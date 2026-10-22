@@ -23,6 +23,9 @@
   #dlg{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);width:640px;
     padding:14px 18px;border:3px solid var(--gold);border-radius:8px;background:rgba(28,20,38,.95);
     font-size:17px;line-height:1.7;display:none;pointer-events:auto}
+  #inv{position:absolute;right:12px;bottom:10px;display:flex;gap:6px}
+  #inv img{width:40px;height:40px;image-rendering:pixelated;padding:4px;border:2px solid var(--gold);
+    border-radius:6px;background:rgba(28,20,38,.85)}
   #dlg b{color:var(--gold);display:block;margin-bottom:4px}
   #dlg small{display:block;text-align:right;opacity:.7;margin-top:6px}
 </style>
@@ -36,6 +39,7 @@
       <span class="key">SHIFT</span> ပြေး&nbsp;&nbsp;
       <span class="key">E</span> လုပ်ဆောင်
     </div>
+    <div id="inv"></div>
     <div id="prompt"><span class="key">E</span> <span id="ptext"></span></div>
     <div id="dlg"><b id="dname"></b><span id="dtext"></span><small>E ▸ ဆက်</small></div>
   </div>

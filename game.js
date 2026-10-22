@@ -22,7 +22,7 @@ const DIALOGS = {
   stall: { name: 'ဒေါ်ခင်မေ · စတုဒိသာဆိုင်', lines: [
     'လာလာ သားလေး၊ မုန့်လုံးရေပေါ် ပူပူလေး စားသွားဦး။',
     'ငရုတ်သီးပါတဲ့လုံး ထိရင် မငိုနဲ့နော် — ဒါ သင်္ကြန်ကံပဲ။',
-    '(အဆင့် ၃ မှာ မုန့်လုံးဆယ် mini-game ဝင်မယ်)'] },
+    '🍡 မုန့်လုံးရေပေါ် တစ်ပွဲ ရလိုက်ပြီ!'], give: { key: 'mlyb', name: 'မုန့်လုံးရေပေါ်', src: 'art/mont-lone-yay-baw.png' } },
   mandat: { name: 'သင်္ကြန်မဏ္ဍပ်', lines: [
     'ဒီနေ့က အကြိုနေ့ — မဏ္ဍပ်ကို ဆောက်နေတုန်းပဲ။',
     'မနက်ဖြန် အကျနေ့ကျရင် ရေပက်ပွဲ စမယ်။ ရေသေနတ် ပြင်ထား!'] },
@@ -31,6 +31,10 @@ const DIALOGS = {
 };
 
 class Pwe extends Phaser.Scene {
+  preload() {
+    this.load.image('mlyb', DIALOGS.stall.give.src); // hand-drawn in Piskel
+  }
+
   create() {
     ART.makeAll(this);
     const data = buildGround();
@@ -53,6 +57,7 @@ class Pwe extends Phaser.Scene {
     put('mandat', 29.5 * T, 15.5 * T, 108, 24, 'mandat');
     this.add.sprite(36 * T + 8, 25 * T - 6, 'npc3', 0).setOrigin(.5, 1).setDepth(25 * T - 20); // vendor behind the table
     put('stall', 36 * T, 25 * T, 52, 16, 'stall');
+    this.add.image(36 * T + 11, 25 * T - 12, 'mlyb').setOrigin(.5, 1).setDepth(25 * T + 1); // on the table
     put('pot', 25 * T, 24 * T, 12, 8, 'pot');
     put('pot', 13 * T, 15 * T, 12, 8, 'pot');
     [[3, 10], [14, 6], [26, 8], [44, 6], [55, 12], [4, 34], [22, 36], [34, 33], [57, 26]].forEach(([tx, ty]) => put('tree', tx * T, ty * T, 10, 8, 'tree'));
@@ -72,20 +77,27 @@ class Pwe extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, MW * T, MH * T).startFollow(this.player, true, .12, .12).setZoom(2).setRoundPixels(true);
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SHIFT,UP,DOWN,LEFT,RIGHT');
-    this.dlg = null; this.facing = 'down';
+    this.dlg = null; this.facing = 'down'; this.bag = new Set();
     this.input.keyboard.on('keydown-E', () => this.interact());
   }
 
   interact() {
     if (this.dlg) { // advance
-      if (++this.dlg.i >= this.dlg.lines.length) { this.dlg = null; $('dlg').style.display = 'none'; $('help').style.display = ''; }
+      if (++this.dlg.i >= this.dlg.lines.length) { this.giveItem(this.dlg.give); this.dlg = null; $('dlg').style.display = 'none'; $('help').style.display = ''; }
       else $('dtext').textContent = this.dlg.lines[this.dlg.i];
       return;
     }
     const h = this.nearest(); if (!h) return;
-    const d = DIALOGS[h.key]; this.dlg = { lines: d.lines, i: 0 };
+    const d = DIALOGS[h.key]; this.dlg = { lines: d.lines, i: 0, give: d.give };
     $('dname').textContent = d.name; $('dtext').textContent = d.lines[0];
     $('dlg').style.display = 'block'; $('prompt').style.display = 'none'; $('help').style.display = 'none';
+  }
+  giveItem(it) {
+    if (!it || this.bag.has(it.key)) return; // ponytail: one of each, counts when items stack
+    this.bag.add(it.key);
+    const img = document.createElement('img');
+    img.src = it.src; img.title = it.name; img.alt = it.name; // Phaser revokes its blob URLs, so use the file path
+    $('inv').appendChild(img);
   }
   nearest() {
     const p = this.player; let best = null, bd = 1e9;

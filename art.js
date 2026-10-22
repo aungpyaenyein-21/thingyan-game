@@ -113,7 +113,6 @@ const ART = (() => {
     px(g, 6, 28, '#8a5a32', 44, 14); px(g, 6, 26, '#a87242', 44, 3);             // table
     px(g, 14, 16, '#2a2a2a', 14, 10); px(g, 16, 15, '#3a3a3a', 10, 2);           // wok
     px(g, 16, 18, '#f6e8c8', 10, 3); for (let i = 0; i < 5; i++) px(g, 16 + i * 2, 17, '#fff8e8', 1, 1); // rice balls
-    px(g, 34, 14, '#b8925a', 10, 12); px(g, 36, 12, '#c9a85a', 6, 3);           // clay pot
     c.refresh();
   }
   function mandat(scene) {
