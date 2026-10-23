@@ -32,7 +32,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=12';
+import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=14';
 
 // ---------- constants (tune here) ----------
 const PAL = {
@@ -292,30 +292,39 @@ function emitFx(type, obj) {
   if (type === 'drip') for (let k = 0; k < 3; k++) { const a = rnd() * 6.28; spawn(w, new THREE.Vector3(Math.cos(a) * 2, 1 + rnd(), Math.sin(a) * 2)); }
 }
 // bean(): same call sites as before, now a chibi with the procedural animator. Everything unspecified is rolled:
-// age (kids / elders), body build (from age + gender), hair style + colour (some Thingyan dye jobs), top cut, slippers, headgear, water gun, garland, thanaka shape.
-function bean({ skin = pick(SKINS), shirt = pick(SHIRTS), hair, flower = false, bottom, longyi, x = 0, z = 0, ry = 0, print, age, hat, prop, build, ...rest } = {}) {
+// age (kids / elders), body build (from age + gender), hair style + colour (some Thingyan dye jobs), top cut (ရင်ဖုံး / တိုက်ပုံ too),
+// face (eyes, brows, mouth, marks) + head shape, slippers, headgear, water gun, garland, padauk in the hair, thanaka shape.
+const KID_TOPS = ['#ff7f6b', '#8bd17c', '#ff9f43', '#4fd1c5', '#b388ff'], KID_BOTTOMS = [['#ff9f43', '#fff6ea'], ['#4fd1c5', '#fff6ea'], ['#b388ff', '#fff6ea']];
+const TAIKPON = ['#2e3a59', '#3a3030', '#f3ead8'];
+function bean({ skin = pick(SKINS), shirt, hair, flower, bottom, longyi, x = 0, z = 0, ry = 0, print, age, hat, prop, build, topStyle, ...rest } = {}) {
   age ??= rnd() < .15 ? 'kid' : rnd() < .1 ? 'elder' : 'adult';
   const fem = ['bun', 'long', 'pigtails', 'bob'].includes(hair) || (!hair && rnd() < .5);
   hair ??= fem ? pick(age === 'kid' ? ['pigtails', 'bob', 'bun'] : ['bun', 'long', 'bob', 'short']) : pick(['short', 'buzz', 'spiky', 'short']);
   bottom ??= fem ? pick(['htamein', 'htamein', 'pants', 'shorts']) : pick(['longyi', 'longyi', 'pants', 'shorts']);
-  const bottomColor = bottom === 'longyi' && longyi ? longyi : pick(BOTTOMS[bottom]);
+  topStyle ??= age === 'kid' ? pick(['tee', 'tee', 'tank']) : age === 'elder' ? (fem ? 'yinphone' : 'taikpon')
+    : fem ? (rnd() < .3 ? 'yinphone' : pick(['tee', 'tank', 'long'])) : rnd() < .15 ? 'taikpon' : pick(['tee', 'tee', 'tank', 'long']);
+  shirt ??= topStyle === 'taikpon' ? pick(TAIKPON) : age === 'kid' ? pick(KID_TOPS) : pick(SHIRTS);
+  flower ??= fem && age !== 'kid' && rnd() < .45;
+  const bottomColor = bottom === 'longyi' && longyi ? longyi : age === 'kid' && bottom !== 'htamein' && bottom !== 'longyi' ? pick(KID_BOTTOMS) : pick(BOTTOMS[bottom]);
   const hairColor = age === 'elder' ? HAIR_GREY : rnd() < .2 ? pick(HAIRS_DYED) : pick(HAIRS);
   hat ??= age === 'elder' ? pick(['none', 'bucket']) : pick(['none', 'none', 'band', 'goggles', 'bucket']);
   prop ??= age === 'elder' ? 'none' : rnd() < .3 ? 'gun' : 'none';
-  const ch = makeChibi({ skin, top: shirt, topStyle: pick(['tee', 'tee', 'tank', 'long']), hair, hairColor, flower, bottom, bottomColor, print: print ?? pick(['သင်္ကြန်', '', '']),
+  const ch = makeChibi({ skin, top: shirt, topStyle, hair, hairColor, flower, bottom, bottomColor, print: print ?? pick(['သင်္ကြန်', '', '']),
     shoes: rnd() < .7 ? 'slipper' : 'sneaker', shoeColor: pick(['#c8553d', '#3f6fa8', '#5a4a3a', '#e9b44c']), accent: pick(ACCENTS), hat, prop, garland: rnd() < .2,
-    thanaka: age === 'kid' ? pick(['square', 'round']) : pick(['round', 'leaf', 'dots', false]), age, build: build ?? (age === 'kid' ? 'round' : fem ? 'slim' : 'broad'), outline: true, ...rest }); // men broad, women slim, kids round // outline: reads against the sand at gameplay zoom
+    thanaka: age === 'kid' ? pick(['square', 'round']) : pick(['round', 'leaf', 'dots', false]), age, build: build ?? (age === 'kid' ? 'round' : fem ? 'slim' : 'broad'), outline: true,
+    eyes: pick(['round', 'round', 'almond', 'bead', 'sleepy']), brows: pick(['arc', 'flat', 'thin', 'bold']), lips: pick(['smile', 'grin', 'small', 'cat']),
+    marks: age === 'kid' ? pick(['blush', 'blush', 'none']) : pick(['none', 'none', 'blush', 'freckles', 'mole']), head: pick(['wide', 'round', 'tall', 'soft']), ...rest }); // men broad, women slim, kids round // outline: reads against the sand at gameplay zoom
   ch.root.position.set(x, groundY(x, z), z); ch.root.rotation.y = ry; scene.add(ch.root);
   const c = { g: ch.root, ch, anim: null, cool: rnd() * 2, idleT: 2 + rnd() * 6 };
   c.anim = new ChibiAnimator(ch, (t, o) => emitFx(t, o)); c.anim.T = rnd() * 3; // desync idle breathing/blinks
   chars.push(c); return c;
 }
 
-const player = bean({ skin: SKINS[0], shirt: '#ffc83d', longyi: LONGYI[2], bottom: 'longyi', hair: 'short', age: 'adult', hat: 'goggles', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', topStyle: 'tee', print: 'သင်္ကြန်', x: -.4, z: 2.3, ry: Math.PI / 4 });
+const player = bean({ skin: SKINS[0], shirt: '#ffc83d', longyi: LONGYI[2], bottom: 'longyi', hair: 'short', age: 'adult', hat: 'goggles', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', topStyle: 'tee', print: 'သင်္ကြန်', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide', x: -.4, z: 2.3, ry: Math.PI / 4 });
 { const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: '#4fd1ff', transparent: true, opacity: .85, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = .012; player.g.add(ring); } // find yourself at any zoom
 // roles read by colour: dancers pink + gold, water crew blue + white, vendor brown + yellow; everyone else is the random public
-const DANCER = { hair: 'bun', flower: true, shirt: '#f48fb1', topStyle: 'long', bottom: 'htamein', bottomColor: ['#c98a2e', '#f2c14e'], accent: '#f2c14e', garland: true, age: 'adult', hat: 'none', prop: 'none' };
+const DANCER = { hair: 'bun', flower: true, shirt: '#f48fb1', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#c98a2e', '#f2c14e'], accent: '#f2c14e', garland: true, age: 'adult', hat: 'none', prop: 'none' };
 const dancers = [bean({ ...DANCER, x: MX - 1.4, z: MZ - .2 }), bean({ ...DANCER, x: MX, z: MZ - .3 }), bean({ ...DANCER, x: MX + 1.4, z: MZ - .2 })];
 dancers.forEach(d => { d.g.position.y = 1.04; d.anim.setLoop('dance'); d.anim.T = 0; }); // the troupe dances in sync
 const crew = [ // ရေပက်အဖွဲ့ behind the outer hoses
@@ -327,7 +336,8 @@ const crowd = [
   bean({ x: 4.1, z: -2.45, ry: .4, flower: true, hair: 'bun' }), bean({ x: 6.1, z: -2.6, ry: 1.2 }),
   bean({ x: 5.2, z: .95, ry: .7, hair: 'bun' }), bean({ x: 2.95, z: -2.3, ry: 1.0 }),
 ];
-const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#e9b44c', topStyle: 'tee', bottom: 'htamein', bottomColor: ['#6e4428', '#a8743a'], accent: '#6e4428', age: 'adult', hat: 'none', prop: 'none', print: '' });
+const runners = [0, Math.PI].map(a => { const k = bean({ age: 'kid', prop: 'none', hat: 'none', x: 5.75 + 1.8 * Math.cos(a), z: 5.5 + 1.8 * Math.sin(a) }); k.lap = a; k.anim.setLoop('run'); return k; }); // kids chase each other round the zedi
+const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#e9b44c', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#6e4428', '#a8743a'], accent: '#6e4428', age: 'adult', hat: 'none', prop: 'none', print: '' });
 vendor.g.position.z = 1.9; vendor.g.rotation.y = 0;
 
 
@@ -543,7 +553,12 @@ renderer.setAnimationLoop(() => {
   player.g.position.y = groundY(player.g.position.x, player.g.position.z);
 
   // npcs: idle, now and then a little action; everyone animates through the same rig
-  for (const c of [...crowd, ...crew, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { c.anim.play(pick(['wave', 'jump', 'wave'])); c.idleT = 5 + rnd() * 8; } }
+  for (const c of [...crowd, ...crew, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { const kid = c.ch.opts.age === 'kid'; c.anim.play(pick(kid ? ['jump', 'jump', 'wave'] : ['wave', 'jump', 'wave'])); c.idleT = kid ? 1.5 + rnd() * 2 : 5 + rnd() * 8; } } // kids bounce far more often
+  for (const k of runners) {
+    k.lap += k.anim.speed / 1.8 * dt; const x = 5.75 + 1.8 * Math.cos(k.lap), z = 5.5 + 1.8 * Math.sin(k.lap); // centre nudged so the lap clears the trishaw
+    k.g.position.set(x, groundY(x, z), z); k.g.rotation.y = Math.atan2(-Math.sin(k.lap), Math.cos(k.lap));
+    if (!k.anim.one && rnd() < dt * .25) k.anim.play('jump');
+  }
   for (const c of chars) { c.cool -= dt; c.anim.update(dt); }
 
   // emitters
@@ -556,7 +571,7 @@ renderer.setAnimationLoop(() => {
   }
 
   // drops
-  const hitList = [...crowd, ...riders, player]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
+  const hitList = [...crowd, ...riders, ...runners, player]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
   for (let i = 0; i < NW; i++) {
     const d = drops[i];
     if (d.life > 0) {

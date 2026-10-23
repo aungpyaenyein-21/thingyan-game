@@ -43,6 +43,12 @@
   <div class="row" id="thanaka"></div>
   <div class="row" id="ages" style="margin-top:6px"></div>
   <div class="row" id="builds" style="margin-top:6px"></div>
+  <h2>မျက်နှာ · ခေါင်းပုံ</h2>
+  <div class="row" id="feyes"></div>
+  <div class="row" id="fbrows" style="margin-top:6px"></div>
+  <div class="row" id="flips" style="margin-top:6px"></div>
+  <div class="row" id="fmarks" style="margin-top:6px"></div>
+  <div class="row" id="fhead" style="margin-top:6px"></div>
   <h2>မျက်ဝန်း</h2>
   <div class="row" id="iris"></div>
   <h2>အသားအရောင် · အင်္ကျီ · ဖိနပ်</h2>
@@ -62,7 +68,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=12';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=14';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -110,7 +116,7 @@ function emit(type, obj) {
 }
 
 // character + UI state
-const state = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', thanaka: 'round', flower: false, hat: 'none', prop: 'none', shoes: 'sneaker', shoeColor: '#c8553d', accent: '#e0574f', garland: false, age: 'adult', build: 'round' };
+const state = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', thanaka: 'round', flower: false, hat: 'none', prop: 'none', shoes: 'sneaker', shoeColor: '#c8553d', accent: '#e0574f', garland: false, age: 'adult', build: 'round', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide' };
 const BOTTOM_COLORS = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#4a5a8a', '#4a5a8a'], shorts: ['#5b7fa8', '#f6ead2'] };
 let ch, anim;
 function build() {
@@ -144,7 +150,13 @@ btn('props', 'ပန်းကုံး', '', function () { state.garland = !stat
 group('thanaka', [[false, 'မပါ'], ['round', 'ဝိုင်း'], ['leaf', 'ရွက်'], ['square', 'လေးထောင့်'], ['dots', 'အစက်']], () => state.thanaka, v => { state.thanaka = v; build(); });
 group('builds', [['round', 'ဖောင်းဖောင်း'], ['slim', 'သွယ်သွယ်'], ['broad', 'ပခုံးကျယ်']], () => state.build, v => { state.build = v; build(); });
 group('ages', [['adult', 'လူကြီး'], ['kid', 'ကလေး'], ['elder', 'အဖိုးအဖွား']], () => state.age, v => { state.age = v; if (v === 'elder') state.hairColor = HAIR_GREY; build(); });
-group('topstyle', [['tee', 'ရှပ်'], ['tank', 'လက်ပြတ်'], ['long', 'လက်ရှည်']], () => state.topStyle, v => { state.topStyle = v; build(); });
+group('topstyle', [['tee', 'ရှပ်'], ['tank', 'လက်ပြတ်'], ['long', 'လက်ရှည်'], ['yinphone', 'ရင်ဖုံး'], ['taikpon', 'တိုက်ပုံ']], () => state.topStyle, v => { state.topStyle = v; build(); });
+const face = (id, key, items) => group(id, items, () => state[key], v => { state[key] = v; build(); });
+face('feyes', 'eyes', [['round', 'မျက်လုံးဝိုင်း'], ['almond', 'မျက်လုံးမောင်း'], ['bead', 'မျက်လုံးသေး'], ['sleepy', 'မျက်လုံးမှေး']]);
+face('fbrows', 'brows', [['arc', 'မျက်ခုံးကွေး'], ['flat', 'မျက်ခုံးဖြောင့်'], ['thin', 'မျက်ခုံးပါး'], ['bold', 'မျက်ခုံးထူ']]);
+face('flips', 'lips', [['smile', 'ပြုံး'], ['grin', 'ရယ်'], ['small', 'ပြုံးလေး'], ['cat', 'ω']]);
+face('fmarks', 'marks', [['none', 'အမှတ်မပါ'], ['blush', 'ပါးနီ'], ['freckles', 'တင်းမှဲ့'], ['mole', 'မှဲ့']]);
+face('fhead', 'head', [['wide', 'ခေါင်းကျယ်'], ['round', 'ခေါင်းဝိုင်း'], ['tall', 'ခေါင်းရှည်'], ['soft', 'ခေါင်းပြား']]);
 group('shoes', [['sneaker', 'ဖိနပ်ထူ'], ['slipper', 'ညှပ်ဖိနပ်']], () => state.shoes, v => { state.shoes = v; build(); });
 const swatches = (parent, cols, key) => { const bs = cols.map(c => { const b = btn(parent, '', '', () => { state[key] = c; build(); bs.forEach(x => x.classList.toggle('on', x === b)); }); b.className = 'sw'; b.style.background = c; b.classList.toggle('on', state[key] === c); return b; }); };
 swatches('skins', SKINS, 'skin');

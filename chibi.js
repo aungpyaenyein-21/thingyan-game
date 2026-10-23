@@ -6,7 +6,8 @@ import * as THREE from 'three';
 const UP = .2, LO = .19, ANKLE = .075;         // thigh, shin, ankle→sole (longer legs than v1)
 export const HIP = UP + LO + ANKLE;            // hip height when standing
 const ARM_UP = .155, ARM_LO = .135;
-const HEAD_R = .3, HEAD_S = [1.1, .96, .95]; // wide, slightly flat-fronted head
+const HEAD_R = .3;
+export const HEADS = { wide: [1.1, .96, .95], round: [1.02, 1, .98], tall: [.97, 1.07, .94], soft: [1.15, .92, 1.0] }; // skull squash per head shape
 
 // ---------- body builds: torso lathe (r, y), shoulder x, hip ball r, longyi / htamein lathes (last point sits on the hem) ----------
 const SLIM_SKIRTS = { longyi: [[.14, .1], [.158, .04], [.168, -.06], [.165, -.22], [.16]], htamein: [[.135, .1], [.152, .03], [.158, -.1], [.15, -.26], [.148]] };
@@ -46,10 +47,13 @@ function stripes(a, b, plaid, border) {
 
 // ---------- face: painted on a canvas, mapped onto a patch of the head ----------
 const FW = 384, FH = 256, faceCache = {};
-function faceTex(iris, thanaka, eye, mouth) {
-  const key = [iris, thanaka, eye, mouth].join('|'); if (faceCache[key]) return faceCache[key];
+// o.eyes round|almond|bead|sleepy · o.brows arc|flat|thin|bold · o.lips smile|grin|small|cat · o.marks none|blush|freckles|mole
+function faceTex(o, eye, mouth) {
+  const k = o.age === 'kid' ? 1.22 : 1, { iris, thanaka } = o;
+  const key = [iris, thanaka, o.eyes, o.brows, o.lips, o.marks, k, eye, mouth].join('|'); if (faceCache[key]) return faceCache[key];
   const c = document.createElement('canvas'); c.width = FW; c.height = FH; const g = c.getContext('2d');
   const ink = '#3a2430';
+  if (o.marks === 'freckles') { g.fillStyle = 'rgba(120,70,50,.6)'; for (const s of [-1, 1]) for (const [dx, dy] of [[38, 150], [54, 161], [68, 147], [47, 172]]) { g.beginPath(); g.arc(192 + s * dx, dy, 4, 0, 7); g.fill(); } }
   if (thanaka) { // ပါးပေါ်က သနပ်ခါး: round | leaf | square | dots (+ faint brush streaks)
     const T = thanaka === true ? 'round' : thanaka;
     for (const s of [-1, 1]) {
@@ -62,43 +66,79 @@ function faceTex(iris, thanaka, eye, mouth) {
       g.restore();
     }
   }
+  if (o.marks === 'blush') for (const s of [-1, 1]) { g.fillStyle = 'rgba(240,110,120,.4)'; g.beginPath(); g.ellipse(192 + s * 74, 152, 24, 12, 0, 0, 7); g.fill(); } // over the thanaka, nearer the nose so it shows
+  if (o.marks === 'mole') { g.fillStyle = '#4a2e2a'; g.beginPath(); g.arc(240, 194, 5, 0, 7); g.fill(); }
   g.lineCap = 'round'; g.lineJoin = 'round';
   for (const s of [-1, 1]) {
     const x = 192 + s * 62, y = 112;
-    g.strokeStyle = ink; g.lineWidth = 6; g.beginPath(); g.arc(x - s * 2, y - 62, 18, Math.PI * 1.2, Math.PI * 1.8); g.stroke(); // brow
-    if (eye === 'normal') {
+    g.save(); g.translate(x, y); g.scale(k, k); g.translate(-x, -y);
+    g.strokeStyle = ink; g.lineWidth = { thin: 3.5, bold: 11 }[o.brows] || 6; g.beginPath(); // brow
+    if (o.brows === 'flat') { g.moveTo(x - 17, y - 74); g.lineTo(x + 17, y - 74); } else g.arc(x - s * 2, y - 62, o.brows === 'bold' ? 16 : 18, Math.PI * 1.2, Math.PI * 1.8);
+    g.stroke();
+    if (eye === 'normal' && o.eyes === 'bead') { // small shiny bead eyes
+      g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 4, 13, 17, 0, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 4, y - 3, 5, 0, 7); g.fill();
+    } else if (eye === 'normal' && o.eyes === 'almond') { // narrower, outer corner lifted
+      g.save(); g.translate(x, y); g.rotate(-s * .14); g.beginPath(); g.ellipse(0, 0, 30, 21, 0, 0, 7); g.fillStyle = '#fff'; g.fill(); g.save(); g.clip();
+      g.fillStyle = iris; g.beginPath(); g.ellipse(0, 3, 17, 20, 0, 0, 7); g.fill();
+      g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(0, 5, 9, 12, 0, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(-6, -4, 5, 0, 7); g.fill(); g.restore();
+      g.strokeStyle = ink; g.lineWidth = 5; g.beginPath(); g.ellipse(0, 0, 30, 21, 0, Math.PI * 1.02, Math.PI * 1.98); g.stroke(); g.restore();
+    } else if (eye === 'normal') { // round (sleepy = the same eye, half-lidded)
+      const sl = o.eyes === 'sleepy';
+      g.save(); if (sl) { g.translate(0, y * .35 + 8); g.scale(1, .65); }
       g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, 7); g.fill();
       g.fillStyle = iris; g.beginPath(); g.ellipse(x, y + 5, 21, 27, 0, 0, 7); g.fill();
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 8, 11, 15, 0, 0, 7); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 8, y - 6, 7, 0, 7); g.fill(); g.beginPath(); g.arc(x + 9, y + 15, 3.5, 0, 7); g.fill();
-      g.strokeStyle = ink; g.lineWidth = 5; g.beginPath(); g.ellipse(x, y, 27, 34, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke(); // upper lid
-      g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, Math.PI); g.stroke();
+      g.strokeStyle = ink; g.lineWidth = sl ? 8 : 5; g.beginPath(); g.ellipse(x, y, 27, 34, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke(); // upper lid
+      g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, Math.PI); g.stroke(); g.restore();
     } else if (eye === 'blink') { g.strokeStyle = ink; g.lineWidth = 7; g.beginPath(); g.arc(x, y - 6, 24, Math.PI * .15, Math.PI * .85); g.stroke(); }
     else if (eye === 'happy') { g.strokeStyle = ink; g.lineWidth = 8; g.beginPath(); g.arc(x, y + 14, 24, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
     else { g.strokeStyle = ink; g.lineWidth = 7; g.beginPath(); g.moveTo(x - s * 20, y - 18); g.lineTo(x + s * 14, y); g.lineTo(x - s * 20, y + 18); g.stroke(); } // > <
+    g.restore();
   }
-  g.fillStyle = '#7a2e3a';
-  if (mouth === 'smile') { g.beginPath(); g.moveTo(162, 192); g.quadraticCurveTo(192, 196, 222, 192); g.quadraticCurveTo(218, 232, 192, 234); g.quadraticCurveTo(166, 232, 162, 192); g.fill(); }
-  else { g.beginPath(); g.ellipse(192, 208, 17, 22, 0, 0, 7); g.fill(); }
-  g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, mouth === 'smile' ? 224 : 220, 15, 8, 0, 0, 7); g.fill(); // tongue
+  g.fillStyle = g.strokeStyle = '#7a2e3a'; g.lineWidth = 6;
+  const lips = mouth === 'smile' ? o.lips : 'open';
+  if (lips === 'smile') { g.beginPath(); g.moveTo(162, 192); g.quadraticCurveTo(192, 196, 222, 192); g.quadraticCurveTo(218, 232, 192, 234); g.quadraticCurveTo(166, 232, 162, 192); g.fill(); }
+  if (lips === 'grin') { g.beginPath(); g.moveTo(148, 188); g.quadraticCurveTo(192, 196, 236, 188); g.quadraticCurveTo(230, 238, 192, 240); g.quadraticCurveTo(154, 238, 148, 188); g.fill(); }
+  if (lips === 'small') { g.beginPath(); g.arc(192, 180, 22, Math.PI * .22, Math.PI * .78); g.stroke(); }
+  if (lips === 'cat') { g.beginPath(); g.arc(178, 194, 14, 0, Math.PI); g.moveTo(220, 194); g.arc(206, 194, 14, 0, Math.PI); g.stroke(); } // ω
+  if (lips === 'open') { g.beginPath(); g.ellipse(192, 208, 17, 22, 0, 0, 7); g.fill(); }
+  if (lips === 'smile' || lips === 'grin' || lips === 'open') { g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, lips === 'open' ? 220 : lips === 'grin' ? 228 : 224, 15, 8, 0, 0, 7); g.fill(); } // tongue
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return faceCache[key] = t;
 }
 
-function printTex(color, ink, text) { // shirt print, front-centred (lathe seam sits at the back)
+function printTex(color, ink, text, style) { // shirt print, front-centred (lathe seam sits at the back)
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d');
   g.fillStyle = color; g.fillRect(0, 0, 512, 128);
+  const trim = lighten(color, .45);
+  if (style === 'yinphone') { // ရင်ဖုံး: crossover flap from the collar to the side, little buttons, light hem band
+    g.strokeStyle = trim; g.lineWidth = 6; g.beginPath(); g.moveTo(246, 16); g.quadraticCurveTo(262, 58, 326, 72); g.stroke();
+    g.fillStyle = trim; for (const [bx, by] of [[262, 46], [286, 63], [310, 70]]) { g.beginPath(); g.arc(bx, by, 5, 0, 7); g.fill(); }
+    g.fillRect(0, 100, 512, 10); return canvasTex(c);
+  }
+  if (style === 'taikpon') { // တိုက်ပုံ: white undershirt collar at the throat, front placket with knot buttons
+    g.fillStyle = '#fff6ea'; g.beginPath(); g.moveTo(232, 8); g.lineTo(280, 8); g.lineTo(256, 44); g.fill();
+    g.strokeStyle = trim; g.lineWidth = 3; g.beginPath(); g.moveTo(256, 44); g.lineTo(256, 128); g.stroke();
+    g.fillStyle = trim; for (const by of [56, 76, 96]) { g.beginPath(); g.arc(256, by, 6, 0, 7); g.fill(); }
+    return canvasTex(c);
+  }
   if (text) { g.fillStyle = ink; g.font = '32px "Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif'; g.textAlign = 'center'; g.fillText(text, 256, 74); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  return canvasTex(c);
 }
+function canvasTex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
 
 // ---------- build ----------
 // opts: skin, hair ('short'|'bun'|'long'|'bob'|'pigtails'|'buzz'|'spiky'), hairColor, iris,
 //       top, topStyle ('tee'|'tank'|'long'), print (text|''), bottom ('longyi'|'htamein'|'pants'|'shorts'), bottomColor [a,b],
 //       shoes ('sneaker'|'slipper'), shoeColor, hat ('none'|'band'|'goggles'|'bucket'), accent, garland, prop ('none'|'gun'),
-//       flower, thanaka (false|'round'|'leaf'|'square'|'dots'), age ('adult'|'kid'|'elder'), build ('round'|'slim'|'broad'), outline
+//       flower, thanaka (false|'round'|'leaf'|'square'|'dots'), age ('adult'|'kid'|'elder'), build ('round'|'slim'|'broad'), outline,
+//       face: eyes/brows/lips/marks (see faceTex), head ('wide'|'round'|'tall'|'soft'); topStyle also 'yinphone' (ရင်ဖုံး) | 'taikpon' (တိုက်ပုံ)
 export function makeChibi(opts = {}) {
   const o = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', bottomColor: ['#3f7a5a', '#72b08b'],
-    shoes: 'sneaker', shoeColor: '#c8553d', hat: 'none', accent: '#e0574f', garland: false, prop: 'none', flower: false, thanaka: 'round', age: 'adult', build: 'round', outline: false, ...opts };
+    shoes: 'sneaker', shoeColor: '#c8553d', hat: 'none', accent: '#e0574f', garland: false, prop: 'none', flower: false, thanaka: 'round', age: 'adult', build: 'round', outline: false,
+    eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide', ...opts };
   const B = BUILDS[o.build];
   if (o.shoes[0] === '#') { o.shoeColor = o.shoes; o.shoes = 'sneaker'; } // old call sites passed a colour
   if (o.thanaka === true) o.thanaka = 'round';
@@ -116,18 +156,19 @@ export function makeChibi(opts = {}) {
   const pivot = (parent, x, y, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const skirt = o.bottom === 'longyi' || o.bottom === 'htamein';
   const legTop = skirt ? o.skin : cloth(o.bottomColor[0]), legLow = o.bottom === 'pants' ? cloth(o.bottomColor[0]) : o.skin;
-  const longSleeve = o.topStyle === 'long';
+  const longSleeve = ['long', 'yinphone', 'taikpon'].includes(o.topStyle);
+  const legK = o.age === 'kid' ? .8 : 1, up = UP * legK, lo = LO * legK, hipH = up + lo + ANKLE; // kids: shorter legs
 
-  const hips = pivot(body, 0, HIP);
+  const hips = pivot(body, 0, hipH);
   part(new THREE.SphereGeometry(B.hip, 16, 10), skirt ? o.skin : cloth(o.bottomColor[0]), hips, 0, .03).scale.set(1.05, .75, .9);
 
   const legs = [1, -1].map(side => { // +x is the character's left (it faces +z)
     const hip = pivot(hips, side * .085, 0);
-    part(new THREE.CapsuleGeometry(.066, UP - .06, 4, 12), legTop, hip, 0, -UP / 2);
-    if (o.bottom === 'shorts') part(new THREE.CylinderGeometry(.078, .078, .05, 14), cloth(o.bottomColor[1]), hip, 0, -UP + .03, 0);
-    const knee = pivot(hip, 0, -UP);
-    part(new THREE.CapsuleGeometry(.058, LO - .05, 4, 12), legLow, knee, 0, -LO / 2);
-    const foot = pivot(knee, 0, -LO);
+    part(new THREE.CapsuleGeometry(.066, up - .06, 4, 12), legTop, hip, 0, -up / 2);
+    if (o.bottom === 'shorts') part(new THREE.CylinderGeometry(.078, .078, .05, 14), cloth(o.bottomColor[1]), hip, 0, -up + .03, 0);
+    const knee = pivot(hip, 0, -up);
+    part(new THREE.CapsuleGeometry(.058, lo - .05, 4, 12), legLow, knee, 0, -lo / 2);
+    const foot = pivot(knee, 0, -lo);
     if (o.shoes === 'slipper') { // ညှပ်ဖိနပ်: flat sole, bare foot, thong strap
       part(new THREE.SphereGeometry(.085, 16, 10), o.shoeColor, foot, 0, -.062, .035).scale.set(1, .22, 1.45);
       part(new THREE.SphereGeometry(.07, 14, 10), o.skin, foot, 0, -.035, .03).scale.set(1, .55, 1.35);
@@ -141,7 +182,7 @@ export function makeChibi(opts = {}) {
 
   let skirtMesh = null, skirtBase = null;
   if (skirt) {
-    const men = o.bottom === 'longyi', hem = -(HIP - .085);
+    const men = o.bottom === 'longyi', hem = -(hipH - .085);
     const prof = B[o.bottom].map(([r, y = hem]) => new THREE.Vector2(r, y));
     const geo = new THREE.LatheGeometry(prof, 28); geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const tex = stripes(o.bottomColor[0], o.bottomColor[1], men, men ? null : '#f2c14e'); tex.repeat.set(5, 1);
@@ -152,8 +193,12 @@ export function makeChibi(opts = {}) {
 
   const spine = pivot(hips, 0, .06);
   const torsoProf = B.torso.map(([r, y]) => new THREE.Vector2(r, y));
-  const torso = part(new THREE.LatheGeometry(torsoProf, 28), wear(null, printTex(o.top, '#5a3550', o.print)), spine);
-  torso.rotation.y = Math.PI; torso.scale.set(1, 1, .82);
+  const torso = part(new THREE.LatheGeometry(torsoProf, 28), wear(null, printTex(o.top, '#5a3550', o.print, o.topStyle)), spine);
+  torso.rotation.y = Math.PI; torso.scale.set(1, 1, o.age === 'kid' ? .98 : .82); // kids: round tummy
+  if (o.topStyle === 'taikpon') { // jacket hem flares just past the waistband
+    const r = Math.max(B.torso[1][0], skirt ? Math.max(B[o.bottom][1][0], B[o.bottom][2][0]) : B.hip * 1.05) + .008;
+    part(new THREE.CylinderGeometry(r, r + .015, .08, 28, 1, true), cloth(o.top), spine, 0, -.05).scale.z = .82;
+  }
   const arms = [1, -1].map(side => {
     const sh = pivot(spine, side * B.sh, .225);
     const tee = o.topStyle === 'tee'; // shoulder cap: only as wide as the sleeve/arm and sunk a little, so it rounds the joint instead of puffing out
@@ -162,6 +207,7 @@ export function makeChibi(opts = {}) {
     part(new THREE.CapsuleGeometry(.048, ARM_UP - .05, 4, 10), longSleeve ? cloth(o.top) : o.skin, sh, 0, -ARM_UP / 2 - .01);
     const elbow = pivot(sh, 0, -ARM_UP);
     part(new THREE.CapsuleGeometry(.046, ARM_LO - .06, 4, 10), longSleeve ? cloth(o.top) : o.skin, elbow, 0, -ARM_LO / 2 + .01);
+    if (o.topStyle === 'taikpon') part(new THREE.CylinderGeometry(.05, .05, .03, 12), '#fff6ea', elbow, 0, -ARM_LO + .035, 0, false); // white shirt cuff
     const hand = pivot(elbow, 0, -ARM_LO);
     part(new THREE.SphereGeometry(.07, 14, 10), o.skin, hand, 0, -.01); // round mitten fist
     return { sh, elbow, hand };
@@ -173,16 +219,22 @@ export function makeChibi(opts = {}) {
   }
 
   const neck = pivot(spine, 0, .3);
-  const head = pivot(neck, 0, HEAD_R * HEAD_S[1] - .03);
-  const skull = pivot(head, 0, 0); skull.scale.set(...HEAD_S); // everything on the skull shares its squash
+  const HS = HEADS[o.head];
+  const head = pivot(neck, 0, HEAD_R * HS[1] - .03);
+  const skull = pivot(head, 0, 0); skull.scale.set(...HS); // everything on the skull shares its squash
   if (o.age === 'kid') skull.scale.multiplyScalar(1.1);
   part(new THREE.SphereGeometry(HEAD_R, 32, 20), o.skin, skull);
   // painted face patch (front ~110° x 72°)
-  const ft = faceTex(o.iris, o.thanaka, 'normal', 'smile');
+  const ft = faceTex(o, 'normal', 'smile');
   const faceMat = new THREE.MeshLambertMaterial({ map: ft, emissive: '#ffffff', emissiveMap: ft, emissiveIntensity: .28, transparent: true, polygonOffset: true, polygonOffsetFactor: -2 }); // a little self-light keeps eye whites + thanaka bright
   const face = new THREE.Mesh(new THREE.SphereGeometry(HEAD_R * 1.004, 32, 16, Math.PI / 2 - .95, 1.9, Math.PI / 2 - .55, 1.25), faceMat); skull.add(face);
   const nose = part(new THREE.SphereGeometry(.026, 10, 8), shade(o.skin, .18), skull, 0, -.035, HEAD_R * .99, false); nose.scale.set(1.15, .85, .9);
   for (const s of [-1, 1]) part(new THREE.SphereGeometry(.05, 10, 8), o.skin, skull, s * HEAD_R * .98, -.02, 0).scale.set(.5, 1, .8); // ears
+
+  if (o.age === 'elder') { // မျက်မှန်
+    for (const s of [-1, 1]) part(new THREE.TorusGeometry(.058, .008, 6, 20), '#4a3428', skull, s * .092, .005, HEAD_R + .012, false).rotation.y = s * .32;
+    part(new THREE.CylinderGeometry(.006, .006, .06, 6), '#4a3428', skull, 0, .02, HEAD_R + .02, false).rotation.z = Math.PI / 2;
+  }
 
   // sculpted hair: cap + sheen + fringe clumps + style
   const hm = cloth(o.hairColor), onSkull = (dx, dy, dz, k = 1) => new THREE.Vector3(dx, dy, dz).normalize().multiplyScalar(HEAD_R * k);
@@ -219,7 +271,11 @@ export function makeChibi(opts = {}) {
       for (const s of [-1, 1]) part(new THREE.CapsuleGeometry(.06, .16, 4, 10), hm, skull, s * .25, -.12, .02).rotation.z = s * .12; // side locks
     }
   }
-  if (o.flower) for (const [x, y, z] of [[.22, .22, -.12], [.29, .14, -.08], [.18, .16, -.18], [.27, .24, -.02]]) part(new THREE.IcosahedronGeometry(.05, 0), PADAUK, skull, x, y, z);
+  if (o.flower) { // ပိတောက်ပန်း: a sprig of florets tucked into the bun (or behind the ear) with a leaf
+    const [fx, fy, fz] = o.hair === 'bun' ? [.12, .33, -.05] : [.25, .17, -.1];
+    part(new THREE.SphereGeometry(.05, 8, 6), '#5d9a4a', skull, fx + .02, fy - .025, fz - .03, false).scale.set(1.4, .35, .8);
+    for (let i = 0; i < 6; i++) part(new THREE.IcosahedronGeometry(.032, 0), PADAUK, skull, fx + Math.cos(i * 1.05) * .045, fy + .01 + Math.sin(i * 1.05) * .04, fz + Math.sin(i * 2.1) * .02, false);
+  }
 
   // hats / headgear
   if (o.hat === 'band') { // ခေါင်းစည်း with tails at the back
@@ -251,6 +307,12 @@ export function makeChibi(opts = {}) {
     part(new THREE.BoxGeometry(.03, .05, .09), '#ff7f3f', gun, 0, .03, .07);
   }
 
+  let cane = null;
+  if (o.age === 'elder') { // တောင်ဝှေး, kept upright by the animator
+    cane = pivot(arms[1].hand, 0, -.02, .02);
+    part(new THREE.CylinderGeometry(.015, .015, .5, 8), '#7a4a2e', cane, 0, -.25, 0); part(new THREE.SphereGeometry(.03, 8, 6), '#7a4a2e', cane);
+  }
+
   // the bucket for the splash action (shown only while throwing)
   const bucketG = new THREE.Group(); bucketG.visible = false; root.add(bucketG);
   part(new THREE.CylinderGeometry(.13, .1, .18, 16), o.accent, bucketG);
@@ -263,9 +325,9 @@ export function makeChibi(opts = {}) {
   // age: kids are small with a bigger head, elders a little shorter and hunched
   const scale = o.age === 'kid' ? .72 : o.age === 'elder' ? .9 : 1;
   root.scale.setScalar(scale);
-  const hunch = o.age === 'elder' ? .22 : 0;
+  const hunch = o.age === 'elder' ? .3 : 0, gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, blob, scale, hunch, opts: o,
+  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, blob, scale, hunch, gait, legK, hipH, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
 }
 
@@ -326,15 +388,16 @@ export class ChibiAnimator {
     if (!c.bubble) { c.bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: emoteTex(kind), depthWrite: false })); c.bubble.renderOrder = 10; c.root.add(c.bubble); }
     c.bubble.material.map = emoteTex(kind); c.bubble.visible = true; this.emT = 0; this.emDur = dur;
   }
-  get speed() { return ['kadaw', 'shake', 'splash', 'wave'].includes(this.one) ? 0 : LOOPS[this.loop].speed * (this.ch.scale || 1); } // ground speed (units/s)
+  get speed() { return ['kadaw', 'shake', 'splash', 'wave'].includes(this.one) ? 0 : LOOPS[this.loop].speed * this.ch.scale * this.ch.legK * this.ch.gait; } // ground speed (units/s)
   _xfade() { this.from = { ...this.out }; this.blendT = 0; }
 
   update(dt) {
     this.T += dt; this.blendT += dt;
     const L = LOOPS[this.loop];
-    this.freq += ((L.f || 0) - this.freq) * clamp01(dt * 6);
+    this.freq += ((L.f || 0) * this.ch.gait - this.freq) * clamp01(dt * 6);
     this.phi += this.freq * Math.PI * 2 * dt;
     let pose = this._loopPose(this.loop);
+    if (this.ch.cane && this.loop !== 'dance') { pose.armRx = pose.armRx * .3 - .3; pose.armRz = -.1; pose.elbowR = -.5; } // cane hand held forward
     if (this.one) {
       this.oneT += dt; const d = ONESHOT[this.one];
       if (this.oneT >= d) { this.one = null; this._xfade(); }
@@ -452,10 +515,11 @@ export class ChibiAnimator {
 
   _apply(p, dt) {
     const c = this.ch;
-    c.body.position.set(p.x, p.y, 0); c.body.scale.set(1 / Math.sqrt(p.sy), p.sy, 1 / Math.sqrt(p.sy));
+    c.body.position.set(p.x, p.y * c.legK, 0); c.body.scale.set(1 / Math.sqrt(p.sy), p.sy, 1 / Math.sqrt(p.sy));
     c.hips.rotation.set(0, p.hipsRy, p.hipsRz); c.spine.rotation.set(p.spineRx + (c.hunch || 0), p.spineRy, p.spineRz);
     c.head.rotation.set(p.headRx - (c.hunch || 0) * .7, p.headRy, p.headRz);
     if (c.gun) c.gun.visible = !c.bucket.visible;
+    if (c.cane) { c.cane.visible = !c.bucket.visible; c.cane.rotation.x = -(p.armRx + p.elbowR + p.spineRx + c.hunch); }
     const [lL, lR] = c.legs;
     lL.hip.rotation.set(p.legLx, 0, p.legLz); lR.hip.rotation.set(p.legRx, 0, p.legRz);
     lL.knee.rotation.x = p.kneeL; lR.knee.rotation.x = p.kneeR; lL.foot.rotation.x = p.footL; lR.foot.rotation.x = p.footR;
@@ -463,8 +527,8 @@ export class ChibiAnimator {
     aL.sh.rotation.set(p.armLx, 0, p.armLz); aR.sh.rotation.set(p.armRx, 0, p.armRz);
     aL.elbow.rotation.x = p.elbowL; aR.elbow.rotation.x = p.elbowR; aL.hand.rotation.z = p.handLz; aR.hand.rotation.z = p.handRz;
     // face
-    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr === 'normal' && blink ? 'blink' : p.expr;
-    const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts.iris, c.opts.thanaka, eye, p.mouth); }
+    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : c.opts.age === 'elder' ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes
+    const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, eye, p.mouth); }
     // bucket rides between the hands
     if (c.bucket.visible) {
       const a = c.arms[0].hand.getWorldPosition(new THREE.Vector3()), b = c.arms[1].hand.getWorldPosition(new THREE.Vector3());
@@ -481,9 +545,9 @@ export class ChibiAnimator {
     const air = Math.max(0, p.y); c.blob.scale.setScalar(1 - Math.min(.5, air * .8)); c.blob.material.opacity = 1 - Math.min(.6, air);
     // skirt: hem follows the legs, front lifts when hitched
     if (c.skirtMesh) {
-      const pos = c.skirtMesh.geometry.attributes.position, B = c.skirtBase, top = .1, hem = -(HIP - .085);
-      const fL = Math.sin(-p.legLx) * (UP + LO) * .9 + Math.sin(-(p.legLx + p.kneeL)) * .05;
-      const fR = Math.sin(-p.legRx) * (UP + LO) * .9 + Math.sin(-(p.legRx + p.kneeR)) * .05;
+      const pos = c.skirtMesh.geometry.attributes.position, B = c.skirtBase, top = .1, hem = -(c.hipH - .085), L = (UP + LO) * c.legK;
+      const fL = Math.sin(-p.legLx) * L * .9 + Math.sin(-(p.legLx + p.kneeL)) * .05;
+      const fR = Math.sin(-p.legRx) * L * .9 + Math.sin(-(p.legRx + p.kneeR)) * .05;
       for (let i = 0; i < pos.count; i++) {
         const x = B[i * 3], y = B[i * 3 + 1], z = B[i * 3 + 2], h = clamp01((top - y) / (top - hem)) ** 1.6;
         const wl = clamp01(.5 + x * 4.5), dz = h * (wl * fL + (1 - wl) * fR) * .8;
