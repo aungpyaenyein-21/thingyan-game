@@ -29,6 +29,8 @@
   <div class="row" id="loops"></div>
   <h2>တစ်ခါလုပ်</h2>
   <div class="row" id="ones"></div>
+  <h2>ရေစို · ခံစားချက်</h2>
+  <div class="row" id="moods"></div>
   <h2>အောက်ပိုင်း</h2>
   <div class="row" id="bottoms"></div>
   <h2>ဆံပင်</h2>
@@ -60,7 +62,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=10';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=12';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -129,9 +131,11 @@ const LOOP_UI = [['idle', 'ရပ်', '1'], ['walk', 'လမ်းလျှေ�
 const ONE_UI = [['jump', 'ခုန်', 'Space'], ['splash', 'ရေပက်', 'E'], ['shake', 'ရေစိုခါ', 'Q'], ['wave', 'လက်ပြ', 'W'], ['kadaw', 'ကန်တော့', 'K']];
 const btn = (parent, label, key, on) => { const b = document.createElement('button'); b.innerHTML = label + (key ? `<kbd>${key}</kbd>` : ''); b.onclick = on; document.getElementById(parent).appendChild(b); return b; };
 const group = (parent, items, get, set) => { const bs = items.map(([v, label, key]) => { const b = btn(parent, label, key, () => { set(v); bs.forEach(x => x.classList.toggle('on', x === b)); }); b.classList.toggle('on', get() === v); return b; }); return bs; };
-window.lab = { play: n => anim.play(n), loop: n => anim.setLoop(n) }; // handy from the console
+window.lab = { play: n => anim.play(n), loop: n => anim.setLoop(n), soak: () => anim.soak(), emote: k => anim.emote(k), get ch() { return ch; } }; // handy from the console
 const loopBtns = group('loops', LOOP_UI, () => anim.loop, v => anim.setLoop(v));
 ONE_UI.forEach(([v, label, key]) => btn('ones', label, key, () => anim.play(v)));
+btn('moods', 'ရေပက်ခံ', 'R', () => { anim.soak(); anim.emote('drop'); });
+for (const [k, label] of [['note', '♪'], ['bang', '!'], ['heart', '❤']]) btn('moods', label, '', () => anim.emote(k));
 group('bottoms', [['longyi', 'ပုဆိုး'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို']], () => state.bottom, v => { state.bottom = v; build(); });
 group('hairs', [['short', 'တိုတို'], ['buzz', 'ရိတ်'], ['spiky', 'ထောင်'], ['bob', 'ဘော့'], ['bun', 'ဆံထုံး'], ['pigtails', 'နှစ်စု'], ['long', 'ဆံမြီး']], () => state.hair, v => { state.hair = v; build(); });
 group('hats', [['none', 'မပါ'], ['band', 'ခေါင်းစည်း'], ['goggles', 'မျက်မှန်'], ['bucket', 'ဦးထုပ်']], () => state.hat, v => { state.hat = v; build(); });
@@ -155,6 +159,7 @@ document.getElementById('prt').onchange = e => { state.print = e.target.checked 
 const turn = document.getElementById('turn');
 addEventListener('keydown', e => {
   const l = LOOP_UI.find(x => x[2] === e.key); if (l) { anim.setLoop(l[0]); loopBtns.forEach((b, i) => b.classList.toggle('on', LOOP_UI[i][0] === l[0])); }
+  if (e.key === 'r' || e.key === 'R') { anim.soak(); anim.emote('drop'); }
   const o = ONE_UI.find(x => x[2] === e.key.toUpperCase() || (x[2] === 'Space' && e.code === 'Space')); if (o) { anim.play(o[0]); e.preventDefault(); }
 });
 

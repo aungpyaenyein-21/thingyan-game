@@ -32,7 +32,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=10';
+import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=12';
 
 // ---------- constants (tune here) ----------
 const PAL = {
@@ -43,7 +43,7 @@ const PAL = {
   hair:'#2b1d1a', eye:'#2b1d1a', thanaka:'#fdf0c8',
 };
 const SKINS = ['#efc29c', '#d9a07a', '#b97d58'];
-const SHIRTS = TOPS;
+const SHIRTS = TOPS.filter(c => !['#4fb3d9', '#f06292', '#ffc83d'].includes(c)); // public: keep crew blue, dancer pink and the player's yellow for their roles
 const LONGYI = [['#4a5aa8', '#7f8fd6'], ['#a8434a', '#d97a7f'], ['#3f7a5a', '#72b08b'], ['#7a4a9a', '#a985c8'], ['#a8743a', '#d6a76a']];
 const HALF = 9;                 // island half size (units)
 const GRAV = -11;              // particle gravity (player speed comes from the gait: LOOPS.walk/run.speed)
@@ -314,17 +314,20 @@ function bean({ skin = pick(SKINS), shirt = pick(SHIRTS), hair, flower = false, 
 const player = bean({ skin: SKINS[0], shirt: '#ffc83d', longyi: LONGYI[2], bottom: 'longyi', hair: 'short', age: 'adult', hat: 'goggles', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', topStyle: 'tee', print: 'သင်္ကြန်', x: -.4, z: 2.3, ry: Math.PI / 4 });
 { const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: '#4fd1ff', transparent: true, opacity: .85, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = .012; player.g.add(ring); } // find yourself at any zoom
-const dancers = [
-  bean({ x: MX - 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
-  bean({ x: MX, z: MZ - .3, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
-  bean({ x: MX + 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
-];
+// roles read by colour: dancers pink + gold, water crew blue + white, vendor brown + yellow; everyone else is the random public
+const DANCER = { hair: 'bun', flower: true, shirt: '#f48fb1', topStyle: 'long', bottom: 'htamein', bottomColor: ['#c98a2e', '#f2c14e'], accent: '#f2c14e', garland: true, age: 'adult', hat: 'none', prop: 'none' };
+const dancers = [bean({ ...DANCER, x: MX - 1.4, z: MZ - .2 }), bean({ ...DANCER, x: MX, z: MZ - .3 }), bean({ ...DANCER, x: MX + 1.4, z: MZ - .2 })];
 dancers.forEach(d => { d.g.position.y = 1.04; d.anim.setLoop('dance'); d.anim.T = 0; }); // the troupe dances in sync
+const crew = [ // ရေပက်အဖွဲ့ behind the outer hoses
+  bean({ x: MX - 1.6, z: MZ + .85, hair: 'short', shirt: '#4fb3d9', bottom: 'shorts', bottomColor: ['#fff6ea', '#4fb3d9'], hat: 'band', accent: '#fff6ea', age: 'adult', prop: 'none', print: '' }),
+  bean({ x: MX + 1.6, z: MZ + .85, hair: 'long', shirt: '#fff6ea', bottom: 'pants', bottomColor: ['#3f6fa8', '#3f6fa8'], hat: 'band', accent: '#4fb3d9', age: 'adult', prop: 'none', print: '' }),
+];
+crew.forEach(c => { c.g.position.y = 1.04; });
 const crowd = [
   bean({ x: 4.1, z: -2.45, ry: .4, flower: true, hair: 'bun' }), bean({ x: 6.1, z: -2.6, ry: 1.2 }),
   bean({ x: 5.2, z: .95, ry: .7, hair: 'bun' }), bean({ x: 2.95, z: -2.3, ry: 1.0 }),
 ];
-const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#8bd17c', longyi: LONGYI[4], age: 'adult', hat: 'none', prop: 'none' });
+const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#e9b44c', topStyle: 'tee', bottom: 'htamein', bottomColor: ['#6e4428', '#a8743a'], accent: '#6e4428', age: 'adult', hat: 'none', prop: 'none', print: '' });
 vendor.g.position.z = 1.9; vendor.g.rotation.y = 0;
 
 
@@ -409,10 +412,10 @@ for (const [x, z] of [[-2.45, -.6], [-2.45, .6]]) { fadd(new THREE.BoxGeometry(.
 }
 // riders
 const riders = [
-  bean({ x: 1.0, z: -.55, ry: Math.PI * .3, shirt: '#9fb7e8', longyi: LONGYI[0] }),
-  bean({ x: .9, z: .55, ry: Math.PI * .7, shirt: '#9fb7e8', longyi: LONGYI[0], hair: 'bun', flower: true }),
-  bean({ x: -1.9, z: -.35, ry: Math.PI * .25, shirt: '#fff6ea', longyi: LONGYI[3] }),
-  bean({ x: -1.6, z: .6, ry: Math.PI * .6, shirt: '#9fb7e8', longyi: LONGYI[0], hair: 'bun' }),
+  bean({ x: 1.0, z: -.55, ry: Math.PI * .3 }),
+  bean({ x: .9, z: .55, ry: Math.PI * .7, hair: 'bun', flower: true }),
+  bean({ x: -1.9, z: -.35, ry: Math.PI * .25 }),
+  bean({ x: -1.6, z: .6, ry: Math.PI * .6, hair: 'bun' }),
 ];
 riders.forEach(r => { flt.add(r.g); r.g.position.y = 1.3; r.anim.setLoop('dance'); r.anim.T = 0; });
 // clip everything on the float at the island edges (it emerges from / disappears into the diorama side)
@@ -540,7 +543,7 @@ renderer.setAnimationLoop(() => {
   player.g.position.y = groundY(player.g.position.x, player.g.position.z);
 
   // npcs: idle, now and then a little action; everyone animates through the same rig
-  for (const c of [...crowd, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { c.anim.play(pick(['wave', 'jump', 'wave'])); c.idleT = 5 + rnd() * 8; } }
+  for (const c of [...crowd, ...crew, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { c.anim.play(pick(['wave', 'jump', 'wave'])); c.idleT = 5 + rnd() * 8; } }
   for (const c of chars) { c.cool -= dt; c.anim.update(dt); }
 
   // emitters
@@ -564,8 +567,9 @@ renderer.setAnimationLoop(() => {
       }
       for (const c of hitList) {
         if (c.cool <= 0 && Math.abs(d.p.x - c.wp.x) < .38 && Math.abs(d.p.z - c.wp.z) < .38 && d.p.y < c.wp.y + 1.4 && d.p.y > c.wp.y) {
-          c.cool = 2.5; // splashed! cheer, jump or shake it off
-          if (!c.anim.one) c.anim.play(c === player ? 'shake' : pick(['jump', 'shake', 'wave']));
+          c.cool = 2.5; c.anim.soak(.6); // splashed! soaked (>_<), then shake it off, jump or cheer
+          const r = c === player ? 'shake' : pick(['jump', 'shake', 'wave']);
+          if (!c.anim.one) { c.anim.play(r); if (c === player || rnd() < .6) c.anim.emote({ shake: 'drop', jump: 'bang', wave: 'heart' }[r]); } // not every hit, or the hose crowd never stops bubbling
         }
       }
     }

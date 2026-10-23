@@ -104,6 +104,10 @@ export function makeChibi(opts = {}) {
   if (o.thanaka === true) o.thanaka = 'round';
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const smooth = c => mats['s' + c] ??= new THREE.MeshLambertMaterial({ color: c });
+  // clothes + hair get their own materials (not the shared cache) so one soaked person doesn't darken everyone in that colour
+  const wetMats = [], worn = {}, vol = [];
+  const wear = (c, map) => { const m = new THREE.MeshPhongMaterial({ color: map ? '#fff' : c, map, specular: 0, shininess: 60 }); m.userData.base = m.color.clone(); wetMats.push(m); return m; };
+  const cloth = c => worn[c] ??= wear(c);
   const part = (geo, m, parent, x = 0, y = 0, z = 0, ol = o.outline) => {
     const mesh = new THREE.Mesh(geo, typeof m === 'string' ? smooth(m) : m); mesh.position.set(x, y, z); mesh.castShadow = true; parent.add(mesh);
     if (ol) mesh.add(new THREE.Mesh(geo, outline));
@@ -111,16 +115,16 @@ export function makeChibi(opts = {}) {
   };
   const pivot = (parent, x, y, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const skirt = o.bottom === 'longyi' || o.bottom === 'htamein';
-  const legTop = skirt ? o.skin : o.bottomColor[0], legLow = o.bottom === 'pants' ? o.bottomColor[0] : o.skin;
+  const legTop = skirt ? o.skin : cloth(o.bottomColor[0]), legLow = o.bottom === 'pants' ? cloth(o.bottomColor[0]) : o.skin;
   const longSleeve = o.topStyle === 'long';
 
   const hips = pivot(body, 0, HIP);
-  part(new THREE.SphereGeometry(B.hip, 16, 10), skirt ? o.skin : o.bottomColor[0], hips, 0, .03).scale.set(1.05, .75, .9);
+  part(new THREE.SphereGeometry(B.hip, 16, 10), skirt ? o.skin : cloth(o.bottomColor[0]), hips, 0, .03).scale.set(1.05, .75, .9);
 
   const legs = [1, -1].map(side => { // +x is the character's left (it faces +z)
     const hip = pivot(hips, side * .085, 0);
     part(new THREE.CapsuleGeometry(.066, UP - .06, 4, 12), legTop, hip, 0, -UP / 2);
-    if (o.bottom === 'shorts') part(new THREE.CylinderGeometry(.078, .078, .05, 14), o.bottomColor[1], hip, 0, -UP + .03, 0);
+    if (o.bottom === 'shorts') part(new THREE.CylinderGeometry(.078, .078, .05, 14), cloth(o.bottomColor[1]), hip, 0, -UP + .03, 0);
     const knee = pivot(hip, 0, -UP);
     part(new THREE.CapsuleGeometry(.058, LO - .05, 4, 12), legLow, knee, 0, -LO / 2);
     const foot = pivot(knee, 0, -LO);
@@ -141,23 +145,23 @@ export function makeChibi(opts = {}) {
     const prof = B[o.bottom].map(([r, y = hem]) => new THREE.Vector2(r, y));
     const geo = new THREE.LatheGeometry(prof, 28); geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const tex = stripes(o.bottomColor[0], o.bottomColor[1], men, men ? null : '#f2c14e'); tex.repeat.set(5, 1);
-    skirtMesh = part(geo, new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }), hips);
+    const sm = wear(null, tex); sm.side = THREE.DoubleSide; skirtMesh = part(geo, sm, hips);
     skirtBase = Float32Array.from(geo.attributes.position.array);
-    if (men) part(new THREE.SphereGeometry(.05, 12, 8), o.bottomColor[0], hips, 0, .06, B.longyi[1][0] - .005); // ပုဆိုးခါးပုံစ (front knot)
+    if (men) part(new THREE.SphereGeometry(.05, 12, 8), cloth(o.bottomColor[0]), hips, 0, .06, B.longyi[1][0] - .005); // ပုဆိုးခါးပုံစ (front knot)
   }
 
   const spine = pivot(hips, 0, .06);
   const torsoProf = B.torso.map(([r, y]) => new THREE.Vector2(r, y));
-  const torso = part(new THREE.LatheGeometry(torsoProf, 28), new THREE.MeshLambertMaterial({ map: printTex(o.top, '#5a3550', o.print) }), spine);
+  const torso = part(new THREE.LatheGeometry(torsoProf, 28), wear(null, printTex(o.top, '#5a3550', o.print)), spine);
   torso.rotation.y = Math.PI; torso.scale.set(1, 1, .82);
   const arms = [1, -1].map(side => {
     const sh = pivot(spine, side * B.sh, .225);
     const tee = o.topStyle === 'tee'; // shoulder cap: only as wide as the sleeve/arm and sunk a little, so it rounds the joint instead of puffing out
-    part(new THREE.SphereGeometry(tee ? .068 : .054, 16, 12), o.topStyle === 'tank' ? o.skin : o.top, sh, 0, -.025).scale.y = .85;
-    if (tee) part(new THREE.CylinderGeometry(.066, .072, .085, 16), o.top, sh, 0, -.06); // short sleeve
-    part(new THREE.CapsuleGeometry(.048, ARM_UP - .05, 4, 10), longSleeve ? o.top : o.skin, sh, 0, -ARM_UP / 2 - .01);
+    part(new THREE.SphereGeometry(tee ? .068 : .054, 16, 12), o.topStyle === 'tank' ? o.skin : cloth(o.top), sh, 0, -.025).scale.y = .85;
+    if (tee) part(new THREE.CylinderGeometry(.066, .072, .085, 16), cloth(o.top), sh, 0, -.06); // short sleeve
+    part(new THREE.CapsuleGeometry(.048, ARM_UP - .05, 4, 10), longSleeve ? cloth(o.top) : o.skin, sh, 0, -ARM_UP / 2 - .01);
     const elbow = pivot(sh, 0, -ARM_UP);
-    part(new THREE.CapsuleGeometry(.046, ARM_LO - .06, 4, 10), longSleeve ? o.top : o.skin, elbow, 0, -ARM_LO / 2 + .01);
+    part(new THREE.CapsuleGeometry(.046, ARM_LO - .06, 4, 10), longSleeve ? cloth(o.top) : o.skin, elbow, 0, -ARM_LO / 2 + .01);
     const hand = pivot(elbow, 0, -ARM_LO);
     part(new THREE.SphereGeometry(.07, 14, 10), o.skin, hand, 0, -.01); // round mitten fist
     return { sh, elbow, hand };
@@ -181,24 +185,24 @@ export function makeChibi(opts = {}) {
   for (const s of [-1, 1]) part(new THREE.SphereGeometry(.05, 10, 8), o.skin, skull, s * HEAD_R * .98, -.02, 0).scale.set(.5, 1, .8); // ears
 
   // sculpted hair: cap + sheen + fringe clumps + style
-  const hm = o.hairColor, onSkull = (dx, dy, dz, k = 1) => new THREE.Vector3(dx, dy, dz).normalize().multiplyScalar(HEAD_R * k);
+  const hm = cloth(o.hairColor), onSkull = (dx, dy, dz, k = 1) => new THREE.Vector3(dx, dy, dz).normalize().multiplyScalar(HEAD_R * k);
   const buzz = o.hair === 'buzz', bucket = o.hat === 'bucket';
   const capH = part(new THREE.SphereGeometry(HEAD_R * (buzz ? 1.025 : 1.05), 32, 16, 0, Math.PI * 2, 0, Math.PI * .5), hm, skull); capH.rotation.x = -.5;
   part(new THREE.SphereGeometry(HEAD_R * 1.03, 24, 12, Math.PI + .3, Math.PI - .6, Math.PI * .3, Math.PI * .42), hm, skull); // back of the head (phi π..2π = -z side)
-  if (!bucket) part(new THREE.SphereGeometry(HEAD_R * (buzz ? 1.035 : 1.062), 24, 8, Math.PI / 2 - 1.0, 2.0, .16, .28), lighten(hm, buzz ? .07 : .12), skull, 0, 0, 0, false).castShadow = false; // highlight on the crown (lower, it sat right behind the fringe and made it read as a rolled headband)
+  if (!bucket) part(new THREE.SphereGeometry(HEAD_R * (buzz ? 1.035 : 1.062), 24, 8, Math.PI / 2 - 1.0, 2.0, .16, .28), cloth(lighten(o.hairColor, buzz ? .07 : .12)), skull, 0, 0, 0, false).castShadow = false; // highlight on the crown (lower, it sat right behind the fringe and made it read as a rolled headband)
   if (!buzz) for (let i = -2; i <= 2; i++) { // fringe
     const p = onSkull(i * .42, .74, .64, 1.0), b = part(new THREE.SphereGeometry(.1, 16, 10), hm, skull, p.x, p.y - .02, p.z, false);
-    b.scale.set(.95, 1.2, .45); b.lookAt(b.position.clone().multiplyScalar(2)); b.rotateZ(i * .22 + (i % 2 ? .12 : -.08)); // tall soft bangs, not a rolled band
+    b.scale.set(.95, 1.2, .45); vol.push(b); b.lookAt(b.position.clone().multiplyScalar(2)); b.rotateZ(i * .22 + (i % 2 ? .12 : -.08)); // tall soft bangs, not a rolled band
   }
   let tail = null;
   if (!bucket) {
     if (o.hair === 'short') for (const [x, y, z, rz, rx] of [[-.15, .25, -.08, .9, -.5], [.15, .25, -.08, -.9, -.5], [0, .25, -.16, 0, -1.1], [-.26, .08, -.02, 1.45, -.2], [.26, .08, -.02, -1.45, -.2]]) {
-      const sp = part(new THREE.ConeGeometry(.09, .15, 12), hm, skull, x, y, z); sp.rotation.set(rx, 0, rz); // soft swept clumps
+      const sp = part(new THREE.ConeGeometry(.09, .15, 12), hm, skull, x, y, z); sp.rotation.set(rx, 0, rz); vol.push(sp); // soft swept clumps
     }
     if (o.hair === 'spiky') { const up = new THREE.Vector3(0, 1, 0);
       for (const [dx, dy, dz] of [[0, 1, .2], [-.5, 1, .1], [.5, 1, .1], [-.3, 1, -.5], [.3, 1, -.5], [0, .9, -.8], [-.8, .8, -.2], [.8, .8, -.2]]) {
         const d = new THREE.Vector3(dx, dy, dz).normalize(), p = d.clone().multiplyScalar(HEAD_R * 1.08);
-        const sp = part(new THREE.ConeGeometry(.075, .22, 10), hm, skull, p.x, p.y, p.z); sp.quaternion.setFromUnitVectors(up, d); sp.rotateX(-.35);
+        const sp = part(new THREE.ConeGeometry(.075, .22, 10), hm, skull, p.x, p.y, p.z); sp.quaternion.setFromUnitVectors(up, d); sp.rotateX(-.35); vol.push(sp);
       } }
     if (o.hair === 'bun') { part(new THREE.SphereGeometry(.13, 16, 12), hm, skull, 0, .3, -.12); part(new THREE.TorusGeometry(.1, .03, 8, 16), o.accent, skull, 0, .23, -.1).rotation.x = Math.PI / 2 - .3; }
     if (o.hair === 'bob') part(new THREE.SphereGeometry(HEAD_R * 1.045, 28, 14, Math.PI / 2 + .62, Math.PI * 2 - 1.24, .3, Math.PI * .56), hm, skull); // bowl hugging sides + back down to the jaw
@@ -253,13 +257,35 @@ export function makeChibi(opts = {}) {
   part(new THREE.CircleGeometry(.12, 16), '#8fd3f0', bucketG, 0, .085, 0).rotation.x = -Math.PI / 2;
   const blob = new THREE.Mesh(new THREE.CircleGeometry(.34, 20), new THREE.MeshBasicMaterial({ map: blobTex(), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = .005; root.add(blob);
+  for (const m of vol) m.userData.sy = m.scale.y;
+  const drips = Array.from({ length: 5 }, () => { const m = new THREE.Mesh(dripGeo, dripMat); m.visible = false; root.add(m); return { m, v: 0, life: 0 }; });
 
   // age: kids are small with a bigger head, elders a little shorter and hunched
   const scale = o.age === 'kid' ? .72 : o.age === 'elder' ? .9 : 1;
   root.scale.setScalar(scale);
   const hunch = o.age === 'elder' ? .22 : 0;
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, blob, scale, hunch, opts: o };
+  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, blob, scale, hunch, opts: o,
+    wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
+}
+
+const dripGeo = new THREE.SphereGeometry(.022, 6, 4), dripMat = new THREE.MeshBasicMaterial({ color: '#bfeaff' });
+
+// emote bubbles above the head: drop (soaked) | note (dancing) | bang (surprised) | heart (loving it). Drawn, not emoji, so every device matches
+const emoteCache = {};
+function emoteTex(kind) {
+  if (emoteCache[kind]) return emoteCache[kind];
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#fffaf0'; g.strokeStyle = '#5b3a52'; g.lineWidth = 7;
+  g.beginPath(); g.arc(64, 58, 46, 0, 7); g.moveTo(52, 100); g.lineTo(64, 122); g.lineTo(76, 100); g.fill(); g.stroke(); // bubble + tail
+  g.fillStyle = '#fffaf0'; g.fillRect(50, 92, 28, 10); // hide the seam between bubble and tail
+  if (kind === 'drop') { g.fillStyle = '#3fa7e0'; g.beginPath(); g.moveTo(64, 22); g.quadraticCurveTo(88, 52, 86, 66); g.arc(64, 66, 22, 0, Math.PI); g.quadraticCurveTo(40, 52, 64, 22); g.fill();
+    g.fillStyle = '#d8f2ff'; g.beginPath(); g.ellipse(56, 64, 5, 9, -.3, 0, 7); g.fill(); }
+  if (kind === 'note') { g.fillStyle = '#e0578a'; g.save(); g.translate(52, 80); g.rotate(-.4); g.beginPath(); g.ellipse(0, 0, 15, 11, 0, 0, 7); g.fill(); g.restore();
+    g.fillRect(62, 28, 7, 52); g.beginPath(); g.moveTo(69, 28); g.quadraticCurveTo(92, 38, 86, 60); g.quadraticCurveTo(84, 44, 69, 44); g.fill(); }
+  if (kind === 'bang') { g.fillStyle = '#e8862e'; g.beginPath(); g.roundRect(56, 20, 16, 50, 8); g.fill(); g.beginPath(); g.arc(64, 84, 9, 0, 7); g.fill(); }
+  if (kind === 'heart') { g.fillStyle = '#e0574f'; g.beginPath(); g.moveTo(64, 88); g.bezierCurveTo(26, 64, 34, 26, 64, 44); g.bezierCurveTo(94, 26, 102, 64, 64, 88); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return emoteCache[kind] = t;
 }
 
 let _blob;
@@ -294,6 +320,12 @@ export class ChibiAnimator {
   setCharacter(ch) { this.ch = ch; }
   setLoop(name) { if (name === this.loop && !this.one) return; this.loop = name; this.one = null; this._xfade(); }
   play(name) { this.one = name; this.oneT = 0; this._xfade(); this.thrown = false; }
+  soak(k = 1) { this.ch.wet = Math.min(1, this.ch.wet + k); this.hitT = .7; } // hit by water: >_< for a moment, then dries over ~10 s
+  emote(kind, dur = 1.6) {
+    const c = this.ch;
+    if (!c.bubble) { c.bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: emoteTex(kind), depthWrite: false })); c.bubble.renderOrder = 10; c.root.add(c.bubble); }
+    c.bubble.material.map = emoteTex(kind); c.bubble.visible = true; this.emT = 0; this.emDur = dur;
+  }
   get speed() { return ['kadaw', 'shake', 'splash', 'wave'].includes(this.one) ? 0 : LOOPS[this.loop].speed * (this.ch.scale || 1); } // ground speed (units/s)
   _xfade() { this.from = { ...this.out }; this.blendT = 0; }
 
@@ -311,6 +343,8 @@ export class ChibiAnimator {
     const w = ease(clamp01(this.blendT / .25));
     for (const k of KEYS) this.out[k] = this.from[k] + (pose[k] - this.from[k]) * w;
     this.out.expr = pose.expr; this.out.mouth = pose.mouth;
+    this.hitT = (this.hitT || 0) - dt;
+    if (this.loop === 'dance' && !this.ch.bubble?.visible && Math.random() < dt * .2) this.emote('note', 1.4);
     this._apply(this.out, dt);
   }
 
@@ -429,7 +463,7 @@ export class ChibiAnimator {
     aL.sh.rotation.set(p.armLx, 0, p.armLz); aR.sh.rotation.set(p.armRx, 0, p.armRz);
     aL.elbow.rotation.x = p.elbowL; aR.elbow.rotation.x = p.elbowR; aL.hand.rotation.z = p.handLz; aR.hand.rotation.z = p.handRz;
     // face
-    const blink = (this.T % 3.7) < .12, eye = p.expr === 'normal' && blink ? 'blink' : p.expr;
+    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr === 'normal' && blink ? 'blink' : p.expr;
     const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts.iris, c.opts.thanaka, eye, p.mouth); }
     // bucket rides between the hands
     if (c.bucket.visible) {
@@ -457,6 +491,21 @@ export class ChibiAnimator {
         pos.setXYZ(i, x * (1 + h * .06 * (Math.abs(fL - fR))), y + lift, z + dz);
       }
       pos.needsUpdate = true; c.skirtMesh.geometry.computeVertexNormals();
+    }
+    // wet: darker, glossy clothes + hair, flatter spikes/bangs, drips falling off; all back to dry as wet → 0
+    if (c.wet > 0 || c.wetShown) {
+      const w = c.wet = Math.max(0, c.wet - dt / 10);
+      for (const m of c.wetMats) { m.color.copy(m.userData.base).multiplyScalar(1 - .32 * w); m.specular.setScalar(.35 * w); }
+      for (const m of c.hairVol) m.scale.y = m.userData.sy * (1 - .3 * w);
+      for (const d of c.drips) {
+        if (d.life <= 0) { if (Math.random() < w * dt * 4) { const a = Math.random() * 6.28; d.m.position.set(Math.cos(a) * .2, .35 + Math.random() * .65, Math.sin(a) * .2); d.v = 0; d.life = 1; d.m.visible = true; } continue; }
+        d.v -= 9 * dt; d.m.position.y += d.v * dt; if (d.m.position.y < .02) { d.life = 0; d.m.visible = false; }
+      }
+      c.wetShown = w > 0 || c.drips.some(d => d.life > 0);
+    }
+    if (c.bubble?.visible) { // pop in, bob, shrink out
+      const t = this.emT += dt, s = .55 * Math.min(1, t / .12) * clamp01((this.emDur - t) / .2) * (1 + .15 * Math.max(0, 1 - t / .25));
+      c.bubble.scale.set(s, s, 1); c.bubble.position.y = 1.82 + Math.sin(t * 5) * .025; if (t > this.emDur) c.bubble.visible = false;
     }
   }
 }
