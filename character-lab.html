@@ -68,7 +68,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=14';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=22';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -143,7 +143,7 @@ ONE_UI.forEach(([v, label, key]) => btn('ones', label, key, () => anim.play(v)))
 btn('moods', 'ရေပက်ခံ', 'R', () => { anim.soak(); anim.emote('drop'); });
 for (const [k, label] of [['note', '♪'], ['bang', '!'], ['heart', '❤']]) btn('moods', label, '', () => anim.emote(k));
 group('bottoms', [['longyi', 'ပုဆိုး'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို']], () => state.bottom, v => { state.bottom = v; build(); });
-group('hairs', [['short', 'တိုတို'], ['buzz', 'ရိတ်'], ['spiky', 'ထောင်'], ['bob', 'ဘော့'], ['bun', 'ဆံထုံး'], ['pigtails', 'နှစ်စု'], ['long', 'ဆံမြီး']], () => state.hair, v => { state.hair = v; build(); });
+group('hairs', [['short', 'တိုတို'], ['buzz', 'ရိတ်'], ['spiky', 'ထောင်'], ['bob', 'ဘော့'], ['bun', 'ဆံထုံး'], ['pigtails', 'နှစ်စု'], ['long', 'ဆံမြီး'], ['mohawk', 'မိုဟော့']], () => state.hair, v => { state.hair = v; build(); });
 group('hats', [['none', 'မပါ'], ['band', 'ခေါင်းစည်း'], ['goggles', 'မျက်မှန်'], ['bucket', 'ဦးထုပ်']], () => state.hat, v => { state.hat = v; build(); });
 group('props', [['none', 'လက်ချည်း'], ['gun', 'ရေသေနတ်']], () => state.prop, v => { state.prop = v; build(); });
 btn('props', 'ပန်းကုံး', '', function () { state.garland = !state.garland; this.classList.toggle('on', state.garland); build(); });

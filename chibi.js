@@ -1,12 +1,52 @@
 // chibi.js — cute 2.2-head character with a code-driven rig + procedural animation.
 // Used by character-lab.html now, by the diorama later. No model files.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ---------- proportions (units ≈ 0.75 m) ----------
 const UP = .2, LO = .19, ANKLE = .075;         // thigh, shin, ankle→sole (longer legs than v1)
 export const HIP = UP + LO + ANKLE;            // hip height when standing
 const ARM_UP = .155, ARM_LO = .135;
 const HEAD_R = .3;
+// ---------- hair: one smooth shell per style (no seams between pieces) ----------
+// The shell is a displaced sphere: outside the skull where there is hair, tucked inside it elsewhere.
+// line(az) = hairline height on the unit sphere by azimuth (0 = face, ±π = back); thick(v, az) = hair depth (× head radius).
+const hairline = (F, S, K) => { const b = (F - K) / 2, ac = (F + K) / 2, a = (ac + S) / 2, c = (ac - S) / 2; return az => a + b * Math.cos(az) + c * Math.cos(2 * az); }; // front / side / back heights
+const bump = (x, w) => Math.max(0, 1 - (x / w) ** 2) ** 2;
+const tufts = (az, list) => list.reduce((d, [a, w, k]) => d + k * bump(az - a, w), 0);
+const crownLift = v => .035 * Math.max(0, v.y) + .01 * Math.sin(Math.atan2(v.x, v.z) * 5 + v.y * 7); // a bit of volume on top + a soft wave so it isn't a helmet
+const parting = (v, x0) => 1 - .45 * bump(v.x - x0, .07) * THREE.MathUtils.smoothstep(v.y, .3, .5) * THREE.MathUtils.smoothstep(v.z, -.1, .2); // shallow groove on the front-top
+const SPIKES = [[0, 1, .2], [-.5, 1, .1], [.5, 1, .1], [-.3, 1, -.5], [.3, 1, -.5], [0, .9, -.8], [-.8, .8, -.2], [.8, .8, -.2]].map(d => [new THREE.Vector3(...d).normalize(), .5]);
+const CREST = Array.from({ length: 10 }, (_, i) => { const b = .55 + i * .32; return [new THREE.Vector3(0, Math.sin(b), Math.cos(b)), .5 + .4 * Math.max(0, Math.sin(b))]; }); // mohawk fan: forehead → crown → nape
+const spikes = (v, list, w) => list.reduce((t, [d, L]) => t + L * Math.max(0, 1 - Math.acos(Math.min(1, v.dot(d))) / w) ** 1.3, 0); // falloff by angle → a true point at each tip
+const HAIR_STYLES = {
+  short: { line: hairline(.5, .08, -.42), fringe: [[-.75, .22, .09], [-.3, .2, .1], [.12, .22, .08], [.55, .22, .09]], thick: v => .05 + crownLift(v) },
+  buzz: { line: hairline(.6, .2, -.35), thick: () => .018 },
+  spiky: { line: hairline(.52, .1, -.4), fringe: [[-.4, .2, .07], [.25, .2, .07]], thick: v => .045 + crownLift(v) + spikes(v, SPIKES, .26) },
+  bob: { line: hairline(.42, -.38, -.38), blunt: true, thick: v => .05 + (.05 + .012 * Math.sin(Math.atan2(v.x, v.z) * 11)) * THREE.MathUtils.smoothstep(-v.y, -.3, .35) + crownLift(v) }, // fuller, softly wavy at the bottom
+  bun: { line: hairline(.6, .05, -.5), thick: v => (.045 + crownLift(v)) * parting(v, 0) },
+  pigtails: { line: hairline(.58, .0, -.5), thick: v => (.045 + crownLift(v)) * parting(v, 0) },
+  mohawk: { cover: v => THREE.MathUtils.smoothstep(.22 - Math.abs(v.x), -.02, .04) * THREE.MathUtils.smoothstep(v.y - (v.z >= 0 ? .45 : -.4), -.02, .06), // shaved sides, a strip forehead → nape
+    thick: v => .03 + spikes(v, CREST, .24) },
+  long: { line: hairline(.6, -.35, -.55), blunt: true, thick: v => (.045 + .02 * THREE.MathUtils.smoothstep(-v.y, -.2, .4) + crownLift(v)) * parting(v, .12) },
+};
+const hairCache = {};
+// ponytail / pigtail: a smooth teardrop hanging from the tie (y = 0) down to a soft point
+const tailGeo = (r, len) => new THREE.LatheGeometry([[.02, 0], [r * .8, -len * .12], [r, -len * .36], [r * .82, -len * .66], [r * .45, -len * .88], [.004, -len]].map(([x, y]) => new THREE.Vector2(x, y)), 20);
+function hairGeo(style, kid) {
+  const key = style + kid; if (hairCache[key]) return hairCache[key];
+  const st = HAIR_STYLES[style], g = st.cover || style === 'spiky' ? new THREE.SphereGeometry(HEAD_R, 120, 80) : new THREE.SphereGeometry(HEAD_R, 72, 48); // spikes need the finer mesh g.deleteAttribute('uv'); g.deleteAttribute('normal');
+  const geo = mergeVertices(g), p = geo.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i).normalize();
+    const az = Math.atan2(v.x, v.z), A = Math.abs(az);
+    const line = st.cover ? 0 : st.line(az) - (st.fringe ? tufts(az, st.fringe) : 0) + (kid ? .06 * THREE.MathUtils.smoothstep(-A, -1.3, -.8) : 0); // kids: hairline a little higher (their brows sit higher)
+    const h = v.y - line, cover = st.cover ? st.cover(v) : st.blunt ? THREE.MathUtils.smoothstep(h, -.015, .015) : THREE.MathUtils.smoothstep(h, -.02, .1);
+    v.multiplyScalar(HEAD_R * (.97 + (.03 + st.thick(v, az)) * cover)); p.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals(); return hairCache[key] = geo;
+}
+
 export const HEADS = { wide: [1.1, .96, .95], round: [1.02, 1, .98], tall: [.97, 1.07, .94], soft: [1.15, .92, 1.0] }; // skull squash per head shape
 
 // ---------- body builds: torso lathe (r, y), shoulder x, hip ball r, longyi / htamein lathes (last point sits on the hem) ----------
@@ -130,7 +170,7 @@ function printTex(color, ink, text, style) { // shirt print, front-centred (lath
 function canvasTex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
 
 // ---------- build ----------
-// opts: skin, hair ('short'|'bun'|'long'|'bob'|'pigtails'|'buzz'|'spiky'), hairColor, iris,
+// opts: skin, hair ('short'|'bun'|'long'|'bob'|'pigtails'|'buzz'|'spiky'|'mohawk'), hairColor, iris,
 //       top, topStyle ('tee'|'tank'|'long'), print (text|''), bottom ('longyi'|'htamein'|'pants'|'shorts'), bottomColor [a,b],
 //       shoes ('sneaker'|'slipper'), shoeColor, hat ('none'|'band'|'goggles'|'bucket'), accent, garland, prop ('none'|'gun'),
 //       flower, thanaka (false|'round'|'leaf'|'square'|'dots'), age ('adult'|'kid'|'elder'), build ('round'|'slim'|'broad'), outline,
@@ -236,39 +276,22 @@ export function makeChibi(opts = {}) {
     part(new THREE.CylinderGeometry(.006, .006, .06, 6), '#4a3428', skull, 0, .02, HEAD_R + .02, false).rotation.z = Math.PI / 2;
   }
 
-  // sculpted hair: cap + sheen + fringe clumps + style
-  const hm = cloth(o.hairColor), onSkull = (dx, dy, dz, k = 1) => new THREE.Vector3(dx, dy, dz).normalize().multiplyScalar(HEAD_R * k);
-  const buzz = o.hair === 'buzz', bucket = o.hat === 'bucket';
-  const capH = part(new THREE.SphereGeometry(HEAD_R * (buzz ? 1.025 : 1.05), 32, 16, 0, Math.PI * 2, 0, Math.PI * .5), hm, skull); capH.rotation.x = -.5;
-  part(new THREE.SphereGeometry(HEAD_R * 1.03, 24, 12, Math.PI + .3, Math.PI - .6, Math.PI * .3, Math.PI * .42), hm, skull); // back of the head (phi π..2π = -z side)
-  if (!bucket) part(new THREE.SphereGeometry(HEAD_R * (buzz ? 1.035 : 1.062), 24, 8, Math.PI / 2 - 1.0, 2.0, .16, .28), cloth(lighten(o.hairColor, buzz ? .07 : .12)), skull, 0, 0, 0, false).castShadow = false; // highlight on the crown (lower, it sat right behind the fringe and made it read as a rolled headband)
-  if (!buzz) for (let i = -2; i <= 2; i++) { // fringe
-    const p = onSkull(i * .42, .74, .64, 1.0), b = part(new THREE.SphereGeometry(.1, 16, 10), hm, skull, p.x, p.y - .02, p.z, false);
-    b.scale.set(.95, 1.2, .45); vol.push(b); b.lookAt(b.position.clone().multiplyScalar(2)); b.rotateZ(i * .22 + (i % 2 ? .12 : -.08)); // tall soft bangs, not a rolled band
-  }
+  // hair: one smooth shell (see HAIR_STYLES) + bun / ponytail / pigtails on top
+  const hm = cloth(o.hairColor), bucket = o.hat === 'bucket';
+  hm.userData.spec = .1; hm.specular.setScalar(.1); hm.shininess = 30; // a little sheen even when dry
+  const shell = part(hairGeo(o.hair, o.age === 'kid'), hm, skull); shell.userData.flat = .04; vol.push(shell); // wet hair sits a touch flatter
   let tail = null;
   if (!bucket) {
-    if (o.hair === 'short') for (const [x, y, z, rz, rx] of [[-.15, .25, -.08, .9, -.5], [.15, .25, -.08, -.9, -.5], [0, .25, -.16, 0, -1.1], [-.26, .08, -.02, 1.45, -.2], [.26, .08, -.02, -1.45, -.2]]) {
-      const sp = part(new THREE.ConeGeometry(.09, .15, 12), hm, skull, x, y, z); sp.rotation.set(rx, 0, rz); vol.push(sp); // soft swept clumps
-    }
-    if (o.hair === 'spiky') { const up = new THREE.Vector3(0, 1, 0);
-      for (const [dx, dy, dz] of [[0, 1, .2], [-.5, 1, .1], [.5, 1, .1], [-.3, 1, -.5], [.3, 1, -.5], [0, .9, -.8], [-.8, .8, -.2], [.8, .8, -.2]]) {
-        const d = new THREE.Vector3(dx, dy, dz).normalize(), p = d.clone().multiplyScalar(HEAD_R * 1.08);
-        const sp = part(new THREE.ConeGeometry(.075, .22, 10), hm, skull, p.x, p.y, p.z); sp.quaternion.setFromUnitVectors(up, d); sp.rotateX(-.35); vol.push(sp);
-      } }
     if (o.hair === 'bun') { part(new THREE.SphereGeometry(.13, 16, 12), hm, skull, 0, .3, -.12); part(new THREE.TorusGeometry(.1, .03, 8, 16), o.accent, skull, 0, .23, -.1).rotation.x = Math.PI / 2 - .3; }
-    if (o.hair === 'bob') part(new THREE.SphereGeometry(HEAD_R * 1.045, 28, 14, Math.PI / 2 + .62, Math.PI * 2 - 1.24, .3, Math.PI * .56), hm, skull); // bowl hugging sides + back down to the jaw
     if (o.hair === 'pigtails') for (const s of [-1, 1]) {
       part(new THREE.SphereGeometry(.055, 10, 8), o.accent, skull, s * .3, .04, -.06);
-      const t = part(new THREE.CapsuleGeometry(.07, .17, 6, 12), hm, skull, s * .36, -.12, -.08); t.rotation.z = s * .45;
-      part(new THREE.SphereGeometry(.06, 10, 8), hm, skull, s * .43, -.26, -.09).scale.set(1, 1.2, .9);
+      const pt = pivot(skull, s * .3, .04, -.06); pt.rotation.z = s * .45;
+      part(tailGeo(.075, .32), hm, pt, 0, -.01, -.01);
     }
     if (o.hair === 'long') {
       tail = pivot(skull, 0, .14, -.27);
       part(new THREE.SphereGeometry(.05, 8, 6), o.accent, tail, 0, 0, -.02);
-      const t1 = part(new THREE.CapsuleGeometry(.08, .2, 6, 12), hm, tail, 0, -.15, -.04); t1.scale.set(1, 1, .8);
-      part(new THREE.SphereGeometry(.06, 10, 8), hm, tail, 0, -.3, -.02).scale.set(1, 1.2, .8);
-      for (const s of [-1, 1]) part(new THREE.CapsuleGeometry(.06, .16, 4, 10), hm, skull, s * .25, -.12, .02).rotation.z = s * .12; // side locks
+      part(tailGeo(.085, .38), hm, tail, 0, -.02, -.04).scale.z = .8;
     }
   }
   if (o.flower) { // ပိတောက်ပန်း: a sprig of florets tucked into the bun (or behind the ear) with a leaf
@@ -283,7 +306,7 @@ export function makeChibi(opts = {}) {
     for (const s of [-1, 1]) { const tl = part(new THREE.CapsuleGeometry(.025, .14, 4, 8), o.accent, skull, s * .06, -.02, -.31); tl.rotation.set(.5, 0, s * .5); }
   }
   if (o.hat === 'goggles') { // pushed up on the forehead
-    part(new THREE.SphereGeometry(HEAD_R * 1.07, 28, 2, 0, Math.PI * 2, .84, .13), lighten(o.accent, .25), skull, 0, 0, 0, false);
+    part(new THREE.SphereGeometry(HEAD_R * 1.1, 28, 2, 0, Math.PI * 2, .84, .13), lighten(o.accent, .25), skull, 0, 0, 0, false);
     for (const s of [-1, 1]) {
       const g = pivot(skull, s * .1, .2, .24); g.rotation.x = -.5;
       part(new THREE.TorusGeometry(.056, .02, 8, 18), o.accent, g);
@@ -559,8 +582,8 @@ export class ChibiAnimator {
     // wet: darker, glossy clothes + hair, flatter spikes/bangs, drips falling off; all back to dry as wet → 0
     if (c.wet > 0 || c.wetShown) {
       const w = c.wet = Math.max(0, c.wet - dt / 10);
-      for (const m of c.wetMats) { m.color.copy(m.userData.base).multiplyScalar(1 - .32 * w); m.specular.setScalar(.35 * w); }
-      for (const m of c.hairVol) m.scale.y = m.userData.sy * (1 - .3 * w);
+      for (const m of c.wetMats) { m.color.copy(m.userData.base).multiplyScalar(1 - .32 * w); m.specular.setScalar((m.userData.spec || 0) + .35 * w); }
+      for (const m of c.hairVol) m.scale.y = m.userData.sy * (1 - (m.userData.flat ?? .3) * w);
       for (const d of c.drips) {
         if (d.life <= 0) { if (Math.random() < w * dt * 4) { const a = Math.random() * 6.28; d.m.position.set(Math.cos(a) * .2, .35 + Math.random() * .65, Math.sin(a) * .2); d.v = 0; d.life = 1; d.m.visible = true; } continue; }
         d.v -= 9 * dt; d.m.position.y += d.v * dt; if (d.m.position.y < .02) { d.life = 0; d.m.visible = false; }
