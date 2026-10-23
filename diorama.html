@@ -32,7 +32,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=25';
+import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=26';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
 
 // ---------- constants (tune here) ----------
 const PAL = {
@@ -439,6 +440,48 @@ riders.forEach(r => { flt.add(r.g); r.g.position.y = 1.3; r.anim.setLoop('dance'
 renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), HALF + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), HALF + .001)]; // global, so AO/shadow passes clip too
 flt.position.set(-HALF - FL.front, .14, FL.lane);
 
+// ---------- street dogs + cats (ခွေး / ကြောင်) ----------
+// dogs: hang round the shops, wander the streets, nap on the zedi grass, or run laps with the kids; cats: doorsteps of the shophouses.
+// Everyone naps, wakes, moves a little; water makes dogs shake and cats bolt; dogs are pleased to see you, cats dodge you if you come running.
+const blockedAt = (x, z) => solids.some(s => x > s.x0 - .22 && x < s.x1 + .22 && z > s.z0 - .22 && z < s.z1 + .22);
+const openAt = (x, z) => Math.abs(x) < HALF - 1 && Math.abs(z) < HALF - 1 && Math.abs(z - FL.lane) > 1.3 && !blockedAt(x, z); // off the float's road too
+const ROLES = { // r = how far from home it strays (0 = anywhere), rest = what it does on arrival, t = how long
+  shop: { r: 1, rest: ['sit', 'sit', 'idle', 'sleep'], t: [6, 14] }, walker: { r: 0, rest: ['idle', 'sit'], t: [2, 5], run: .25 },
+  park: { r: .6, rest: ['sleep', 'sleep', 'sit'], t: [15, 30] }, house: { r: .8, rest: ['sit', 'sleep', 'sleep', 'idle'], t: [8, 20] },
+};
+function petSpot(c) {
+  const h = c?.home, R = c ? ROLES[c.role].r : 0;
+  for (let k = 0; k < 60; k++) {
+    const x = h && R ? h.x + (rnd() * 2 - 1) * R : (rnd() * 2 - 1) * (HALF - 1), z = h && R ? h.z + (rnd() * 2 - 1) * R : (rnd() * 2 - 1) * (HALF - 1);
+    if (openAt(x, z)) return new THREE.Vector3(x, 0, z);
+  }
+  return h ? h.clone() : new THREE.Vector3(5, 0, 5);
+}
+const pets = [];
+function addPet(kind, role, hx, hz) {
+  const ch = makeCritter({ kind, coat: pick(kind === 'dog' ? DOG_COATS : CAT_COATS), ears: pick(['point', 'point', 'floppy']), socks: rnd() < .4, size: .9 + rnd() * .2, outline: true });
+  const c = { g: ch.root, ch, role, home: new THREE.Vector3(hx, 0, hz), anim: new CritterAnimator(ch, (t, o) => emitFx(t, o)), cool: rnd(), rest: 3 + rnd() * 8, target: null, near: false, stuck: 0 };
+  const at = role === 'walker' ? petSpot() : c.home;
+  ch.root.position.set(at.x, groundY(at.x, at.z), at.z); ch.root.rotation.y = rnd() * 6.28; scene.add(ch.root);
+  c.anim.setLoop(pick(ROLES[role]?.rest ?? ['idle']));
+  c.flee = from => { const a = Math.atan2(c.g.position.x - from.x, c.g.position.z - from.z), t = c.g.position.clone().add(new THREE.Vector3(Math.sin(a) * 2.5, 0, Math.cos(a) * 2.5));
+    c.target = openAt(t.x, t.z) ? t : petSpot(c); c.anim.setLoop('run'); };
+  c.hit = d => { // dogs shake it off, cats bolt
+    c.anim.soak();
+    if (ch.dog) { if (c.role !== 'kids') { c.anim.setLoop('idle'); c.target = null; c.rest = 2 + rnd() * 2; } c.anim.play('shake'); c.anim.emote('drop'); }
+    else { c.anim.play('hop'); c.anim.emote('bang'); c.flee(d.p); }
+  };
+  pets.push(c); return c;
+}
+addPet('dog', 'shop', -4.4, 1.3);      // by the mont lone yay baw stall, hoping for scraps
+addPet('dog', 'shop', -6.6, -2.25);    // outside the tea shop
+addPet('dog', 'walker', 2.6, -3.6);    // out on its rounds
+addPet('dog', 'park', 7.6, 7.5);       // asleep on the zedi grass
+const kidDog = addPet('dog', 'kids', 5.75, 5.5); kidDog.lap = runners[0].lap - .5; kidDog.anim.setLoop('run'); // chasing the kids round the zedi
+addPet('cat', 'house', -7.3, -2.25);   // tea shop step
+addPet('cat', 'house', -3.6, -2.25);   // grocery step
+addPet('cat', 'house', -4.05, 6.6);    // pharmacy step
+
 // ---------- particles: water + falling petals ----------
 const NW = 700, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NW);
 water.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(water);
@@ -561,6 +604,30 @@ renderer.setAnimationLoop(() => {
 
   // npcs: idle, now and then a little action; everyone animates through the same rig
   for (const c of [...crowd, ...crew, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { const kid = c.ch.opts.age === 'kid'; c.anim.play(pick(kid ? ['jump', 'jump', 'wave'] : ['wave', 'jump', 'wave'])); c.idleT = kid ? 1.5 + rnd() * 2 : 5 + rnd() * 8; } } // kids bounce far more often
+  for (const c of pets) {
+    const a = c.anim, p = c.g.position, pp = player.g.position, role = ROLES[c.role];
+    if (c.role === 'kids') { // stays half a lap behind its kid, catching up after a shake
+      const k = runners[0]; if (a.one !== 'shake') c.lap += (k.lap - .5 - c.lap) * Math.min(1, dt * 3);
+      const x = 5.75 + 1.95 * Math.cos(c.lap), z = 5.5 + 1.95 * Math.sin(c.lap); p.set(x, groundY(x, z), z); c.g.rotation.y = -c.lap;
+      a.setLoop('run'); if (k.anim.one === 'jump' && !a.one) a.play('hop'); if (rnd() < dt * .08) a.emote(pick(['heart', 'note']));
+      c.cool -= dt; a.update(dt); continue;
+    }
+    if (c.target) { // trot towards it, turning in an arc; give up if something keeps blocking
+      const dx = c.target.x - p.x, dz = c.target.z - p.z;
+      if (Math.hypot(dx, dz) < .2) { c.target = null; a.setLoop(pick(role.rest)); c.rest = role.t[0] + rnd() * (role.t[1] - role.t[0]); }
+      else if (a.speed > 0) {
+        let d = Math.atan2(dx, dz) - c.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); c.g.rotation.y += d * Math.min(1, dt * 5);
+        const ox = p.x, oz = p.z, s = a.speed * dt; p.x += Math.sin(c.g.rotation.y) * s; p.z += Math.cos(c.g.rotation.y) * s; collide(p);
+        c.stuck = Math.hypot(p.x - ox, p.z - oz) < s * .3 ? c.stuck + dt : 0; if (c.stuck > 1) { c.target = petSpot(c); c.stuck = 0; }
+      }
+    } else if ((c.rest -= dt) < 0) { c.target = petSpot(c); a.setLoop(rnd() < (role.run || 0) ? 'run' : 'walk'); }
+    const fx = flt.position.x; // keep out from under the float
+    if (p.x > fx - FL.back - .3 && p.x < fx + FL.front + .3 && Math.abs(p.z - FL.lane) < 1.25) p.z = FL.lane + Math.sign(p.z - FL.lane || 1) * 1.25;
+    const pd = Math.hypot(pp.x - p.x, pp.z - p.z);
+    if (c.ch.dog) { if (pd < 1.3) { a.happy = 1; if (!c.near) { c.near = true; a.emote('heart'); if (a.loop === 'sleep') a.setLoop('sit'); } } else if (pd > 2) c.near = false; } // dogs are pleased to see you
+    else if (pd < 1.2 && player.anim.loop === 'run' && a.loop !== 'run') { a.emote('bang'); c.flee(pp); } // cats aren't, if you come running
+    p.y = groundY(p.x, p.z); c.cool -= dt; a.update(dt);
+  }
   for (const k of runners) {
     k.lap += k.anim.speed / 1.8 * dt; const x = 5.75 + 1.8 * Math.cos(k.lap), z = 5.5 + 1.8 * Math.sin(k.lap); // centre nudged so the lap clears the trishaw
     k.g.position.set(x, groundY(x, z), z); k.g.rotation.y = Math.atan2(-Math.sin(k.lap), Math.cos(k.lap));
@@ -578,7 +645,7 @@ renderer.setAnimationLoop(() => {
   }
 
   // drops
-  const hitList = [...crowd, ...riders, ...runners, player]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
+  const hitList = [...crowd, ...riders, ...runners, ...pets, player]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
   for (let i = 0; i < NW; i++) {
     const d = drops[i];
     if (d.life > 0) {
@@ -589,7 +656,8 @@ renderer.setAnimationLoop(() => {
       }
       for (const c of hitList) {
         if (c.cool <= 0 && Math.abs(d.p.x - c.wp.x) < .38 && Math.abs(d.p.z - c.wp.z) < .38 && d.p.y < c.wp.y + 1.4 && d.p.y > c.wp.y) {
-          c.cool = 2.5; c.anim.soak(.6); // splashed! soaked (>_<), then shake it off, jump or cheer
+          c.cool = 2.5; if (c.hit) { c.hit(d); continue; } // dogs / cats have their own reaction
+          c.anim.soak(.6); // splashed! soaked (>_<), then shake it off, jump or cheer
           const r = c === player ? 'shake' : pick(['jump', 'shake', 'wave']);
           if (!c.anim.one) { c.anim.play(r); if (c === player || rnd() < .6) c.anim.emote({ shake: 'drop', jump: 'bang', wave: 'heart' }[r]); } // not every hit, or the hose crowd never stops bubbling
         }

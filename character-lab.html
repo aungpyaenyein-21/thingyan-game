@@ -31,6 +31,9 @@
   <div class="row" id="ones"></div>
   <h2>ရေစို · ခံစားချက်</h2>
   <div class="row" id="moods"></div>
+  <h2>ခွေး · ကြောင်</h2>
+  <div class="row" id="pets"></div>
+  <div class="row" id="petacts" style="margin-top:6px"></div>
   <h2>အောက်ပိုင်း</h2>
   <div class="row" id="bottoms"></div>
   <h2>ဆံပင်</h2>
@@ -68,7 +71,8 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=25';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=26';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -133,11 +137,23 @@ if (qs.get('cam') === 'face') { cam.position.set(.5, 1.25, 2.3); ctl.target.set(
 if (qs.get('ol')) { state.outline = document.getElementById('oln').checked = true; build(); }
 if (qs.get('a')) anim.setLoop(qs.get('a'));
 
+// street dog / cat standing beside the character
+let pet = null, petAnim = null, petKind = null, petCoat = 0;
+function buildPet() {
+  if (pet) scene.remove(pet.root); pet = null; if (!petKind) return;
+  const coats = petKind === 'dog' ? DOG_COATS : CAT_COATS;
+  pet = makeCritter({ kind: petKind, coat: coats[petCoat % coats.length], ears: petCoat % 2 ? 'floppy' : 'point', outline: state.outline });
+  pet.root.position.set(.8, 0, .25); scene.add(pet.root); petAnim = new CritterAnimator(pet, emit);
+}
 const LOOP_UI = [['idle', 'ရပ်', '1'], ['walk', 'လမ်းလျှောက်', '2'], ['run', 'ပြေး', '3'], ['dance', 'ယိမ်းက', '4']];
 const ONE_UI = [['jump', 'ခုန်', 'Space'], ['splash', 'ရေပက်', 'E'], ['shake', 'ရေစိုခါ', 'Q'], ['wave', 'လက်ပြ', 'W'], ['kadaw', 'ကန်တော့', 'K']];
 const btn = (parent, label, key, on) => { const b = document.createElement('button'); b.innerHTML = label + (key ? `<kbd>${key}</kbd>` : ''); b.onclick = on; document.getElementById(parent).appendChild(b); return b; };
 const group = (parent, items, get, set) => { const bs = items.map(([v, label, key]) => { const b = btn(parent, label, key, () => { set(v); bs.forEach(x => x.classList.toggle('on', x === b)); }); b.classList.toggle('on', get() === v); return b; }); return bs; };
-window.lab = { play: n => anim.play(n), loop: n => anim.setLoop(n), soak: () => anim.soak(), emote: k => anim.emote(k), get ch() { return ch; } }; // handy from the console
+group('pets', [[null, 'မပါ'], ['dog', 'ခွေး'], ['cat', 'ကြောင်']], () => petKind, v => { petKind = v; buildPet(); });
+btn('pets', 'အရောင်ပြောင်း', '', () => { petCoat++; buildPet(); });
+for (const [v, label] of [['idle', 'ရပ်'], ['walk', 'လမ်းလျှောက်'], ['run', 'ပြေး'], ['sit', 'ထိုင်'], ['sleep', 'အိပ်']]) btn('petacts', label, '', () => petAnim?.setLoop(v));
+btn('petacts', 'ရေပက်', '', () => { if (!petAnim) return; petAnim.soak(); if (pet.dog) { petAnim.play('shake'); petAnim.emote('drop'); } else { petAnim.play('hop'); petAnim.emote('bang'); } });
+window.lab = { play: n => anim.play(n), loop: n => anim.setLoop(n), soak: () => anim.soak(), emote: k => anim.emote(k), get ch() { return ch; }, get pet() { return petAnim; } }; // handy from the console
 const loopBtns = group('loops', LOOP_UI, () => anim.loop, v => anim.setLoop(v));
 ONE_UI.forEach(([v, label, key]) => btn('ones', label, key, () => anim.play(v)));
 btn('moods', 'ရေပက်ခံ', 'R', () => { anim.soak(); anim.emote('drop'); });
@@ -187,6 +203,7 @@ const clock = new THREE.Clock(), G = -9;
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30) * +spd.value;
   anim.update(dt);
+  if (pet) petAnim.update(dt);
   if (turn.checked) ch.root.rotation.y += dt * .6;
   // floor scrolls opposite to the facing direction at the gait's ground speed (feet stay planted)
   const v = anim.speed * dt * SCROLL_PER_UNIT, yaw = ch.root.rotation.y;

@@ -68,12 +68,12 @@ export const HAIR_GREY = '#d9d3c7';
 export const ACCENTS = ['#e0574f', '#ffc83d', '#4fb3d9', '#f06292', '#8bd17c', '#ff7f6b'];
 export const TOPS = ['#fff6ea', '#ff7f6b', '#ffc83d', '#4fb3d9', '#8bd17c', '#f06292', '#7e57c2', '#2e3a59'];
 const lighten = (c, k) => '#' + new THREE.Color(c).lerp(new THREE.Color('#fff8e8'), k).getHexString();
-const shade = (c, k) => '#' + new THREE.Color(c).lerp(new THREE.Color('#7a3b3b'), k).getHexString();
+export const shade = (c, k) => '#' + new THREE.Color(c).lerp(new THREE.Color('#7a3b3b'), k).getHexString();
 export const IRIS = ['#5a3a2a', '#2f2a3a', '#7a5230'];
 
 const mats = {};
 const mat = c => mats[c] ??= new THREE.MeshLambertMaterial({ color: c });
-const outline = new THREE.MeshBasicMaterial({ color: '#5b3a52', side: THREE.BackSide });
+export const outline = new THREE.MeshBasicMaterial({ color: '#5b3a52', side: THREE.BackSide }); // shared inverted-hull outline (critters.js uses it too)
 outline.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normalize(normal) * 0.02;'); };
 
 function stripes(a, b, plaid, border) {
@@ -399,7 +399,7 @@ const dripGeo = new THREE.SphereGeometry(.022, 6, 4), dripMat = new THREE.MeshBa
 
 // emote bubbles above the head: drop (soaked) | note (dancing) | bang (surprised) | heart (loving it). Drawn, not emoji, so every device matches
 const emoteCache = {};
-function emoteTex(kind) {
+export function emoteTex(kind) {
   if (emoteCache[kind]) return emoteCache[kind];
   const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
   g.fillStyle = '#fffaf0'; g.strokeStyle = '#5b3a52'; g.lineWidth = 7;
