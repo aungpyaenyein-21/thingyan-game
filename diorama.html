@@ -13,13 +13,15 @@
     padding:6px 12px;border-radius:12px}
   #splash{position:fixed;z-index:2;right:18px;bottom:18px;width:76px;height:76px;border-radius:50%;border:0;
     background:#7ec8e3;color:#fff;font:inherit;font-size:15px;box-shadow:0 4px 0 #4f9fbd;display:none}
-  @media (pointer:coarse){#splash{display:block}#hint .kb{display:none}}
+  #jump{position:fixed;z-index:2;right:104px;bottom:26px;width:60px;height:60px;border-radius:50%;border:0;background:#f2a65a;color:#fff;font:inherit;font-size:14px;box-shadow:0 4px 0 #c97f3a;display:none}
+  @media (pointer:coarse){#splash,#jump{display:block}#hint .kb{display:none}}
   @media (pointer:fine){#hint .touch{display:none}}
 </style>
 </head>
 <body>
-<div id="hint"><span class="kb">WASD လမ်းလျှောက် · Space ရေပက်</span><span class="touch">ဆွဲပြီး လမ်းလျှောက် · ခလုတ်နဲ့ ရေပက်</span></div>
+<div id="hint"><span class="kb">WASD လမ်းလျှောက် · Shift ပြေး · Space ခုန် · E ရေပက် · Q လက်ပြ · 1 ယိမ်း · 2 ကန်တော့</span><span class="touch">ဆွဲပြီး လမ်းလျှောက် (ဝေးဝေးဆွဲရင် ပြေး) · ခလုတ်နဲ့ ခုန်/ရေပက်</span></div>
 <button id="splash" aria-label="ရေပက်">ရေပက်</button>
+<button id="jump" aria-label="ခုန်">ခုန်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -30,6 +32,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=10';
 
 // ---------- constants (tune here) ----------
 const PAL = {
@@ -40,10 +43,10 @@ const PAL = {
   hair:'#2b1d1a', eye:'#2b1d1a', thanaka:'#fdf0c8',
 };
 const SKINS = ['#efc29c', '#d9a07a', '#b97d58'];
-const SHIRTS = ['#fff6ea', '#f4a6a6', '#a9d8bf', '#9fb7e8', '#f7d58b'];
+const SHIRTS = TOPS;
 const LONGYI = [['#4a5aa8', '#7f8fd6'], ['#a8434a', '#d97a7f'], ['#3f7a5a', '#72b08b'], ['#7a4a9a', '#a985c8'], ['#a8743a', '#d6a76a']];
 const HALF = 9;                 // island half size (units)
-const WALK = 3.2, GRAV = -11;   // player speed, particle gravity
+const GRAV = -11;              // particle gravity (player speed comes from the gait: LOOPS.walk/run.speed)
 let VIEW = +(new URLSearchParams(location.search).get('v') || 15); // ortho view height (units); wheel zooms 7..18
 
 const Q = new URLSearchParams(location.search).get('q') || (matchMedia('(pointer:coarse)').matches ? 'low' : 'high'); // ?q=low|high|off
@@ -276,65 +279,52 @@ for (let i = 0; i <= 16; i++) {
 
 // ---------- bean characters ----------
 const chars = [];
-const outlineMat = new THREE.MeshBasicMaterial({ color: '#5b3a52', side: THREE.BackSide });
-outlineMat.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed += normalize(normal) * 0.022;'); };
-const hull = m => { const o = new THREE.Mesh(m.geometry, outlineMat); o.castShadow = false; m.add(o); }; // cartoon outline on the cute stuff only
-const blobGeo = new THREE.CircleGeometry(.36, 20);
-const blobMat = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  const r = g.createRadialGradient(32, 32, 4, 32, 32, 32); r.addColorStop(0, 'rgba(70,40,80,.45)'); r.addColorStop(1, 'rgba(70,40,80,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64);
-  return new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }); })();
-function bean({ skin = pick(SKINS), shirt = pick(SHIRTS), longyi = pick(LONGYI), hair = 'short', flower = false, x = 0, z = 0, ry = 0 } = {}) {
-  // chibi bean: smooth round body + big head (contrast with the faceted low-poly world)
-  const g = new THREE.Group(); const body = new THREE.Group(); g.add(body); scene.add(g);
-  const S = c => matCache['s' + c] ??= new THREE.MeshLambertMaterial({ color: c });
-  const add = (geo, mat, px, py, pz, parent = body, cast = true) => { const m = new THREE.Mesh(geo, typeof mat === 'string' ? S(mat) : mat); m.position.set(px, py, pz); m.castShadow = cast; parent.add(m); return m; };
-  hull(add(new THREE.CapsuleGeometry(.25, .3, 6, 16), shirt, 0, .4, 0));
-  const lt = stripeTex(longyi[0], longyi[1], 6, true); lt.repeat.set(4, 1.5);
-  const prof = [[.305, 0], [.3, .1], [.285, .24], [.262, .4], [.25, .43]].map(([r, y]) => new THREE.Vector2(r, y));
-  add(new THREE.LatheGeometry(prof, 20), new THREE.MeshLambertMaterial({ map: lt, side: THREE.DoubleSide }), 0, .01, 0);
-  const arms = [];
-  for (const sx of [-1, 1]) {
-    const a = new THREE.Group(); a.position.set(sx * .25, .66, 0); body.add(a);
-    const arm = add(new THREE.CapsuleGeometry(.065, .14, 4, 8), shirt, 0, -.1, 0, a); arm.rotation.z = sx * .35; hull(arm);
-    add(new THREE.SphereGeometry(.06, 8, 6), skin, sx * .05, -.21, 0, a);
-    arms.push(a);
-  }
-  const head = new THREE.Group(); head.position.y = 1.0; body.add(head);
-  const HR = .32;
-  hull(add(new THREE.SphereGeometry(HR, 20, 14), skin, 0, 0, 0, head));
-  const cap = add(new THREE.SphereGeometry(HR + .018, 20, 10, 0, Math.PI * 2, 0, Math.PI * .46), PAL.hair, 0, 0, 0, head);
-  cap.rotation.x = -.42;
-  if (hair === 'bun') hull(add(new THREE.SphereGeometry(.14, 12, 8), PAL.hair, 0, .2, -.27, head));
-  if (flower) for (const [fx, fy, fz] of [[.2, .2, -.16], [.27, .12, -.12], [.15, .14, -.22], [.25, .22, -.06]]) add(new THREE.IcosahedronGeometry(.055, 0), PAL.padauk, fx, fy, fz, head, false);
-  const onFace = (geo, mat, dx, dy, lift = .004) => { // stick a flat decal onto the head sphere, facing outward
-    const n = new THREE.Vector3(dx, dy, Math.sqrt(Math.max(0, 1 - dx * dx - dy * dy))).normalize();
-    const m = add(geo, mat, n.x * (HR + lift), n.y * (HR + lift), n.z * (HR + lift), head, false);
-    m.lookAt(n.clone().multiplyScalar(5).add(head.getWorldPosition(new THREE.Vector3()))); return m; // runs before g is placed; lookAt is world-space
-  };
-  const eyes = [];
-  for (const sx of [-1, 1]) {
-    const e = onFace(new THREE.SphereGeometry(.05, 10, 8), PAL.eye, sx * .32, .02, -.012); e.scale.set(.85, 1.25, .45); eyes.push(e);
-    onFace(new THREE.SphereGeometry(.016, 6, 4), '#ffffff', sx * .34, .1, .02);
-    onFace(new THREE.CircleGeometry(.1, 18), PAL.thanaka, sx * .5, -.2);
-  }
-  const smile = onFace(new THREE.TorusGeometry(.045, .013, 6, 12, Math.PI), PAL.eye, 0, -.24, 0); smile.rotateZ(Math.PI);
-  const blob = new THREE.Mesh(blobGeo, blobMat); blob.rotation.x = -Math.PI / 2; blob.position.y = .012; g.add(blob);
-  g.position.set(x, .14, z); g.rotation.y = ry;
-  const c = { g, body, head, arms, eyes, blink: 1 + rnd() * 4, vy: 0, y: 0, phase: rnd() * 6, hitT: 0, walk: 0 }; chars.push(c); return c;
+const BOTTOMS = { longyi: LONGYI, htamein: [['#a8434a', '#e08a8f'], ['#7a4a9a', '#c79be0'], ['#3f6fa8', '#8fb8e8']], pants: [['#4a5a8a', '#4a5a8a'], ['#5a4a3a', '#5a4a3a']], shorts: [['#5b7fa8', '#f6ead2'], ['#3f7a5a', '#f6ead2']] };
+const groundY = (x, z) => { // road .045, raised sidewalk .14, grass .01
+  const ax = Math.abs(x), az = Math.abs(z);
+  if (ax < R || az < R) return .045;
+  if (ax < R + .9 || az < R + .9) return .14;
+  return .01;
+};
+function emitFx(type, obj) {
+  const w = obj.getWorldPosition(new THREE.Vector3());
+  if (type === 'splash') { const f = new THREE.Vector3(Math.sin(player.g.rotation.y), 0, Math.cos(player.g.rotation.y)); splash(w.addScaledVector(f, .15), f, 40); }
+  if (type === 'drip') for (let k = 0; k < 3; k++) { const a = rnd() * 6.28; spawn(w, new THREE.Vector3(Math.cos(a) * 2, 1 + rnd(), Math.sin(a) * 2)); }
+}
+// bean(): same call sites as before, now a chibi with the procedural animator. Everything unspecified is rolled:
+// age (kids / elders), body build (from age + gender), hair style + colour (some Thingyan dye jobs), top cut, slippers, headgear, water gun, garland, thanaka shape.
+function bean({ skin = pick(SKINS), shirt = pick(SHIRTS), hair, flower = false, bottom, longyi, x = 0, z = 0, ry = 0, print, age, hat, prop, build, ...rest } = {}) {
+  age ??= rnd() < .15 ? 'kid' : rnd() < .1 ? 'elder' : 'adult';
+  const fem = ['bun', 'long', 'pigtails', 'bob'].includes(hair) || (!hair && rnd() < .5);
+  hair ??= fem ? pick(age === 'kid' ? ['pigtails', 'bob', 'bun'] : ['bun', 'long', 'bob', 'short']) : pick(['short', 'buzz', 'spiky', 'short']);
+  bottom ??= fem ? pick(['htamein', 'htamein', 'pants', 'shorts']) : pick(['longyi', 'longyi', 'pants', 'shorts']);
+  const bottomColor = bottom === 'longyi' && longyi ? longyi : pick(BOTTOMS[bottom]);
+  const hairColor = age === 'elder' ? HAIR_GREY : rnd() < .2 ? pick(HAIRS_DYED) : pick(HAIRS);
+  hat ??= age === 'elder' ? pick(['none', 'bucket']) : pick(['none', 'none', 'band', 'goggles', 'bucket']);
+  prop ??= age === 'elder' ? 'none' : rnd() < .3 ? 'gun' : 'none';
+  const ch = makeChibi({ skin, top: shirt, topStyle: pick(['tee', 'tee', 'tank', 'long']), hair, hairColor, flower, bottom, bottomColor, print: print ?? pick(['သင်္ကြန်', '', '']),
+    shoes: rnd() < .7 ? 'slipper' : 'sneaker', shoeColor: pick(['#c8553d', '#3f6fa8', '#5a4a3a', '#e9b44c']), accent: pick(ACCENTS), hat, prop, garland: rnd() < .2,
+    thanaka: age === 'kid' ? pick(['square', 'round']) : pick(['round', 'leaf', 'dots', false]), age, build: build ?? (age === 'kid' ? 'round' : fem ? 'slim' : 'broad'), outline: true, ...rest }); // men broad, women slim, kids round // outline: reads against the sand at gameplay zoom
+  ch.root.position.set(x, groundY(x, z), z); ch.root.rotation.y = ry; scene.add(ch.root);
+  const c = { g: ch.root, ch, anim: null, cool: rnd() * 2, idleT: 2 + rnd() * 6 };
+  c.anim = new ChibiAnimator(ch, (t, o) => emitFx(t, o)); c.anim.T = rnd() * 3; // desync idle breathing/blinks
+  chars.push(c); return c;
 }
 
-const player = bean({ skin: SKINS[0], shirt: '#fff6ea', longyi: LONGYI[2], hair: 'short', x: -.4, z: 2.3, ry: Math.PI / 4 });
+const player = bean({ skin: SKINS[0], shirt: '#ffc83d', longyi: LONGYI[2], bottom: 'longyi', hair: 'short', age: 'adult', hat: 'goggles', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', topStyle: 'tee', print: 'သင်္ကြန်', x: -.4, z: 2.3, ry: Math.PI / 4 });
+{ const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: '#4fd1ff', transparent: true, opacity: .85, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .012; player.g.add(ring); } // find yourself at any zoom
 const dancers = [
-  bean({ x: MX - 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1] }),
-  bean({ x: MX, z: MZ - .3, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1] }),
-  bean({ x: MX + 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1] }),
+  bean({ x: MX - 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
+  bean({ x: MX, z: MZ - .3, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
+  bean({ x: MX + 1.4, z: MZ - .2, hair: 'bun', flower: true, shirt: '#f4a6a6', longyi: LONGYI[1], age: 'adult', hat: 'none', prop: 'none' }),
 ];
-dancers.forEach(d => { d.g.position.y = 1.04; d.dance = true; });
+dancers.forEach(d => { d.g.position.y = 1.04; d.anim.setLoop('dance'); d.anim.T = 0; }); // the troupe dances in sync
 const crowd = [
   bean({ x: 4.1, z: -2.45, ry: .4, flower: true, hair: 'bun' }), bean({ x: 6.1, z: -2.6, ry: 1.2 }),
   bean({ x: 5.2, z: .95, ry: .7, hair: 'bun' }), bean({ x: 2.95, z: -2.3, ry: 1.0 }),
 ];
-const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#a9d8bf', longyi: LONGYI[4] });
+const vendor = bean({ x: -5.0, z: 1.85, ry: 0, hair: 'bun', flower: true, skin: SKINS[1], shirt: '#8bd17c', longyi: LONGYI[4], age: 'adult', hat: 'none', prop: 'none' });
 vendor.g.position.z = 1.9; vendor.g.rotation.y = 0;
 
 
@@ -424,7 +414,7 @@ const riders = [
   bean({ x: -1.9, z: -.35, ry: Math.PI * .25, shirt: '#fff6ea', longyi: LONGYI[3] }),
   bean({ x: -1.6, z: .6, ry: Math.PI * .6, shirt: '#9fb7e8', longyi: LONGYI[0], hair: 'bun' }),
 ];
-riders.forEach(r => { flt.add(r.g); r.g.position.y = 1.3; });
+riders.forEach(r => { flt.add(r.g); r.g.position.y = 1.3; r.anim.setLoop('dance'); r.anim.T = 0; });
 // clip everything on the float at the island edges (it emerges from / disappears into the diorama side)
 renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), HALF + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), HALF + .001)]; // global, so AO/shadow passes clip too
 flt.position.set(-HALF - FL.front, .14, FL.lane);
@@ -452,20 +442,19 @@ function splash(from, dir, n = 34) {
 
 // ---------- input ----------
 const keys = {};
-addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'Space') { throwWater(); e.preventDefault(); } });
+const act = name => { const a = player.anim; if (a.one && a.one !== 'jump') return; if (name === 'dance') { a.setLoop(a.loop === 'dance' ? 'idle' : 'dance'); return; } a.play(name); };
+addEventListener('keydown', e => {
+  keys[e.code] = true; if (e.repeat) return;
+  const m = { Space: 'jump', KeyE: 'splash', KeyQ: 'wave', Digit1: 'dance', Digit2: 'kadaw' }[e.code];
+  if (m) { act(m); e.preventDefault(); }
+});
 addEventListener('keyup', e => keys[e.code] = false);
 let touch = null;
 renderer.domElement.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId }; });
 addEventListener('pointermove', e => { if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; } });
 addEventListener('pointerup', e => { if (touch && e.pointerId === touch.id) touch = null; });
-document.getElementById('splash').addEventListener('pointerdown', e => { e.stopPropagation(); throwWater(); });
-let throwCD = 0;
-function throwWater() {
-  if (throwCD > 0) return; throwCD = .35;
-  const f = new THREE.Vector3(Math.sin(player.g.rotation.y), 0, Math.cos(player.g.rotation.y));
-  splash(player.g.position.clone().add(new THREE.Vector3(0, .9, 0)).addScaledVector(f, .4), f);
-  player.vy = 1.6; // little hop
-}
+document.getElementById('splash').addEventListener('pointerdown', e => { e.stopPropagation(); act('splash'); });
+document.getElementById('jump').addEventListener('pointerdown', e => { e.stopPropagation(); act('jump'); });
 
 // ---------- post: bloom -> tilt-shift/grade/grain -> output ----------
 const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q === 'off' ? 0 : 4 });
@@ -523,33 +512,20 @@ function collide(p) {
   }
 }
 
-function animateBean(c, dt, moving) {
-  c.vy += GRAV * dt; c.y = Math.max(0, c.y + c.vy * dt); if (c.y === 0) c.vy = 0;
-  c.walk += dt * (moving ? 11 : 0);
-  const sway = moving ? Math.sin(c.walk) * .13 : Math.sin(T * 1.6 + c.phase) * .03;
-  const bob = moving ? Math.abs(Math.sin(c.walk)) * .07 : 0;
-  const squash = c.hitT > 0 ? 1 - Math.sin(c.hitT * 14) * .12 * c.hitT : 1;
-  c.body.position.y = c.y + bob; c.body.rotation.z = sway; c.body.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-  const swing = moving ? Math.sin(c.walk) * .7 : (c.hitT > 0 ? -2.2 : Math.sin(T * 1.6 + c.phase) * .08);
-  c.arms[0].rotation.x = swing; c.arms[1].rotation.x = c.hitT > 0 ? -2.2 : -swing; // arms up when splashed
-  c.blink -= dt; const shut = c.blink < 0 && c.blink > -.11; if (c.blink < -.11) c.blink = 2 + rnd() * 4;
-  c.eyes.forEach(e => e.scale.y = shut ? .15 : 1.25);
-  c.head.rotation.z = moving ? -sway * .5 : Math.sin(T * 1.1 + c.phase) * .06;
-  c.hitT = Math.max(0, c.hitT - dt);
-}
-
 renderer.setAnimationLoop(() => {
-  const dt = Math.min(clock.getDelta(), 1 / 30); T += dt; throwCD -= dt;
+  const dt = Math.min(clock.getDelta(), 1 / 30); T += dt;
 
   // player
   let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
   let iy = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
-  if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 12) { ix = dx / Math.max(l, 60); iy = dy / Math.max(l, 60); } }
+  let farDrag = false;
+  if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 12) { ix = dx / l; iy = dy / l; farDrag = l > 90; } }
   const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
-  const moving = mv.lengthSq() > .01;
-  if (moving) {
-    if (mv.length() > 1) mv.normalize();
-    player.g.position.addScaledVector(mv, WALK * (keys.ShiftLeft ? 1.7 : 1) * dt); collide(player.g.position);
+  const moving = mv.lengthSq() > .01, pa = player.anim;
+  if (pa.loop !== 'dance' || moving) pa.setLoop(moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle');
+  if (moving && pa.speed > 0) {
+    mv.normalize();
+    player.g.position.addScaledVector(mv, pa.speed * dt); collide(player.g.position);
     const want = Math.atan2(mv.x, mv.z); let d = want - player.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
     player.g.rotation.y += d * Math.min(1, dt * 12);
   }
@@ -561,13 +537,11 @@ renderer.setAnimationLoop(() => {
   flt.traverse(o => { if (o.name === 'wing') o.rotation.x = Math.sin(T * 1.4) * .08 * o.userData.s; });
   { const p = player.g.position, fx = flt.position.x;
     if (p.x > fx - FL.back - .3 && p.x < fx + FL.front + .3 && Math.abs(p.z - FL.lane) < 1.25) p.z = FL.lane + Math.sign(p.z - FL.lane || 1) * 1.25; }
-  riders.forEach((r, i) => { animateBean(r, dt, false); if (r.hitT === 0) r.arms[i % 2].rotation.x = -1.6 + Math.sin(T * 4 + i) * .5; });
-  animateBean(player, dt, moving);
+  player.g.position.y = groundY(player.g.position.x, player.g.position.z);
 
-  // npcs
-  dancers.forEach((d, i) => { d.body.rotation.z = Math.sin(T * 3 + i) * .18; d.body.position.y = Math.abs(Math.sin(T * 3 + i)) * .12; d.g.rotation.y = Math.sin(T * 1.5 + i) * .5; });
-  for (const c of [...crowd, vendor]) animateBean(c, dt, false);
-  vendor.body.rotation.y = Math.sin(T * 2) * .15;
+  // npcs: idle, now and then a little action; everyone animates through the same rig
+  for (const c of [...crowd, vendor]) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { c.anim.play(pick(['wave', 'jump', 'wave'])); c.idleT = 5 + rnd() * 8; } }
+  for (const c of chars) { c.cool -= dt; c.anim.update(dt); }
 
   // emitters
   for (const e of emitters) {
@@ -589,8 +563,9 @@ renderer.setAnimationLoop(() => {
         d.life = 0;
       }
       for (const c of hitList) {
-        if (c.hitT < .2 && Math.abs(d.p.x - c.wp.x) < .38 && Math.abs(d.p.z - c.wp.z) < .38 && d.p.y < c.wp.y + 1.3 && d.p.y > c.wp.y) {
-          if (c !== player && c.hitT === 0 && c.y === 0) c.vy = 3.4; c.hitT = .6;
+        if (c.cool <= 0 && Math.abs(d.p.x - c.wp.x) < .38 && Math.abs(d.p.z - c.wp.z) < .38 && d.p.y < c.wp.y + 1.4 && d.p.y > c.wp.y) {
+          c.cool = 2.5; // splashed! cheer, jump or shake it off
+          if (!c.anim.one) c.anim.play(c === player ? 'shake' : pick(['jump', 'shake', 'wave']));
         }
       }
     }

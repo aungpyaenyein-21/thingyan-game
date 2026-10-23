@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ဇာတ်ကောင် Lab</title>
+<style>
+  :root{--ink:#5a3550;--card:rgba(255,246,232,.86);--on:#f2a65a;--line:#e9c9a8}
+  html,body{margin:0;height:100%;overflow:hidden;touch-action:none;color:var(--ink);
+    background:linear-gradient(#ffd9a8 0%,#f9b8a0 50%,#d9a3c0 85%,#b39bd1 100%);
+    font-family:"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif}
+  canvas{position:fixed;inset:0;display:block}
+  #ui{position:fixed;right:16px;top:16px;bottom:16px;width:290px;overflow:auto;background:var(--card);border-radius:16px;
+    padding:12px 14px;box-sizing:border-box;z-index:2;font-size:14px}
+  h2{font-size:13px;font-weight:500;margin:10px 0 6px;opacity:.75}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:inherit;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:5px 10px;cursor:pointer}
+  button.on{background:var(--on);border-color:var(--on);color:#fff}
+  button kbd{font:11px ui-monospace,monospace;opacity:.6;margin-left:4px}
+  .sw{width:28px;height:28px;padding:0;border-radius:50%}
+  label{display:flex;align-items:center;gap:8px;margin:6px 0}
+  input[type=range]{flex:1}
+  @media (max-width:700px){#ui{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:36vh}}
+</style>
+</head>
+<body>
+<div id="ui">
+  <h2>လှုပ်ရှားမှု (ဆက်တိုက်)</h2>
+  <div class="row" id="loops"></div>
+  <h2>တစ်ခါလုပ်</h2>
+  <div class="row" id="ones"></div>
+  <h2>အောက်ပိုင်း</h2>
+  <div class="row" id="bottoms"></div>
+  <h2>ဆံပင်</h2>
+  <div class="row" id="hairs"></div>
+  <div class="row" id="hairc" style="margin-top:6px"></div>
+  <h2>ခေါင်းပေါ် · ပစ္စည်း</h2>
+  <div class="row" id="hats"></div>
+  <div class="row" id="props" style="margin-top:6px"></div>
+  <h2>သနပ်ခါး · အသက်</h2>
+  <div class="row" id="thanaka"></div>
+  <div class="row" id="ages" style="margin-top:6px"></div>
+  <div class="row" id="builds" style="margin-top:6px"></div>
+  <h2>မျက်ဝန်း</h2>
+  <div class="row" id="iris"></div>
+  <h2>အသားအရောင် · အင်္ကျီ · ဖိနပ်</h2>
+  <div class="row" id="skins"></div>
+  <div class="row" id="tops" style="margin-top:6px"></div>
+  <div class="row" id="topstyle" style="margin-top:6px"></div>
+  <div class="row" id="shoes" style="margin-top:6px"></div>
+  <div class="row" id="accent" style="margin-top:6px"></div>
+  <h2>ကြည့်ပုံ</h2>
+  <label>အမြန်နှုန်း <input id="spd" type="range" min="0.1" max="1.5" step="0.05" value="1"><span id="spdv">1.0×</span></label>
+  <label><input id="turn" type="checkbox"> လှည့်ပြ (turntable)</label>
+  <label><input id="flw" type="checkbox"> ပိတောက်ပန်း</label>
+  <label><input id="oln" type="checkbox"> အနားသတ်မျဉ်း</label>
+  <label><input id="prt" type="checkbox" checked> အင်္ကျီပေါ် စာ</label>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=10';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(28, 1, .1, 100);
+cam.position.set(2.6, 1.9, 4.2);
+const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, .72, 0); ctl.enableDamping = true; ctl.minDistance = 2; ctl.maxDistance = 9; ctl.maxPolarAngle = 1.5;
+
+scene.add(new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.55));
+const sun = new THREE.DirectionalLight('#ffb46b', 2.4); sun.position.set(-4, 6, 3); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 }); sun.shadow.bias = -.0005;
+scene.add(sun);
+
+// stage: round tiled floor that scrolls under the character while it walks/runs
+const floorTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#e6c9a8'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#dcb994';
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if ((x + y) % 2) g.fillRect(x * 64, y * 64, 64, 64);
+  g.fillStyle = '#c99f7a'; for (let i = 0; i < 4; i++) { g.fillRect(i * 64, 0, 2, 256); g.fillRect(0, i * 64, 256, 2); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); return t;
+})();
+const fadeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const r = g.createRadialGradient(64, 64, 40, 64, 64, 64); r.addColorStop(0, '#fff'); r.addColorStop(1, '#000'); g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c); })();
+const floor = new THREE.Mesh(new THREE.CircleGeometry(2.6, 48), new THREE.MeshLambertMaterial({ map: floorTex, alphaMap: fadeTex, transparent: true }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const SCROLL_PER_UNIT = 3 / 5.2; // texture repeats per world unit across the 5.2-wide disc
+
+// particles: water drops + dust puffs (pooled)
+const drops = [], dust = [];
+const dropGeo = new THREE.IcosahedronGeometry(.035, 0), dropMat = new THREE.MeshBasicMaterial({ color: '#bfeaff' });
+for (let i = 0; i < 160; i++) { const m = new THREE.Mesh(dropGeo, dropMat); m.visible = false; scene.add(m); drops.push({ m, v: new THREE.Vector3(), life: 0 }); }
+for (let i = 0; i < 16; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), new THREE.MeshBasicMaterial({ color: '#f3dcc0', transparent: true, depthWrite: false })); m.visible = false; scene.add(m); dust.push({ m, life: 0 }); }
+let di = 0, ui = 0;
+const W = new THREE.Vector3();
+function emit(type, obj) {
+  obj.getWorldPosition(W);
+  if (type === 'dust') { for (let k = 0; k < 2; k++) { const d = dust[ui = (ui + 1) % dust.length]; d.m.position.set(W.x + (k - .5) * .1, .05, W.z - .05); d.life = .5; d.m.visible = true; } }
+  if (type === 'splash') for (let k = 0; k < 60; k++) { const d = drops[di = (di + 1) % drops.length];
+    d.m.position.copy(W).add(new THREE.Vector3(0, .1, .1)); d.v.set((Math.random() - .5) * 1.4, 2 + Math.random() * 2, 2.2 + Math.random() * 2.2).applyQuaternion(ch.root.quaternion); d.life = 1.6; d.m.visible = true; }
+  if (type === 'drip') for (let k = 0; k < 5; k++) { const d = drops[di = (di + 1) % drops.length]; const a = Math.random() * 6.28;
+    d.m.position.copy(W).add(new THREE.Vector3(Math.cos(a) * .3, Math.random() * .2 - .2, Math.sin(a) * .3)); d.v.set(Math.cos(a) * 2.2, 1 + Math.random(), Math.sin(a) * 2.2); d.life = .9; d.m.visible = true; }
+}
+
+// character + UI state
+const state = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', thanaka: 'round', flower: false, hat: 'none', prop: 'none', shoes: 'sneaker', shoeColor: '#c8553d', accent: '#e0574f', garland: false, age: 'adult', build: 'round' };
+const BOTTOM_COLORS = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#4a5a8a', '#4a5a8a'], shorts: ['#5b7fa8', '#f6ead2'] };
+let ch, anim;
+function build() {
+  const yaw = ch ? ch.root.rotation.y : 0; if (ch) scene.remove(ch.root);
+  ch = makeChibi({ ...state, bottomColor: BOTTOM_COLORS[state.bottom], flower: state.flower });
+  ch.root.rotation.y = yaw; scene.add(ch.root);
+  if (anim) anim.setCharacter(ch); else anim = new ChibiAnimator(ch, emit);
+}
+build();
+const qs = new URLSearchParams(location.search); // ?a=walk|run|dance&yaw=90&cam=side
+if (qs.get('yaw')) ch.root.rotation.y = +qs.get('yaw') * Math.PI / 180;
+if (qs.get('cam') === 'side') cam.position.set(4.6, 1.3, 0);
+if (qs.get('cam') === 'face') { cam.position.set(.5, 1.25, 2.3); ctl.target.set(0, 1.05, 0); }
+if (qs.get('ol')) { state.outline = document.getElementById('oln').checked = true; build(); }
+if (qs.get('a')) anim.setLoop(qs.get('a'));
+
+const LOOP_UI = [['idle', 'ရပ်', '1'], ['walk', 'လမ်းလျှောက်', '2'], ['run', 'ပြေး', '3'], ['dance', 'ယိမ်းက', '4']];
+const ONE_UI = [['jump', 'ခုန်', 'Space'], ['splash', 'ရေပက်', 'E'], ['shake', 'ရေစိုခါ', 'Q'], ['wave', 'လက်ပြ', 'W'], ['kadaw', 'ကန်တော့', 'K']];
+const btn = (parent, label, key, on) => { const b = document.createElement('button'); b.innerHTML = label + (key ? `<kbd>${key}</kbd>` : ''); b.onclick = on; document.getElementById(parent).appendChild(b); return b; };
+const group = (parent, items, get, set) => { const bs = items.map(([v, label, key]) => { const b = btn(parent, label, key, () => { set(v); bs.forEach(x => x.classList.toggle('on', x === b)); }); b.classList.toggle('on', get() === v); return b; }); return bs; };
+window.lab = { play: n => anim.play(n), loop: n => anim.setLoop(n) }; // handy from the console
+const loopBtns = group('loops', LOOP_UI, () => anim.loop, v => anim.setLoop(v));
+ONE_UI.forEach(([v, label, key]) => btn('ones', label, key, () => anim.play(v)));
+group('bottoms', [['longyi', 'ပုဆိုး'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို']], () => state.bottom, v => { state.bottom = v; build(); });
+group('hairs', [['short', 'တိုတို'], ['buzz', 'ရိတ်'], ['spiky', 'ထောင်'], ['bob', 'ဘော့'], ['bun', 'ဆံထုံး'], ['pigtails', 'နှစ်စု'], ['long', 'ဆံမြီး']], () => state.hair, v => { state.hair = v; build(); });
+group('hats', [['none', 'မပါ'], ['band', 'ခေါင်းစည်း'], ['goggles', 'မျက်မှန်'], ['bucket', 'ဦးထုပ်']], () => state.hat, v => { state.hat = v; build(); });
+group('props', [['none', 'လက်ချည်း'], ['gun', 'ရေသေနတ်']], () => state.prop, v => { state.prop = v; build(); });
+btn('props', 'ပန်းကုံး', '', function () { state.garland = !state.garland; this.classList.toggle('on', state.garland); build(); });
+group('thanaka', [[false, 'မပါ'], ['round', 'ဝိုင်း'], ['leaf', 'ရွက်'], ['square', 'လေးထောင့်'], ['dots', 'အစက်']], () => state.thanaka, v => { state.thanaka = v; build(); });
+group('builds', [['round', 'ဖောင်းဖောင်း'], ['slim', 'သွယ်သွယ်'], ['broad', 'ပခုံးကျယ်']], () => state.build, v => { state.build = v; build(); });
+group('ages', [['adult', 'လူကြီး'], ['kid', 'ကလေး'], ['elder', 'အဖိုးအဖွား']], () => state.age, v => { state.age = v; if (v === 'elder') state.hairColor = HAIR_GREY; build(); });
+group('topstyle', [['tee', 'ရှပ်'], ['tank', 'လက်ပြတ်'], ['long', 'လက်ရှည်']], () => state.topStyle, v => { state.topStyle = v; build(); });
+group('shoes', [['sneaker', 'ဖိနပ်ထူ'], ['slipper', 'ညှပ်ဖိနပ်']], () => state.shoes, v => { state.shoes = v; build(); });
+const swatches = (parent, cols, key) => { const bs = cols.map(c => { const b = btn(parent, '', '', () => { state[key] = c; build(); bs.forEach(x => x.classList.toggle('on', x === b)); }); b.className = 'sw'; b.style.background = c; b.classList.toggle('on', state[key] === c); return b; }); };
+swatches('skins', SKINS, 'skin');
+swatches('hairc', [...HAIRS, ...HAIRS_DYED, HAIR_GREY], 'hairColor');
+swatches('accent', ACCENTS, 'accent');
+swatches('iris', IRIS, 'iris');
+swatches('tops', TOPS, 'top');
+const spd = document.getElementById('spd'); spd.oninput = () => document.getElementById('spdv').textContent = (+spd.value).toFixed(2) + '×';
+document.getElementById('oln').onchange = e => { state.outline = e.target.checked; build(); };
+document.getElementById('flw').onchange = e => { state.flower = e.target.checked; build(); };
+document.getElementById('prt').onchange = e => { state.print = e.target.checked ? 'သင်္ကြန်' : ''; build(); };
+const turn = document.getElementById('turn');
+addEventListener('keydown', e => {
+  const l = LOOP_UI.find(x => x[2] === e.key); if (l) { anim.setLoop(l[0]); loopBtns.forEach((b, i) => b.classList.toggle('on', LOOP_UI[i][0] === l[0])); }
+  const o = ONE_UI.find(x => x[2] === e.key.toUpperCase() || (x[2] === 'Space' && e.code === 'Space')); if (o) { anim.play(o[0]); e.preventDefault(); }
+});
+
+function resize() { // on narrow screens the panel sits at the bottom: widen the view and lift the character into the free area
+  const w = innerWidth, h = innerHeight, narrow = w <= 700;
+  renderer.setSize(w, h); cam.aspect = w / h; cam.fov = narrow ? 44 : 28;
+  if (narrow) cam.setViewOffset(w, h, 0, h * .2, w, h); else cam.clearViewOffset();
+  cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+const clock = new THREE.Clock(), G = -9;
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 1 / 30) * +spd.value;
+  anim.update(dt);
+  if (turn.checked) ch.root.rotation.y += dt * .6;
+  // floor scrolls opposite to the facing direction at the gait's ground speed (feet stay planted)
+  const v = anim.speed * dt * SCROLL_PER_UNIT, yaw = ch.root.rotation.y;
+  floorTex.offset.x += Math.sin(yaw) * v; floorTex.offset.y -= Math.cos(yaw) * v; // disc v-axis points to world -z
+  for (const d of drops) if (d.life > 0) { d.life -= dt; d.v.y += G * dt; d.m.position.addScaledVector(d.v, dt); if (d.m.position.y < 0 || d.life <= 0) { d.life = 0; d.m.visible = false; } }
+  for (const d of dust) if (d.life > 0) { d.life -= dt; const k = 1 - d.life / .5; d.m.scale.setScalar(.6 + k * 1.4); d.m.position.y += dt * .12; d.m.material.opacity = .5 * (1 - k); if (d.life <= 0) d.m.visible = false; }
+  ctl.update(); renderer.render(scene, cam);
+});
+</script>
+</body>
+</html>
