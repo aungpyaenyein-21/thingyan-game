@@ -68,7 +68,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=22';
+import { makeChibi, ChibiAnimator, SKINS, HAIRS, HAIRS_DYED, HAIR_GREY, IRIS, TOPS, ACCENTS } from './chibi.js?v=25';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -117,7 +117,7 @@ function emit(type, obj) {
 
 // character + UI state
 const state = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', thanaka: 'round', flower: false, hat: 'none', prop: 'none', shoes: 'sneaker', shoeColor: '#c8553d', accent: '#e0574f', garland: false, age: 'adult', build: 'round', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide' };
-const BOTTOM_COLORS = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#4a5a8a', '#4a5a8a'], shorts: ['#5b7fa8', '#f6ead2'] };
+const BOTTOM_COLORS = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#3f5a8a', '#3f5a8a'], shorts: ['#5b7fa8', '#f6ead2'], skirt: ['#e9a0b4', '#e9a0b4'], overalls: ['#4a6a9a', '#4a6a9a'] };
 let ch, anim;
 function build() {
   const yaw = ch ? ch.root.rotation.y : 0; if (ch) scene.remove(ch.root);
@@ -142,7 +142,7 @@ const loopBtns = group('loops', LOOP_UI, () => anim.loop, v => anim.setLoop(v));
 ONE_UI.forEach(([v, label, key]) => btn('ones', label, key, () => anim.play(v)));
 btn('moods', 'ရေပက်ခံ', 'R', () => { anim.soak(); anim.emote('drop'); });
 for (const [k, label] of [['note', '♪'], ['bang', '!'], ['heart', '❤']]) btn('moods', label, '', () => anim.emote(k));
-group('bottoms', [['longyi', 'ပုဆိုး'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို']], () => state.bottom, v => { state.bottom = v; build(); });
+group('bottoms', [['longyi', 'ပုဆိုး'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို'], ['skirt', 'စကတ်'], ['overalls', 'ဘောင်းဘီသိုင်းကြိုး']], () => state.bottom, v => { state.bottom = v; build(); });
 group('hairs', [['short', 'တိုတို'], ['buzz', 'ရိတ်'], ['spiky', 'ထောင်'], ['bob', 'ဘော့'], ['bun', 'ဆံထုံး'], ['pigtails', 'နှစ်စု'], ['long', 'ဆံမြီး'], ['mohawk', 'မိုဟော့']], () => state.hair, v => { state.hair = v; build(); });
 group('hats', [['none', 'မပါ'], ['band', 'ခေါင်းစည်း'], ['goggles', 'မျက်မှန်'], ['bucket', 'ဦးထုပ်']], () => state.hat, v => { state.hat = v; build(); });
 group('props', [['none', 'လက်ချည်း'], ['gun', 'ရေသေနတ်']], () => state.prop, v => { state.prop = v; build(); });
@@ -150,7 +150,7 @@ btn('props', 'ပန်းကုံး', '', function () { state.garland = !stat
 group('thanaka', [[false, 'မပါ'], ['round', 'ဝိုင်း'], ['leaf', 'ရွက်'], ['square', 'လေးထောင့်'], ['dots', 'အစက်']], () => state.thanaka, v => { state.thanaka = v; build(); });
 group('builds', [['round', 'ဖောင်းဖောင်း'], ['slim', 'သွယ်သွယ်'], ['broad', 'ပခုံးကျယ်']], () => state.build, v => { state.build = v; build(); });
 group('ages', [['adult', 'လူကြီး'], ['kid', 'ကလေး'], ['elder', 'အဖိုးအဖွား']], () => state.age, v => { state.age = v; if (v === 'elder') state.hairColor = HAIR_GREY; build(); });
-group('topstyle', [['tee', 'ရှပ်'], ['tank', 'လက်ပြတ်'], ['long', 'လက်ရှည်'], ['yinphone', 'ရင်ဖုံး'], ['taikpon', 'တိုက်ပုံ']], () => state.topStyle, v => { state.topStyle = v; build(); });
+group('topstyle', [['tee', 'တီရှပ်'], ['stripe', 'အစင်း'], ['tank', 'လက်ပြတ်'], ['long', 'လက်ရှည်'], ['shirt', 'ကြယ်သီးရှပ်'], ['hoodie', 'ဟူဒီ'], ['jacket', 'ဂျာကင်'], ['yinphone', 'ရင်ဖုံး'], ['taikpon', 'တိုက်ပုံ']], () => state.topStyle, v => { state.topStyle = v; build(); });
 const face = (id, key, items) => group(id, items, () => state[key], v => { state[key] = v; build(); });
 face('feyes', 'eyes', [['round', 'မျက်လုံးဝိုင်း'], ['almond', 'မျက်လုံးမောင်း'], ['bead', 'မျက်လုံးသေး'], ['sleepy', 'မျက်လုံးမှေး']]);
 face('fbrows', 'brows', [['arc', 'မျက်ခုံးကွေး'], ['flat', 'မျက်ခုံးဖြောင့်'], ['thin', 'မျက်ခုံးပါး'], ['bold', 'မျက်ခုံးထူ']]);

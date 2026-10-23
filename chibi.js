@@ -149,10 +149,33 @@ function faceTex(o, eye, mouth) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return faceCache[key] = t;
 }
 
-function printTex(color, ink, text, style) { // shirt print, front-centred (lathe seam sits at the back)
+function printTex(color, ink, text, style, bib) { // shirt print, front-centred (lathe seam sits at the back); bib = overalls colour
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d');
   g.fillStyle = color; g.fillRect(0, 0, 512, 128);
-  const trim = lighten(color, .45);
+  const trim = lighten(color, .45), dark = shade(color, .22);
+  if (style === 'stripe') { g.fillStyle = trim; for (let y = 18; y < 128; y += 22) g.fillRect(0, y, 512, 9); } // kids' striped tee
+  if (style === 'shirt') { // button-up: collar points, placket, chest pocket
+    g.fillStyle = trim; g.beginPath(); g.moveTo(226, 10); g.lineTo(254, 14); g.lineTo(240, 34); g.fill(); g.beginPath(); g.moveTo(286, 10); g.lineTo(258, 14); g.lineTo(272, 34); g.fill();
+    g.strokeStyle = dark; g.lineWidth = 3; g.beginPath(); g.moveTo(256, 16); g.lineTo(256, 128); g.stroke();
+    g.fillStyle = trim; for (const by of [44, 66, 88, 110]) { g.beginPath(); g.arc(262, by, 4, 0, 7); g.fill(); }
+    g.strokeStyle = dark; g.lineWidth = 2.5; g.strokeRect(282, 46, 26, 24); return canvasTex(c);
+  }
+  if (style === 'hoodie') { // kangaroo pocket + drawstrings
+    g.fillStyle = dark; g.beginPath(); g.roundRect(214, 84, 84, 36, 10); g.fill();
+    g.strokeStyle = trim; g.lineWidth = 4; for (const x of [246, 266]) { g.beginPath(); g.moveTo(x, 8); g.lineTo(x + (x < 256 ? -3 : 3), 40); g.stroke(); }
+    return canvasTex(c);
+  }
+  if (style === 'jacket') { // worn open: the tee underneath shows down the front, lapels either side
+    g.fillStyle = '#fff6ea'; g.fillRect(232, 0, 48, 128);
+    g.strokeStyle = dark; g.lineWidth = 5; for (const x of [230, 282]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke(); }
+    g.fillStyle = dark; g.beginPath(); g.moveTo(232, 0); g.lineTo(214, 0); g.lineTo(232, 44); g.fill(); g.beginPath(); g.moveTo(280, 0); g.lineTo(298, 0); g.lineTo(280, 44); g.fill();
+    return canvasTex(c);
+  }
+  if (bib) { // overalls: bib over the tummy, straps over the shoulders, two buttons
+    g.fillStyle = bib; g.fillRect(212, 62, 88, 66); g.fillRect(214, 0, 14, 64); g.fillRect(284, 0, 14, 64);
+    g.fillStyle = '#f2c14e'; for (const x of [221, 291]) { g.beginPath(); g.arc(x, 64, 6, 0, 7); g.fill(); }
+    return canvasTex(c);
+  }
   if (style === 'yinphone') { // ရင်ဖုံး: crossover flap from the collar to the side, little buttons, light hem band
     g.strokeStyle = trim; g.lineWidth = 6; g.beginPath(); g.moveTo(246, 16); g.quadraticCurveTo(262, 58, 326, 72); g.stroke();
     g.fillStyle = trim; for (const [bx, by] of [[262, 46], [286, 63], [310, 70]]) { g.beginPath(); g.arc(bx, by, 5, 0, 7); g.fill(); }
@@ -171,7 +194,8 @@ function canvasTex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THR
 
 // ---------- build ----------
 // opts: skin, hair ('short'|'bun'|'long'|'bob'|'pigtails'|'buzz'|'spiky'|'mohawk'), hairColor, iris,
-//       top, topStyle ('tee'|'tank'|'long'), print (text|''), bottom ('longyi'|'htamein'|'pants'|'shorts'), bottomColor [a,b],
+//       top, topStyle ('tee'|'stripe'|'tank'|'long'|'shirt'|'hoodie'|'jacket'|'yinphone'|'taikpon'), print (text|''),
+//       bottom ('longyi'|'htamein'|'pants'|'shorts'|'skirt'|'overalls'), bottomColor [a,b],
 //       shoes ('sneaker'|'slipper'), shoeColor, hat ('none'|'band'|'goggles'|'bucket'), accent, garland, prop ('none'|'gun'),
 //       flower, thanaka (false|'round'|'leaf'|'square'|'dots'), age ('adult'|'kid'|'elder'), build ('round'|'slim'|'broad'), outline,
 //       face: eyes/brows/lips/marks (see faceTex), head ('wide'|'round'|'tall'|'soft'); topStyle also 'yinphone' (ရင်ဖုံး) | 'taikpon' (တိုက်ပုံ)
@@ -194,20 +218,25 @@ export function makeChibi(opts = {}) {
     return mesh;
   };
   const pivot = (parent, x, y, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
-  const skirt = o.bottom === 'longyi' || o.bottom === 'htamein';
-  const legTop = skirt ? o.skin : cloth(o.bottomColor[0]), legLow = o.bottom === 'pants' ? cloth(o.bottomColor[0]) : o.skin;
-  const longSleeve = ['long', 'yinphone', 'taikpon'].includes(o.topStyle);
+  // clothes hang off the body rather than being painted on it: tops drape straight from the chest to an untucked hem,
+  // sleeves and trouser legs are open tubes wider than the limb inside, shorts/skirts flare
+  const longSkirt = o.bottom === 'longyi' || o.bottom === 'htamein', skirt = longSkirt || o.bottom === 'skirt';
+  const pants = o.bottom === 'pants', shortsLike = o.bottom === 'shorts' || o.bottom === 'overalls';
+  const pantsMat = cloth(o.bottomColor[0]); pantsMat.side = THREE.DoubleSide; // open hems are seen from inside too
+  const legTop = skirt || shortsLike ? o.skin : pantsMat, legLow = pants ? pantsMat : o.skin;
+  const longSleeve = ['long', 'hoodie', 'jacket', 'yinphone', 'taikpon'].includes(o.topStyle), shortSleeve = ['tee', 'stripe', 'shirt'].includes(o.topStyle);
   const legK = o.age === 'kid' ? .8 : 1, up = UP * legK, lo = LO * legK, hipH = up + lo + ANKLE; // kids: shorter legs
 
   const hips = pivot(body, 0, hipH);
-  part(new THREE.SphereGeometry(B.hip, 16, 10), skirt ? o.skin : cloth(o.bottomColor[0]), hips, 0, .03).scale.set(1.05, .75, .9);
+  part(new THREE.SphereGeometry(skirt ? B.hip : Math.max(B.hip, .16), 16, 10), skirt ? o.skin : pantsMat, hips, 0, .03).scale.set(1.05, .75, .9);
 
   const legs = [1, -1].map(side => { // +x is the character's left (it faces +z)
     const hip = pivot(hips, side * .085, 0);
-    part(new THREE.CapsuleGeometry(.066, up - .06, 4, 12), legTop, hip, 0, -up / 2);
-    if (o.bottom === 'shorts') part(new THREE.CylinderGeometry(.078, .078, .05, 14), cloth(o.bottomColor[1]), hip, 0, -up + .03, 0);
+    part(new THREE.CapsuleGeometry(pants ? .08 : .066, up - .06, 4, 12), legTop, hip, 0, -up / 2); // trousers: roomy legs
+    if (shortsLike) part(new THREE.CylinderGeometry(.09, .1, up * .8, 16, 1, true), pantsMat, hip, 0, -up * .4 + .02); // wide shorts leg, down to just above the knee
     const knee = pivot(hip, 0, -up);
-    part(new THREE.CapsuleGeometry(.058, lo - .05, 4, 12), legLow, knee, 0, -lo / 2);
+    part(new THREE.CapsuleGeometry(pants ? .07 : .058, lo - .05, 4, 12), legLow, knee, 0, -lo / 2);
+    if (pants) part(new THREE.CylinderGeometry(.07, .08, .05, 14, 1, true), pantsMat, knee, 0, -lo + .035); // hem flares over the shoe
     const foot = pivot(knee, 0, -lo);
     if (o.shoes === 'slipper') { // ညှပ်ဖိနပ်: flat sole, bare foot, thong strap
       part(new THREE.SphereGeometry(.085, 16, 10), o.shoeColor, foot, 0, -.062, .035).scale.set(1, .22, 1.45);
@@ -221,32 +250,44 @@ export function makeChibi(opts = {}) {
   });
 
   let skirtMesh = null, skirtBase = null;
+  const skirtHem = longSkirt ? -(hipH - .085) : -(up + .01); // ankle for longyi / htamein, knee for a skirt
+  const skirtProf = longSkirt ? B[o.bottom] : (r => [[r, .1], [r + .012, .03], [r + .045, -.1], [r + .085]])(B.htamein[0][0]); // A-line
   if (skirt) {
-    const men = o.bottom === 'longyi', hem = -(hipH - .085);
-    const prof = B[o.bottom].map(([r, y = hem]) => new THREE.Vector2(r, y));
+    const men = o.bottom === 'longyi';
+    const prof = skirtProf.map(([r, y = skirtHem]) => new THREE.Vector2(r, y));
     const geo = new THREE.LatheGeometry(prof, 28); geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
-    const tex = stripes(o.bottomColor[0], o.bottomColor[1], men, men ? null : '#f2c14e'); tex.repeat.set(5, 1);
+    const tex = longSkirt ? stripes(o.bottomColor[0], o.bottomColor[1], men, men ? null : '#f2c14e') : stripes(o.bottomColor[0], o.bottomColor[0], false, lighten(o.bottomColor[0], .4)); tex.repeat.set(5, 1);
     const sm = wear(null, tex); sm.side = THREE.DoubleSide; skirtMesh = part(geo, sm, hips);
     skirtBase = Float32Array.from(geo.attributes.position.array);
     if (men) part(new THREE.SphereGeometry(.05, 12, 8), cloth(o.bottomColor[0]), hips, 0, .06, B.longyi[1][0] - .005); // ပုဆိုးခါးပုံစ (front knot)
   }
 
   const spine = pivot(hips, 0, .06);
-  const torsoProf = B.torso.map(([r, y]) => new THREE.Vector2(r, y));
-  const torso = part(new THREE.LatheGeometry(torsoProf, 28), wear(null, printTex(o.top, '#5a3550', o.print, o.topStyle)), spine);
-  torso.rotation.y = Math.PI; torso.scale.set(1, 1, o.age === 'kid' ? .98 : .82); // kids: round tummy
-  if (o.topStyle === 'taikpon') { // jacket hem flares just past the waistband
-    const r = Math.max(B.torso[1][0], skirt ? Math.max(B[o.bottom][1][0], B[o.bottom][2][0]) : B.hip * 1.05) + .008;
-    part(new THREE.CylinderGeometry(r, r + .015, .08, 28, 1, true), cloth(o.top), spine, 0, -.05).scale.z = .82;
+  // top: straight drape from the chest (no painted-on waist) to a hem that hangs over whatever is underneath
+  const rc = Math.max(...B.torso.filter(([, y]) => y > .08).map(([r]) => r));
+  const under = skirt ? Math.max(skirtProf[1][0], skirtProf[2][0]) : shortsLike ? .185 : .17;
+  const hemR = Math.max(rc + .015, under + .015);
+  const torsoProf = [[.001, -.095], [hemR, -.095], [hemR - .006, -.06], [rc * .99, .06], [rc, .14], ...B.torso.filter(([, y]) => y >= .2)].map(([r, y]) => new THREE.Vector2(r, y));
+  const tg = new THREE.LatheGeometry(torsoProf, 32), tp = tg.attributes.position, zTop = o.age === 'kid' ? .98 : .82; // kids: round tummy
+  for (let i = 0; i < tp.count; i++) tp.setZ(i, tp.getZ(i) * THREE.MathUtils.lerp(zTop, 1, THREE.MathUtils.smoothstep(-tp.getY(i), -.06, .06))); // flattened chest, round hem
+  tg.computeVertexNormals();
+  const torso = part(tg, wear(null, printTex(o.top, '#5a3550', o.print, o.topStyle, o.bottom === 'overalls' && o.bottomColor[0])), spine);
+  torso.rotation.y = Math.PI;
+  if (o.topStyle === 'hoodie') { // hood folded down behind the neck
+    part(new THREE.TorusGeometry(.1, .04, 10, 20), cloth(o.top), spine, 0, .285, -.02).rotation.x = Math.PI / 2 - .2;
+    part(new THREE.SphereGeometry(.11, 16, 12), cloth(o.top), spine, 0, .25, -.13).scale.set(1.15, .8, .55);
   }
   const arms = [1, -1].map(side => {
     const sh = pivot(spine, side * B.sh, .225);
-    const tee = o.topStyle === 'tee'; // shoulder cap: only as wide as the sleeve/arm and sunk a little, so it rounds the joint instead of puffing out
-    part(new THREE.SphereGeometry(tee ? .068 : .054, 16, 12), o.topStyle === 'tank' ? o.skin : cloth(o.top), sh, 0, -.025).scale.y = .85;
-    if (tee) part(new THREE.CylinderGeometry(.066, .072, .085, 16), cloth(o.top), sh, 0, -.06); // short sleeve
-    part(new THREE.CapsuleGeometry(.048, ARM_UP - .05, 4, 10), longSleeve ? cloth(o.top) : o.skin, sh, 0, -ARM_UP / 2 - .01);
+    const sleeve = cloth(o.top); sleeve.side = THREE.DoubleSide;
+    // shoulder cap: only as wide as the sleeve/arm and sunk a little, so it rounds the joint instead of puffing out
+    part(new THREE.SphereGeometry(shortSleeve ? .068 : longSleeve ? .064 : .054, 16, 12), o.topStyle === 'tank' ? o.skin : sleeve, sh, 0, -.025).scale.y = .85;
+    if (shortSleeve) part(new THREE.CylinderGeometry(.066, .09, .11, 18, 1, true), sleeve, sh, 0, -.07); // short sleeve, wide open at the end
+    if (longSleeve) part(new THREE.CylinderGeometry(.064, .066, ARM_UP + .01, 16, 1, true), sleeve, sh, 0, -ARM_UP / 2 - .005);
+    part(new THREE.CapsuleGeometry(.048, ARM_UP - .05, 4, 10), longSleeve ? sleeve : o.skin, sh, 0, -ARM_UP / 2 - .01);
     const elbow = pivot(sh, 0, -ARM_UP);
-    part(new THREE.CapsuleGeometry(.046, ARM_LO - .06, 4, 10), longSleeve ? cloth(o.top) : o.skin, elbow, 0, -ARM_LO / 2 + .01);
+    if (longSleeve) part(new THREE.CylinderGeometry(.06, .074, ARM_LO - .015, 16, 1, true), sleeve, elbow, 0, -ARM_LO / 2 + .005); // loose cuff at the wrist
+    part(new THREE.CapsuleGeometry(.046, ARM_LO - .06, 4, 10), longSleeve ? sleeve : o.skin, elbow, 0, -ARM_LO / 2 + .01);
     if (o.topStyle === 'taikpon') part(new THREE.CylinderGeometry(.05, .05, .03, 12), '#fff6ea', elbow, 0, -ARM_LO + .035, 0, false); // white shirt cuff
     const hand = pivot(elbow, 0, -ARM_LO);
     part(new THREE.SphereGeometry(.07, 14, 10), o.skin, hand, 0, -.01); // round mitten fist
@@ -350,7 +391,7 @@ export function makeChibi(opts = {}) {
   root.scale.setScalar(scale);
   const hunch = o.age === 'elder' ? .3 : 0, gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, blob, scale, hunch, gait, legK, hipH, opts: o,
+  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
 }
 
@@ -459,7 +500,7 @@ export class ChibiAnimator {
         p.armLx = 1.05 * s - .35; p.armRx = -1.05 * s - .35; p.armLz = .2; p.armRz = -.2;
         p.elbowL = -1.5 - .3 * Math.max(0, -s); p.elbowR = -1.5 - .3 * Math.max(0, s);
         p.handLz = .3; p.handRz = -.3;
-        if (this.ch.skirtMesh) { p.hold = 1; p.armRx = -.65 + .18 * s; p.armRz = .08; p.elbowR = -.75; } // one hand keeps the longyi hitched, still bobs
+        if (this.ch.longSkirt) { p.hold = 1; p.armRx = -.65 + .18 * s; p.armRz = .08; p.elbowR = -.75; } // one hand keeps the longyi hitched, still bobs
       } else {
         p.kneeL = .75 * swL ** 1.3; p.kneeR = .75 * swR ** 1.3;
         p.footL = -(p.legLx + p.kneeL) * (1 - swL * .6) - .25 * swL; p.footR = -(p.legRx + p.kneeR) * (1 - swR * .6) - .25 * swR;
@@ -568,7 +609,7 @@ export class ChibiAnimator {
     const air = Math.max(0, p.y); c.blob.scale.setScalar(1 - Math.min(.5, air * .8)); c.blob.material.opacity = 1 - Math.min(.6, air);
     // skirt: hem follows the legs, front lifts when hitched
     if (c.skirtMesh) {
-      const pos = c.skirtMesh.geometry.attributes.position, B = c.skirtBase, top = .1, hem = -(c.hipH - .085), L = (UP + LO) * c.legK;
+      const pos = c.skirtMesh.geometry.attributes.position, B = c.skirtBase, top = .1, hem = c.skirtHem, L = (UP + LO) * c.legK;
       const fL = Math.sin(-p.legLx) * L * .9 + Math.sin(-(p.legLx + p.kneeL)) * .05;
       const fR = Math.sin(-p.legRx) * L * .9 + Math.sin(-(p.legRx + p.kneeR)) * .05;
       for (let i = 0; i < pos.count; i++) {

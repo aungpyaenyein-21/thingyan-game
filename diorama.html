@@ -32,7 +32,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=22';
+import { makeChibi, ChibiAnimator, LOOPS, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=25';
 
 // ---------- constants (tune here) ----------
 const PAL = {
@@ -279,7 +279,8 @@ for (let i = 0; i <= 16; i++) {
 
 // ---------- bean characters ----------
 const chars = [];
-const BOTTOMS = { longyi: LONGYI, htamein: [['#a8434a', '#e08a8f'], ['#7a4a9a', '#c79be0'], ['#3f6fa8', '#8fb8e8']], pants: [['#4a5a8a', '#4a5a8a'], ['#5a4a3a', '#5a4a3a']], shorts: [['#5b7fa8', '#f6ead2'], ['#3f7a5a', '#f6ead2']] };
+const BOTTOMS = { longyi: LONGYI, htamein: [['#a8434a', '#e08a8f'], ['#7a4a9a', '#c79be0'], ['#3f6fa8', '#8fb8e8']], pants: [['#3f5a8a', '#3f5a8a'], ['#b59a6a', '#b59a6a'], ['#2e2e38', '#2e2e38']], shorts: [['#5b7fa8', '#f6ead2'], ['#3f7a5a', '#f6ead2'], ['#b59a6a', '#f6ead2']],
+  skirt: [['#4a6a9a', '#4a6a9a'], ['#e9a0b4', '#e9a0b4'], ['#f2d27a', '#f2d27a'], ['#2e2e38', '#2e2e38']], overalls: [['#4a6a9a', '#4a6a9a'], ['#e0574f', '#e0574f']] }; // jeans, khaki, black …
 const groundY = (x, z) => { // road .045, raised sidewalk .14, grass .01
   const ax = Math.abs(x), az = Math.abs(z);
   if (ax < R || az < R) return .045;
@@ -295,17 +296,23 @@ function emitFx(type, obj) {
 // age (kids / elders), body build (from age + gender), hair style + colour (some Thingyan dye jobs), top cut (ရင်ဖုံး / တိုက်ပုံ too),
 // face (eyes, brows, mouth, marks) + head shape, slippers, headgear, water gun, garland, padauk in the hair, thanaka shape.
 const KID_TOPS = ['#ff7f6b', '#8bd17c', '#ff9f43', '#4fd1c5', '#b388ff'], KID_BOTTOMS = [['#ff9f43', '#fff6ea'], ['#4fd1c5', '#fff6ea'], ['#b388ff', '#fff6ea']];
-const TAIKPON = ['#2e3a59', '#3a3030', '#f3ead8'];
+const TAIKPON = ['#2e3a59', '#3a3030', '#f3ead8'], HOODIE = ['#9aa3ad', '#2e3a59', '#8a3a4a', '#3f7a5a'], JACKET = ['#4a6a9a', '#b59a6a', '#2e2e38'];
 function bean({ skin = pick(SKINS), shirt, hair, flower, bottom, longyi, x = 0, z = 0, ry = 0, print, age, hat, prop, build, topStyle, ...rest } = {}) {
   age ??= rnd() < .15 ? 'kid' : rnd() < .1 ? 'elder' : 'adult';
   const fem = ['bun', 'long', 'pigtails', 'bob'].includes(hair) || (!hair && rnd() < .5);
   hair ??= fem ? pick(age === 'kid' ? ['pigtails', 'bob', 'bun'] : ['bun', 'long', 'bob', 'short']) : pick(['short', 'buzz', 'spiky', 'short', 'mohawk']);
-  bottom ??= fem ? pick(['htamein', 'htamein', 'pants', 'shorts']) : pick(['longyi', 'longyi', 'pants', 'shorts']);
-  topStyle ??= age === 'kid' ? pick(['tee', 'tee', 'tank']) : age === 'elder' ? (fem ? 'yinphone' : 'taikpon')
-    : fem ? (rnd() < .3 ? 'yinphone' : pick(['tee', 'tank', 'long'])) : rnd() < .15 ? 'taikpon' : pick(['tee', 'tee', 'tank', 'long']);
-  shirt ??= topStyle === 'taikpon' ? pick(TAIKPON) : age === 'kid' ? pick(KID_TOPS) : pick(SHIRTS);
+  // wardrobe by age: elders always in longyi / htamein, kids in kids' clothes, adults mix Myanmar and everyday wear
+  bottom ??= age === 'elder' ? (fem ? 'htamein' : 'longyi')
+    : age === 'kid' ? pick(fem ? ['shorts', 'skirt', 'overalls', 'htamein'] : ['shorts', 'shorts', 'overalls', 'pants'])
+    : fem ? pick(['htamein', 'htamein', 'pants', 'skirt', 'skirt', 'shorts']) : pick(['longyi', 'longyi', 'longyi', 'pants', 'pants', 'shorts']);
+  topStyle ??= age === 'elder' ? (fem ? 'yinphone' : pick(['taikpon', 'shirt']))
+    : age === 'kid' ? pick(['tee', 'stripe', 'stripe', 'tank', 'hoodie'])
+    : fem ? (rnd() < .25 ? 'yinphone' : pick(['tee', 'tee', 'shirt', 'long', 'hoodie', 'jacket', 'tank']))
+    : rnd() < .12 ? 'taikpon' : pick(['tee', 'tee', 'shirt', 'hoodie', 'jacket', 'tank', 'long']);
+  shirt ??= topStyle === 'taikpon' ? pick(TAIKPON) : age === 'elder' ? pick(['#fff6ea', '#f3ead8', '#dfe8f0']) : age === 'kid' ? pick(KID_TOPS)
+    : topStyle === 'hoodie' ? pick(HOODIE) : topStyle === 'jacket' ? pick(JACKET) : pick(SHIRTS);
   flower ??= fem && age !== 'kid' && rnd() < .45;
-  const bottomColor = bottom === 'longyi' && longyi ? longyi : age === 'kid' && bottom !== 'htamein' && bottom !== 'longyi' ? pick(KID_BOTTOMS) : pick(BOTTOMS[bottom]);
+  const bottomColor = bottom === 'longyi' && longyi ? longyi : age === 'kid' && (bottom === 'shorts' || bottom === 'pants') ? pick(KID_BOTTOMS) : pick(BOTTOMS[bottom]);
   const hairColor = age === 'elder' ? HAIR_GREY : rnd() < (hair === 'mohawk' ? .7 : .2) ? pick(HAIRS_DYED) : pick(HAIRS); // mohawks are mostly dyed
   hat ??= hair === 'mohawk' ? 'none' : age === 'elder' ? pick(['none', 'bucket']) : pick(['none', 'none', 'band', 'goggles', 'bucket']);
   prop ??= age === 'elder' ? 'none' : rnd() < .3 ? 'gun' : 'none';
