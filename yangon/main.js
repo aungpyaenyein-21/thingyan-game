@@ -3,9 +3,10 @@
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=3';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=1';
-import { createHud } from './hud.js?v=1';
-import { openBarber, openClothes, LOOK0 } from './wardrobe.js?v=1';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=2';
+import { createHud, play } from './hud.js?v=2';
+import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
+import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 19 }, view: 16 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;
@@ -13,23 +14,11 @@ const L = buildSet(W);
 const hud = createHud(W);
 const v = new THREE.Vector3();
 
-// ---------- save (STORY.md §၈: progress is the player's own) ----------
-// step: arrive → quests (eight favours, any order) → build → evening → done
-const KEY = 'thingyan.day1.v2';
-const ERRANDS = ['cloth', 'padauk', 'cat', 'tea', 'sign', 'fronds', 'lights', 'drum'];
-const fresh = () => ({ step: 'arrive', q: Object.fromEntries(ERRANDS.map(k => [k, 'ask'])), parts: [], gifts: 3, served: [], water: 0, signName: 'ကလေးမဏ္ဍပ်', look: { ...LOOK0 }, intro: false });
-let S = fresh();
-try {
-  if (new URLSearchParams(location.search).has('new')) localStorage.removeItem(KEY);
-  const old = JSON.parse(localStorage.getItem(KEY) || '{}');
-  S = { ...fresh(), ...old }; S.q = { ...fresh().q, ...old.q }; S.look = { ...LOOK0, ...old.look };
-} catch {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+// ---------- save (shared with downtown: save.js) ----------
+const S = loadSave(); S.at = 'ward';
+const save = () => store(S);
 
 // ---------- the stage parts: one per favour; ghosts until found ----------
-const ITEMS = { fronds: 'အုန်းလက်နဲ့ ဝါး', cloth: 'ပိတ်စ', padauk: 'ပိတောက်ခက်', cat: 'အသံချဲ့စက်', tea: 'ရေပိုက်', sign: 'ဆိုင်းဘုတ်', lights: 'မီးကြိုး', drum: 'ရေစည်' };
-const WHERE = { fronds: '③ ဈေး', cloth: '① အန်တီစိန်', padauk: '① အဘွား', cat: '① ဦးဘတင်', tea: '② လက်ဖက်ရည်ဆိုင်', sign: '② ကွမ်းယာဆိုင်', lights: '③ ဈေး', drum: '④ ဘုန်းကြီးကျောင်း' };
-const NEED = ERRANDS.length;
 const GHOST = new THREE.MeshBasicMaterial({ color: '#fff6ea', transparent: true, opacity: .3, depthWrite: false });
 const parts = {}, SX = L.STAGE.x, SZ = L.STAGE.z;
 const P = (k, m) => { W.keep(m); m.userData.real = m.material; (parts[k] ??= []).push(m); return m; };
@@ -55,6 +44,8 @@ let banner;
   for (let i = 0; i <= 12; i++) P('lights', mesh(new THREE.SphereGeometry(.06, 8, 6), new THREE.MeshBasicMaterial({ color: i % 2 ? new THREE.Color(2.8, 2.3, 1.2) : new THREE.Color(2.8, 1.5, 1.4) }), SX - 1.6 + i * .27, 2.98, SZ + 1.0, { cast: false }));
   for (const px of [-1.25, 1.25]) P('cat', box(.36, .55, .32, '#26222b', SX + px, .47, SZ - .6));
   P('drum', cyl(.32, .32, .8, '#3f8fd0', SX + 2.1, .02, SZ - .6, 14)); P('drum', cyl(.33, .33, .05, '#2f73c4', SX + 2.1, .5, SZ - .6, 14));
+  // nozzle (from the big downtown stage): a brass sprinkler up on the ridge
+  P('nozzle', cyl(.05, .05, .5, '#c99a4a', SX, 3.45, SZ + .1, 8)); P('nozzle', mesh(new THREE.SphereGeometry(.12, 10, 8), new THREE.MeshStandardMaterial({ color: '#d9a84a', metalness: .9, roughness: .35 }), SX, 4.0, SZ + .1));
   P('tea', mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[SX + 2.1, .85, SZ - .6], [SX + 1.9, 1.0, SZ], [SX + 1.5, .6, SZ + .4], [SX + 1.2, .55, SZ + .95]].map(p => new THREE.Vector3(...p))), 16, .05, 6), '#4fb3d9'));
 }
 let stageSolid = false;
@@ -109,12 +100,8 @@ const near = (c, r = 1.8) => c.g.position.distanceTo(W.player.g.position) < r;
 const face = (c, t = W.player) => { c.g.rotation.y = Math.atan2(t.g.position.x - c.g.position.x, t.g.position.z - c.g.position.z); };
 const npc = (o, y) => { const c = bean({ prop: 'none', print: '', ...o }); if (y !== undefined) c.g.position.y = y; return c; };
 // the player, dressed from the save (barber / clothes shop change S.look)
-const BODY = { skin: SKINS[0], age: 'adult', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', print: 'သင်္ကြန်', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide', flower: false, build: 'broad' };
-W.setPlayer(bean({ ...BODY, ...S.look, x: 4.6, z: 6.25, ry: Math.PI }));
-function dress() {
-  const old = W.player, p = bean({ ...BODY, ...S.look, x: old.g.position.x, z: old.g.position.z, ry: old.g.rotation.y });
-  W.removeChar(old); W.setPlayer(p); p.anim.play('wave'); save();
-}
+W.setPlayer(makePlayer(W, S, 4.6, 6.25, Math.PI));
+const dress = () => { redress(W, S); save(); };
 const auntie = npc({ hair: 'bun', flower: true, age: 'adult', skin: SKINS[1], shirt: '#e9a0b4', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#7a4a9a', '#c79be0'], hat: 'none', build: 'round' });
 auntie.g.position.copy(AB.at(-.3, .08, -.08)); auntie.dry = true;
 const grandma = npc({ age: 'elder', hair: 'bun', flower: true, shirt: '#fff6ea', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#3f6fa8', '#8fb8e8'], hat: 'none', x: 6.7, z: -4.45 }, .32);
@@ -178,7 +165,7 @@ shweWa.hit = () => { shweWa.anim.soak(); shweWa.anim.emote('bang'); };
 function catHome() { shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE.z + .6); shweWa.target = null; shweWa.anim.setLoop('sit'); if (!CAT.hop) shweWa.g.position.set(UNCLE.x + .6, ground(UNCLE.x + .6, UNCLE.z + .6), UNCLE.z + .6); }
 
 // ---------- the living street: vendor, kids, bus, cat, chinlone, pilgrims, the barber pole ----------
-const party = () => S.step === 'evening' || S.step === 'done';
+const party = () => partyOf(S);
 const CH = { t: 0, from: 0, to: 1 };
 W.tick((dt, T) => {
   const player = W.player;
@@ -243,6 +230,7 @@ const QGOALS = {
   fronds: { ask: 'ဈေးထဲက အုန်းလက်ဆိုင် ကိုအောင်ကို မေး', mohinga: 'မုန့်ဟင်းခါးဆိုင်မှာ တစ်ပွဲ ဝယ်', bring: 'မုန့်ဟင်းခါးကို ကိုအောင်ဆီ ပို့' },
   lights: { ask: 'ဈေးထဲက မီးကြိုးဆိုင် ကိုဇော်ကို မေး', cord: 'လမ်းမက ဖုန်းဆိုင်မှာ ကြိုးခွေ ယူ', bring: 'ကြိုးခွေကို ကိုဇော်ဆီ ပို့' },
   drum: { ask: 'ဘုန်းကြီးကျောင်းက ကိုရင်လေးတွေကို မေး', carry: 'ရေတွင်းကနေ ကန်ထဲ ရေ ၃ ပုံး သယ်', abbot: 'ဆရာတော်ဆီ သွား' },
+  nozzle: { soak: '⑤ မြို့လယ် မဏ္ဍပ် ၃ ခုမှာ ရေပက်ခံ', back: '⑤ ရေပက်အဖွဲ့ ကိုကြီးဆီ ပြန်သွား' },
 };
 const GOALS = { arrive: 'ကွက်လပ်မှာ ဆော့နေတဲ့ ကလေးတွေဆီ သွားပါ (① အိမ်နဲ့ လမ်းကြား)', build: 'ပစ္စည်း ပြည့်ပြီ! ကွက်လပ်မှာ ကလေးတွေနဲ့ မဏ္ဍပ်လေး ဆောက်ပါ', evening: 'ညကား ထွက်ခါနီးပြီ — ဘတ်စ်ကားမှတ်တိုင်ကနေ မန္တလေး ထွက်ပါ', done: 'ရက် ၁ ပြီးပြီ။ ရပ်ကွက်ထဲ ဆက်လည်လို့ရတယ်' };
 function hud2() {
@@ -269,10 +257,11 @@ function hud2() {
 }
 $('goal').addEventListener('click', () => $('goal').classList.toggle('open'));
 function gotPart(q) {
-  S.q[q] = 'done'; S.parts.push(q); hud2(); hud.toast(`+ ${ITEMS[q]}  (${MM(S.parts.length)}/${MM(NEED)})`);
+  const all = finish(S, q); hud2(); hud.toast(`+ ${ITEMS[q]}  (${MM(S.parts.length)}/${MM(NEED)})`);
   kids.forEach(k => { k.anim.play('jump'); k.anim.emote('heart'); });
-  if (S.parts.length >= NEED) setTimeout(() => after(() => { S.step = 'build'; hud2(); hud.say([['', 'ပစ္စည်း ရှစ်မျိုးလုံး စုံပြီ။ ကလေးတွေဆီ ပြန်သွားပြီး မဏ္ဍပ်လေး ဆောက်ကြစို့!']]); }), 1200);
+  if (all) setTimeout(() => after(() => hud.say([['', 'ပစ္စည်း ကိုးမျိုးလုံး စုံပြီ။ ကလေးတွေဆီ ပြန်သွားပြီး မဏ္ဍပ်လေး ဆောက်ကြစို့!']])), 1200);
 }
+if (S.step === 'build' && S.at === 'ward' && !S.toldBuild) { S.toldBuild = true; setTimeout(() => after(() => hud.say([['', 'ပစ္စည်း ကိုးမျိုးလုံး စုံပြီ။ ကလေးတွေဆီ ပြန်သွားပြီး မဏ္ဍပ်လေး ဆောက်ကြစို့!']])), 2500); } // came back from downtown with the last part
 const after = f => hud.busy() ? setTimeout(() => after(f), 400) : f();
 const ME = 'ကျွန်တော်';
 const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); };
@@ -286,7 +275,7 @@ function talkKids() {
     ['ချိုချို', 'သမီးတို့ ရေကစားချင်တယ်…'],
     [ME, 'ရော့… ဦးလေး ဝယ်လာတဲ့ မုန့်လေးတွေ။ ပြီးတော့ — ဦးလေးတို့ ကိုယ်ပိုင် မဏ္ဍပ်လေး ဆောက်ကြမယ်! ဒီကွက်လပ်မှာ၊ အုန်းလက်မိုးနဲ့။'],
     ['မေသူ', 'ဟေး!! ဒါဆို အုန်းလက်၊ ဝါး၊ ပိတ်စ၊ ရေပိုက်၊ ရေစည်၊ ဆိုင်းဘုတ်၊ မီးကြိုး၊ အသံချဲ့စက် … အများကြီး လိုမယ်နော်။'],
-    ['ဖိုးကျော်', 'ရပ်ကွက်တစ်ပတ် လှည့်ရှာရမှာ! အိမ်နားမှာ၊ လမ်းမမှာ၊ ဈေးထဲမှာ၊ ဘုန်းကြီးကျောင်းမှာ။'],
+    ['ဖိုးကျော်', 'ရပ်ကွက်တစ်ပတ် လှည့်ရှာရမှာ! အိမ်နားမှာ၊ လမ်းမမှာ၊ ဈေးထဲမှာ၊ ဘုန်းကြီးကျောင်းမှာ… မြို့လယ် မဏ္ဍပ်ကြီးမှာတောင်!'],
     ['ချိုချို', 'မသိရင် သမီးတို့ကို လာမေးနော်။ ဘယ်သူ့ဆီ သွားရမလဲ ပြောပြမယ်။'],
   ], () => { S.step = 'quests'; S.gifts--; hud2(); kids.forEach(k => k.anim.emote('heart')); hud.toast('ကလေးမဏ္ဍပ် — ပစ္စည်း ၈ မျိုး ရှာမယ်'); });
   if (party()) return talk([
@@ -297,7 +286,8 @@ function talkKids() {
   if (S.step === 'build') return talk([['မေသူ', 'ပစ္စည်း စုံပြီ! ဆောက်ကြစို့ ဦးလေး!']]);
   const LEAD = { cloth: 'အန်တီစိန်ဆီမှာ ပိတ်စ အဟောင်းတွေ ရှိတယ်။ ကြိုးဆွဲပုံး ဝရန်တာ!', padauk: 'ဘွားဘွားရဲ့ ပိတောက်ပင် ပွင့်နေပြီ!', cat: 'ဦးဘတင်ဆီမှာ အသံချဲ့စက် ရှိတယ်… ကြောင် ပျောက်နေလို့ စိတ်ညစ်နေတယ်။',
     tea: 'လမ်းမက လက်ဖက်ရည်ဆိုင်မှာ ရေပိုက်ခွေ အပို ရှိတယ်။ ဆရာ အလုပ်များနေတယ်။', sign: 'ကွမ်းယာဆိုင် အဘက စာလှလှ ရေးတတ်တယ်!', fronds: 'ဈေးထဲမှာ အုန်းလက်နဲ့ ဝါး ရောင်းတဲ့ ကိုအောင် ရှိတယ်။',
-    lights: 'ဈေးထဲက ကိုဇော်ဆီမှာ မီးကြိုး ရှိတယ်။', drum: 'ဘုန်းကြီးကျောင်းမှာ ရေစည် အဟောင်းတွေ ရှိတယ်တဲ့။ ကိုရင်လေးတွေကို မေးကြည့်။' };
+    lights: 'ဈေးထဲက ကိုဇော်ဆီမှာ မီးကြိုး ရှိတယ်။', drum: 'ဘုန်းကြီးကျောင်းမှာ ရေစည် အဟောင်းတွေ ရှိတယ်တဲ့။ ကိုရင်လေးတွေကို မေးကြည့်။',
+    nozzle: 'ဆူးလေက မဏ္ဍပ်ကြီးမှာ ရေပန်းခေါင်း ရှိတယ်! သမီးတို့ မသွားရဘူး… ဦးလေး ဘတ်စ်ကားနဲ့ သွားယူပေး!' };
   const todo = ERRANDS.filter(k => S.q[k] !== 'done'), names = ['ဖိုးကျော်', 'ချိုချို', 'မေသူ'];
   talk([['မေသူ', `${MM(S.parts.length)} မျိုး ရပြီ! နောက်ထပ် ${MM(todo.length)} မျိုး ရှာရဦးမယ်။`], ...todo.slice(0, 3).map((k, i) => [names[i], LEAD[k]])]);
 }
@@ -471,25 +461,27 @@ async function build() {
   hud.cinematic(false);
   talk([['', 'ညနေစောင်း။ အုန်းလက်မဏ္ဍပ်လေးမှာ သင်္ကြန်သီချင်း ထွက်လာတယ်။'], ['မေသူ', 'ဦးလေး! လာ! ရေကစားမယ်!']]);
 }
-W.tick((dt, T) => { // the hose on the finished mandat sprays the lane in pulses
-  if (!party() || !S.parts.includes('tea') || Math.sin(T * 1.1) < -.2) return;
-  for (let k = 0; k < 2; k++) W.spawn(v.set(SX + 1.2, .6, SZ + 1.0), new THREE.Vector3((rnd() - .5) * .8, 3.2 + rnd(), 4.5 + rnd()));
+W.tick((dt, T) => { // the hose on the finished mandat sprays the lane in pulses; the downtown sprinkler fans out from the ridge
+  if (!party()) return;
+  if (S.parts.includes('tea') && Math.sin(T * 1.1) > -.2) for (let k = 0; k < 2; k++) W.spawn(v.set(SX + 1.2, .6, SZ + 1.0), new THREE.Vector3((rnd() - .5) * .8, 3.2 + rnd(), 4.5 + rnd()));
+  if (S.parts.includes('nozzle')) { const a = T * 2.2 + rnd() * .4; W.spawn(v.set(SX, 4.05, SZ + .1), new THREE.Vector3(Math.sin(a) * 2.2, 2.4, Math.cos(a) * 2.2 + .6)); }
 });
 function openBus() {
   const night = party();
   hud.menu({ title: '🚌 ဘယ်ကို သွားမလဲ', close: 'မသွားသေးဘူး', items: [
     ...(night ? [{ label: '🌙 မန္တလေး · ညကားဂိတ်', note: 'ရက် ၂', cls: 'go', on: () => { leave(); } }] : []),
-    { label: '⑤ မြို့လယ် · ဆူးလေ မဏ္ဍပ်တန်း', note: 'မကြာခင်', disabled: true },
+    { label: '⑤ မြို့လယ် · ဆူးလေ မဏ္ဍပ်တန်း', note: S.step === 'arrive' ? 'ကလေးတွေကို အရင် တွေ့' : 'ဘတ်စ်ကား ၃၆', cls: 'go', disabled: S.step === 'arrive', on: () => { ride(); } },
     { label: '①–④ ရပ်ကွက်ထဲ', note: 'လမ်းလျှောက်ပဲ သွားလို့ရတယ်', disabled: true },
   ] });
 }
+async function ride() { hud.cinematic(true); hud.area('🚌 ဆူးလေ~ ဆူးလေ~'); await hud.fade(true, 900); travel(S, 'downtown'); }
 async function leave() {
   hud.cinematic(true); await hud.fade(true, 1200);
   S.step = 'done'; hud2();
   $('epart').textContent = `${MM(S.parts.length)}/${MM(NEED)}`; $('ename').textContent = S.signName; $('end').hidden = false;
 }
 $('estay').addEventListener('click', async e => { e.stopPropagation(); $('end').hidden = true; await hud.fade(false); hud.cinematic(false); });
-$('eagain').addEventListener('click', e => { e.stopPropagation(); try { localStorage.removeItem(KEY); } catch {} location.reload(); });
+$('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); location.reload(); });
 
 // ---------- what you can do, where ----------
 // goal: true when the current goal points here, so it beats a nearer bystander for the E prompt
@@ -521,8 +513,6 @@ const SPOTS = [
   { at: () => L.BELL, r: 1.4, label: () => 'ခေါင်းလောင်း ထိုး', goal: () => false, run: () => { W.player.anim.play('wave'); hud.toast('ဒေါင်… ဒေါင်… ဒေါင်… သာဓု'); } },
   { at: () => L.STOP, r: 1.9, label: () => party() ? 'ညကား သွားစီး' : 'ဘတ်စ်ကား စီး', goal: () => S.step === 'evening', run: openBus },
 ];
-let here = null;
-W.onAction = () => { if (hud.action()) return true; if (here) { here.run(); return true; } return false; };
 
 // bucket + cat + mandat as the save left them
 const atBottom = { money: 'money', buy: null, return: null, cloth: 'cloth' };
@@ -550,29 +540,14 @@ function goalsAt() {
   add({ ask: L.FRONDS, mohinga: L.MOHINGA, bring: L.FRONDS }[q.fronds]);
   add({ ask: L.LIGHTS, cord: phoneGirl.g.position, bring: L.LIGHTS }[q.lights]);
   add({ ask: novices[0].g.position, carry: S.carrying ? L.POND : L.WELL, abbot: L.MONASTERY }[q.drum]);
+  if (q.nozzle !== 'done') add(L.STOP); // ⑤ is a bus ride away
   return out;
 }
-const markers = Array.from({ length: 12 }, () => { const m = W.keep(mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false })); m.rotation.x = Math.PI; return m; });
 hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BOUNDS.x1, z0: 6.6, z1: 9 }, { x0: 11.8, x1: 14.2, z0: 9.8, z1: BOUNDS.z1 }], BOUNDS);
-const PROMPT = $('prompt'), PTEXT = $('ptext'), SPLASH = $('splash'), PP = new THREE.Vector3(); let lastUI = '', lastArea = null;
-
-W.tick((dt, T) => {
-  here = null; let best = 1e9, label = null;
-  if (!W.frozen) {
-    const pp = PP.copy(W.player.g.position).setY(0);
-    for (const s of SPOTS) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d >= 0) continue; const score = d - (s.goal() ? 10 : 0); if (score < best) { best = score; here = s; label = l; } }
-  }
-  const busy = hud.busy(), ui = `${label}|${busy}`;
-  if (ui !== lastUI) { lastUI = ui; PROMPT.hidden = !label; if (label) PTEXT.textContent = label; SPLASH.classList.toggle('act', !!label || busy); SPLASH.textContent = label || busy ? 'လုပ်' : 'ရေပက်'; }
-  const goals = goalsAt();
-  markers.forEach((m, i) => { const g = goals[i]; m.visible = !!g && !busy; if (g) { m.position.set(g.x, (g.y || 0) + 2.2 + Math.sin(T * 3 + i) * .12, g.z); m.rotation.y = T * 1.5; } });
-  hud.map(W.player.g.position, goals, T, dt);
-  const a = areaAt(W.player.g.position.x, W.player.g.position.z);
-  if (a && a.name !== lastArea) { if (lastArea) hud.area(a.name); lastArea = a.name; }
-});
+const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, S: () => S, SPOTS, vendor, shweWa, L, hud, here: () => here?.label(), talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ ပိတောက်နံ့ ရနေတုန်း…'],

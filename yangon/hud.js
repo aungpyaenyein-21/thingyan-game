@@ -99,4 +99,28 @@ export function createHud(W) {
     map: (p, goals, T, dt) => { if ((mapT -= dt) <= 0 && mapBase) { mapT = .1; drawMap(p, goals, T); } },
     talking: () => !!talking, menuOpen: () => !!menuOpen, mini: () => mini, busy: () => !!(talking || menuOpen || mini || scene) };
 }
+// play(): the "what can I do here" loop both maps share. spots: [{ at() → Vector3, r, label() → text | null, goal() → bool, run() }];
+// a spot your goal points at beats a nearer bystander for the E prompt. goals() → positions for the gold arrows + minimap dots.
+export function play(W, hud, { spots, goals, areaAt }) {
+  const { THREE } = W, PP = new THREE.Vector3();
+  const markers = Array.from({ length: 12 }, () => { const m = W.keep(W.mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false })); m.rotation.x = Math.PI; return m; });
+  const PROMPT = $('prompt'), PTEXT = $('ptext'), SPLASH = $('splash');
+  let here = null, lastUI = '', lastArea = null;
+  W.onAction = () => { if (hud.action()) return true; if (here) { here.run(); return true; } return false; };
+  W.tick((dt, T) => {
+    here = null; let best = 1e9, label = null;
+    if (!W.frozen) {
+      const pp = PP.copy(W.player.g.position).setY(0);
+      for (const s of spots) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d >= 0) continue; const score = d - (s.goal() ? 10 : 0); if (score < best) { best = score; here = s; label = l; } }
+    }
+    const busy = hud.busy(), ui = `${label}|${busy}`;
+    if (ui !== lastUI) { lastUI = ui; PROMPT.hidden = !label; if (label) PTEXT.textContent = label; SPLASH.classList.toggle('act', !!label || busy); SPLASH.textContent = label || busy ? 'လုပ်' : 'ရေပက်'; }
+    const g = goals();
+    markers.forEach((m, i) => { const p = g[i]; m.visible = !!p && !busy; if (p) { m.position.set(p.x, (p.y || 0) + 2.2 + Math.sin(T * 3 + i) * .12, p.z); m.rotation.y = T * 1.5; } });
+    hud.map(W.player.g.position, g, T, dt);
+    const a = areaAt(W.player.g.position.x, W.player.g.position.z);
+    if (a && a.name !== lastArea) { if (lastArea) hud.area(a.name); lastArea = a.name; }
+  });
+  return { here: () => here?.label() };
+}
 export const mm = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);

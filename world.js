@@ -241,7 +241,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   }
 
   // ---------- particles: water + falling petals ----------
-  const NW = 700, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NW);
+  const NW = 1400, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NW);
   water.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(water);
   const drops = Array.from({ length: NW }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0 }));
   let di = 0;
@@ -346,7 +346,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
     // npcs in W.idlers do a little something now and then; zone code drives everyone else
     for (const c of W.idlers) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { const kid = c.ch.opts.age === 'kid'; c.anim.play(pick(kid ? ['jump', 'jump', 'wave'] : ['wave', 'jump', 'wave'])); c.idleT = kid ? 1.5 + rnd() * 2 : 5 + rnd() * 8; } }
-    const near = c => c === player || Math.abs(c.g.position.x - camTarget.x) + Math.abs(c.g.position.z - camTarget.z) < LOD; // far off-screen: skip the animation work
+    const near = c => { if (c === player) return true; const p = c.g.parent === scene ? c.g.position : c.g.getWorldPosition(v3); return Math.abs(p.x - camTarget.x) + Math.abs(p.z - camTarget.z) < LOD; }; // far off-screen: skip the animation work
     for (const c of pets) if (near(c)) updatePet(c, dt);
     for (const f of ticks) f(dt, T);
     for (const c of chars) { c.cool -= dt; if (near(c)) c.anim.update(dt); }
