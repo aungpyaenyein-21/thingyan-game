@@ -627,7 +627,8 @@ export class ChibiAnimator {
     Object.assign(p, { hold: 0, armRx: -1.5 * up + p.armRx * (1 - up), armRz: -.05 * up + p.armRz * (1 - up), elbowR: -.08 * up + p.elbowR * (1 - up),
       armLx: -1.2 * up + p.armLx * (1 - up), armLz: -.45 * up + p.armLz * (1 - up), elbowL: -.65 * up + p.elbowL * (1 - up),
       spineRy: -.12 * up, headRy: -.08 * up, expr: 'happy', mouth: up > .5 ? 'open' : 'smile' });
-    const n = Math.floor((Math.min(t, .7) - .14) * 45); while (this.sq < n) { this.sq++; this.emit('squirt', this.ch.gun); }
+    const n = Math.floor((Math.min(t, .7) - .14) * 45); if (this.sq === 0 && n > 0) this.emit('squirtStart', this.ch.gun);
+    while (this.sq < n) { this.sq++; this.emit('squirt', this.ch.gun); }
     return p;
   }
   _kick(p, t) { // chinlone: inside-of-the-foot kick, the leg swings up and out, arms out for balance, a little hop

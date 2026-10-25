@@ -160,7 +160,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   function emitFx(type, obj, root) { // root: whoever is splashing, so kids can splash too, not just the player
     const w = obj.getWorldPosition(new THREE.Vector3());
     const f = new THREE.Vector3(Math.sin(root.rotation.y), 0, Math.cos(root.rotation.y)), k = root.scale.x;
-    if (type === 'splash') splash(w.addScaledVector(f, .2 * k).setY(w.y + .1), f, 64, root); // a bucket: a lot of water, it doesn't go far
+    if (type === 'splash') { splash(w.addScaledVector(f, .2 * k).setY(w.y + .1), f, 64, root); W.onFx?.('splash', w); } // a bucket: a lot of water, it doesn't go far
+    if (type === 'squirtStart') W.onFx?.('squirt', w);
     if (type === 'squirt') { // a water gun: a thin, fast stream that carries
       w.addScaledVector(f, .22 * k); const v = f.clone().multiplyScalar(8 + rnd() * .9); v.x += (rnd() - .5) * .25; v.z += (rnd() - .5) * .25; v.y = .9 + rnd() * .35;
       spawn(w, v, { own: root, s: .6 });
@@ -414,7 +415,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
         if (c.g === d.own || Math.abs(d.p.x - c.wp.x) > c.hr || Math.abs(d.p.z - c.wp.z) > c.hr || d.p.y > c.wp.y + c.hh || d.p.y < c.wp.y) continue;
         dead = true; burst(d);
         if (c.cool <= 0) {
-          c.cool = 2.5;
+          c.cool = 2.5; W.onFx?.('hit', d.p);
           if (c.hit) c.hit(d);
           else {
             c.anim.soak(.6); // splashed! soaked (>_<), then shake it off, jump or cheer

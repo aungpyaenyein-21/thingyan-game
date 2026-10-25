@@ -45,7 +45,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     const sx = Math.sin(v.g.rotation.y) * (v.side || 0), sz = Math.cos(v.g.rotation.y) * (v.side || 0); // a sidecar sweeps its own strip
     const what = blockedAhead(v, p.x, p.z, dx / d, dz / d, 1.4, .15) || (v.side ? blockedAhead(v, p.x + sx, p.z + sz, dx / d, dz / d, 1.2, .2) : null);
     v.blockT = what ? (v.blockT || 0) + dt : 0; v.moving = !what || v.blockT > (v.giveUp ?? 1e9);
-    if (!v.moving) { if (v.bell && (what === 'you' || what === 'person') && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); } return; } // stop for whoever's in the way (and ring the bell)
+    if (!v.moving) { if (v.bell && (what === 'you' || what === 'person') && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); W.onFx?.('bike', v.g.position); } return; } // stop for whoever's in the way (and ring the bell)
     let a = Math.atan2(dx, dz) - Math.PI / 2 - v.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); v.g.rotation.y += a * Math.min(1, dt * 5);
     const s = Math.min(d, v.speed * dt); p.x += dx / d * s; p.z += dz / d * s; v.roll?.(s);
   }
@@ -170,7 +170,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       if (!v.on) continue;
       const free = clearAhead(v.g, v.dir, v.lane, 1);
       v.speed = free ? Math.min(v.max, v.speed + dt * 2.5) : Math.max(0, v.speed - dt * 9);
-      if (!free && v.speed < .3 && (v.honkT -= dt) < 0) { v.honkT = 4; const pp = W.player.g.position; if (Math.abs(pp.z - v.lane) < .8) say(v.who, 'ပီ ပီ!', 1.2, 1.9); }
+      if (!free && v.speed < .3 && (v.honkT -= dt) < 0) { v.honkT = 4; const pp = W.player.g.position; if (Math.abs(pp.z - v.lane) < .8) { say(v.who, 'ပီ ပီ!', 1.2, 1.9); W.onFx?.('horn', v.g.position); } }
       v.g.position.x += v.dir * v.speed * dt;
       if (v.g.position.x > BOUNDS.x1 + 4 || v.g.position.x < BOUNDS.x0 - 4) { v.on = false; v.g.visible = false; }
     }
@@ -302,7 +302,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (let up = true; ; up = !up) {
       const z0 = up ? 10.4 : 25.2, z1 = up ? 25.2 : 10.4;
       for (let z = z0; up ? z < z1 : z > z1; z += up ? 3.7 : -3.7) {
-        await walk(lolly, [[12.9, z + (up ? 3.7 : -3.7)]], 'push'); if (rnd() < .6) { say(lolly, 'ဒင် ဒင်~ ရေခဲချောင်း~', 2.2); await wait(2.6); }
+        await walk(lolly, [[12.9, z + (up ? 3.7 : -3.7)]], 'push'); if (rnd() < .6) { say(lolly, 'ဒင် ဒင်~ ရေခဲချောင်း~', 2.2); W.onFx?.('icebell', lolly.g.position); await wait(2.6); }
       }
     }
   }

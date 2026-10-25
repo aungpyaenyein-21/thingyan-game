@@ -9,6 +9,7 @@ import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2'
 import { buildRooms } from './rooms.js?v=1';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=1';
+import { createSound } from '../sound.js?v=1';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 19 }, view: 16 });
@@ -16,6 +17,7 @@ const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rn
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's — walk in from the street
 const hud = createHud(W);
+const sound = createSound(W); W.onFx = (n, p) => sound.fx(n, p); // ambience + effects, no music yet
 const v = new THREE.Vector3();
 
 // ---------- save (shared with downtown: save.js) ----------
@@ -207,6 +209,12 @@ W.tick((dt, T) => {
   const lit = THREE.MathUtils.clamp((W.dusk() - .7) / .3, 0, 1) * (.5 + .5 * W.night());
   if (Math.abs(lit - lampK) > .005) { lampK = lit; L.lamp.bulb.color.setRGB(.85 + 2.0 * lit, .82 + 1.5 * lit, .77 + .6 * lit); L.lamp.glow.opacity = .5 * lit; }
   const shut = closed(); if (shut !== wasClosed) { wasClosed = shut; for (const n of [vendor, frondMan, mohingaLady, lightsMan, betelMan, phoneGirl]) n.g.visible = !shut; call.visible = false; for (const sh of L.shutters) sh.visible = shut; }
+  { // what you hear: the street, the market, people near you, water, the kyaung — or the inside of a shop
+    let crowd = 0; for (const ch of W.chars) if (ch.on && ch !== player && ch.g.parent === scene && Math.abs(ch.g.position.x - p.x) + Math.abs(ch.g.position.z - p.z) < 7) crowd++;
+    const mk = p.x < 11.8 && p.z > 9.8 ? 1 : THREE.MathUtils.clamp(1 - Math.max(p.x - 11.8, 9.8 - p.z) / 6, 0, 1);
+    sound.env({ phase: phase(), night: W.night(), inside, street: THREE.MathUtils.clamp(1 - Math.abs(p.z - 7.8) / 8, 0, 1), market: closed() ? 0 : mk, crowd: Math.min(1, crowd / 10),
+      water: THREE.MathUtils.clamp(1 - p.distanceTo(KIDS_AT) / 9, 0, 1) * (party() ? 1.5 : 1), kyaung: THREE.MathUtils.clamp(1 - p.distanceTo(L.MONASTERY) / 14, 0, 1) });
+  }
   for (const s of L.spin) s.rotation.y += dt * 2;
   for (const f of TR.spin) f.rotation.z += dt * 9; // the tea shop's wall fan
 });
@@ -571,7 +579,7 @@ const SPOTS = [
   { at: () => L.WELL, r: 1.4, label: () => S.q.drum === 'carry' && !S.carrying ? 'ရေတွင်းက ရေခပ်' : null, goal: () => true, run: useWell },
   { at: () => L.POND, r: 1.6, label: () => S.q.drum === 'carry' && S.carrying ? 'ကန်ထဲ ရေလောင်း' : null, goal: () => true, run: usePond },
   { at: () => L.MONASTERY, r: 1.8, label: () => 'ဆရာတော်ကို ဖူးမြော်', goal: () => S.q.drum === 'abbot', run: talkAbbot },
-  { at: () => L.BELL, r: 1.4, label: () => 'ခေါင်းလောင်း ထိုး', goal: () => false, run: () => { W.player.anim.play('wave'); hud.toast('ဒေါင်… ဒေါင်… ဒေါင်… သာဓု'); } },
+  { at: () => L.BELL, r: 1.4, label: () => 'ခေါင်းလောင်း ထိုး', goal: () => false, run: () => { W.player.anim.play('wave'); sound.fx('bell', L.BELL); hud.toast('ဒေါင်… ဒေါင်… ဒေါင်… သာဓု'); } },
   { at: () => L.STOP, r: 1.9, label: () => party() ? 'ညကား သွားစီး' : 'ဘတ်စ်ကား စီး', goal: () => S.step === 'evening', run: openBus },
 ];
 
@@ -609,7 +617,7 @@ hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BO
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ ပိတောက်နံ့ ရနေတုန်း…'],

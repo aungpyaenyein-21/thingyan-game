@@ -7,6 +7,7 @@ import { shwedagon, MM } from './set.js?v=2';
 import { createHud, play } from './hud.js?v=2';
 import { makePlayer } from './wardrobe.js?v=2';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=2';
+import { createSound } from '../sound.js?v=1';
 
 const S = load(); S.at = 'downtown';
 const save = () => store(S);
@@ -33,6 +34,7 @@ const areaAt = (x, z) => AREAS.find(a => x > a.x0 && x < a.x1 && z > a.z0 && z <
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -9, x1: 21, z0: -7, z1: 15 }, view: 17 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solid, bean, rnd, pick } = W;
 const hud = createHud(W);
+const sound = createSound(W); W.onFx = (n, p) => sound.fx(n, p);
 const v = new THREE.Vector3();
 const gold = new THREE.MeshStandardMaterial({ color: '#e0a83f', metalness: 1, roughness: .42 });
 const bulbM = [new THREE.Color(2.8, 2.3, 1.2), new THREE.Color(2.8, 1.4, 1.4), new THREE.Color(1.3, 2.4, 2.8)].map(c => new THREE.MeshBasicMaterial({ color: c }));
@@ -207,6 +209,7 @@ const balloons = Array.from({ length: 14 }, (_, i) => { const b = W.keep(mesh(ne
 
 // ---------- the living street ----------
 W.tick((dt, T) => {
+  sound.env({ phase: 'day', night: W.night(), street: .5, crowd: .9, water: .9 }); // downtown: a big crowd and the hoses going
   // hoses: pulse on and off, each stage on its own beat
   emitters.forEach((e, i) => { if (Math.sin(T * .8 + i * .7) < -.25 || rnd() < .4) return; const vv = e.d.clone().multiplyScalar(e.k + rnd()); vv.x += (rnd() - .5) * .8; vv.z += (rnd() - .5) * .4; W.spawn(e.p, vv); });
   // float round the ring; riders splash now and then; keep you from under the wheels
