@@ -400,7 +400,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       let on = c === player;
       if (!on && c.g.visible) { ndc.copy(c.g.parent === scene ? c.g.position : c.g.getWorldPosition(v3)).project(cam); on = ndc.x > -1.2 && ndc.x < 1.2 && ndc.y > -1.3 && ndc.y < 1.5; }
       if (on !== c.on) { c.on = on; c.ch.body.visible = c.ch.blob.visible = on; c.ch.body.matrixWorldAutoUpdate = on; if (!on) { c.ch.bucket.visible = false; if (c.ch.hang) c.ch.hang.visible = false; } }
-      if (on) c.anim.update(dt);
+      if (on) c.anim.update(dt); else c.anim.skip(dt);
     }
 
     // drops: only the live ones; hit-test only people near the camera

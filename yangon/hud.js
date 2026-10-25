@@ -7,10 +7,11 @@ export function createHud(W) {
   const sync = () => { W.frozen = !!(talking || menuOpen || mini || scene); };
 
   // ---------- dialogue ----------
-  function talk(lines, done) { talking = { lines, i: -1, done }; sync(); next(); }
+  const waiting = []; // a conversation that starts while another is open waits its turn instead of cutting in
+  function talk(lines, done) { if (talking) { waiting.push([lines, done]); return; } talking = { lines, i: -1, done }; sync(); next(); }
   function next() {
     const t = talking; t.i++;
-    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); t.done?.(); return; }
+    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); t.done?.(); if (!talking && waiting.length) talk(...waiting.shift()); return; }
     const [who, text] = t.lines[t.i];
     $('dname').textContent = who || ''; $('dtext').textContent = text; $('dlg').classList.toggle('say', !who); $('dlg').hidden = false;
   }

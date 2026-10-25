@@ -44,8 +44,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     if (d < .15) { if (++v.pi >= v.path.length) { drivers.delete(v); v.moving = false; const r = v.arrive; v.arrive = null; r(); } return; }
     const sx = Math.sin(v.g.rotation.y) * (v.side || 0), sz = Math.cos(v.g.rotation.y) * (v.side || 0); // a sidecar sweeps its own strip
     const what = blockedAhead(v, p.x, p.z, dx / d, dz / d, 1.4, .15) || (v.side ? blockedAhead(v, p.x + sx, p.z + sz, dx / d, dz / d, 1.2, .2) : null);
-    v.blockT = what ? (v.blockT || 0) + dt : 0; v.moving = !what || v.blockT > (v.giveUp ?? 1e9);
-    if (!v.moving) { if (v.bell && (what === 'you' || what === 'person') && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); W.onFx?.('bike', v.g.position); } return; } // stop for whoever's in the way (and ring the bell)
+    v.blockT = what ? (v.blockT || 0) + dt : 0; v.moving = !what || (what !== 'you' && v.blockT > (v.giveUp ?? 1e9)); // never through you
+    if (!v.moving) { if (v.bell && (what === 'you' || what?.g) && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); W.onFx?.('bike', v.g.position); } return; } // stop for whoever's in the way (and ring the bell)
     let a = Math.atan2(dx, dz) - Math.PI / 2 - v.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); v.g.rotation.y += a * Math.min(1, dt * 5);
     const s = Math.min(d, v.speed * dt); p.x += dx / d * s; p.z += dz / d * s; v.roll?.(s);
   }
@@ -119,18 +119,18 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   async function waiter(c, seatX) {
     for (;;) {
       show(c, false); await wait(3 + rnd() * 14);
-      const from = rnd() < .5 ? [[-3.6, -1.6], [-3.6, 5.5], [-2.8, 6.45]] : [[14.5, 5.1], [11.4, 6.45]];
+      const from = rnd() < .5 ? [[-3.6, -1.6], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-2.8, 6.45]] : [[14.5, 5.1], [11.4, 6.45]];
       c.g.position.copy(V(...from[0])); show(c, true);
       await walk(c, [...from.slice(1), [seatX, 6.45], [seatX, 6.08]]);
       c.g.rotation.y = 0; c.anim.setLoop('sit'); c.anim.play('sitdown'); lift(c, BENCH_Y);
       await until(() => BUS.stopped && BUS.wait > 0);
       BUS.boarding++; c.anim.setLoop('idle'); c.anim.play('standup'); lift(c, .14, .55); await wait(.6);
-      await walk(c, [[seatX, 6.45], DOOR()]); BUS.boarding--;
+      await walk(c, [[seatX, 6.45], DOOR()]); BUS.boarding = Math.max(0, BUS.boarding - 1);
     }
   }
   [[2.6, { age: 'elder' }]].forEach(([x, o]) => waiter(npc(o), x));
   const alighter = npc({ age: 'adult', hair: 'long', topStyle: 'shirt', bottom: 'htamein' }); alighter.ch.hang = shopBag(alighter); show(alighter, false);
-  async function getOff() { const c = alighter; c.g.position.copy(DOOR()); show(c, true); await walk(c, [[-2.8, 6.45], [-3.6, 5.5], [-3.6, -1.6]]); show(c, false); }
+  async function getOff() { const c = alighter; c.g.position.copy(DOOR()); show(c, true); await walk(c, [[-2.8, 6.45], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -1.6]]); show(c, false); }
   function stepBus(dt) {
     if (BUS.away > 0) { BUS.away -= dt; return; }
     if (BUS.wait > 0 || BUS.boarding > 0) { BUS.wait -= dt; conductor.visible = BUS.wait > .8; if (BUS.wait < -8) BUS.boarding = 0; return; }
@@ -164,7 +164,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   function stepCars(dt) {
     if ((carT -= dt) < 0) {
       carT = 12 + rnd() * 14; const v = pick(CARS.filter(c => !c.on)); // a car now and then, not traffic
-      if (v) { v.on = true; v.dir = rnd() < .5 ? 1 : -1; v.lane = v.dir > 0 ? 8.3 : 7.3; v.g.rotation.y = v.dir > 0 ? 0 : Math.PI; v.g.position.set(v.dir > 0 ? BOUNDS.x0 - 3 : BOUNDS.x1 + 3, .045, v.lane); v.g.visible = true; v.speed = v.max; }
+      if (v) { v.since = W.time(); v.on = true; v.dir = rnd() < .5 ? 1 : -1; v.lane = v.dir > 0 ? 8.3 : 7.3; v.g.rotation.y = v.dir > 0 ? 0 : Math.PI; v.g.position.set(v.dir > 0 ? BOUNDS.x0 - 3 : BOUNDS.x1 + 3, .045, v.lane); v.g.visible = true; v.speed = v.max; }
     }
     for (const v of CARS) {
       if (!v.on) continue;
@@ -256,8 +256,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     cyl(.05, .05, .07, '#c99a4a', .1, .04, -.07, 8, o); cyl(.05, .05, .07, '#c99a4a', .1, .04, .08, 8, o);
     for (let i = 0; i < 4; i++) mesh(new THREE.IcosahedronGeometry(.04, 0), PAL.padauk, .02 + (i % 2) * .05, .1 + (i >> 1) * .04, .02, o); return g;
   }
-  const SIDEWALK = [[-2.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement, round the padauk tree
-  const HOME = [[-1.2, -3.0], [-3.0, -2.4], [-3.6, -2.4], [-3.6, 5.5], [-3.2, 6.3]], TO_MARKET = [...SIDEWALK, [12.6, 10.4], [12.6, 13.7]];
+  const SIDEWALK = [[-3.2, 8.85], [.2, 8.85], [.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement: past the kids' drum on the road edge, round the padauk tree
+  const HOME = [[-1.2, -3.0], [-3.0, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.1, 6.3]], /* round the old car */ TO_MARKET = [...SIDEWALK, [12.6, 10.4], [12.6, 13.7]];
   const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
     const lz = laneI ? 20.3 : 13.7;

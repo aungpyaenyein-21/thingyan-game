@@ -1,5 +1,5 @@
 // yangon/main.js — story day 1, Yangon (STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
-// Walk the whole ward — home lane, main street, market, pagoda — and do eight favours for eight parts of a coconut-frond
+// Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=3';
 import { CAT_COATS } from '../critters.js?v=4';
@@ -131,7 +131,7 @@ const SERVE = [0, 1, 3]; // which tables are waiting on the boy who went home
 const customers = SERVE.map((t, i) => seat({ age: i === 1 ? 'elder' : 'adult' }, TR.tables[t].seats[i % 2]));
 const friend = seat({ age: 'adult', hair: 'spiky', hairColor: '#4a2e22', topStyle: 'jacket', shirt: '#2e3a59', bottom: 'pants', hat: 'none', name: 'ဖိုးသာ' }, TR.tables[2].seats[1]);
 const oldMen = TR.tables[5].seats.map(st => seat({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi' }, st)); // two old men at their usual table, putting the world to rights
-seat({ age: 'adult' }, TR.tables[1].seats[1]).anim.setLoop('eat'); // palata and tea, alone with the TV
+seat({ age: 'adult' }, TR.tables[1].seats[0]).anim.setLoop('eat'); // palata and tea, alone with the TV
 const MY_TABLE = TR.tables[4];
 const betelMan = npc({ age: 'elder', hair: 'short', topStyle: 'shirt', shirt: '#dfe8f0', bottom: 'longyi', hat: 'none', x: 16.7, z: 4.55 }, .14);
 const barber = npc({ age: 'adult', hair: 'spiky', hairColor: '#2b1d1a', topStyle: 'shirt', shirt: '#fff6ea', bottom: 'pants', hat: 'none', x: ROOMS.barber.boss.x, z: ROOMS.barber.boss.z }, .05);
@@ -269,7 +269,7 @@ const after = f => hud.busy() ? setTimeout(() => after(f), 400) : f();
 const ME = 'ကျွန်တော်';
 const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); };
 
-// ---------- the eight favours ----------
+// ---------- the nine favours (the ninth is downtown: downtown.js) ----------
 function talkKids() {
   kids.forEach(k => face(k));
   if (S.step === 'arrive') return talk([
@@ -280,7 +280,7 @@ function talkKids() {
     ['မေသူ', 'ဟေး!! ဒါဆို အုန်းလက်၊ ဝါး၊ ပိတ်စ၊ ရေပိုက်၊ ရေစည်၊ ဆိုင်းဘုတ်၊ မီးကြိုး၊ အသံချဲ့စက် … အများကြီး လိုမယ်နော်။'],
     ['ဖိုးကျော်', 'ရပ်ကွက်တစ်ပတ် လှည့်ရှာရမှာ! အိမ်နားမှာ၊ လမ်းမမှာ၊ ဈေးထဲမှာ၊ ဘုန်းကြီးကျောင်းမှာ… မြို့လယ် မဏ္ဍပ်ကြီးမှာတောင်!'],
     ['ချိုချို', 'မသိရင် သမီးတို့ကို လာမေးနော်။ ဘယ်သူ့ဆီ သွားရမလဲ ပြောပြမယ်။'],
-  ], () => { S.step = 'quests'; S.gifts--; hud2(); kids.forEach(k => k.anim.emote('heart')); hud.toast('ကလေးမဏ္ဍပ် — ပစ္စည်း ၈ မျိုး ရှာမယ်'); });
+  ], () => { S.step = 'quests'; S.gifts--; hud2(); kids.forEach(k => k.anim.emote('heart')); hud.toast('ကလေးမဏ္ဍပ် — ပစ္စည်း ၉ မျိုး ရှာမယ်'); });
   if (party()) return talk([
     ['မေသူ', `ဦးလေး! ကျေးဇူးပဲ! ရပ်ကွက်မှာ အလှဆုံး မဏ္ဍပ်ပဲ — “${S.signName}”!`],
     ['ဖိုးကျော်', 'ဦးလေး ဒီည မန္တလေး သွားမှာလား… နောက်နှစ်လည်း ပြန်လာနော်။'],
@@ -349,6 +349,7 @@ function talkUncle() {
   if (q === 'follow' && near(shweWa, 3)) return talk([[U, 'ရွှေဝါ!! ဘယ်တွေ သွားနေတာလဲ သမီးရယ်…'], [U, 'ကျေးဇူးပဲ ငါ့တူ။ ရော့ — ဘုရားပွဲသုံး အသံချဲ့စက်။ သင်္ကြန်သီချင်း ကက်ဆက်လည်း ပါတယ်။ အကျယ်ကြီး မဖွင့်နဲ့နော်… ဦးလေးအိပ်ချင်တယ်။']],
     () => { catHome(); shweWa.anim.emote('heart'); gotPart('cat'); }, uncle);
   if (['search', 'fish', 'lure'].includes(q)) return talk([[U, 'ညောင်သံ ကြားလား… ဘေးလမ်းဘက်ကပဲ ထင်တယ်။']], null, uncle);
+  if (q === 'follow') return talk([[U, 'ရွှေဝါ ဘယ်မှာလဲ… နောက်က လိုက်လာနေတာလား။ အနားထိ ခေါ်လာခဲ့ပါ။']], null, uncle); // the cat fell behind
   talk([[U, S.step === 'arrive' ? 'ပြန်ရောက်လာတဲ့ ကောင်လေး မဟုတ်လား! ကြီးလာလိုက်တာ။' : 'ဒီရေဒီယိုလေး အနှစ်သုံးဆယ် ရှိပြီ… သင်္ကြန်သီချင်း ဖွင့်ရင် အသံ ကြည်တုန်းပဲ။']], null, uncle);
 }
 function callCat() {
@@ -559,7 +560,7 @@ const SPOTS = [
   { at: () => vendor.g.position, r: 1.6, label: () => closed() ? null : 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => S.q.cloth === 'buy' || S.q.cat === 'fish', run: talkVendor },
   { at: () => grandma.g.position, r: 1.7, label: () => S.q.padauk === 'shrine' ? 'ပိတောက်ခက် ပေး' : 'အဘွားနဲ့ စကားပြော', goal: () => Q() && ['ask', 'shrine'].includes(S.q.padauk), run: talkGrandma },
   { at: () => TREE, r: 1.4, label: () => S.q.padauk === 'climb' ? 'ပိတောက်ပင် တက်' : null, goal: () => true, run: climb },
-  { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
+  { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' && near(shweWa, 3) ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
   { at: () => L.CAR, r: 1.8, label: () => shweWa.held === 'roof' && ['search', 'fish', 'lure'].includes(S.q.cat) ? (S.q.cat === 'lure' ? 'ငါးခြောက်နဲ့ ချော့' : 'ရွှေဝါကို ခေါ်') : null, goal: () => true, run: callCat },
   { at: () => L.TEA, r: 1.4, label: () => closed() ? SHUT : 'လက်ဖက်ရည်ဆိုင်ထဲ ဝင်', goal: () => Q() && S.q.tea !== 'done', run: () => closed() ? hud.toast(SHUT) : enter('tea') },
   { at: () => L.BARBER, r: 1.3, label: () => closed() ? SHUT : 'ဆံပင်ညှပ်ဆိုင်ထဲ ဝင် ✂', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('barber') },
@@ -596,7 +597,7 @@ if (party()) { partyPose(); W.setTime(1.7); }
 
 // ---------- goal markers (in the world and on the minimap) ----------
 function goalsAt() {
-  if (inside) return inside === 'tea' && S.q.tea !== 'done' ? (S.q.tea === 'serve' ? SERVE.map((t, i) => !S.served.includes(i) && customers[i].g.position).filter(Boolean) : [TR.counter]) : !S.metFriend && inside === 'tea' ? [friend.g.position] : [];
+  if (inside) return inside === 'tea' && Q() && S.q.tea !== 'done' ? (S.q.tea === 'serve' ? SERVE.map((t, i) => !S.served.includes(i) && customers[i].g.position).filter(Boolean) : [TR.counter]) : !S.metFriend && inside === 'tea' ? [friend.g.position] : [];
   if (S.step === 'arrive') return [KIDS_AT];
   if (S.step === 'build') return [L.STAGE];
   if (S.step === 'evening') return [L.STOP];
@@ -618,7 +619,7 @@ hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BO
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, got: q => gotPart(q), S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ ပိတောက်နံ့ ရနေတုန်း…'],

@@ -482,6 +482,7 @@ export class ChibiAnimator {
     this.one = name; this.oneT = 0; this._xfade(); this.thrown = false; this.sq = 0;
   }
   setTool(t) { if (this.ch.tools.includes(t)) this.ch.tool = t; }
+  skip(dt) { if (this.one && (this.oneT += dt) >= ONESHOT[this.one]) { this.one = null; this._xfade(); } } // off screen: no pose, but one-shots still end (scripts wait on them)
   soak(k = 1) { this.ch.wet = Math.min(1, this.ch.wet + k); this.hitT = .7; } // hit by water: >_< for a moment, then dries over ~10 s
   emote(kind, dur = 1.6) {
     const c = this.ch;
