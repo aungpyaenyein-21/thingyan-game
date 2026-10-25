@@ -9,6 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=26';
 import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
 
@@ -30,10 +31,13 @@ const TAIKPON = ['#2e3a59', '#3a3030', '#f3ead8'], HOODIE = ['#9aa3ad', '#2e3a59
 const GRAV = -11;
 const FONT = '"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif';
 
-// opts: half = island half size, ground(x, z) = walk height, paintSky(g, W, H) = extra sky art (skyline, zedi), camClamp = how far the camera follows, view = default zoom
-export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp = 4, view = 15, seed = 20270413 } = {}) {
+// opts: half = island half size, or bounds = { x0, x1, z0, z1 } for a non-square map; ground(x, z) = walk height,
+// paintSky(g, W, H, dusk) = extra sky art (skyline, zedi), camClamp = how far the camera follows (small islands),
+// camBounds = { x0, x1, z0, z1 }: on a big map the camera centres on you, kept inside this rect; view = default zoom
+export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, camClamp = 4, camBounds, view = 15, seed = 20270413 } = {}) {
+  const B = bounds ?? { x0: -half, x1: half, z0: -half, z1: half };
   const P = new URLSearchParams(location.search);
-  let VIEW = +(P.get('v') || view); // ortho view height (units); wheel zooms 7..18
+  let VIEW = +(P.get('v') || view); // ortho view height (units); wheel zooms 7..28
   const Q = P.get('q') || (matchMedia('(pointer:coarse)').matches ? 'low' : 'high'); // ?q=low|high|off
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const pick = a => a[(rnd() * a.length) | 0];
@@ -66,7 +70,8 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; scene.environmentIntensity = .45; // only the metals (Standard) use it
   const hemi = new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.55); scene.add(hemi); // lavender fill = soft lilac shadows
   const sun = new THREE.DirectionalLight('#ffb46b', 2.4);
-  sun.position.set(-14, 11, 6); sun.castShadow = true;
+  const SUN = new THREE.Vector3(-14, 11, 6); // the sun's offset from wherever the camera looks, so shadows follow you round a big map
+  sun.position.copy(SUN); sun.castShadow = true; scene.add(sun.target);
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 50 });
   scene.add(sun);
@@ -82,10 +87,11 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   // ---------- builders ----------
   const matCache = {};
   const M = (c, o = {}) => matCache[c + JSON.stringify(o)] ??= new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...o });
+  const statics = [], LOD = 26; // LOD: |dx| + |dz| from the camera beyond which people and pets stop animating
   function mesh(geo, color, x = 0, y = 0, z = 0, opt = {}) {
     const m = new THREE.Mesh(geo, typeof color === 'string' ? M(color) : color);
     m.position.set(x, y, z); m.castShadow = opt.cast ?? true; m.receiveShadow = true;
-    (opt.parent || scene).add(m); return m;
+    (opt.parent || scene).add(m); statics.push(m); return m;
   }
   const box = (w, h, d, c, x, y, z, o) => mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(.07, Math.min(w, h, d) * .3)), c, x, y + h / 2, z, o);
   const cyl = (rt, rb, h, c, x, y, z, seg = 10, o) => mesh(new THREE.CylinderGeometry(rt, rb, h, seg), c, x, y + h / 2, z, o);
@@ -116,7 +122,7 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   const solids = []; // AABBs the player can't walk into
   const solid = (x, z, w, d) => solids.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
   function collide(p) {
-    p.x = THREE.MathUtils.clamp(p.x, -half + .4, half - .4); p.z = THREE.MathUtils.clamp(p.z, -half + .4, half - .4);
+    p.x = THREE.MathUtils.clamp(p.x, B.x0 + .4, B.x1 - .4); p.z = THREE.MathUtils.clamp(p.z, B.z0 + .4, B.z1 - .4);
     for (const s of solids) {
       if (p.x > s.x0 - .3 && p.x < s.x1 + .3 && p.z > s.z0 - .3 && p.z < s.z1 + .3) {
         const dx0 = p.x - (s.x0 - .3), dx1 = s.x1 + .3 - p.x, dz0 = p.z - (s.z0 - .3), dz1 = s.z1 + .3 - p.z, m = Math.min(dx0, dx1, dz0, dz1);
@@ -187,7 +193,7 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   // ---------- street dogs + cats ----------
   // dogs hang round shops, wander, nap; cats sit on doorsteps. Water makes dogs shake and cats bolt; dogs are pleased to see you.
   const blockedAt = (x, z) => solids.some(s => x > s.x0 - .22 && x < s.x1 + .22 && z > s.z0 - .22 && z < s.z1 + .22);
-  const openAt = (x, z) => Math.abs(x) < half - 1 && Math.abs(z) < half - 1 && !blockedAt(x, z);
+  const openAt = (x, z) => x > B.x0 + 1 && x < B.x1 - 1 && z > B.z0 + 1 && z < B.z1 - 1 && !blockedAt(x, z) && !W.offLimits?.(x, z);
   const ROLES = { // r = how far from home it strays (0 = anywhere), rest = what it does on arrival, t = how long
     shop: { r: 1, rest: ['sit', 'sit', 'idle', 'sleep'], t: [6, 14] }, walker: { r: 0, rest: ['idle', 'sit'], t: [2, 5], run: .25 },
     park: { r: .6, rest: ['sleep', 'sleep', 'sit'], t: [15, 30] }, house: { r: .8, rest: ['sit', 'sleep', 'sleep', 'idle'], t: [8, 20] },
@@ -195,7 +201,7 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   function petSpot(c) {
     const h = c?.home, R = c ? ROLES[c.role].r : 0;
     for (let k = 0; k < 60; k++) {
-      const x = h && R ? h.x + (rnd() * 2 - 1) * R : (rnd() * 2 - 1) * (half - 1), z = h && R ? h.z + (rnd() * 2 - 1) * R : (rnd() * 2 - 1) * (half - 1);
+      const x = h && R ? h.x + (rnd() * 2 - 1) * R : B.x0 + 1 + rnd() * (B.x1 - B.x0 - 2), z = h && R ? h.z + (rnd() * 2 - 1) * R : B.z0 + 1 + rnd() * (B.z1 - B.z0 - 2);
       if (openAt(x, z)) return new THREE.Vector3(x, 0, z);
     }
     return h ? h.clone() : new THREE.Vector3(0, 0, 0);
@@ -340,9 +346,10 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
 
     // npcs in W.idlers do a little something now and then; zone code drives everyone else
     for (const c of W.idlers) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { const kid = c.ch.opts.age === 'kid'; c.anim.play(pick(kid ? ['jump', 'jump', 'wave'] : ['wave', 'jump', 'wave'])); c.idleT = kid ? 1.5 + rnd() * 2 : 5 + rnd() * 8; } }
-    for (const c of pets) updatePet(c, dt);
+    const near = c => c === player || Math.abs(c.g.position.x - camTarget.x) + Math.abs(c.g.position.z - camTarget.z) < LOD; // far off-screen: skip the animation work
+    for (const c of pets) if (near(c)) updatePet(c, dt);
     for (const f of ticks) f(dt, T);
-    for (const c of chars) { c.cool -= dt; c.anim.update(dt); }
+    for (const c of chars) { c.cool -= dt; if (near(c)) c.anim.update(dt); }
 
     // drops
     const hitList = [...chars.filter(c => !c.dry), ...pets]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
@@ -387,14 +394,18 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
     }
 
     // camera follow (soft, clamped so the island edge stays in view)
-    v3.copy(player.g.position); v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); v3.y = 0;
+    v3.copy(player.g.position); v3.y = 0;
+    if (camBounds) { v3.x = THREE.MathUtils.clamp(v3.x, camBounds.x0, camBounds.x1); v3.z = THREE.MathUtils.clamp(v3.z, camBounds.z0, camBounds.z1); }
+    else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
     camTarget.lerp(v3, Math.min(1, dt * 3));
     cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget);
+    sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
     look.uniforms.time.value = T % 100;
     composer.render();
   }
   const ticks = [];
   function start() { // call once the zone has built its set: flowers + petals need the trees
+    bake();
     if (flowerSpots.length) {
       const fl = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.09, 0), M(PAL.padauk), flowerSpots.length);
       flowerSpots.forEach((p, i) => fl.setMatrixAt(i, new THREE.Matrix4().setPosition(p)));
@@ -404,13 +415,38 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
       scene.add(petals);
     }
     addEventListener('resize', resize); resize();
-    addEventListener('wheel', e => { VIEW = THREE.MathUtils.clamp(VIEW * (1 + Math.sign(e.deltaY) * .1), 7, 18); fitCam(); }, { passive: true }); // zoom only changes the projection
+    addEventListener('wheel', e => { VIEW = THREE.MathUtils.clamp(VIEW * (1 + Math.sign(e.deltaY) * .1), 7, 28); fitCam(); }, { passive: true }); // zoom only changes the projection
     camTarget.copy(W.player.g.position); camTarget.y = 0;
     renderer.setAnimationLoop(frame);
   }
 
-  const W = { THREE, scene, cam, renderer, half, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
+  // bake: merge every static mesh into one mesh per material, so a big map is a few dozen draw calls instead of thousands.
+  // Static = made with mesh()/box()/cyl() and not under anything marked keep(); call keep(obj) on what moves or changes later.
+  const keep = o => { o.userData.keep = true; return o; };
+  function bake() {
+    scene.updateMatrixWorld(true);
+    const kept = o => { for (let p = o; p; p = p.parent) if (p.userData.keep) return true; return false; };
+    const groups = new Map();
+    for (const m of statics) {
+      if (!m.parent || kept(m) || Array.isArray(m.material) || !m.visible) continue;
+      let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      g.clearGroups(); g.applyMatrix4(m.matrixWorld);
+      const key = m.material.uuid + (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
+      if (!groups.has(key)) groups.set(key, { mat: m.material, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
+      groups.get(key).geos.push(g); m.parent.remove(m);
+    }
+    for (const { mat, cast, recv, geos } of groups.values()) {
+      const merged = new THREE.Mesh(mergeGeometries(geos), mat); merged.castShadow = cast; merged.receiveShadow = recv; scene.add(merged);
+    }
+    statics.length = 0;
+  }
+  const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
+
+  const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk };
+    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, bake, removeChar, offLimits: null };
   return W;
 }

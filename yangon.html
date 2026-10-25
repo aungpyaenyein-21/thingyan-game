@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>သင်္ကြန်ပွဲ · ရန်ကုန်</title>
+<style>
+  :root{--ink:#5a3550;--paper:rgba(255,246,232,.92);--gold:#f2c14e;--line:#e9cfa8;--accent:#c8553d}
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%;overflow:hidden;touch-action:none;background:#f9b8a0;
+    font-family:"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif;color:var(--ink)}
+  canvas{display:block}
+  body>canvas{position:fixed;inset:0}
+  .panel{position:fixed;z-index:2;background:var(--paper);border-radius:14px;box-shadow:0 3px 0 rgba(90,53,80,.18)}
+  #goal{left:max(16px,env(safe-area-inset-left,0px));top:calc(14px + env(safe-area-inset-top,0px));width:min(340px,calc(100% - 32px));box-sizing:border-box;padding:8px 14px;font-size:13px;line-height:1.65;cursor:pointer}
+  #goal>b{display:block;font-size:12px;opacity:.65;font-weight:normal}
+  #gtext .ok{opacity:.5}
+  #gtext .now b{color:var(--accent)}
+  #gtext .more{display:none;font-size:12px;opacity:.6}
+  #where{right:max(16px,env(safe-area-inset-right,0px));top:calc(14px + env(safe-area-inset-top,0px));padding:8px 10px 10px;font-size:13px;text-align:right;line-height:1.6}
+  #where i{font-style:normal;display:inline-block;min-width:18px;padding:0 6px;margin-left:3px;border-radius:8px;background:var(--gold)}
+  #map{width:180px;height:148px;margin-top:6px;border-radius:8px;image-rendering:pixelated}
+  #bag{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;margin-top:4px;max-width:180px;margin-left:auto}
+  #bag span{font-size:11px;padding:1px 7px;border-radius:9px;background:#fff;border:1px solid var(--line)}
+  #hint{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:6px 12px;font-size:13px;line-height:1.7}
+  #prompt{left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:6px 16px;font-size:15px;white-space:nowrap}
+  .key{display:inline-block;min-width:18px;padding:0 6px;margin-right:6px;border-radius:6px;background:var(--ink);color:#fff6ea;font:bold 12px/20px monospace;text-align:center}
+  #dlg{left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(640px,calc(100% - 32px));box-sizing:border-box;padding:12px 18px 8px;font-size:17px;line-height:1.8;cursor:pointer;z-index:4}
+  #dname{display:block;color:var(--accent);font-size:14px}
+  #dlg small{display:block;text-align:right;opacity:.55;font-size:12px}
+  #dlg.say #dtext{font-style:italic;opacity:.85}
+  #toast{left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:6px 18px;font-size:16px;background:var(--gold);z-index:4}
+  #area{left:50%;top:32%;transform:translate(-50%,-50%);padding:10px 26px;font-size:22px;opacity:0;transition:opacity .5s;pointer-events:none;background:rgba(90,53,80,.82);color:#fff6ea}
+  #area.on{opacity:1}
+  #title{left:50%;top:38%;transform:translate(-50%,-50%);padding:14px 28px;text-align:center;font-size:24px;line-height:1.6;pointer-events:none;transition:opacity 1.2s}
+  #title.gone{opacity:0}
+  #title small{display:block;font-size:14px;opacity:.7}
+  #menu{left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,calc(100% - 32px));max-height:calc(100% - 120px);overflow:auto;box-sizing:border-box;padding:14px 16px;z-index:4}
+  #mtitle{margin:0 0 8px;font-size:17px;font-weight:normal}
+  #mlist{display:flex;flex-wrap:wrap;gap:6px}
+  #mlist .mhead{flex-basis:100%;font-size:12px;opacity:.65;margin-top:6px}
+  #mlist button,#mclose{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-basis:100%;padding:8px 12px;border:2px solid var(--line);border-radius:10px;
+    background:#fff;color:var(--ink);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+  #mlist button.chip{flex-basis:auto;font-size:14px;padding:5px 10px}
+  #mlist button.sw{width:38px;height:32px;padding:3px}
+  #mlist button i{display:block;width:100%;height:100%;border-radius:6px}
+  #mlist button em{font-style:normal;font-size:12px;opacity:.6;white-space:nowrap}
+  #mlist button.go{border-color:#7a4f92;background:#efe6fa}
+  #mlist button:disabled{cursor:default;opacity:.55}
+  #mlist button:focus-visible,#mclose:focus-visible,#end button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+  #mclose{margin-top:10px;justify-content:center;background:var(--ink);color:#fff6ea;border-color:var(--ink)}
+  #mini{left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(420px,calc(100% - 32px));box-sizing:border-box;padding:10px 16px 12px;cursor:pointer;text-align:center;font-size:15px;z-index:4}
+  #mini small{display:block;font-size:12px;opacity:.65;margin-top:6px}
+  #mbar{position:relative;height:18px;margin-top:8px;border-radius:9px;background:var(--line);overflow:hidden}
+  #mband{position:absolute;top:0;bottom:0;background:var(--gold)}
+  #mcur{position:absolute;top:-2px;width:6px;height:22px;margin-left:-3px;border-radius:3px;background:var(--accent)}
+  #fade{position:fixed;inset:0;z-index:5;background:#1c1426;opacity:0;pointer-events:none}
+  #end{left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:min(400px,calc(100% - 32px));box-sizing:border-box;padding:20px 22px;text-align:center;line-height:1.9}
+  #end h2{margin:0 0 6px;font-size:21px;font-weight:normal}
+  #end p{margin:4px 0;font-size:15px}
+  #end button{display:block;width:100%;margin-top:10px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:var(--ink);color:#fff6ea}
+  #end button.alt{background:#fff;color:var(--ink);border:2px solid var(--line)}
+  #splash{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:76px;height:76px;border-radius:50%;border:0;
+    background:#7ec8e3;color:#fff;font:inherit;font-size:15px;box-shadow:0 4px 0 #4f9fbd;display:none}
+  #splash.act{background:#f2a65a;box-shadow:0 4px 0 #c97f3a}
+  #jump{position:fixed;z-index:3;right:calc(104px + env(safe-area-inset-right,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:#b39bd1;color:#fff;font:inherit;font-size:14px;box-shadow:0 4px 0 #8a74a8;display:none}
+  @media (pointer:coarse){#splash,#jump{display:block}#hint{display:none!important}#prompt{bottom:calc(112px + env(safe-area-inset-bottom,0px))}}
+  @media (max-width:640px){
+    #goal{width:min(250px,calc(100% - 170px));font-size:12px}
+    #goal:not(.open) #gtext .ok,#goal:not(.open) #gtext .todo{display:none}
+    #goal:not(.open) #gtext .more{display:block}
+    #map{width:130px;height:107px}
+    #where{font-size:11px}
+    #hint{display:none!important}
+  }
+  @media (prefers-reduced-motion:reduce){#area,#title{transition:none}}
+</style>
+</head>
+<body>
+<div id="goal" class="panel"><b>ရည်မှန်းချက်</b><div id="gtext"></div></div>
+<div id="where" class="panel">အကြိုနေ့ · ၁/၅ · ရန်ကုန်
+  <div id="stage" hidden>ကလေးမဏ္ဍပ် ပစ္စည်း<i id="scount"></i></div>
+  <canvas id="map" width="180" height="148" aria-label="မြေပုံ"></canvas>
+  <div id="bag"></div>
+</div>
+<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · Space ခုန် · wheel zoom</div>
+<div id="prompt" class="panel" hidden><span class="key">E</span><span id="ptext"></span></div>
+<div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small>E ▸ ဆက်</small></div>
+<div id="toast" class="panel" hidden></div>
+<div id="area" class="panel"></div>
+<div id="title" class="panel">သင်္ကြန်ပွဲ · ရန်ကုန်<small>အကြိုနေ့ · ရပ်ကွက်ထဲ ပြန်ရောက်ပြီ</small></div>
+<div id="menu" class="panel" hidden><h3 id="mtitle"></h3><div id="mlist"></div><button id="mclose" type="button">ပိတ်မယ်</button></div>
+<div id="mini" class="panel" hidden><span id="mtitle2"></span> <b id="mcount"></b><div id="mbar"><div id="mband"></div><div id="mcur"></div></div><small>E / တို့ — အနီရောင်တံ ရွှေရောင်ထဲ ရောက်မှ နှိပ်</small></div>
+<div id="fade"></div>
+<div id="end" class="panel" hidden><h2>ရက် ၁ · ရန်ကုန် ပြီးဆုံး</h2><p>“<span id="ename"></span>” ✓ · ပစ္စည်း <span id="epart"></span></p><p>ညကားနဲ့ မန္တလေးကို ထွက်ခဲ့ပြီ…</p><p style="opacity:.65">ရက် ၂ · မန္တလေး — မကြာခင်</p>
+  <button id="estay" type="button">ရပ်ကွက်ထဲ ဆက်နေမယ်</button><button id="eagain" type="button" class="alt">အစက ပြန်ကစားမယ်</button></div>
+<button id="splash" type="button" aria-label="ရေပက် / လုပ်">ရေပက်</button>
+<button id="jump" type="button" aria-label="ခုန်">ခုန်</button>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module" src="./yangon/main.js?v=1"></script>
+</body>
+</html>
