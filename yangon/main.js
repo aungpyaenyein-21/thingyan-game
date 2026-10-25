@@ -8,6 +8,7 @@ import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=1';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
+import { startLife } from './life.js?v=1';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 19 }, view: 16 });
@@ -83,19 +84,6 @@ W.tick((dt, T) => {
 });
 const BUCKET_SPOT = new THREE.Vector3(BTOP.x, 0, BTOP.z + .55);
 
-// ---------- the bus on the main street ----------
-const BUS = { lane: 7.3, speed: 2.2, len: 4.6, wait: 0, stopped: false };
-const bus = W.keep(new THREE.Group()); scene.add(bus);
-{
-  const o = { parent: bus };
-  box(BUS.len, 1.5, 1.5, '#fff6ea', 0, .32, 0, o); box(BUS.len + .02, .3, 1.52, '#c8553d', 0, .5, 0, o); box(BUS.len - .2, .08, 1.3, '#d9dde3', 0, 1.82, 0, o);
-  for (let x = -1.8; x < 1.7; x += .7) for (const z of [-.76, .76]) box(.58, .5, .02, PAL.window, x, 1.05, z, o);
-  box(.04, .55, 1.2, PAL.window, BUS.len / 2, 1.0, 0, o);
-  mesh(new THREE.PlaneGeometry(.7, .26), new THREE.MeshLambertMaterial({ map: textTex('၃၆', '#2b2730', '#ffc83d', 128, 48, 40) }), BUS.len / 2 + .02, 1.62, 0, { ...o, cast: false }).rotation.y = Math.PI / 2;
-  for (const wx of [-1.5, 1.4]) for (const wz of [-.72, .72]) { const w = mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), '#2b2730', wx, .3, wz, o); w.rotation.x = Math.PI / 2; }
-  bus.position.set(BOUNDS.x0 - BUS.len, .045, BUS.lane);
-}
-const spayar = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဆူးလေ~ ဆူးလေ~'), depthWrite: false })); spayar.scale.set(2.8, .88, 1); spayar.position.set(1.2, 2.7, .6); spayar.visible = false; bus.add(spayar);
 const CLIP = W.renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), BOUNDS.x1 + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), -BOUNDS.x0 + .001)]; // bus slides in/out of the island sides
 
 // ---------- people ----------
@@ -103,7 +91,7 @@ const near = (c, r = 1.8) => c.g.position.distanceTo(W.player.g.position) < r;
 const face = (c, t = W.player) => { c.g.rotation.y = Math.atan2(t.g.position.x - c.g.position.x, t.g.position.z - c.g.position.z); };
 const npc = (o, y) => { const c = bean({ prop: 'none', print: '', ...o }); if (y !== undefined) c.g.position.y = y; return c; };
 // the player, dressed from the save (barber / clothes shop change S.look)
-W.setPlayer(makePlayer(W, S, 4.6, 6.25, Math.PI));
+W.setPlayer(makePlayer(W, S, 4.6, 6.25, Math.PI)); hud.tool(W.player.ch.tool);
 let seated = null; // { ry } while you sit on a stool / in the barber's chair; moving stands you up
 const dress = () => { redress(W, S); if (seated) { W.player.anim.setLoop('sit'); W.player.g.rotation.y = seated.ry; } save(); };
 const auntie = npc({ hair: 'bun', flower: true, age: 'adult', skin: SKINS[1], shirt: '#e9a0b4', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#7a4a9a', '#c79be0'], hat: 'none', build: 'round' });
@@ -113,7 +101,7 @@ const UNCLE = new THREE.Vector3(-5.15, 0, -.7);
 const uncle = npc({ age: 'elder', hair: 'short', topStyle: 'taikpon', shirt: '#f3ead8', bottom: 'longyi', hat: 'none', x: UNCLE.x, z: UNCLE.z, ry: Math.PI / 2 });
 const kids = [
   bean({ age: 'kid', hair: 'pigtails', shirt: '#ff7f6b', bottom: 'skirt', prop: 'gun', hat: 'none', x: 3.4, z: 4.0, ry: -2.2 }),
-  bean({ age: 'kid', hair: 'buzz', shirt: '#4fd1c5', bottom: 'shorts', prop: 'gun', hat: 'band', x: 1.7, z: 3.5, ry: 2.2 }),
+  bean({ age: 'kid', hair: 'buzz', shirt: '#4fd1c5', bottom: 'shorts', tool: 'bucket', hat: 'band', x: 1.7, z: 3.5, ry: 2.2 }),
   bean({ age: 'kid', hair: 'bob', shirt: '#b388ff', bottom: 'overalls', prop: 'gun', hat: 'none', x: 4.9, z: 3.3, ry: -1.0 }),
 ];
 const KIDS_AT = new THREE.Vector3(3.3, 0, 3.6), ON_STAGE = [[SX - .9, SZ + .35], [SX, SZ - .1], [SX + .9, SZ + .35]];
@@ -137,29 +125,30 @@ const ORDERS = [['ပေါ့ဆိမ့်', 'pawsein'], ['ချိုဆိ
 const SERVE = [0, 1, 3]; // which tables are waiting on the boy who went home
 const customers = SERVE.map((t, i) => seat({ age: i === 1 ? 'elder' : 'adult' }, TR.tables[t].seats[i % 2]));
 const friend = seat({ age: 'adult', hair: 'spiky', hairColor: '#4a2e22', topStyle: 'jacket', shirt: '#2e3a59', bottom: 'pants', hat: 'none', name: 'ဖိုးသာ' }, TR.tables[2].seats[1]);
-for (const st of TR.tables[5].seats) seat({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi' }, st); // two old men at their usual table
-seat({ age: 'adult' }, TR.tables[1].seats[1]);
+const oldMen = TR.tables[5].seats.map(st => seat({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi' }, st)); // two old men at their usual table, putting the world to rights
+seat({ age: 'adult' }, TR.tables[1].seats[1]).anim.setLoop('eat'); // palata and tea, alone with the TV
 const MY_TABLE = TR.tables[4];
 const betelMan = npc({ age: 'elder', hair: 'short', topStyle: 'shirt', shirt: '#dfe8f0', bottom: 'longyi', hat: 'none', x: 16.7, z: 4.55 }, .14);
 const barber = npc({ age: 'adult', hair: 'spiky', hairColor: '#2b1d1a', topStyle: 'shirt', shirt: '#fff6ea', bottom: 'pants', hat: 'none', x: ROOMS.barber.boss.x, z: ROOMS.barber.boss.z }, .05);
 const tailor = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#7a4a9a', bottom: 'htamein', hat: 'none', x: ROOMS.clothes.boss.x, z: ROOMS.clothes.boss.z, ry: Math.PI }, .05);
 const phoneGirl = npc({ age: 'adult', hair: 'long', topStyle: 'tee', shirt: '#f2c14e', bottom: 'skirt', hat: 'none', x: 26.1, z: 4.95 }, .14);
-// chinlone is an evening thing: the players turn up once the day cools
-const chinlone = [[-1, -.6], [1, -.6], [0, 1.1]].map(([dx, dz]) => npc({ age: 'adult', bottom: 'longyi', hat: 'none', topStyle: 'tank', x: L.FIELD.x + dx, z: L.FIELD.z + dz }));
-chinlone.forEach(c => face(c, { g: { position: L.FIELD } }));
-const ball = W.keep(mesh(new THREE.IcosahedronGeometry(.13, 1), '#d9b06a', L.FIELD.x, 1, L.FIELD.z)); // cane ball, kicked round the ring
-// ③ market: the vendors sit on their low stools by their sheets
+// ③ market
 const frondMan = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#86b96d', bottom: 'longyi', hat: 'bucket', x: -6.9, z: 21.9 });
 const mohingaLady = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#e9a0b4', bottom: 'htamein', hat: 'none', x: 9.4, z: 11.8, ry: 0 });
 const lightsMan = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: 3.0, z: 19.5, ry: 0 });
-L.SEATS.forEach((st, i) => { if (i % 2) return; const c = npc({ age: pick(['adult', 'adult', 'elder']), hair: pick(['bun', 'bun', 'short']), topStyle: pick(['yinphone', 'tee', 'shirt']), bottom: pick(['htamein', 'longyi']), hat: pick(['none', 'bucket']), x: st.x, z: st.z, ry: st.ry }); c.anim.setLoop('sit'); });
-for (const [x, z] of [[-5.4, 13.6], [1.5, 13.9], [5, 20.2], [-2, 20.4], [7.5, 13.4], [-8.4, 20]]) W.idlers.push(npc({ x, z, ry: rnd() * 6 })); // shoppers
+// (vendors, shoppers, the bus, traffic, chinlone, knots of people chatting … live in life.js)
 // ④ pagoda + monastery: monks are never splashed (dry) and never joked about (VISION.md §၉)
 const ROBE = { topStyle: 'long', shirt: '#9a3a2a', bottom: 'longyi', bottomColor: ['#8a3a2a', '#a8432f'], hair: 'buzz', hairColor: '#3a2a26', hat: 'none', thanaka: false, flower: false, garland: false };
 const novices = [npc({ ...ROBE, age: 'kid', x: L.WELL.x, z: L.WELL.z + .2 }), npc({ ...ROBE, age: 'kid', x: L.POND.x - .4, z: L.POND.z + 1 })];
 const abbot = npc({ ...ROBE, age: 'elder', x: L.MONASTERY.x, z: L.MONASTERY.z - .4, ry: 0 });
 [...novices, abbot].forEach(m => { m.dry = true; });
 W.idlers.push(grandma, auntie, uncle, betelMan, barber, tailor, phoneGirl, teaBoss);
+// time of day follows the story: morning while you start out, the afternoon, the late afternoon once most parts are in, then evening
+const PHASE = { morning: 'မနက်ခင်း', day: 'နေ့လယ်', late: 'ညနေစောင်း', evening: 'ညနေ' };
+const phase = () => S.step === 'arrive' || (S.step === 'quests' && S.parts.length < 3) ? 'morning' : ['evening', 'done'].includes(S.step) ? 'evening' : S.step === 'build' || S.parts.length >= 6 ? 'late' : 'day';
+const life = startLife(W, { L, BOUNDS, ground, phase }); // the ward going about its day
+life.knot(oldMen, true);
+W.onTool = t => { S.tool = t; save(); hud.tool(t); };
 
 W.addPet('dog', 'house', 3.6, -3.75);     // home dog on the porch step
 W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
@@ -176,16 +165,15 @@ const CAT = { meowT: 2, hop: null };
 shweWa.hit = () => { shweWa.anim.soak(); shweWa.anim.emote('bang'); };
 function catHome() { shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE.z + .6); shweWa.target = null; shweWa.anim.setLoop('sit'); if (!CAT.hop) shweWa.g.position.set(UNCLE.x + .6, ground(UNCLE.x + .6, UNCLE.z + .6), UNCLE.z + .6); }
 
-// ---------- the living street: vendor, kids, bus, cat, chinlone, pilgrims, the barber pole ----------
+// ---------- the story's street: the veg cart, the kids, Shwe Wa, the barber pole ----------
 const party = () => partyOf(S);
-const CH = { t: 0, from: 0, to: 1 };
 W.tick((dt, T) => {
   const player = W.player;
   // vendor: walks the lane, stops for you, calls out every few seconds
   const vNear = near(vendor) || hud.talking();
   if (vNear) { if (vendor.anim.loop !== 'idle') vendor.anim.setLoop('idle'); }
   else {
-    if (vendor.anim.loop !== 'walk') vendor.anim.setLoop('walk'); // setLoop() drops a splash reaction, so only on a change
+    if (vendor.anim.loop !== 'push') vendor.anim.setLoop('push'); // setLoop() drops a splash reaction, so only on a change
     vendor.g.rotation.y = VD.dir * Math.PI / 2; vendor.g.position.x += VD.dir * vendor.anim.speed * dt;
     if (vendor.g.position.x < VD.x0) VD.dir = 1; if (vendor.g.position.x > VD.x1) VD.dir = -1;
   }
@@ -200,16 +188,7 @@ W.tick((dt, T) => {
       face(k, t); k.anim.play(rnd() < .65 ? 'splash' : 'jump'); k.idleT = (party() ? 1.8 : 2.5) + rnd() * 3;
     }
   }
-  // bus: in from the west, wait at the stop, out to the east, round again
-  if (BUS.wait > 0) { BUS.wait -= dt; spayar.visible = BUS.wait > .6; }
-  else {
-    const toStop = L.STOP.x + 1.2 - bus.position.x, slow = BUS.stopped || toStop < 0 ? 1 : THREE.MathUtils.clamp(toStop / 2.5, .15, 1);
-    bus.position.x += BUS.speed * slow * dt;
-    if (!BUS.stopped && toStop < .03) { BUS.stopped = true; BUS.wait = 4; }
-    if (bus.position.x - BUS.len / 2 > BOUNDS.x1 + 4) { bus.position.x = BOUNDS.x0 - BUS.len; BUS.stopped = false; }
-  }
-  const p = player.g.position, bx = bus.position.x;
-  if (p.x > bx - BUS.len / 2 - .3 && p.x < bx + BUS.len / 2 + .3 && Math.abs(p.z - BUS.lane) < 1.1) { p.z = BUS.lane + Math.sign(p.z - BUS.lane || -1) * 1.1; W.collide(p); p.y = ground(p.x, p.z); }
+  const p = player.g.position;
   // Shwe Wa: on the roof (meowing) → hop down → trots after you → home by U Ba Tin
   const c = shweWa, cp = c.g.position, q = S.q.cat;
   if (CAT.hop) { const h = CAT.hop; h.t += dt / .7; const k = Math.min(1, h.t); cp.lerpVectors(h.from, h.to, k); cp.y += Math.sin(k * Math.PI) * .5; if (k >= 1) { CAT.hop = null; c.held = 'follow'; } }
@@ -223,11 +202,6 @@ W.tick((dt, T) => {
   }
   meow.visible = c.held === 'roof' && ['search', 'fish', 'lure'].includes(q) && (CAT.meowT -= dt) < 1.6;
   if (CAT.meowT < 0) CAT.meowT = 4 + rnd() * 2;
-  // chinlone (evening only): the cane ball loops between the three, whoever it reaches hops to kick it on
-  const play = party(); chinlone.forEach(c => { c.g.visible = play; }); ball.visible = play;
-  CH.t += dt / .9;
-  if (CH.t >= 1) { CH.t = 0; CH.from = CH.to; CH.to = (CH.to + 1 + (rnd() < .3 ? 1 : 0)) % 3; const k = chinlone[CH.from]; if (!k.anim.one) k.anim.play('jump'); }
-  { const a = chinlone[CH.from].g.position, b = chinlone[CH.to].g.position; ball.position.lerpVectors(a, b, CH.t); ball.position.y = .9 + Math.sin(CH.t * Math.PI) * 1.6; ball.rotation.x += dt * 6; }
   for (const s of L.spin) s.rotation.y += dt * 2;
   for (const f of TR.spin) f.rotation.z += dt * 9; // the tea shop's wall fan
 });
@@ -266,6 +240,8 @@ function hud2() {
   if (S.q.lights === 'bring') bag.push('ကြိုးခွေ');
   if (S.q.drum === 'carry' && S.carrying) bag.push('ရေပုံး');
   $('bag').innerHTML = bag.map(b => `<span>${b}</span>`).join('');
+  if (!party()) W.setTime(phase() === 'late' ? .07 : 0);
+  $('where').firstChild.nodeValue = `အကြိုနေ့ · ၁/၅ · ${PHASE[phase()]}\n  `;
   showParts(); save();
 }
 $('goal').addEventListener('click', () => $('goal').classList.toggle('open'));
@@ -383,7 +359,7 @@ function talkTea() {
   talk([[T, 'ထိုင်ပါ ထိုင်ပါ… ပလာတာ ပူပူလေး ရမယ်။']], null, teaBoss);
 }
 function serve(i) {
-  S.served.push(i); const c = customers[i]; c.anim.play('wave'); cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2);
+  S.served.push(i); const c = customers[i]; c.anim.play('wave'); setTimeout(() => c.anim.setLoop('eat'), 1500); cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2);
   hud.toast(`${ORDERS[i][0]} ချပြီ  (${MM(S.served.length)}/၃)`);
   if (S.served.length >= 3) S.q.tea = 'back';
   hud2();
@@ -601,7 +577,7 @@ fill(atBottom[S.q.cloth] ?? null); BK.y = BK.to = S.q.cloth in atBottom ? BBOT.y
 if (S.q.cat === 'done') catHome(); else if (S.q.cat === 'follow') { shweWa.held = 'follow'; shweWa.g.position.copy(W.player.g.position); } else shweWa.held = 'roof';
 if (S.q.drum === 'carry') S.carrying = false;
 setBanner(S.signName);
-for (const i of S.served) cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2);
+for (const i of S.served) { cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2); customers[i].anim.setLoop('eat'); }
 if (party()) { partyPose(); W.setTime(1); }
 
 // ---------- goal markers (in the world and on the minimap) ----------
@@ -628,7 +604,7 @@ hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BO
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ ပိတောက်နံ့ ရနေတုန်း…'],

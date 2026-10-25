@@ -96,7 +96,9 @@ export function createHud(W) {
     if (areaT > 0 && (areaT -= dt) <= 0) $('area').classList.remove('on');
   });
 
-  return { talk, say, next, toast, area, menu, closeMenu, timing, fade, cinematic, action, initMap,
+  const tool = t => { $('tool').innerHTML = t === 'gun' ? '<b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : '<b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun'); };
+  tool(W.player?.ch.tool ?? 'bucket');
+  return { talk, say, next, toast, area, menu, closeMenu, timing, fade, cinematic, action, initMap, tool,
     map: (p, goals, T, dt) => { if ((mapT -= dt) <= 0 && mapBase) { mapT = .1; drawMap(p, goals, T); } },
     talking: () => !!talking, menuOpen: () => !!menuOpen, mini: () => mini, busy: () => !!(talking || menuOpen || mini || scene) };
 }

@@ -273,7 +273,7 @@ const goals = () => {
 hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BOUNDS.x1, z0: -2, z1: 2 }, { x0: -2, x1: 2, z0: BOUNDS.z0, z1: BOUNDS.z1 }], BOUNDS);
 const here = play(W, hud, { spots: SPOTS, goals, areaAt }).here;
 
-W.setPlayer(makePlayer(W, S, STOP.x + 1.4, STOP.z + 1.2, Math.PI / 2));
+W.setPlayer(makePlayer(W, S, STOP.x + 1.4, STOP.z + 1.2, Math.PI / 2)); hud.tool(W.player.ch.tool); W.onTool = t => { S.tool = t; save(); hud.tool(t); };
 if (party()) W.setTime(1);
 $('title').firstChild.textContent = 'ဆူးလေ · မြို့လယ်';
 $('title').querySelector('small').textContent = 'မဏ္ဍပ်တန်း · ဘတ်စ်ကား ၃၆ နဲ့ ရောက်လာ';

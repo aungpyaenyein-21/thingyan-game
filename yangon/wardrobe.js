@@ -5,7 +5,7 @@ import { makeChibi, HAIRS, HAIRS_DYED, TOPS } from '../chibi.js?v=26';
 export const LOOK0 = { hair: 'short', hairColor: HAIRS[0], topStyle: 'tee', top: '#ffc83d', bottom: 'longyi', bottomColor: ['#3f7a5a', '#72b08b'], hat: 'goggles' };
 // what never changes about the hero; S.look (hair, clothes, hat) goes on top
 const BODY = { skin: '#efc29c', age: 'adult', prop: 'gun', accent: '#e0574f', shoes: 'sneaker', shoeColor: '#c8553d', garland: false, thanaka: 'round', print: 'သင်္ကြန်', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'wide', flower: false, build: 'broad' };
-export const makePlayer = (W, S, x, z, ry = 0) => W.bean({ ...BODY, ...S.look, x, z, ry });
+export const makePlayer = (W, S, x, z, ry = 0) => W.bean({ ...BODY, ...S.look, tools: ['bucket', 'gun'], tool: S.tool ?? 'bucket', x, z, ry }); // carries both; R swaps
 // rebuild the hero in place after a look change
 export function redress(W, S) { const old = W.player, p = makePlayer(W, S, old.g.position.x, old.g.position.z, old.g.rotation.y); W.removeChar(old); W.setPlayer(p); p.anim.play('wave'); }
 

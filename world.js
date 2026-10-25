@@ -155,7 +155,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const chars = [];
   function emitFx(type, obj, root) { // root: whoever is splashing, so kids can splash too, not just the player
     const w = obj.getWorldPosition(new THREE.Vector3());
-    if (type === 'splash') { const f = new THREE.Vector3(Math.sin(root.rotation.y), 0, Math.cos(root.rotation.y)); splash(w.addScaledVector(f, .15), f, 40); }
+    const f = new THREE.Vector3(Math.sin(root.rotation.y), 0, Math.cos(root.rotation.y)), k = root.scale.x;
+    if (type === 'splash') splash(w.addScaledVector(f, .2 * k).setY(w.y + .1), f, 64, root); // a bucket: a lot of water, it doesn't go far
+    if (type === 'squirt') { // a water gun: a thin, fast stream that carries
+      w.addScaledVector(f, .22 * k); const v = f.clone().multiplyScalar(8 + rnd() * .9); v.x += (rnd() - .5) * .25; v.z += (rnd() - .5) * .25; v.y = .9 + rnd() * .35;
+      spawn(w, v, { own: root, s: .6 });
+    }
     if (type === 'drip') for (let k = 0; k < 3; k++) { const a = rnd() * 6.28; spawn(w, new THREE.Vector3(Math.cos(a) * 2, 1 + rnd(), Math.sin(a) * 2)); }
   }
   function bean({ skin = pick(SKINS), shirt, hair, flower, bottom, longyi, x = 0, z = 0, ry = 0, print, age, hat, prop, build, topStyle, ...rest } = {}) {
@@ -175,12 +180,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const bottomColor = bottom === 'longyi' && longyi ? longyi : age === 'kid' && (bottom === 'shorts' || bottom === 'pants') ? pick(KID_BOTTOMS) : pick(BOTTOMS[bottom]);
     const hairColor = age === 'elder' ? HAIR_GREY : rnd() < (hair === 'mohawk' ? .7 : .2) ? pick(HAIRS_DYED) : pick(HAIRS);
     hat ??= hair === 'mohawk' ? 'none' : age === 'elder' ? pick(['none', 'bucket']) : pick(['none', 'none', 'band', 'goggles', 'bucket']);
-    prop ??= age === 'elder' ? 'none' : rnd() < .3 ? 'gun' : 'none';
+    prop ??= age === 'elder' ? 'none' : rnd() < .25 ? 'gun' : rnd() < .2 ? 'bucket' : 'none';
     const ch = makeChibi({ skin, top: shirt, topStyle, hair, hairColor, flower, bottom, bottomColor, print: print ?? pick(['သင်္ကြန်', '', '']),
-      shoes: rnd() < .7 ? 'slipper' : 'sneaker', shoeColor: pick(['#c8553d', '#3f6fa8', '#5a4a3a', '#e9b44c']), accent: pick(ACCENTS), hat, prop, garland: rnd() < .2,
+      shoes: rnd() < .7 ? 'slipper' : 'sneaker', shoeColor: pick(['#c8553d', '#3f6fa8', '#5a4a3a', '#e9b44c']), accent: pick(ACCENTS), hat, prop, tool: rest.tool ?? (prop === 'none' ? 'none' : prop), garland: rnd() < .2,
       thanaka: age === 'kid' ? pick(['square', 'round']) : pick(['round', 'leaf', 'dots', false]), age, build: build ?? (age === 'kid' ? 'round' : fem ? 'slim' : 'broad'), outline: true,
       eyes: pick(['round', 'round', 'almond', 'bead', 'sleepy']), brows: pick(['arc', 'flat', 'thin', 'bold']), lips: pick(['smile', 'grin', 'small', 'cat']),
       marks: age === 'kid' ? pick(['blush', 'blush', 'none']) : pick(['none', 'none', 'blush', 'freckles', 'mole']), head: pick(['wide', 'round', 'tall', 'soft']), ...rest });
+    ch.root.traverse(m => { if (m.isMesh) m.castShadow = false; }); // the soft blob under their feet is their shadow: half the draw calls for a crowd
     ch.root.position.set(x, ground(x, z), z); ch.root.rotation.y = ry; scene.add(ch.root);
     const c = { g: ch.root, ch, anim: null, cool: rnd() * 2, idleT: 2 + rnd() * 6 };
     c.anim = new ChibiAnimator(ch, (t, o) => emitFx(t, o, ch.root)); c.anim.T = rnd() * 3; // desync idle breathing/blinks
@@ -241,19 +247,29 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   }
 
   // ---------- particles: water + falling petals ----------
+  // drops live in a pool; only the live ones are touched each frame and drawn (water.count). A drop that hits someone stops there
+  // and bursts into a little spray off them, instead of flying on through.
   const NW = 1400, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NW);
-  water.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(water);
-  const drops = Array.from({ length: NW }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0 }));
-  let di = 0;
-  function spawn(p, v) { const d = drops[di = (di + 1) % NW]; d.p.copy(p); d.v.copy(v); d.life = 2.2; }
+  water.instanceMatrix.setUsage(THREE.DynamicDrawUsage); water.frustumCulled = false; water.count = 0; scene.add(water);
+  const free = Array.from({ length: NW }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0, s: 1, own: null, spray: false })), live = [];
+  function spawn(p, v, o) { // o: { own: the thrower's root (never hits them), s: size, life, spray: no hit test }
+    const d = free.pop() ?? live.shift(); if (!d) return;
+    d.p.copy(p); d.v.copy(v); d.life = o?.life ?? 2.2; d.s = o?.s ?? 1; d.own = o?.own ?? null; d.spray = !!o?.spray; live.push(d);
+  }
+  let sprayBudget = 0;
+  function burst(d) { // the drop splats on someone: a few small droplets bounce off them
+    if (sprayBudget <= 0) return; sprayBudget -= 3;
+    const back = d.v.clone().multiplyScalar(-.12);
+    for (let k = 0; k < 3; k++) spawn(d.p, new THREE.Vector3(back.x + (rnd() - .5) * 2.2, 1 + rnd() * 1.4, back.z + (rnd() - .5) * 2.2), { s: .5, life: .6, spray: true });
+  }
   const NR = 40, rings = new THREE.InstancedMesh(new THREE.RingGeometry(.12, .17, 14), new THREE.MeshBasicMaterial({ color: '#e8f8ff', transparent: true, opacity: .85 }), NR);
-  rings.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(rings);
+  rings.instanceMatrix.setUsage(THREE.DynamicDrawUsage); rings.frustumCulled = false; scene.add(rings);
   const ringD = Array.from({ length: NR }, () => ({ x: 0, z: 0, t: 9 })); let ri = 0;
-  function splash(from, dir, n = 34) {
+  function splash(from, dir, n = 34, own = null) { // a bucketful: a wide, heavy sheet of water that lands a couple of steps away
     for (let i = 0; i < n; i++) {
-      const v = dir.clone().multiplyScalar(3.5 + rnd() * 2.5);
-      v.x += (rnd() - .5) * 1.6; v.z += (rnd() - .5) * 1.6; v.y = 2.2 + rnd() * 2.2;
-      spawn(from, v);
+      const v = dir.clone().multiplyScalar(2.2 + rnd() * 1.6);
+      v.x += (rnd() - .5) * 1.8; v.z += (rnd() - .5) * 1.8; v.y = 1.4 + rnd() * 1.6;
+      spawn(from.clone().add(new THREE.Vector3((rnd() - .5) * .2, rnd() * .1, (rnd() - .5) * .2)), v, { own, s: .8 + rnd() * .5 });
     }
   }
   let petals = null, pet = [];
@@ -263,9 +279,15 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const keys = {};
   const act = name => { const a = W.player.anim; if (a.one && a.one !== 'jump') return; if (name === 'dance') { a.setLoop(a.loop === 'dance' ? 'idle' : 'dance'); return; } a.play(name); };
   const action = () => { if (W.onAction?.()) return; if (!W.frozen) act('splash'); };
+  const swapTool = () => { // bucket ⇄ water gun, for a hero who carries both
+    const c = W.player, ts = c.ch.tools.filter(t => t !== 'none'); if (ts.length < 2 || c.anim.one === 'splash' || c.anim.one === 'squirt') return;
+    const t = ts[(ts.indexOf(c.ch.tool) + 1) % ts.length]; c.anim.setTool(t); W.onTool?.(t);
+  };
+  document.getElementById('tool')?.addEventListener('pointerdown', e => { e.stopPropagation(); swapTool(); });
   addEventListener('keydown', e => {
     keys[e.code] = true; if (e.repeat) return;
     if (e.code === 'KeyE' || e.code === 'Enter') { action(); e.preventDefault(); return; }
+    if (e.code === 'KeyR') { swapTool(); return; }
     if (W.frozen) return;
     const m = { Space: 'jump', KeyQ: 'wave', Digit1: 'dance', Digit2: 'kadaw' }[e.code];
     if (m) { act(m); e.preventDefault(); }
@@ -283,7 +305,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q === 'off' ? 0 : 4 });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, cam));
-  if (Q !== 'off') composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25));
+  const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25) : null; if (bloom) composer.addPass(bloom);
   const look = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: .52 }, blur: { value: Q === 'off' ? 0 : 3.2 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
@@ -322,8 +344,25 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const tmp = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v3 = new THREE.Vector3();
   const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
   const clock = new THREE.Clock(); let T = 0;
+  const ndc = new THREE.Vector3();
+  const DTMAX = +(P.get('dt') || 1 / 30); // longest step per frame (?dt= lets a very slow test browser keep time)
+  // adaptive quality (unless ?q= says otherwise): if frames stay slow, step down — sharper pixels first, then bloom + blur,
+  // then smaller shadows, then no shadows. Never steps back up within a visit.
+  const AQ = { on: !P.get('q'), lvl: 0, t: -4, sum: 0, n: 0 };
+  function adapt(raw) {
+    if (!AQ.on || document.hidden || raw > .5) return;
+    AQ.t += raw; if (AQ.t < 0) return; AQ.sum += raw; AQ.n++;
+    if (AQ.t < 3) return;
+    const avg = AQ.sum / AQ.n; AQ.t = AQ.sum = AQ.n = 0;
+    if (avg < 1 / 40 || AQ.lvl >= 4) return;
+    AQ.lvl++;
+    if (AQ.lvl === 1) { renderer.setPixelRatio(Math.min(renderer.getPixelRatio(), 1.25)); resize(); }
+    if (AQ.lvl === 2) { if (bloom) bloom.enabled = false; look.uniforms.blur.value = 0; }
+    if (AQ.lvl === 3) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.setPixelRatio(1); resize(); }
+    if (AQ.lvl === 4) sun.castShadow = false;
+  }
   function frame() {
-    const dt = Math.min(clock.getDelta(), 1 / 30); T += dt;
+    const raw = clock.getDelta(), dt = Math.min(raw, DTMAX); T += dt; adapt(raw);
     const player = W.player, pa = player.anim;
 
     // player
@@ -349,32 +388,42 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const near = c => { if (c === player) return true; const p = c.g.parent === scene ? c.g.position : c.g.getWorldPosition(v3); return Math.abs(p.x - camTarget.x) + Math.abs(p.z - camTarget.z) < LOD; }; // far off-screen: skip the animation work
     for (const c of pets) if (near(c)) updatePet(c, dt);
     for (const f of ticks) f(dt, T);
-    for (const c of chars) { c.cool -= dt; if (near(c)) c.anim.update(dt); }
+    // people off screen: no animation, and their whole body is skipped by the renderer and the matrix update (a big crowd stays cheap)
+    for (const c of chars) {
+      c.cool -= dt;
+      let on = c === player;
+      if (!on && c.g.visible) { ndc.copy(c.g.parent === scene ? c.g.position : c.g.getWorldPosition(v3)).project(cam); on = ndc.x > -1.2 && ndc.x < 1.2 && ndc.y > -1.3 && ndc.y < 1.5; }
+      if (on !== c.on) { c.on = on; c.ch.body.visible = c.ch.blob.visible = on; c.ch.body.matrixWorldAutoUpdate = on; if (!on) { c.ch.bucket.visible = false; if (c.ch.hang) c.ch.hang.visible = false; } }
+      if (on) c.anim.update(dt);
+    }
 
-    // drops
-    const hitList = [...chars.filter(c => !c.dry), ...pets]; for (const c of hitList) c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3());
-    for (let i = 0; i < NW; i++) {
-      const d = drops[i];
-      if (d.life > 0) {
-        d.life -= dt; d.v.y += GRAV * dt; d.p.addScaledVector(d.v, dt);
-        if (d.p.y < .1) {
-          if (rnd() < .18) { const r = ringD[ri = (ri + 1) % NR]; r.x = d.p.x; r.z = d.p.z; r.t = 0; }
-          d.life = 0;
-        }
-        for (const c of hitList) {
-          if (c.cool <= 0 && Math.abs(d.p.x - c.wp.x) < .38 && Math.abs(d.p.z - c.wp.z) < .38 && d.p.y < c.wp.y + 1.4 && d.p.y > c.wp.y) {
-            c.cool = 2.5; if (c.hit) { c.hit(d); continue; }
+    // drops: only the live ones; hit-test only people near the camera
+    const hitList = []; if (live.length) for (const c of [...chars, ...pets]) if (!c.dry && c.g.visible && (c.on ?? near(c))) { c.wp = c.g.getWorldPosition(c.wp || new THREE.Vector3()); c.hr = .3 * c.g.scale.x + .06; c.hh = 1.45 * c.g.scale.x; hitList.push(c); }
+    sprayBudget = 45; let n = 0;
+    for (let i = 0; i < live.length; i++) {
+      const d = live[i];
+      d.life -= dt; d.v.y += GRAV * dt; d.p.addScaledVector(d.v, dt);
+      let dead = d.life <= 0;
+      if (!dead && d.p.y < .1) { if (rnd() < (d.spray ? .05 : .18)) { const r = ringD[ri = (ri + 1) % NR]; r.x = d.p.x; r.z = d.p.z; r.t = 0; } dead = true; }
+      if (!dead && !d.spray) for (const c of hitList) {
+        if (c.g === d.own || Math.abs(d.p.x - c.wp.x) > c.hr || Math.abs(d.p.z - c.wp.z) > c.hr || d.p.y > c.wp.y + c.hh || d.p.y < c.wp.y) continue;
+        dead = true; burst(d);
+        if (c.cool <= 0) {
+          c.cool = 2.5;
+          if (c.hit) c.hit(d);
+          else {
             c.anim.soak(.6); // splashed! soaked (>_<), then shake it off, jump or cheer
             const r = c === player ? 'shake' : pick(['jump', 'shake', 'wave']);
-            if (!c.anim.one) { c.anim.play(r); if (c === player || rnd() < .6) c.anim.emote({ shake: 'drop', jump: 'bang', wave: 'heart' }[r]); }
-            c.onSplash?.();
+            if (!c.anim.one || c.anim.one === 'jump') { c.anim.play(r); if (c === player || rnd() < .6) c.anim.emote({ shake: 'drop', jump: 'bang', wave: 'heart' }[r]); }
+            c.onSplash?.(d);
           }
-        }
+        } else if (c !== player && c.ch.wet !== undefined) c.ch.wet = Math.min(1, c.ch.wet + .02); // a stream keeps soaking them
+        break;
       }
-      sc.setScalar(d.life > 0 ? 1 : 0);
-      water.setMatrixAt(i, tmp.compose(d.p, q, sc));
+      if (dead) { d.life = 0; free.push(d); continue; }
+      live[n] = d; water.setMatrixAt(n++, tmp.compose(d.p, q, sc.setScalar(d.s)));
     }
-    water.instanceMatrix.needsUpdate = true;
+    live.length = n; water.count = n; water.instanceMatrix.needsUpdate = true;
     for (let i = 0; i < NR; i++) {
       const r = ringD[i]; r.t += dt; const s = r.t < .5 ? 1 + r.t * 5 : 0;
       rings.setMatrixAt(i, tmp.compose(v3.set(r.x, .09, r.z), flat, sc.setScalar(s)));
@@ -455,7 +504,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
-    padauk, flowerSpots, sag, bean, chars, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
+    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }
