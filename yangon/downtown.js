@@ -209,7 +209,7 @@ const balloons = Array.from({ length: 14 }, (_, i) => { const b = W.keep(mesh(ne
 
 // ---------- the living street ----------
 W.tick((dt, T) => {
-  sound.env({ phase: 'day', night: W.night(), street: .5, crowd: .9, water: .9 }); // downtown: a big crowd and the hoses going
+  sound.env({ phase: 'day', night: W.night(), crowd: .9, water: .9 }); // downtown: a big crowd and the hoses going
   // hoses: pulse on and off, each stage on its own beat
   emitters.forEach((e, i) => { if (Math.sin(T * .8 + i * .7) < -.25 || rnd() < .4) return; const vv = e.d.clone().multiplyScalar(e.k + rnd()); vv.x += (rnd() - .5) * .8; vv.z += (rnd() - .5) * .4; W.spawn(e.p, vv); });
   // float round the ring; riders splash now and then; keep you from under the wheels

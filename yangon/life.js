@@ -371,5 +371,6 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const v of CARS) if (v.on) shove(0, 0, v.g.position.x, v.g.position.z, 1, .5);
   });
   people.push(...ring, ...roadKids, alighter);
-  return { bus, BUS, knot, people, say };
+  const vehicles = () => [...(BUS.away <= 0 ? [bus.position] : []), ...CARS.filter(v => v.on).map(v => v.g.position)]; // for the engine sound
+  return { bus, BUS, knot, people, say, vehicles };
 }

@@ -212,7 +212,8 @@ W.tick((dt, T) => {
   { // what you hear: the street, the market, people near you, water, the kyaung — or the inside of a shop
     let crowd = 0; for (const ch of W.chars) if (ch.on && ch !== player && ch.g.parent === scene && Math.abs(ch.g.position.x - p.x) + Math.abs(ch.g.position.z - p.z) < 7) crowd++;
     const mk = p.x < 11.8 && p.z > 9.8 ? 1 : THREE.MathUtils.clamp(1 - Math.max(p.x - 11.8, 9.8 - p.z) / 6, 0, 1);
-    sound.env({ phase: phase(), night: W.night(), inside, street: THREE.MathUtils.clamp(1 - Math.abs(p.z - 7.8) / 8, 0, 1), market: closed() ? 0 : mk, crowd: Math.min(1, crowd / 10),
+    let engine = 0; for (const vp of life.vehicles()) engine = Math.max(engine, 1 - Math.hypot(vp.x - p.x, vp.z - p.z) / 9);
+    sound.env({ phase: phase(), night: W.night(), inside, engine, market: closed() ? 0 : mk, crowd: Math.min(1, crowd / 10),
       water: THREE.MathUtils.clamp(1 - p.distanceTo(KIDS_AT) / 9, 0, 1) * (party() ? 1.5 : 1), kyaung: THREE.MathUtils.clamp(1 - p.distanceTo(L.MONASTERY) / 14, 0, 1) });
   }
   for (const s of L.spin) s.rotation.y += dt * 2;

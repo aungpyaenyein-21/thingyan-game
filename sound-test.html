@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>သင်္ကြန် အသံစစ်</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  /* layout: one narrow column of rows, like a sound engineer's cue sheet — scene buttons on top, then beds, events, effects */
+  :root {
+    --bg: #f6f1e7; --panel: #fffaf1; --ink: #2b2236; --muted: #7a6f86; --line: #e4d9c6;
+    --accent: #c98a12; --accent-ink: #ffffff; --on: #3f7a5a; --meter: #e0a21b;
+    --f-body: "Noto Sans Myanmar", "Padauk", "Myanmar Text", system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #17142a; --panel: #211d38; --ink: #efe8f8; --muted: #a89fbd; --line: #36305a;
+    --accent: #f0b33a; --accent-ink: #1d1830; --on: #7fcf9c; --meter: #f0b33a; color-scheme: dark } }
+  :root[data-theme="dark"] {
+    --bg: #17142a; --panel: #211d38; --ink: #efe8f8; --muted: #a89fbd; --line: #36305a;
+    --accent: #f0b33a; --accent-ink: #1d1830; --on: #7fcf9c; --meter: #f0b33a; color-scheme: dark }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.7;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px }
+  main { max-width: 760px; margin: 0 auto; display: grid; gap: 28px }
+  h1 { font-size: 24px; margin: 0; text-wrap: balance; line-height: 1.5 }
+  h2 { font-size: 16px; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline }
+  h2 .tag { font-family: var(--f-mono); font-size: 12px; color: var(--accent) }
+  p { margin: 0; color: var(--muted); max-width: 62ch }
+  header { display: grid; gap: 12px }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 10px; padding: 6px 14px; line-height: 1.5 }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600 }
+  button.on { border-color: var(--on); color: var(--on); font-weight: 600 }
+  .meter { flex: 1 1 160px; min-width: 120px; height: 10px; border-radius: 6px; background: var(--line); overflow: hidden }
+  .meter i { display: block; height: 100%; width: 0; background: var(--meter); transition: width .08s linear }
+  .rows { display: grid; border-top: 1px solid var(--line) }
+  .row { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line) }
+  .row .id { font-family: var(--f-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums }
+  .row .name { font-weight: 600; min-width: 0 }
+  .row .where { grid-column: 2 / 4; font-size: 13px; color: var(--muted); min-width: 0 }
+  .row .ctl { display: flex; gap: 8px; align-items: center }
+  .row input[type=range] { width: 110px; accent-color: var(--accent) }
+  .scenes { display: flex; flex-wrap: wrap; gap: 8px }
+  .note { font-size: 13px }
+  @media (max-width: 480px) { .row input[type=range] { width: 80px } h1 { font-size: 21px } }
+  @media (prefers-reduced-motion: reduce) { .meter i { transition: none } }
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>သင်္ကြန် ရပ်ကွက် — အသံစစ်</h1>
+    <p>ဂိမ်းထဲမှာ သုံးထားတဲ့ အသံ အကုန်ပါ။ ဖိုင်မသုံးဘဲ browser ထဲမှာ ဖန်တီးထားတာပါ။ မကြိုက်တဲ့ အသံရှိရင် ဘယ်ဘက်က <b>နံပါတ်</b> (ဥပမာ B2) နဲ့ ပြောပေးပါ။</p>
+    <div class="bar">
+      <button id="go" class="primary" type="button">▶ အသံ စဖွင့်</button>
+      <button id="stop" type="button">■ အကုန်ရပ်</button>
+      <div class="meter" aria-label="အသံ ပမာဏ"><i id="lv"></i></div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="tag">S</span>မြင်ကွင်းလိုက် နားထောင် (ဂိမ်းထဲက စည်းကမ်းအတိုင်း ရောစပ်)</h2>
+    <p class="note">ဂိမ်းထဲမှာ အဲဒီနေရာ ရောက်နေသလို အသံတွေ ရောပြီး ထွက်ပါမယ်။</p>
+    <div class="scenes" id="scenes"></div>
+  </section>
+
+  <section>
+    <h2><span class="tag">A</span>နောက်ခံ အသံ (ဆက်တိုက်)</h2>
+    <p class="note">ဖွင့်/ပိတ် နဲ့ အသံ ကျယ်/တိုး ချိန်ကြည့်လို့ရ။ ဂိမ်းထဲမှာ ဒီအသံတွေက ပြထားတဲ့ နေရာမှာပဲ ထွက်ပါတယ်။</p>
+    <div class="rows" id="loops"></div>
+  </section>
+
+  <section>
+    <h2><span class="tag">B</span>ပတ်ဝန်းကျင် အသံ (ခဏခဏ ထွက်)</h2>
+    <div class="rows" id="once"></div>
+  </section>
+
+  <section>
+    <h2><span class="tag">C</span>လုပ်ဆောင်ချက် အသံ</h2>
+    <div class="rows" id="fx"></div>
+  </section>
+</main>
+
+<script type="module">
+  import { createSound, CATALOG } from './sound.js?v=1';
+  const snd = createSound(null, { manual: true });
+  const $ = id => document.getElementById(id);
+  const DEFAULT = { crowd: .4, engine: .35, tv: .25, roar: .05, fan: .12 };
+  const loopOn = {};
+  let scene = null;
+
+  function row(item, i, prefix) {
+    const r = document.createElement('div'); r.className = 'row';
+    r.innerHTML = `<span class="id">${prefix}${i + 1}</span><span class="name"></span><span class="ctl"></span><span class="where"></span>`;
+    r.querySelector('.name').textContent = item.name; r.querySelector('.where').textContent = 'နေရာ — ' + item.where;
+    const ctl = r.querySelector('.ctl');
+    if (item.kind === 'loop') {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = 'ဖွင့်'; b.id = 'l-' + item.key;
+      const s = document.createElement('input'); s.type = 'range'; s.min = 0; s.max = 1; s.step = .01; s.value = DEFAULT[item.key] ?? .3; s.id = 'v-' + item.key; s.setAttribute('aria-label', item.name + ' အသံ');
+      b.addEventListener('click', () => { stopScene(); loopOn[item.key] = !loopOn[item.key]; b.classList.toggle('on', loopOn[item.key]); b.textContent = loopOn[item.key] ? 'ပိတ်' : 'ဖွင့်'; snd.setLoop(item.key, loopOn[item.key] ? +s.value : 0); });
+      s.addEventListener('input', () => { if (loopOn[item.key]) snd.setLoop(item.key, +s.value); });
+      ctl.append(s, b);
+    } else {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = '▶ နားထောင်'; b.id = 'p-' + item.key;
+      b.addEventListener('click', () => snd.play(item.key));
+      ctl.append(b);
+    }
+    return r;
+  }
+  CATALOG.filter(c => c.kind === 'loop').forEach((c, i) => $('loops').append(row(c, i, 'A')));
+  CATALOG.filter(c => c.kind === 'once').forEach((c, i) => $('once').append(row(c, i, 'B')));
+  CATALOG.filter(c => c.kind === 'fx').forEach((c, i) => $('fx').append(row(c, i, 'C')));
+
+  const SCENES = [
+    ['မနက် · ① ရပ်ကွက်', { phase: 'morning', night: 0, crowd: .3, water: .4, kyaung: .2 }],
+    ['နေ့လယ် · ဈေးထဲ', { phase: 'day', night: 0, crowd: .9, market: 1 }],
+    ['လမ်းမ · ကားနား', { phase: 'day', night: 0, crowd: .3, engine: .8 }],
+    ['ဘုန်းကြီးကျောင်းနား', { phase: 'morning', night: 0, crowd: .1, kyaung: 1 }],
+    ['လက်ဖက်ရည်ဆိုင်ထဲ', { phase: 'day', night: 0, inside: 'tea' }],
+    ['ည · ရပ်ကွက်', { phase: 'evening', night: 1, crowd: .2 }],
+  ];
+  SCENES.forEach(([name, e], i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = `S${i + 1} ${name}`; b.id = 's-' + i;
+    b.addEventListener('click', () => { snd.start(); allLoopsOff(); scene = e; document.querySelectorAll('#scenes button').forEach(x => x.classList.toggle('on', x === b)); });
+    $('scenes').append(b);
+  });
+  function allLoopsOff() { for (const c of CATALOG) if (c.kind === 'loop') { loopOn[c.key] = false; snd.setLoop(c.key, 0); const b = $('l-' + c.key); b.classList.remove('on'); b.textContent = 'ဖွင့်'; } }
+  function stopScene() { if (!scene) return; scene = null; for (const c of CATALOG) if (c.kind === 'loop') snd.setLoop(c.key, 0); document.querySelectorAll('#scenes button').forEach(x => x.classList.remove('on')); }
+  $('go').addEventListener('click', () => { snd.start(); $('go').textContent = '✓ အသံ ဖွင့်ပြီး'; });
+  $('stop').addEventListener('click', () => { stopScene(); allLoopsOff(); });
+
+  let last = performance.now();
+  function frame(t) {
+    const dt = Math.min(.1, (t - last) / 1000); last = t;
+    if (scene) snd.env(scene, true); else snd.tick(dt);
+    $('lv').style.width = Math.min(100, snd.level() * 400) + '%';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>
