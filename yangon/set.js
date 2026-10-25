@@ -148,7 +148,7 @@ export function buildSet(W) {
     g.fillStyle = '#8a5a38'; for (let y = 0; y < 64; y += 8) g.fillRect(0, y, 64, 2); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 2); t.magFilter = THREE.NearestFilter; return t; })();
   const plankM = new THREE.MeshLambertMaterial({ map: plank });
   const zinc = new THREE.MeshLambertMaterial({ map: stripeTex('#b4bcc4', '#8f99a3', 16), flatShading: true });
-  const gable = (x, y, z, len, r, k = .5) => { const rg = new THREE.CylinderGeometry(r, r, len, 3); rg.rotateX(-Math.PI / 2); rg.rotateY(Math.PI / 2); rg.scale(1, k, 1); return mesh(rg, zinc, x, y, z); }; // triangular prism, ridge along x
+  const gable = (x, y, z, len, r, k = .5, mat = zinc) => { const rg = new THREE.CylinderGeometry(r, r, len, 3); rg.rotateX(-Math.PI / 2); rg.rotateY(Math.PI / 2); rg.scale(1, k, 1); return mesh(rg, mat, x, y, z); }; // triangular prism, ridge along x
   {
     const X = 5.6, Z = -6.5;
     box(5.2, 1.4, 3.2, '#eef1ee', X, .02, Z); box(5.22, .5, 3.22, '#6f9fc8', X, .02, Z, { cast: false });
@@ -293,13 +293,16 @@ export function buildSet(W) {
   // ---------- ③ the ward market: vendors on mats along two lanes, umbrellas and plastic tarps, a zinc-roofed market shed behind ----------
   const FROND = frondGeo(THREE), frondM = M('#7fae5a', { side: THREE.DoubleSide }), dryM = M('#c8b070', { side: THREE.DoubleSide });
   const TARP = ['#3f6fa8', '#e0843f', '#4f8f5a', '#c8553d', '#7a8fd0'];
+  // the market's roofs, tarps and umbrellas get their own materials so main.js can fade them out while you're in the market
+  L.roofFade = []; const fadeOf = new Map();
+  const fade = m => { if (!fadeOf.has(m)) { const f = m.clone(); f.transparent = true; L.roofFade.push(f); fadeOf.set(m, f); } return fadeOf.get(m); };
   const tarp = (x, z, w, d, c, h = 2.0) => { // a plastic sheet on four bamboo poles, sagging
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) cyl(.035, .035, h, PAL.bamboo, x + sx * w / 2, .02, z + sz * d / 2, 5);
     const g = new THREE.PlaneGeometry(w + .2, d + .2, 4, 4), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) p.setZ(i, -.18 * (1 - (2 * p.getX(i) / (w + .2)) ** 2) * (1 - (2 * p.getY(i) / (d + .2)) ** 2)); g.computeVertexNormals();
-    const m = mesh(g, M(c, { side: THREE.DoubleSide }), x, h + .02, z); m.rotation.x = -Math.PI / 2;
+    const m = mesh(g, fade(M(c, { side: THREE.DoubleSide })), x, h + .02, z); m.rotation.x = -Math.PI / 2;
   };
-  const umbrella = (x, z, cA, cB) => { cyl(.03, .03, 1.9, '#8f8794', x, .02, z, 5); mesh(new THREE.CylinderGeometry(.02, 1.05, .35, 8, 1, true), new THREE.MeshLambertMaterial({ map: stripeTex(cA, cB, 8), side: THREE.DoubleSide }), x, 1.92, z); };
+  const umbrella = (x, z, cA, cB) => { cyl(.03, .03, 1.9, '#8f8794', x, .02, z, 5); mesh(new THREE.CylinderGeometry(.02, 1.05, .35, 8, 1, true), fade(new THREE.MeshLambertMaterial({ map: stripeTex(cA, cB, 8), side: THREE.DoubleSide })), x, 1.92, z); };
   const GOODS = { veg: [PAL.leaf, PAL.leafLight, '#e0574f', '#7a4a9a'], fruit: ['#f2c14e', '#e8954a', '#86b96d'], flower: ['#ffc83d', '#fff6ea', '#f48fb1'], fish: ['#9aa3ad', '#c9d2dc'], dry: ['#c8553d', '#e8954a', '#d9b98f'], guns: ['#ff7f3f', '#4fb3d9', '#8bd17c', '#f06292'] };
   L.SEATS = [];
   function pitch(x, z, side, kind, cover) { // one vendor's patch: a sheet on the ground, baskets, trays, a basin, a low stool
@@ -330,7 +333,7 @@ export function buildSet(W) {
     const X = .2, w = 19.4;
     for (let x = X - w / 2 + .2; x <= X + w / 2; x += 2.4) for (const z of [z0 + .15, z1 - .15]) cyl(.12, .12, 2.6, '#bdb6ae', x, .02, z, 6);
     box(w, .8, z1 - z0, '#d9cdb8', X, .02, (z0 + z1) / 2);   // brick half wall the stalls lean on
-    gable(X, 3.2, (z0 + z1) / 2, w + .8, (z1 - z0) * .78, .38);
+    gable(X, 3.2, (z0 + z1) / 2, w + .8, (z1 - z0) * .78, .38, fade(zinc));
     for (let i = 0; i < 8; i++) box(.8, .5, .6, pick(['#c8553d', '#3f6fa8', '#e9e1d2', '#f2c14e']), X - w / 2 + 1.4 + i * 2.4, .82, z0 + .6);  // goods heaped along the shed's edge
     solid(X, (z0 + z1) / 2, w, z1 - z0);
   }

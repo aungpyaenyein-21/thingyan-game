@@ -65,9 +65,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     k.who = w; k.ppl.forEach((c, i) => { c.anim.chat = i === w ? 'speak' : 'listen'; }); if (rnd() < .3) k.ppl[w].anim.emote('dots', 1.2);
     k.t = 2.4 + rnd() * 3.5;
   }
-  standingKnot(-1.2, 2.3, 3, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
-  standingKnot(23.6, 9.45, 3, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }));                                // ② men on the corner
-  standingKnot(14.2, -1.3, 2, () => ({ age: 'adult', topStyle: 'tank', bottom: 'longyi', hat: 'none' }), .5);                                    // ② behind the shops, a smoke break
+  standingKnot(-1.2, 2.3, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
+  standingKnot(23.6, 9.45, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }));                                // ② men on the corner
   standingKnot(8.7, 20.3, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
   const yardElders = standingKnot(20.4, 12.1, 2, () => ({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }), .5);              // ④ in the kyaung yard
 
@@ -115,7 +114,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       await walk(c, [[seatX, 6.45], DOOR()]); BUS.boarding--;
     }
   }
-  [[1.9, {}], [3.3, { age: 'elder' }]].forEach(([x, o]) => waiter(npc(o), x));
+  [[2.6, { age: 'elder' }]].forEach(([x, o]) => waiter(npc(o), x));
   const alighter = npc({ age: 'adult', hair: 'long', topStyle: 'shirt', bottom: 'htamein' }); alighter.ch.hang = shopBag(alighter); show(alighter, false);
   async function getOff() { const c = alighter; c.g.position.copy(DOOR()); show(c, true); await walk(c, [[-2.8, 6.45], [-3.6, 5.5], [-3.6, -1.6]]); show(c, false); }
   function stepBus(dt) {
@@ -153,7 +152,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   function stepCars(dt) {
     if ((carT -= dt) < 0) {
-      carT = 7 + rnd() * 10; const v = pick(CARS.filter(c => !c.on));
+      carT = 12 + rnd() * 14; const v = pick(CARS.filter(c => !c.on)); // a car now and then, not traffic
       if (v) { v.on = true; v.dir = rnd() < .5 ? 1 : -1; v.lane = v.dir > 0 ? 8.3 : 7.3; v.g.rotation.y = v.dir > 0 ? 0 : Math.PI; v.g.position.set(v.dir > 0 ? BOUNDS.x0 - 3 : BOUNDS.x1 + 3, .045, v.lane); v.g.visible = true; v.speed = v.max; }
     }
     for (const v of CARS) {
@@ -200,7 +199,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       v.g.visible = true; await drive(v, r.slice(1));
     }
   }
-  [bike('#3f6fa8', { age: 'adult', topStyle: 'shirt', bottom: 'longyi', hat: 'none' }), bike('#c8553d', { age: 'kid', hat: 'band' }), bike('#4f8f5a', { age: 'adult', hair: 'long', bottom: 'htamein', hat: 'none' })].forEach((v, i) => cyclist(v, i * 2));
+  [bike('#3f6fa8', { age: 'adult', topStyle: 'shirt', bottom: 'longyi', hat: 'none' }), bike('#4f8f5a', { age: 'adult', hair: 'long', bottom: 'htamein', hat: 'none' })].forEach((v, i) => cyclist(v, i * 2));
   // the trishaw (ဆိုက်ကား): sidecar on the right, back-to-back seats; takes an auntie with a basket to market and comes back empty
   const trike = { g: group(), speed: 1.7, bell: 'ဆိုက်ကား~ ဆိုက်ကား~' };
   {
@@ -264,7 +263,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       await walk(c, [...HOME.slice(1), ...TO_MARKET]); await shopper(c); delay = 6;
     }
   }
-  [{ hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }, { age: 'elder', hair: 'bun', bottom: 'htamein' }, { hair: 'long', topStyle: 'tee', bottom: 'skirt' }, { age: 'adult', topStyle: 'shirt', bottom: 'longyi', hat: 'none' }]
+  [{ hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }, { age: 'elder', hair: 'bun', bottom: 'htamein' }, { hair: 'long', topStyle: 'tee', bottom: 'skirt' }]
     .forEach((o, i) => { const c = npc({ age: 'adult', ...o }); c.ch.hang = basket(c); people.push(c); marketGoer(c, i * 7); });
   // offerings to the kyaung: trays held out in front, in at the gate, three bows to the abbot, home again
   const TO_KYAUNG = [[-2.6, 8.95], [12.2, 8.95], [12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
@@ -276,7 +275,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     c.tray.visible = false; c.dry = false; c.anim.chat = 'listen'; await wait(8 + rnd() * 6); c.anim.chat = null;
     await walk(c, [[17.4, 18.6], ...back(TO_KYAUNG).slice(1), ...back(HOME)]); show(c, false);
   }
-  [{ age: 'elder', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }, { age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }, { age: 'adult', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }]
+  [{ age: 'elder', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }, { age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }]
     .forEach((o, i) => { const c = npc(o); c.tray = tray(c); c.dry = true; people.push(c); pilgrim(c, i); }); // nobody splashes someone carrying food for the monks
 
   // ---------- ② push cart on the market street: ice lollies, the little bell ----------

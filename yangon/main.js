@@ -167,6 +167,7 @@ function catHome() { shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE
 
 // ---------- the story's street: the veg cart, the kids, Shwe Wa, the barber pole ----------
 const party = () => partyOf(S);
+let roofA = 1;
 W.tick((dt, T) => {
   const player = W.player;
   // vendor: walks the lane, stops for you, calls out every few seconds
@@ -202,6 +203,9 @@ W.tick((dt, T) => {
   }
   meow.visible = c.held === 'roof' && ['search', 'fish', 'lure'].includes(q) && (CAT.meowT -= dt) < 1.6;
   if (CAT.meowT < 0) CAT.meowT = 4 + rnd() * 2;
+  // in the market the roofs go see-through, so you can see the lanes and yourself under them
+  const inMarket = !inside && p.x < 11.8 && p.z > 9.8; roofA += ((inMarket ? .15 : 1) - roofA) * Math.min(1, dt * 4);
+  for (const m of L.roofFade) { m.opacity = roofA; m.depthWrite = roofA > .95; }
   for (const s of L.spin) s.rotation.y += dt * 2;
   for (const f of TR.spin) f.rotation.z += dt * 9; // the tea shop's wall fan
 });
