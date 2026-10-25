@@ -23,16 +23,17 @@ export function createHud(W) {
   const area = t => { $('area').textContent = t; $('area').classList.add('on'); areaT = 2.2; };
 
   // ---------- menus: one list of choices; an item's on() returning true keeps the menu open (live previews) ----------
-  function menu({ title, items, close = 'ပိတ်မယ်', onClose }) {
-    menuOpen = { onClose }; sync();
+  function menu({ title, items, close = 'ပိတ်မယ်', onClose, side = false }) { // side: dock to the right so you can see yourself (wardrobe)
+    menuOpen = { onClose }; sync(); $('menu').classList.toggle('side', side);
     $('mtitle').textContent = title;
     const list = $('mlist'); list.innerHTML = '';
     for (const it of items) {
       if (it.head) { const h = document.createElement('div'); h.className = 'mhead'; h.textContent = it.head; list.appendChild(h); continue; }
       const b = document.createElement('button'); b.type = 'button'; b.disabled = !!it.disabled; if (it.cls) b.className = it.cls;
       if (it.swatch) { const s = document.createElement('i'); s.style.background = it.swatch; b.appendChild(s); }
+      if (it.img) { const im = document.createElement('img'); im.src = it.img; im.alt = ''; b.appendChild(im); b.classList.add('pic'); }
       b.append(it.label); if (it.note) { const em = document.createElement('em'); em.textContent = it.note; b.appendChild(em); }
-      b.addEventListener('click', e => { e.stopPropagation(); if (!it.on?.(b)) closeMenu(); });
+      b.addEventListener('click', e => { e.stopPropagation(); if (it.on?.(b)) { list.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on'); } else closeMenu(); });
       list.appendChild(b);
     }
     $('mclose').textContent = close; $('menu').hidden = false;
@@ -101,7 +102,7 @@ export function createHud(W) {
 }
 // play(): the "what can I do here" loop both maps share. spots: [{ at() → Vector3, r, label() → text | null, goal() → bool, run() }];
 // a spot your goal points at beats a nearer bystander for the E prompt. goals() → positions for the gold arrows + minimap dots.
-export function play(W, hud, { spots, goals, areaAt }) {
+export function play(W, hud, { spots, goals, areaAt, mapAt }) { // mapAt: where to put your dot when you're in a room
   const { THREE } = W, PP = new THREE.Vector3();
   const markers = Array.from({ length: 12 }, () => { const m = W.keep(W.mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false })); m.rotation.x = Math.PI; return m; });
   const PROMPT = $('prompt'), PTEXT = $('ptext'), SPLASH = $('splash');
@@ -117,7 +118,7 @@ export function play(W, hud, { spots, goals, areaAt }) {
     if (ui !== lastUI) { lastUI = ui; PROMPT.hidden = !label; if (label) PTEXT.textContent = label; SPLASH.classList.toggle('act', !!label || busy); SPLASH.textContent = label || busy ? 'လုပ်' : 'ရေပက်'; }
     const g = goals();
     markers.forEach((m, i) => { const p = g[i]; m.visible = !!p && !busy; if (p) { m.position.set(p.x, (p.y || 0) + 2.2 + Math.sin(T * 3 + i) * .12, p.z); m.rotation.y = T * 1.5; } });
-    hud.map(W.player.g.position, g, T, dt);
+    hud.map(mapAt?.() ?? W.player.g.position, g, T, dt);
     const a = areaAt(W.player.g.position.x, W.player.g.position.z);
     if (a && a.name !== lastArea) { if (lastArea) hud.area(a.name); lastArea = a.name; }
   });

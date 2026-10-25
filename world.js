@@ -35,7 +35,7 @@ const FONT = '"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif';
 // paintSky(g, W, H, dusk) = extra sky art (skyline, zedi), camClamp = how far the camera follows (small islands),
 // camBounds = { x0, x1, z0, z1 }: on a big map the camera centres on you, kept inside this rect; view = default zoom
 export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, camClamp = 4, camBounds, view = 15, seed = 20270413 } = {}) {
-  const B = bounds ?? { x0: -half, x1: half, z0: -half, z1: half };
+  let B = bounds ?? { x0: -half, x1: half, z0: -half, z1: half };
   const P = new URLSearchParams(location.search);
   let VIEW = +(P.get('v') || view); // ortho view height (units); wheel zooms 7..28
   const Q = P.get('q') || (matchMedia('(pointer:coarse)').matches ? 'low' : 'high'); // ?q=low|high|off
@@ -335,7 +335,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
     const moving = mv.lengthSq() > .01;
     const loop = moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle';
-    if ((pa.loop !== 'dance' || moving) && loop !== pa.loop) pa.setLoop(loop); // setLoop() drops any one-shot, so only call it on a real change
+    if ((!['dance', 'sit'].includes(pa.loop) || moving) && loop !== pa.loop) pa.setLoop(loop); // dancing / sitting last until you move; setLoop() drops any one-shot, so only on a real change
     if (moving && pa.speed > 0) {
       mv.normalize();
       player.g.position.addScaledVector(mv, pa.speed * dt); collide(player.g.position);
@@ -443,10 +443,19 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     }
     statics.length = 0;
   }
+  // rooms: a shop interior built off the island swaps in its own walls, floor and camera box; null goes back outside
+  const outside = { B, ground, camBounds, bg: null };
+  function setRoom(r) { // r: { bounds, ground, camBounds, background, view }; the camera jumps straight there
+    if (!r) { B = outside.B; ground = outside.ground; camBounds = outside.camBounds; scene.background = skyT; if (outside.view) { VIEW = outside.view; outside.view = null; fitCam(); } }
+    else { B = r.bounds; ground = r.ground; camBounds = r.camBounds; scene.background = new THREE.Color(r.background || '#3a2a3e'); if (r.view) { outside.view ??= VIEW; VIEW = r.view; fitCam(); } }
+    W.ground = ground; W.bounds = B;
+    W.player.g.position.y = ground(W.player.g.position.x, W.player.g.position.z);
+  }
+  const snapCam = () => { camTarget.copy(W.player.g.position).setY(0); if (camBounds) { camTarget.x = THREE.MathUtils.clamp(camTarget.x, camBounds.x0, camBounds.x1); camTarget.z = THREE.MathUtils.clamp(camTarget.z, camBounds.z0, camBounds.z1); } };
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, bake, removeChar, offLimits: null };
+    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

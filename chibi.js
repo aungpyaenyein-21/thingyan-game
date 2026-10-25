@@ -430,8 +430,8 @@ const base = () => Object.fromEntries(KEYS.map(k => [k, k === 'sy' ? 1 : 0]));
 const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 const clamp01 = t => Math.min(1, Math.max(0, t));
 
-// loops: idle | walk | run | dance ; one-shots: jump | splash | shake | wave | kadaw
-export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 } };
+// loops: idle | walk | run | dance | sit ; one-shots: jump | splash | shake | wave | kadaw
+export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 } };
 const LEG = UP + LO;
 for (const k of ['walk', 'run']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
 export const ONESHOT = { jump: .98, splash: .95, shake: 1.0, wave: 1.5, kadaw: 2.6 };
@@ -515,6 +515,10 @@ export class ChibiAnimator {
       const stance = c > 0 ? 1 : -1; // dust on each foot strike while running
       if (run && stance !== this.lastStance) this.emit('dust', this.ch.legs[stance > 0 ? 1 : 0].foot);
       this.lastStance = stance;
+    } else if (name === 'sit') { // on a tea-shop stool: thighs forward, shins down, hands on the knees, a slow breath
+      const b = Math.sin(T * 1.8);
+      p.y = -.2; p.legLx = p.legRx = -1.45; p.kneeL = p.kneeR = 1.45; p.footL = p.footR = 0; p.legLz = .12; p.legRz = -.12;
+      p.spineRx = .06 + .01 * b; p.armLx = p.armRx = -.55; p.armLz = .18; p.armRz = -.18; p.elbowL = p.elbowR = -.55; p.headRz = .04 * Math.sin(T * .7);
     } else if (name === 'dance') { // yein: hips sway, knee dips, raised arms with wrist flicks
       const b = T * Math.PI * 2 * 1.1, s = Math.sin(b), d = (1 + Math.sin(2 * b)) / 2;
       p.x = .05 * s; p.hipsRz = .08 * s; p.spineRz = -.1 * s; p.headRz = .14 * Math.sin(b + 1.2);
