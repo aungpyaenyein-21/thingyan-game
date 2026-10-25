@@ -99,7 +99,8 @@ export function buildSet(W) {
   const FH = 1.25;
   const grille = new THREE.MeshLambertMaterial({ map: stripeTex('#4f7a68', '#27453c', 10) });
   const stain = new THREE.MeshBasicMaterial({ color: '#3b2a3a', transparent: true, opacity: .1, depthWrite: false });
-  function flats(fx, fz, units, rotY, wall, no) {
+  const flats = (...a) => W.occluder(() => flats0(...a)); // tall: see-through when you walk behind it
+  function flats0(fx, fz, units, rotY, wall, no) {
     const g = new THREE.Group(); g.position.set(fx, 0, fz); g.rotation.y = rotY; scene.add(g);
     const UW = 2.6, Wd = units * UW, D = 3, H = 4 * FH, o = { parent: g }, stair = units >> 1, balconies = [];
     box(Wd, H, D, wall, 0, .14, 0, o);
@@ -149,7 +150,7 @@ export function buildSet(W) {
   const plankM = new THREE.MeshLambertMaterial({ map: plank });
   const zinc = new THREE.MeshLambertMaterial({ map: stripeTex('#b4bcc4', '#8f99a3', 16), flatShading: true });
   const gable = (x, y, z, len, r, k = .5, mat = zinc) => { const rg = new THREE.CylinderGeometry(r, r, len, 3); rg.rotateX(-Math.PI / 2); rg.rotateY(Math.PI / 2); rg.scale(1, k, 1); return mesh(rg, mat, x, y, z); }; // triangular prism, ridge along x
-  {
+  W.occluder(() => { // the home house fades when it hides you
     const X = 5.6, Z = -6.5;
     box(5.2, 1.4, 3.2, '#eef1ee', X, .02, Z); box(5.22, .5, 3.22, '#6f9fc8', X, .02, Z, { cast: false });
     mesh(new THREE.BoxGeometry(5.5, 1.3, 3.5), plankM, X, 2.08, Z);
@@ -162,7 +163,7 @@ export function buildSet(W) {
     for (const px of [-2.2, -1.8]) { mesh(new THREE.SphereGeometry(.2, 12, 8), M('#b8653d', { flatShading: false }), X + px, .5, Z + 2.2); cyl(.13, .13, .03, '#d9b98f', X + px, .67, Z + 2.2, 10); }
     mesh(new THREE.PlaneGeometry(.9, .3), new THREE.MeshLambertMaterial({ map: textTex('အမှတ် ၁၂', '#fff6ea', '#5a3550', 256, 84, 46) }), X + .2, 1.25, Z + 1.62, { cast: false });
     solid(X, Z, 5.5, 3.5); solid(X, Z + 2.05, 5.2, .9);
-  }
+  });
   // the empty lot where the kids' mandat goes up
   box(8, .03, 5.4, '#c99a6b', 2.6, 0, 2.1, { cast: false });
   for (let i = 0; i < 26; i++) { const x = -1.2 + rnd() * 7.6, z = -.4 + rnd() * 5; if (Math.hypot(x - 2.6, z - 1.9) > 2) mesh(new THREE.ConeGeometry(.09, .22, 4), pick([PAL.leaf, PAL.leafLight]), x, .12, z, { cast: false }); }
@@ -204,7 +205,8 @@ export function buildSet(W) {
   })();
   const grilleM = (rx, ry) => { const t = grilleTex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, alphaTest: .5, side: THREE.DoubleSide }); };
   const cage = grilleM(3, 1.5), cageSide = grilleM(1, 1.5);
-  function shopFlat(x, w, floors, wall, sign, signBg, signFg = '#fff6ea', opts = {}) {
+  const shopFlat = (...a) => W.occluder(() => shopFlat0(...a)); // tall: see-through when you walk behind it
+  function shopFlat0(x, w, floors, wall, sign, signBg, signFg = '#fff6ea', opts = {}) {
     const D = 3.2, Z = 2.8, FH = 1.25, front = Z + D / 2, H = floors * FH;
     box(w, H + .1, D, wall, x, .02, Z); box(w + .2, .25, D + .2, PAL.frame, x, H + .1, Z);
     box(w - .3, 1.05, .06, '#3b3040', x, .14, front);                                          // open shop front (dark inside)
@@ -259,7 +261,8 @@ export function buildSet(W) {
 
   // ---------- behind the shops: walled compounds (ခြံဝင်း), a small chinlone lot, a condo going up ----------
   const wallM = '#e9e1d2';
-  function compound(x0, x1, z0, z1, house) {
+  const compound = (...a) => W.occluder(() => compound0(...a)); // tall: see-through when you walk behind it
+  function compound0(x0, x1, z0, z1, house) {
     const gx = (x0 + x1) / 2 + .6, seg = (a, b, z) => { box(b - a, .95, .18, wallM, (a + b) / 2, .02, z); solid((a + b) / 2, z, b - a, .18); };
     seg(x0, gx - .8, z1); seg(gx + .8, x1, z1); seg(x0, x1, z0);
     for (const x of [x0, x1]) { box(.18, .95, z1 - z0, wallM, x, .02, (z0 + z1) / 2); solid(x, (z0 + z1) / 2, .18, z1 - z0); }
@@ -275,7 +278,7 @@ export function buildSet(W) {
   compound(22.8, 27.4, -9.6, -2.6, { c: '#cfe3d2', w: 2.6 });
   L.FIELD = new THREE.Vector3(20, 0, -5.4);   // the chinlone lot: a patch of beaten earth between two compound walls
   box(5, .02, 5.2, '#c99a6b', 20, 0, -5.6, { cast: false });
-  { // the condo going up (2015–19): concrete frame, bamboo scaffolding, green netting, a tower crane
+  W.occluder(() => { // the condo going up (2015–19): concrete frame, bamboo scaffolding, green netting, a tower crane
     const X = 30.8, Z = -6.2, w = 5, d = 5.2, F = 6;
     for (let f = 0; f <= F; f++) box(w, .14, d, '#bdb6ae', X, f * 1.2, Z);
     for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) box(.22, F * 1.2, .22, '#bdb6ae', X + sx * (w / 2 - .15), .02, Z + sz * (d / 2 - .15));
@@ -288,7 +291,7 @@ export function buildSet(W) {
     solid(X, Z, w + .6, d + .6); solid(X + 3.2, Z - 1.5, .4, .4);
     box(4.2, 1.6, .1, '#2f73c4', X - .2, .02, Z + d / 2 + 1.2); mesh(new THREE.PlaneGeometry(4, .5), new THREE.MeshLambertMaterial({ map: textTex('ကွန်ဒို အသစ် · ရောင်းမည်', '#2f73c4', '#fff6ea', 512, 64, 40) }), X - .2, 1.1, Z + d / 2 + 1.26, { cast: false });
     solid(X - .2, Z + d / 2 + 1.2, 4.2, .1);
-  }
+  });
 
   // ---------- ③ the ward market: vendors on mats along two lanes, umbrellas and plastic tarps, a zinc-roofed market shed behind ----------
   const FROND = frondGeo(THREE), frondM = M('#7fae5a', { side: THREE.DoubleSide }), dryM = M('#c8b070', { side: THREE.DoubleSide });
@@ -375,7 +378,7 @@ export function buildSet(W) {
     mesh(new THREE.PlaneGeometry(2, .4), new THREE.MeshLambertMaterial({ map: textTex('ဓမ္မာရုံ ကျောင်း', '#8a3a2a', '#ffe7a3', 512, 100, 56), side: THREE.DoubleSide }), 14.75, 1.9, 15.6, { cast: false }).rotation.y = -Math.PI / 2;
   }
   L.GATE = new THREE.Vector3(15.8, 0, 15.6);
-  { // the kyaung: whitewashed brick below, teak above, a plain hipped zinc roof with one small tiered finial
+  W.occluder(() => { // the kyaung: whitewashed brick below, teak above, a plain hipped zinc roof with one small tiered finial
     const X = 21.2, Z = 15.4, w = 6.2, d = 4.0;
     box(w, 1.4, d, '#fbf4e6', X, .02, Z); mesh(new THREE.BoxGeometry(w + .2, 1.3, d + .2), plankM, X, 2.07, Z);
     for (let i = 0; i < 4; i++) { const ax = X - 2.2 + i * 1.47; box(.5, .8, .06, '#5a4a52', ax, .3, Z + d / 2 + .01); mesh(new THREE.CylinderGeometry(.25, .25, .06, 10, 1, false, 0, Math.PI), '#5a4a52', ax, 1.1, Z + d / 2 + .01).rotation.set(Math.PI / 2, 0, 0); box(.55, .55, .06, '#3b2a24', ax, 1.85, Z + d / 2 + .12); }
@@ -386,7 +389,7 @@ export function buildSet(W) {
     for (let i = 0; i < 3; i++) box(1.4, .14, .35, '#d9cdb8', X, .02 + i * .14, Z + d / 2 + .25 + (2 - i) * .3);
     solid(X, Z, w + .2, d + .2);
     L.MONASTERY = new THREE.Vector3(X, 0, Z + d / 2 + 1.5);
-  }
+  });
   { // bell (ခေါင်းလောင်း), well (ရေတွင်း), fish tank (ငါးကန်) in the yard; a coconut palm and a padauk
     for (const s of [-1, 1]) cyl(.05, .05, 1.6, '#8a5a38', 17.2 + s * .45, .02, 12.2, 6); box(1.1, .1, .1, '#8a5a38', 17.2, 1.6, 12.2);
     mesh(new THREE.CylinderGeometry(.16, .26, .42, 14), new THREE.MeshStandardMaterial({ color: '#c99a4a', metalness: .9, roughness: .4 }), 17.2, 1.1, 12.2);

@@ -75,11 +75,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 50 });
   scene.add(sun);
+  const occluders = []; // see occluder() below
   function setTime(t) { // 0 day .. 1 dusk; windows (PAL.window) glow as it gets dark
     dusk = THREE.MathUtils.clamp(t, 0, 1);
     sun.color.set(mix('#ffb46b', '#ff7a5a', dusk)); sun.intensity = 2.4 - dusk * 1.5;
     hemi.color.set(mix('#ffe2c4', '#9a8ad0', dusk)); hemi.groundColor.set(mix('#9a7fb8', '#3f3368', dusk)); hemi.intensity = 1.55 - dusk * .35;
     M(PAL.window).emissive.set('#ffc46b').multiplyScalar(dusk * dusk * .9);
+    for (const o of occluders) for (const c of o.mats) if (c.userData.base.emissive) c.emissive.copy(c.userData.base.emissive); // see-through buildings' windows light up too
     document.body.style.background = mix('#f9b8a0', '#7a4f92', dusk);
     drawSky();
   }
@@ -388,6 +390,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const near = c => { if (c === player) return true; const p = c.g.parent === scene ? c.g.position : c.g.getWorldPosition(v3); return Math.abs(p.x - camTarget.x) + Math.abs(p.z - camTarget.z) < LOD; }; // far off-screen: skip the animation work
     for (const c of pets) if (near(c)) updatePet(c, dt);
     for (const f of ticks) f(dt, T);
+    if (occluders.length) fadeOccluders(dt);
     // people off screen: no animation, and their whole body is skipped by the renderer and the matrix update (a big crowd stays cheap)
     for (const c of chars) {
       c.cool -= dt;
@@ -472,6 +475,29 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // bake: merge every static mesh into one mesh per material, so a big map is a few dozen draw calls instead of thousands.
   // Static = made with mesh()/box()/cyl() and not under anything marked keep(); call keep(obj) on what moves or changes later.
   const keep = o => { o.userData.keep = true; return o; };
+  // tall things you can walk behind (flats, shop-houses, the kyaung …): build() makes one; its meshes get their own materials,
+  // so it can fade to see-through whenever it stands between the camera and you. Still baked like everything else.
+  const RAY = new THREE.Ray(), ISOdir = ISO.clone().normalize();
+  function occluder(build) {
+    const n0 = statics.length, r = build(), own = new Map(), box = new THREE.Box3();
+    scene.updateMatrixWorld(true);
+    for (const m of statics.slice(n0)) {
+      if (Array.isArray(m.material)) continue;
+      let c = own.get(m.material);
+      if (!c) { c = m.material.clone(); c.transparent = true; c.userData.base = m.material; own.set(m.material, c); }
+      m.material = c; box.expandByObject(m);
+    }
+    occluders.push({ box, mats: [...own.values()], a: 1 }); return r;
+  }
+  function fadeOccluders(dt) {
+    const p = W.player.g.position;
+    for (const o of occluders) {
+      let hit = false; for (const y of [.25, 1.1]) { RAY.origin.set(p.x, p.y + y, p.z); RAY.direction.copy(ISOdir); if (RAY.intersectsBox(o.box)) { hit = true; break; } }
+      const want = hit ? .2 : 1; if (o.a === want) continue;
+      o.a += (want - o.a) * Math.min(1, dt * 7); if (Math.abs(o.a - want) < .01) o.a = want;
+      for (const c of o.mats) { c.opacity = o.a; c.depthWrite = o.a > .95; }
+    }
+  }
   function bake() {
     scene.updateMatrixWorld(true);
     const kept = o => { for (let p = o; p; p = p.parent) if (p.userData.keep) return true; return false; };
@@ -505,6 +531,6 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

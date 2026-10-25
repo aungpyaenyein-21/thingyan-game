@@ -41,11 +41,23 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   function stepDriver(v, dt) {
     const p = v.g.position, t = v.path[v.pi], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
     if (d < .15) { if (++v.pi >= v.path.length) { drivers.delete(v); v.moving = false; const r = v.arrive; v.arrive = null; r(); } return; }
-    const pp = W.player.g.position, ax = p.x + dx / d * 1.1, az = p.z + dz / d * 1.1;
-    v.moving = !(Math.hypot(pp.x - ax, pp.z - az) < .8 || v.hold?.()); // stop for you (and ring the bell)
-    if (!v.moving) { if (v.bell && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); } return; }
+    const sx = Math.sin(v.g.rotation.y) * (v.side || 0), sz = Math.cos(v.g.rotation.y) * (v.side || 0); // a sidecar sweeps its own strip
+    const what = blockedAhead(v, p.x, p.z, dx / d, dz / d, 1.4, .15) || (v.side ? blockedAhead(v, p.x + sx, p.z + sz, dx / d, dz / d, 1.2, .2) : null);
+    v.blockT = what ? (v.blockT || 0) + dt : 0; v.moving = !what || v.blockT > (v.giveUp ?? 1e9);
+    if (!v.moving) { if (v.bell && (what === 'you' || what === 'person') && !(v.bellT > 0)) { v.bellT = 3; say(v.rider ?? v.who, v.bell, 1.4, 2.2); } return; } // stop for whoever's in the way (and ring the bell)
     let a = Math.atan2(dx, dz) - Math.PI / 2 - v.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); v.g.rotation.y += a * Math.min(1, dt * 5);
     const s = Math.min(d, v.speed * dt); p.x += dx / d * s; p.z += dz / d * s; v.roll?.(s);
+  }
+
+  // what's in front of a vehicle heading (ux, uz): you, someone standing or walking, a car, the bus, another bike — so nobody drives through anybody
+  function blockedAhead(self, px, pz, ux, uz, reach, pad = 0) {
+    const hit = (x, z, w) => { const ax = x - px, az = z - pz, along = ax * ux + az * uz; return along > .05 && along < reach && Math.abs(-ax * uz + az * ux) < w + pad; };
+    const pp = W.player.g.position; if (hit(pp.x, pp.z, .4)) return 'you';
+    for (const c of W.chars) if (c.g.visible && c.g.parent === scene && c !== W.player && hit(c.g.position.x, c.g.position.z, .3)) return c;
+    for (const o of CARS) if (o.on && o !== self) for (const k of [-.9, 0, .9]) if (hit(o.g.position.x + k, o.g.position.z, .5)) return 'car';
+    if (self !== BUS && BUS.away <= 0) for (const k of [-2.1, -1, 0, 1, 2.1]) if (hit(bus.position.x + k, bus.position.z, .75)) return 'car';
+    for (const o of [trike, ...bikes]) if (o !== self && o.g.visible) for (const k of o === trike ? [0, .78] : [0]) if (hit(o.g.position.x + Math.sin(o.g.rotation.y) * k, o.g.position.z + Math.cos(o.g.rotation.y) * k, .35)) return 'bike'; // the trishaw's sidecar too
+    return null;
   }
 
   // ---------- people talking in a knot: one speaks (hands going), the others nod; now and then they all laugh ----------
@@ -65,8 +77,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     k.who = w; k.ppl.forEach((c, i) => { c.anim.chat = i === w ? 'speak' : 'listen'; }); if (rnd() < .3) k.ppl[w].anim.emote('dots', 1.2);
     k.t = 2.4 + rnd() * 3.5;
   }
-  standingKnot(-1.2, 2.3, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
-  standingKnot(23.6, 9.45, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }));                                // ② men on the corner
+  standingKnot(-.5, 2.6, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
+  standingKnot(23.6, 9.9, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }), .5);                                // ② men on the corner
   standingKnot(8.7, 20.3, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
   const yardElders = standingKnot(20.4, 12.1, 2, () => ({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }), .5);              // ④ in the kyaung yard
 
@@ -141,14 +153,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   ['taxi', 'sedan', 'wagon', 'pickup', 'taxi'].forEach(car);
   let carT = 4;
-  function clearAhead(g, dir, lane, half) { // nothing in this lane just ahead: the bus, cars, a trishaw, you, someone crossing
-    const x = g.position.x, near = (px, pz, gap = 1.6) => Math.abs(pz - lane) < .75 && (px - x) * dir > 0 && (px - x) * dir < half + gap;
-    const pp = W.player.g.position; if (near(pp.x, pp.z, 1.4)) return false;
-    if (g !== bus && BUS.away <= 0 && near(bus.position.x - dir * BUS.len / 2, bus.position.z, .7)) return false;
-    for (const v of CARS) if (v.on && v.g !== g && near(v.g.position.x - dir * 1, v.g.position.z, .8)) return false;
-    if (trike.g.visible && near(trike.g.position.x - dir * .7, trike.g.position.z, .8)) return false;
-    for (const c of people) if (c.g.visible && walkers.has(c) && near(c.g.position.x, c.g.position.z, 1.2)) return false;
-    return true;
+  function clearAhead(g, dir, lane, half) { // nothing in this lane just ahead: you, people, the bus, cars, bikes, the trishaw
+    const self = g === bus ? BUS : CARS.find(o => o.g === g);
+    self.why = blockedAhead(self, g.position.x + dir * (half - .4), lane, dir, 0, 1.9, self === BUS ? .45 : .25);
+    if (!self.why) self.since = W.time();
+    return !self.why || (self.why !== 'you' && W.time() - self.since > 12); // never through you; anything else, after a long wait, it squeezes past
   }
   function stepCars(dt) {
     if ((carT -= dt) < 0) {
@@ -189,8 +198,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   const ROUTES = [
     [[BOUNDS.x0 - 2, 8.85], [BOUNDS.x1 + 2, 8.85]], [[BOUNDS.x1 + 2, 6.75], [BOUNDS.x0 - 2, 6.75]],
-    [[-3.6, -.8], [-3.6, -2.4], [9.8, -2.4], [9.8, -9.4]], [[9.8, -9.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 5.2], [-3.0, 6.75], [BOUNDS.x0 - 2, 6.75]],
-    [[12.9, 25.6], [12.9, 10.2], [13.4, 8.85], [BOUNDS.x1 + 2, 8.85]],
+    [[-1.5, -2.95], [-1.5, -2.4], [9.8, -2.4], [9.8, -9.4]], [[9.8, -9.4], [9.8, -2.4], [-1.5, -2.4], [-1.5, -2.95]], // from / to the flats
+    [[13.6, 25.6], [13.6, 10.2], [13.6, 8.85], [BOUNDS.x1 + 2, 8.85]],                                                  // down the market street (the ice cart keeps to the other side)
   ];
   async function cyclist(v, first) {
     for (let k = first; ; k++) {
@@ -199,25 +208,26 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       v.g.visible = true; await drive(v, r.slice(1));
     }
   }
-  [bike('#3f6fa8', { age: 'adult', topStyle: 'shirt', bottom: 'longyi', hat: 'none' }), bike('#4f8f5a', { age: 'adult', hair: 'long', bottom: 'htamein', hat: 'none' })].forEach((v, i) => cyclist(v, i * 2));
+  const bikes = [bike('#3f6fa8', { age: 'adult', topStyle: 'shirt', bottom: 'longyi', hat: 'none' }), bike('#4f8f5a', { age: 'adult', hair: 'long', bottom: 'htamein', hat: 'none' })];
+  bikes.forEach((v, i) => { v.giveUp = 12; cyclist(v, i * 2); });
   // the trishaw (ဆိုက်ကား): sidecar on the right, back-to-back seats; takes an auntie with a basket to market and comes back empty
-  const trike = { g: group(), speed: 1.7, bell: 'ဆိုက်ကား~ ဆိုက်ကား~' };
+  const trike = { g: group(), speed: 1.7, bell: 'ဆိုက်ကား~ ဆိုက်ကား~', side: .78, giveUp: 14 };
   {
     const g = trike.g, o = { parent: g }, tm = '#2f6f8f'; bikeFrame(o, tm);
     const w = mesh(new THREE.TorusGeometry(.24, .025, 6, 14), '#2b2730', -.1, .24, .78, o); w.userData.wheel = true;
     box(.95, .06, .1, tm, -.05, .5, .4, o); box(.75, .08, .55, tm, -.1, .42, .78, o); box(.08, .38, .55, tm, -.1, .5, .78, o); box(.66, .06, .48, '#c8553d', -.1, .5, .78, o);
     trike.wheels = wheelsOf(g); trike.roll = s => { for (const m of trike.wheels) m.rotation.z -= s / .27; };
     trike.rider = npc({ age: 'adult', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'bucket' }); rideOn(g, trike.rider); people.push(trike.rider);
-    g.position.set(-3.6, .05, -.8); g.rotation.y = -Math.PI / 2;
+    g.position.set(-2.2, .03, 1.0); g.rotation.y = -Math.PI / 2; // waits on the verge by the side lane (clear of the old car)
   }
   const fare = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }); fare.ch.hang = basket(fare); people.push(fare); show(fare, false);
-  const TRIKE_OUT = [[-3.6, 5.0], [-3.2, 8.3], [12.0, 8.3], [12.6, 10.6], [12.6, 12.3]], TRIKE_BACK = [[13.4, 11.6], [13.4, 9.9], [12.4, 6.85], [-3.0, 6.85], [-3.6, 5.0], [-3.6, -.8]];
+  const TRIKE_OUT = [[-2.2, 5.0], [-2.6, 8.3], [12.0, 8.3], [12.6, 10.6], [12.6, 12.3]], TRIKE_BACK = [[13.4, 11.6], [13.4, 9.9], [12.4, 6.85], [-2.0, 6.85], [-2.2, 5.0], [-2.2, 1.0]];
   async function trishawRun() {
     for (;;) {
       await wait(6 + rnd() * 8);
       const fetch = !fare.g.visible && (morning() || rnd() < .4);
       if (fetch) { // she walks out of the flats, climbs into the sidecar
-        fare.g.position.set(-1.2, 0, -3.0); show(fare, true); await walk(fare, [[-3.0, -2.4], [-3.0, -1.0]]);
+        fare.g.position.set(-1.2, 0, -3.0); show(fare, true); await walk(fare, [[-3.0, -2.4], [-3.0, .4], [-2.6, .9]]);
         trike.g.add(fare.g); fare.g.position.set(-.15, .5 - .24, .78); fare.g.rotation.y = Math.PI; fare.anim.setLoop('sit'); fare.anim.play('sitdown');
       }
       await drive(trike, TRIKE_OUT);
@@ -244,7 +254,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     cyl(.05, .05, .07, '#c99a4a', .1, .04, -.07, 8, o); cyl(.05, .05, .07, '#c99a4a', .1, .04, .08, 8, o);
     for (let i = 0; i < 4; i++) mesh(new THREE.IcosahedronGeometry(.04, 0), PAL.padauk, .02 + (i % 2) * .05, .1 + (i >> 1) * .04, .02, o); return g;
   }
-  const HOME = [[-1.2, -3.0], [-3.0, -2.4], [-3.6, -2.4], [-3.6, 5.5], [-3.2, 6.3]], TO_MARKET = [[-2.6, 8.95], [12.2, 8.95], [12.6, 10.4], [12.6, 13.7]];
+  const SIDEWALK = [[-2.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement, round the padauk tree
+  const HOME = [[-1.2, -3.0], [-3.0, -2.4], [-3.6, -2.4], [-3.6, 5.5], [-3.2, 6.3]], TO_MARKET = [...SIDEWALK, [12.6, 10.4], [12.6, 13.7]];
   const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
     const lz = laneI ? 20.3 : 13.7;
@@ -266,7 +277,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   [{ hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }, { age: 'elder', hair: 'bun', bottom: 'htamein' }, { hair: 'long', topStyle: 'tee', bottom: 'skirt' }]
     .forEach((o, i) => { const c = npc({ age: 'adult', ...o }); c.ch.hang = basket(c); people.push(c); marketGoer(c, i * 7); });
   // offerings to the kyaung: trays held out in front, in at the gate, three bows to the abbot, home again
-  const TO_KYAUNG = [[-2.6, 8.95], [12.2, 8.95], [12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
+  const TO_KYAUNG = [...SIDEWALK, [12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
   async function pilgrim(c, i) {
     show(c, false); await wait(4 + i * 3); await until(morning);
     c.g.position.set(-1.2 - i * .5, 0, -3.0); show(c, true);

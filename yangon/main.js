@@ -116,7 +116,10 @@ const cart = W.keep(new THREE.Group()); scene.add(cart);
   for (let i = 0; i < 4; i++) mesh(new THREE.SphereGeometry(.07, 8, 6), PAL.red, .35 + (i % 2) * .12, .92, -.2 + (i >> 1) * .14, o);
 }
 const call = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဟင်းသီး~ ဟင်းရွက်~'), depthWrite: false })); call.scale.set(2.8, .88, 1); call.position.y = 2.3; call.visible = false; vendor.g.add(call);
-const VD = { dir: -1, x0: -2.6, x1: 8.2, z: -2.65, callT: 2 };
+const VD = { callT: 2 }, CORNER = new THREE.Vector3(-2.0, 0, -1.0); // ① where the side lane meets the back lane
+vendor.g.position.set(CORNER.x, ground(CORNER.x, CORNER.z + .7), CORNER.z + .7); vendor.g.rotation.y = Math.PI; // behind her cart, facing the lane
+cart.position.set(CORNER.x, .02, CORNER.z); W.solid(CORNER.x, CORNER.z, 1.3, .8);
+cyl(.03, .03, 2.1, '#8f8794', CORNER.x + .55, .02, CORNER.z + .2, 5, { parent: cart.parent }); mesh(new THREE.CylinderGeometry(.02, 1.0, .32, 8, 1, true), new THREE.MeshLambertMaterial({ map: stripeTex('#4f8f5a', '#fff6ea', 8), side: THREE.DoubleSide }), CORNER.x + .55, 2.1, CORNER.z + .2); // her sun umbrella
 // ② main street
 // ② the tea shop is busy inside; the barber and the tailor work in their shops
 const TR = ROOMS.tea, seat = (o, st) => { const c = npc({ ...o, x: st.x, z: st.z, ry: st.ry }, .05); c.anim.setLoop('sit'); return c; };
@@ -170,17 +173,8 @@ const party = () => partyOf(S);
 let roofA = 1;
 W.tick((dt, T) => {
   const player = W.player;
-  // vendor: walks the lane, stops for you, calls out every few seconds
-  const vNear = near(vendor) || hud.talking();
-  if (vNear) { if (vendor.anim.loop !== 'idle') vendor.anim.setLoop('idle'); }
-  else {
-    if (vendor.anim.loop !== 'push') vendor.anim.setLoop('push'); // setLoop() drops a splash reaction, so only on a change
-    vendor.g.rotation.y = VD.dir * Math.PI / 2; vendor.g.position.x += VD.dir * vendor.anim.speed * dt;
-    if (vendor.g.position.x < VD.x0) VD.dir = 1; if (vendor.g.position.x > VD.x1) VD.dir = -1;
-  }
-  vendor.g.position.z = VD.z; vendor.g.position.y = ground(vendor.g.position.x, VD.z);
-  if (!vNear) cart.position.set(vendor.g.position.x + VD.dir * .95, .02, VD.z); cart.rotation.y = VD.dir > 0 ? 0 : Math.PI;
-  VD.callT -= dt; if (VD.callT < 0) { call.visible = !call.visible; VD.callT = call.visible ? 2.6 : 5 + rnd() * 3; }
+  // vendor: stands at her corner with the cart, calls out every few seconds, beckons when you're close
+  VD.callT -= dt; if (VD.callT < 0) { call.visible = !call.visible; VD.callT = call.visible ? 2.6 : 5 + rnd() * 3; if (call.visible && !vendor.anim.one) vendor.anim.play('call'); }
   // kids: splash each other; once the mandat is up they dance on it and get you too
   for (const k of kids) {
     k.idleT -= dt;
