@@ -119,9 +119,9 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   async function waiter(c, seatX) {
     for (;;) {
       show(c, false); await wait(3 + rnd() * 14);
-      const from = rnd() < .5 ? [[-3.6, -1.6], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-2.8, 6.45]] : [[14.5, 5.1], [11.4, 6.45]];
+      const from = rnd() < .5 ? [[BOUNDS.x0 - .6, 6.05], [.9, 6.05]] : [[BOUNDS.x1 + .6, 6.05], [4.3, 6.05]]; // in along the north pavement from either end of the street
       c.g.position.copy(V(...from[0])); show(c, true);
-      await walk(c, [...from.slice(1), [seatX, 6.45], [seatX, 6.08]]);
+      await walk(c, [...from.slice(1), [seatX, 6.08]]);
       c.g.rotation.y = 0; c.anim.setLoop('sit'); c.anim.play('sitdown'); lift(c, BENCH_Y);
       await until(() => BUS.stopped && BUS.wait > 0);
       BUS.boarding++; c.anim.setLoop('idle'); c.anim.play('standup'); lift(c, .14, .55); await wait(.6);
@@ -130,7 +130,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   [[2.6, { age: 'elder' }]].forEach(([x, o]) => waiter(npc(o), x));
   const alighter = npc({ age: 'adult', hair: 'long', topStyle: 'shirt', bottom: 'htamein' }); alighter.ch.hang = shopBag(alighter); show(alighter, false);
-  async function getOff() { const c = alighter; c.g.position.copy(DOOR()); show(c, true); await walk(c, [[-2.8, 6.45], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -1.6]]); show(c, false); }
+  async function getOff() { const c = alighter; c.g.position.copy(DOOR()); show(c, true); await walk(c, [[-.8, 6.05], [BOUNDS.x0 - .6, 6.05]]); show(c, false); } // off along the pavement, out of the ward
   function stepBus(dt) {
     if (BUS.away > 0) { BUS.away -= dt; return; }
     if (BUS.wait > 0 || BUS.boarding > 0) { BUS.wait -= dt; conductor.visible = BUS.wait > .8; if (BUS.wait < -8) BUS.boarding = 0; return; }
@@ -199,9 +199,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     g.visible = false; return v;
   }
   const ROUTES = [
-    [[BOUNDS.x0 - 2, 8.85], [BOUNDS.x1 + 2, 8.85]], [[BOUNDS.x1 + 2, 6.75], [BOUNDS.x0 - 2, 6.75]],
-    [[-1.5, -2.95], [-1.5, -2.4], [9.8, -2.4], [9.8, -9.4]], [[9.8, -9.4], [9.8, -2.4], [-1.5, -2.4], [-1.5, -2.95]], // from / to the flats
-    [[13.6, 25.6], [13.6, 10.2], [13.6, 8.85], [BOUNDS.x1 + 2, 8.85]],                                                  // down the market street (the ice cart keeps to the other side)
+    [[BOUNDS.x0 - 2, 8.5], [BOUNDS.x1 + 2, 8.5]], [[BOUNDS.x1 + 2, 6.75], [BOUNDS.x0 - 2, 6.75]],
+    [[BOUNDS.x0 - 2, 6.75], [-3.0, 6.75], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -2.4], [9.8, -2.4], [9.8, -10.4]],  // up the side lane, along the back lane, out by the east lane
+    [[9.8, -10.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.0, 6.75], [BOUNDS.x0 - 2, 6.75]], // …and the other way
+    [[13.6, 25.6], [13.6, 10.2], [13.6, 8.5], [BOUNDS.x1 + 2, 8.5]],                                                  // down the market street (the ice cart keeps to the other side)
   ];
   async function cyclist(v, first) {
     for (let k = first; ; k++) {
@@ -229,7 +230,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       await wait(6 + rnd() * 8); await until(() => !isNight()); // parked for the night
       const fetch = !fare.g.visible && (morning() || rnd() < .4);
       if (fetch) { // she walks out of the flats, climbs into the sidecar
-        fare.g.position.set(-1.2, 0, -3.0); show(fare, true); await walk(fare, [[-3.0, -2.4], [-3.0, .4], [-2.6, .9]]);
+        fare.g.position.set(BOUNDS.x0 - .6, 0, 6.05); show(fare, true); await walk(fare, [[-3.1, 6.05], [-3.05, 5.9], [-3.05, 2.8], [-2.95, 1.7]]); // in from the street, up the side lane
         trike.g.add(fare.g); fare.g.position.set(-.15, .5 - .24, .78); fare.g.rotation.y = Math.PI; fare.anim.setLoop('sit'); fare.anim.play('sitdown');
       }
       await drive(trike, TRIKE_OUT);
@@ -256,8 +257,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     cyl(.05, .05, .07, '#c99a4a', .1, .04, -.07, 8, o); cyl(.05, .05, .07, '#c99a4a', .1, .04, .08, 8, o);
     for (let i = 0; i < 4; i++) mesh(new THREE.IcosahedronGeometry(.04, 0), PAL.padauk, .02 + (i % 2) * .05, .1 + (i >> 1) * .04, .02, o); return g;
   }
-  const SIDEWALK = [[-3.2, 8.85], [.2, 8.85], [.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement: past the kids' drum on the road edge, round the padauk tree
-  const HOME = [[-1.2, -3.0], [-3.0, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.1, 6.3]], /* round the old car */ TO_MARKET = [...SIDEWALK, [12.6, 10.4], [12.6, 13.7]];
+  const SIDEWALK = [[-3.2, 8.98], [.2, 8.98], [.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement: past the kids' drum on the road edge, round the padauk tree
+  // people come into the ward along the main street from either end (off the map), and leave the same way
+  const WEST = [[BOUNDS.x0 - .6, 9.0], ...SIDEWALK], EAST = [[BOUNDS.x1 + .6, 9.0], [14.6, 9.0], [13.4, 9.6]]; // on the pavement's edge, clear of the bikes (z 8.5)
+  const way = () => pick([WEST, EAST]), MARKET_IN = [[12.6, 10.4], [12.6, 13.7]];
   const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
     const lz = laneI ? 20.3 : 13.7;
@@ -267,26 +270,26 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       c.anim.setLoop('squat'); await wait(2 + rnd() * 3); c.anim.setLoop('idle'); if (rnd() < .4) c.anim.play('laugh');
       await wait(.6);
     }
-    await walk(c, [[11.6, lz], [12.6, lz], ...back(TO_MARKET).slice(laneI ? 0 : 1), ...back(HOME)]); show(c, false);
+    await walk(c, [[11.6, lz], [12.6, lz], [12.6, 10.4], ...back(way())]); show(c, false);
   }
   async function marketGoer(c, delay) {
     for (;;) {
       show(c, false); await wait(delay + rnd() * 12); await until(() => morning() || (!isNight() && rnd() < .002));
-      c.g.position.set(...[HOME[0][0] + rnd() * 6, 0, HOME[0][1]]); show(c, true);
-      await walk(c, [...HOME.slice(1), ...TO_MARKET]); await shopper(c); delay = 6;
+      const w = way(); c.g.position.set(w[0][0], 0, w[0][1]); show(c, true);
+      await walk(c, [...w.slice(1), ...MARKET_IN]); await shopper(c); delay = 6;
     }
   }
   [{ hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }, { age: 'elder', hair: 'bun', bottom: 'htamein' }, { hair: 'long', topStyle: 'tee', bottom: 'skirt' }]
     .forEach((o, i) => { const c = npc({ age: 'adult', ...o }); c.ch.hang = basket(c); people.push(c); marketGoer(c, i * 7); });
   // offerings to the kyaung: trays held out in front, in at the gate, three bows to the abbot, home again
-  const TO_KYAUNG = [...SIDEWALK, [12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
+  const TO_KYAUNG = [[12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
   async function pilgrim(c, i) {
     show(c, false); await wait(4 + i * 3); await until(morning);
-    c.g.position.set(-1.2 - i * .5, 0, -3.0); show(c, true);
-    await walk(c, [...HOME.slice(1), ...TO_KYAUNG, [20.2 + i * .7, 19.7]], 'carry');
+    const w = way(); c.g.position.set(w[0][0] + (w === WEST ? -i : i) * .8, 0, w[0][1]); show(c, true);
+    await walk(c, [...w.slice(1), ...TO_KYAUNG, [20.2 + i * .7, 19.7]], 'carry');
     c.g.rotation.y = Math.PI; for (let k = 0; k < 3; k++) { c.anim.play('kadaw'); await wait(2.7); }
     c.tray.visible = false; c.dry = false; c.anim.chat = 'listen'; await wait(8 + rnd() * 6); c.anim.chat = null;
-    await walk(c, [[17.4, 18.6], ...back(TO_KYAUNG).slice(1), ...back(HOME)]); show(c, false);
+    await walk(c, [[17.4, 18.6], ...back(TO_KYAUNG).slice(1), ...back(way())]); show(c, false);
   }
   [{ age: 'elder', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }, { age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }]
     .forEach((o, i) => { const c = npc(o); c.tray = tray(c); c.dry = true; people.push(c); pilgrim(c, i); }); // nobody splashes someone carrying food for the monks
