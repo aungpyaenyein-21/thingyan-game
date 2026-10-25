@@ -26,8 +26,12 @@ export const CATALOG = [
   { key: 'icebell', kind: 'fx', name: 'ရေခဲချောင်းလှည်း ခေါင်းလောင်း', where: 'ဈေးလမ်းမှာ လှည်းရပ်ရင်' },
 ];
 
+// OFF until real recordings replace these synthesized sounds (the in-game ones didn't sound right). The test page (manual) still plays them.
+export const ENABLED = false;
+
 export function createSound(W, { manual = false } = {}) {
-  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return { env() {}, fx() {}, play() {}, setLoop() {}, tick() {}, start() {}, toggle() {}, muted: () => true, level: () => 0 };
+  if (!ENABLED && !manual) { const b = document.getElementById('snd'); if (b) b.hidden = true; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC || (!ENABLED && !manual)) return { env() {}, fx() {}, play() {}, setLoop() {}, tick() {}, start() {}, toggle() {}, muted: () => true, level: () => 0 };
   let ctx = null, meter = null, master, amb, fxBus, noise, pinkBuf, brownBuf, layers = {}, started = false;
   let muted = false; try { muted = !manual && localStorage.getItem('thingyan.mute') === '1'; } catch {}
   const R = Math.random, rr = (a, b) => a + R() * (b - a);
