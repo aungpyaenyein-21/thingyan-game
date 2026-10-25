@@ -10,6 +10,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const group = () => { const g = W.keep(new THREE.Group()); scene.add(g); return g; };
   const npc = (o = {}) => { const c = bean({ prop: 'none', print: '', ...o }); c.g.position.y = ground(c.g.position.x, c.g.position.z); return c; };
   const show = (c, on) => { c.g.visible = on; };
+  const isNight = () => W.night() > .3; // after dark the market packs up, the kids go in, the shops shut
   const morning = () => phase() === 'morning', evening = () => phase() === 'late' || phase() === 'evening';
   const lift = (c, y, k = .45) => { c.ty = { from: c.g.position.y, to: y, t: 0, k }; }; // ease the body up/down onto a seat
 
@@ -79,7 +80,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   standingKnot(-.5, 2.6, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
   standingKnot(23.6, 9.9, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }), .5);                                // ② men on the corner
-  standingKnot(8.7, 20.3, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
+  const marketKnot = standingKnot(8.7, 20.3, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
   const yardElders = standingKnot(20.4, 12.1, 2, () => ({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }), .5);              // ④ in the kyaung yard
 
   // ---------- ③ vendors on their low stools: fanning, watching, calling you over ----------
@@ -89,13 +90,14 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     c.anim.setLoop('vend'); c.g.position.y = .04; c.callT = 3 + rnd() * 8; return c;
   });
   // ③ the mohinga stall's low tables: breakfast eaters (two each, on tiny stools)
+  const dayOnly = []; // market folk: gone home after dark
   for (const tx of [8.0, 10.8]) {
-    for (const [sx, ry] of [[.45, -Math.PI / 2], [-.45, Math.PI / 2]]) { const c = npc({ age: pick(['adult', 'adult', 'elder', 'kid']), x: tx + sx, z: 11.2, ry }); c.anim.setLoop('eat'); c.g.position.y = -.08; }
+    for (const [sx, ry] of [[.45, -Math.PI / 2], [-.45, Math.PI / 2]]) { const c = npc({ age: pick(['adult', 'adult', 'elder', 'kid']), x: tx + sx, z: 11.2, ry }); c.anim.setLoop('eat'); c.g.position.y = -.08; dayOnly.push(c); }
     cyl(.1, .1, .16, '#e0574f', tx - .45, .02, 11.2, 8);
     for (const s of [-1, 1]) { cyl(.1, .07, .07, '#fff6ea', tx + s * .14, .32, 11.2, 10); cyl(.085, .085, .01, '#d9a04a', tx + s * .14, .39, 11.2, 10); } // bowls of mohinga
   }
   // browsers squatting over the trays
-  for (const [x, z, ry] of [[-5.6, 13.25, Math.PI], [2.2, 14.15, 0], [-.4, 19.85, Math.PI], [7.2, 20.75, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); }
+  for (const [x, z, ry] of [[-5.6, 13.25, Math.PI], [2.2, 14.15, 0], [-.4, 19.85, Math.PI], [7.2, 20.75, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
 
   // ---------- the YBS bus (yellow, 2017–) westbound on the north lane: stops, the conductor calls, people get on and off ----------
   const BUS = { len: 4.6, lane: 7.3, speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
@@ -224,7 +226,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const TRIKE_OUT = [[-2.2, 5.0], [-2.6, 8.3], [12.0, 8.3], [12.6, 10.6], [12.6, 12.3]], TRIKE_BACK = [[13.4, 11.6], [13.4, 9.9], [12.4, 6.85], [-2.0, 6.85], [-2.2, 5.0], [-2.2, 1.0]];
   async function trishawRun() {
     for (;;) {
-      await wait(6 + rnd() * 8);
+      await wait(6 + rnd() * 8); await until(() => !isNight()); // parked for the night
       const fetch = !fare.g.visible && (morning() || rnd() < .4);
       if (fetch) { // she walks out of the flats, climbs into the sidecar
         fare.g.position.set(-1.2, 0, -3.0); show(fare, true); await walk(fare, [[-3.0, -2.4], [-3.0, .4], [-2.6, .9]]);
@@ -269,7 +271,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   async function marketGoer(c, delay) {
     for (;;) {
-      show(c, false); await wait(delay + rnd() * 12); await until(() => morning() || rnd() < .002);
+      show(c, false); await wait(delay + rnd() * 12); await until(() => morning() || (!isNight() && rnd() < .002));
       c.g.position.set(...[HOME[0][0] + rnd() * 6, 0, HOME[0][1]]); show(c, true);
       await walk(c, [...HOME.slice(1), ...TO_MARKET]); await shopper(c); delay = 6;
     }
@@ -313,7 +315,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   roadKids.forEach(k => { k.home = k.g.position.clone(); k.coolT = 1 + rnd() * 2; k.dryT = 0; });
   function stepRoadKids(dt) {
     for (const k of roadKids) {
-      if ((k.coolT -= dt) > 0 || k.anim.one) continue;
+      if (!k.g.visible || (k.coolT -= dt) > 0 || k.anim.one) continue;
       const range = k.ch.tool === 'gun' ? 4.5 : 1.9, kp = k.g.position;
       let best = null, bd = range;
       const consider = (g, pos) => { const d = Math.hypot(pos.x - kp.x, pos.z - kp.z); if (d < bd && d > .5) { bd = d; best = pos; } };
@@ -333,7 +335,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const CB = { from: 0, to: 1, t: 0, dur: 1, kicked: false };
   const footOf = c => v3.copy(c.g.position).setY(.35);
   function stepChinlone(dt) {
-    const on = evening(); ring.forEach(c => show(c, on)); ball.visible = on; if (!on) return;
+    const on = evening() && !isNight(); ring.forEach(c => show(c, on)); ball.visible = on; if (!on) return;
     CB.t += dt / CB.dur;
     const a = footOf(ring[CB.from]).clone(), b = footOf(ring[CB.to]).clone(), k = Math.min(1, CB.t), h = CB.from === CB.to ? .9 : 1.9;
     ball.position.lerpVectors(a, b, k); ball.position.y = .35 + Math.sin(k * Math.PI) * h; ball.rotation.x += dt * 9; ball.rotation.z += dt * 5;
@@ -344,6 +346,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const c of ring) { let d = Math.atan2(ball.position.x - c.g.position.x, ball.position.z - c.g.position.z) - c.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); c.g.rotation.y += d * Math.min(1, dt * 4); }
   }
 
+  let lastDay = true;
   // ---------- the frame ----------
   W.tick(dt => {
     for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; if (j.f ? j.f() : (j.t -= dt) <= 0) { jobs.splice(i, 1); j.r(); } }
@@ -360,6 +363,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       const pp = W.player.g.position; if (Math.hypot(pp.x - c.g.position.x, pp.z - c.g.position.z) < 5 || rnd() < .3) { c.anim.play('call'); say(c, pick(CALLS), 2.2, 1.9); }
     }
     yardElders.ppl.forEach(c => show(c, morning() || phase() === 'day'));
+    { const day = !isNight(); if (day !== lastDay) { lastDay = day; for (const c of [...vendors, ...dayOnly, ...marketKnot.ppl, ...roadKids, lolly]) show(c, day); icecart.visible = day; } }
     // the ice cart rides in front of its man
     { const p = lolly.g.position, ry = lolly.g.rotation.y; icecart.position.set(p.x + Math.sin(ry) * .8, ground(p.x, p.z) + .02, p.z + Math.cos(ry) * .8); icecart.rotation.y = ry - Math.PI / 2; }
     stepBus(dt); stepCars(dt); stepRoadKids(dt); stepChinlone(dt);

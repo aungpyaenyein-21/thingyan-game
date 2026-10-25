@@ -56,14 +56,16 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // time of day: 0 = the usual golden afternoon, 1 = dusk (setTime). Sky stops, sun and fill light all blend between the two.
   const SKY = [['#ffd9a8', '#3d3470'], ['#f9b8a0', '#7a4f92'], ['#d9a3c0', '#d97a7a'], ['#b39bd1', '#f2a65a']], STOPS = [0, .45, .8, 1];
   const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString();
-  let dusk = 0;
+  let dusk = 0, night = 0; // setTime: 0..1 afternoon → sunset (dusk), 1..2 sunset → night
   function drawSky() { // gradient + soft sun, redrawn per aspect so the sun stays round
     const H = 512, W = Math.round(H * innerWidth / innerHeight); skyC.width = W; skyC.height = H; const g = skyC.getContext('2d');
-    const gr = g.createLinearGradient(0, 0, 0, H); SKY.forEach(([a, b], i) => gr.addColorStop(STOPS[i], mix(a, b, dusk)));
+    const NIGHT = ['#0f1433', '#1c2150', '#2f2a5a', '#46386a'];
+    const gr = g.createLinearGradient(0, 0, 0, H); SKY.forEach(([a, b], i) => gr.addColorStop(STOPS[i], mix(mix(a, b, dusk), NIGHT[i], night)));
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    const r = H * .14 * (1 - dusk * .3), cx = W / 2, cy = H * (.2 + dusk * .55), rg = g.createRadialGradient(cx, cy, r * .2, cx, cy, r * 1.6), a = 1 - dusk * .45; // the sun sinks and reddens
+    const r = H * .14 * (1 - dusk * .3), cx = W / 2, cy = H * (.2 + dusk * .55), rg = g.createRadialGradient(cx, cy, r * .2, cx, cy, r * 1.6), a = (1 - dusk * .45) * (1 - night); // the sun sinks and reddens
     rg.addColorStop(0, `rgba(255,245,218,${.95 * a})`); rg.addColorStop(.6, `rgba(255,${240 - dusk * 70},${205 - dusk * 90},${.85 * a})`); rg.addColorStop(.66, `rgba(255,232,190,${.25 * a})`); rg.addColorStop(1, 'rgba(255,232,190,0)');
     g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    if (night > .3) { g.fillStyle = `rgba(255,250,235,${(night - .3) * .9})`; for (let i = 0; i < 70; i++) { const sx = (Math.sin(i * 91.7) * .5 + .5) * W, sy = (Math.sin(i * 47.3) * .5 + .5) * H * .55; g.fillRect(sx, sy, i % 7 ? 1.5 : 2.5, i % 7 ? 1.5 : 2.5); } } // stars
     paintSky?.(g, W, H, dusk); skyT.needsUpdate = true;
   }
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -77,12 +79,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   scene.add(sun);
   const occluders = []; // see occluder() below
   function setTime(t) { // 0 day .. 1 dusk; windows (PAL.window) glow as it gets dark
-    dusk = THREE.MathUtils.clamp(t, 0, 1);
-    sun.color.set(mix('#ffb46b', '#ff7a5a', dusk)); sun.intensity = 2.4 - dusk * 1.5;
-    hemi.color.set(mix('#ffe2c4', '#9a8ad0', dusk)); hemi.groundColor.set(mix('#9a7fb8', '#3f3368', dusk)); hemi.intensity = 1.55 - dusk * .35;
-    M(PAL.window).emissive.set('#ffc46b').multiplyScalar(dusk * dusk * .9);
+    dusk = THREE.MathUtils.clamp(t, 0, 1); night = THREE.MathUtils.clamp(t - 1, 0, 1);
+    sun.color.set(mix(mix('#ffb46b', '#ff7a5a', dusk), '#8fa0e8', night)); sun.intensity = 2.4 - dusk * 1.5 - night * .6; // the sun goes, a cool moonlight stays
+    hemi.color.set(mix(mix('#ffe2c4', '#9a8ad0', dusk), '#5d68b0', night)); hemi.groundColor.set(mix(mix('#9a7fb8', '#3f3368', dusk), '#221d3e', night)); hemi.intensity = 1.55 - dusk * .35 - night * .55;
+    M(PAL.window).emissive.set('#ffc46b').multiplyScalar(dusk * dusk * .9 + night * .4);
     for (const o of occluders) for (const c of o.mats) if (c.userData.base.emissive) c.emissive.copy(c.userData.base.emissive); // see-through buildings' windows light up too
-    document.body.style.background = mix('#f9b8a0', '#7a4f92', dusk);
+    document.body.style.background = mix(mix('#f9b8a0', '#7a4f92', dusk), '#1c2150', night);
     drawSky();
   }
 
@@ -531,6 +533,6 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

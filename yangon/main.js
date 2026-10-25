@@ -147,7 +147,7 @@ const abbot = npc({ ...ROBE, age: 'elder', x: L.MONASTERY.x, z: L.MONASTERY.z - 
 [...novices, abbot].forEach(m => { m.dry = true; });
 W.idlers.push(grandma, auntie, uncle, betelMan, barber, tailor, phoneGirl, teaBoss);
 // time of day follows the story: morning while you start out, the afternoon, the late afternoon once most parts are in, then evening
-const PHASE = { morning: 'မနက်ခင်း', day: 'နေ့လယ်', late: 'ညနေစောင်း', evening: 'ညနေ' };
+const PHASE = { morning: 'မနက်ခင်း', day: 'နေ့လယ်', late: 'ညနေစောင်း', evening: 'ည' };
 const phase = () => S.step === 'arrive' || (S.step === 'quests' && S.parts.length < 3) ? 'morning' : ['evening', 'done'].includes(S.step) ? 'evening' : S.step === 'build' || S.parts.length >= 6 ? 'late' : 'day';
 const life = startLife(W, { L, BOUNDS, ground, phase }); // the ward going about its day
 life.knot(oldMen, true);
@@ -171,10 +171,14 @@ function catHome() { shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE
 // ---------- the story's street: the veg cart, the kids, Shwe Wa, the barber pole ----------
 const party = () => partyOf(S);
 let roofA = 1;
+// after dark (the evening party): street lamps on, the market and the shops shut, their people gone home
+const closed = () => party() && W.night() > .3;
+const SHUT = 'ညဘက် ဆိုင်ပိတ်သွားပြီ 🌙';
+let wasClosed = null, lampK = -1;
 W.tick((dt, T) => {
   const player = W.player;
   // vendor: stands at her corner with the cart, calls out every few seconds, beckons when you're close
-  VD.callT -= dt; if (VD.callT < 0) { call.visible = !call.visible; VD.callT = call.visible ? 2.6 : 5 + rnd() * 3; if (call.visible && !vendor.anim.one) vendor.anim.play('call'); }
+  VD.callT -= dt; if (VD.callT < 0 && vendor.g.visible) { call.visible = !call.visible; VD.callT = call.visible ? 2.6 : 5 + rnd() * 3; if (call.visible && !vendor.anim.one) vendor.anim.play('call'); }
   // kids: splash each other; once the mandat is up they dance on it and get you too
   for (const k of kids) {
     k.idleT -= dt;
@@ -200,6 +204,9 @@ W.tick((dt, T) => {
   // in the market the roofs go see-through, so you can see the lanes and yourself under them
   const inMarket = !inside && p.x < 11.8 && p.z > 9.8; roofA += ((inMarket ? .15 : 1) - roofA) * Math.min(1, dt * 4);
   for (const m of L.roofFade) { m.opacity = roofA; m.depthWrite = roofA > .95; }
+  const lit = THREE.MathUtils.clamp((W.dusk() - .7) / .3, 0, 1) * (.5 + .5 * W.night());
+  if (Math.abs(lit - lampK) > .005) { lampK = lit; L.lamp.bulb.color.setRGB(.85 + 2.0 * lit, .82 + 1.5 * lit, .77 + .6 * lit); L.lamp.glow.opacity = .5 * lit; }
+  const shut = closed(); if (shut !== wasClosed) { wasClosed = shut; for (const n of [vendor, frondMan, mohingaLady, lightsMan, betelMan, phoneGirl]) n.g.visible = !shut; call.visible = false; for (const sh of L.shutters) sh.visible = shut; }
   for (const s of L.spin) s.rotation.y += dt * 2;
   for (const f of TR.spin) f.rotation.z += dt * 9; // the tea shop's wall fan
 });
@@ -504,7 +511,7 @@ async function build() {
   W.player.g.position.set(SX + .4, 0, SZ + 2.4); face(W.player, { g: { position: L.STAGE } });
   await hud.fade(false);
   const t0 = W.time();
-  await new Promise(r => { const k = () => { const t = Math.min(1, .15 + (W.time() - t0) / 4); W.setTime(t); t < 1 ? requestAnimationFrame(k) : r(); }; k(); });
+  await new Promise(r => { const k = () => { const t = Math.min(1.7, .15 + (W.time() - t0) / 4); W.setTime(t); t < 1.7 ? requestAnimationFrame(k) : r(); }; k(); }); // sunset, then night falls
   hud.cinematic(false);
   talk([['', 'ညနေစောင်း။ အုန်းလက်မဏ္ဍပ်လေးမှာ သင်္ကြန်သီချင်း ထွက်လာတယ်။'], ['မေသူ', 'ဦးလေး! လာ! ရေကစားမယ်!']]);
 }
@@ -540,14 +547,14 @@ const SPOTS = [
   { at: () => L.SIGN, r: 1.5, label: () => S.step === 'arrive' ? null : 'မဏ္ဍပ်လေး ပစ္စည်းစာရင်း', goal: () => false,
     run: () => talk([['', ERRANDS.map(k => (S.parts.includes(k) ? '✓ ' : '· ') + ITEMS[k]).join('   ')], ['', `${MM(NEED)} မျိုးလုံး စုံရင် ဆောက်လို့ရပြီ။`]]) },
   { at: () => BUCKET_SPOT, r: 1.5, label: () => bucketBusy() ? null : ({ ask: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[Q() && S.q.cloth] ?? 'အန်တီစိန်နဲ့ စကားပြော'), goal: () => Q() && ['ask', 'money', 'return', 'cloth'].includes(S.q.cloth), run: useBucket },
-  { at: () => vendor.g.position, r: 1.6, label: () => 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => S.q.cloth === 'buy' || S.q.cat === 'fish', run: talkVendor },
+  { at: () => vendor.g.position, r: 1.6, label: () => closed() ? null : 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => S.q.cloth === 'buy' || S.q.cat === 'fish', run: talkVendor },
   { at: () => grandma.g.position, r: 1.7, label: () => S.q.padauk === 'shrine' ? 'ပိတောက်ခက် ပေး' : 'အဘွားနဲ့ စကားပြော', goal: () => Q() && ['ask', 'shrine'].includes(S.q.padauk), run: talkGrandma },
   { at: () => TREE, r: 1.4, label: () => S.q.padauk === 'climb' ? 'ပိတောက်ပင် တက်' : null, goal: () => true, run: climb },
   { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
   { at: () => L.CAR, r: 1.8, label: () => shweWa.held === 'roof' && ['search', 'fish', 'lure'].includes(S.q.cat) ? (S.q.cat === 'lure' ? 'ငါးခြောက်နဲ့ ချော့' : 'ရွှေဝါကို ခေါ်') : null, goal: () => true, run: callCat },
-  { at: () => L.TEA, r: 1.4, label: () => 'လက်ဖက်ရည်ဆိုင်ထဲ ဝင်', goal: () => Q() && S.q.tea !== 'done', run: () => enter('tea') },
-  { at: () => L.BARBER, r: 1.3, label: () => 'ဆံပင်ညှပ်ဆိုင်ထဲ ဝင် ✂', goal: () => false, run: () => enter('barber') },
-  { at: () => L.CLOTHES, r: 1.3, label: () => 'အထည်ဆိုင်ထဲ ဝင် 👕', goal: () => false, run: () => enter('clothes') },
+  { at: () => L.TEA, r: 1.4, label: () => closed() ? SHUT : 'လက်ဖက်ရည်ဆိုင်ထဲ ဝင်', goal: () => Q() && S.q.tea !== 'done', run: () => closed() ? hud.toast(SHUT) : enter('tea') },
+  { at: () => L.BARBER, r: 1.3, label: () => closed() ? SHUT : 'ဆံပင်ညှပ်ဆိုင်ထဲ ဝင် ✂', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('barber') },
+  { at: () => L.CLOTHES, r: 1.3, label: () => closed() ? SHUT : 'အထည်ဆိုင်ထဲ ဝင် 👕', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('clothes') },
   ...Object.values(ROOMS).map(r => ({ at: () => r.door, r: .9, label: () => 'အပြင် ထွက်', goal: () => false, run: goOut })),
   { at: () => TR.counter, r: 1.4, label: () => 'ဆရာနဲ့ စကားပြော', goal: () => Q() && ['ask', 'back'].includes(S.q.tea), run: talkTea },
   ...SERVE.map((t, i) => ({ at: () => customers[i].g.position, r: 1.1, label: () => S.q.tea === 'serve' && !S.served.includes(i) ? `${ORDERS[i][0]} ချပေး` : null, goal: () => true, run: () => serve(i) })),
@@ -555,11 +562,11 @@ const SPOTS = [
   { at: () => MY_SEAT, r: 1.1, label: () => seated ? null : 'ထိုင်ပြီး မှာစား ☕', goal: () => false, run: () => order(MY_TABLE, MY_TABLE.seats[0]) },
   { at: () => CHAIR, r: 1.3, label: () => seated ? null : 'ခုံပေါ် ထိုင်ပြီး ညှပ် ✂', goal: () => false, run: sitBarber },
   { at: () => ROOMS.clothes.mirror, r: 1.4, label: () => 'မှန်ရှေ့မှာ ဝတ်ကြည့် 👕', goal: () => false, run: tryOn },
-  { at: () => L.BETEL, r: 1.5, label: () => 'ကွမ်းယာဆိုင် အဘနဲ့ စကားပြော', goal: () => Q() && S.q.sign === 'ask', run: talkBetel },
-  { at: () => phoneGirl.g.position, r: 1.6, label: () => 'ဖုန်းဆိုင် မမနဲ့ စကားပြော', goal: () => S.q.lights === 'cord', run: talkPhone },
-  { at: () => L.FRONDS, r: 2.0, label: () => 'အုန်းလက်ဆိုင် ကိုအောင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.fronds), run: talkFronds },
-  { at: () => L.MOHINGA, r: 1.8, label: () => 'မုန့်ဟင်းခါးဆိုင်', goal: () => S.q.fronds === 'mohinga', run: talkMohinga },
-  { at: () => L.LIGHTS, r: 1.8, label: () => 'မီးကြိုးဆိုင် ကိုဇော်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.lights), run: talkLights },
+  { at: () => L.BETEL, r: 1.5, label: () => closed() ? null : 'ကွမ်းယာဆိုင် အဘနဲ့ စကားပြော', goal: () => Q() && S.q.sign === 'ask', run: talkBetel },
+  { at: () => phoneGirl.g.position, r: 1.6, label: () => closed() ? null : 'ဖုန်းဆိုင် မမနဲ့ စကားပြော', goal: () => S.q.lights === 'cord', run: talkPhone },
+  { at: () => L.FRONDS, r: 2.0, label: () => closed() ? null : 'အုန်းလက်ဆိုင် ကိုအောင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.fronds), run: talkFronds },
+  { at: () => L.MOHINGA, r: 1.8, label: () => closed() ? null : 'မုန့်ဟင်းခါးဆိုင်', goal: () => S.q.fronds === 'mohinga', run: talkMohinga },
+  { at: () => L.LIGHTS, r: 1.8, label: () => closed() ? null : 'မီးကြိုးဆိုင် ကိုဇော်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.lights), run: talkLights },
   { at: () => novices[0].g.position, r: 1.6, label: () => 'ကိုရင်လေးနဲ့ စကားပြော', goal: () => Q() && S.q.drum === 'ask', run: talkNovice },
   { at: () => L.WELL, r: 1.4, label: () => S.q.drum === 'carry' && !S.carrying ? 'ရေတွင်းက ရေခပ်' : null, goal: () => true, run: useWell },
   { at: () => L.POND, r: 1.6, label: () => S.q.drum === 'carry' && S.carrying ? 'ကန်ထဲ ရေလောင်း' : null, goal: () => true, run: usePond },
@@ -576,7 +583,7 @@ if (S.q.cat === 'done') catHome(); else if (S.q.cat === 'follow') { shweWa.held 
 if (S.q.drum === 'carry') S.carrying = false;
 setBanner(S.signName);
 for (const i of S.served) { cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2); customers[i].anim.setLoop('eat'); }
-if (party()) { partyPose(); W.setTime(1); }
+if (party()) { partyPose(); W.setTime(1.7); }
 
 // ---------- goal markers (in the world and on the minimap) ----------
 function goalsAt() {

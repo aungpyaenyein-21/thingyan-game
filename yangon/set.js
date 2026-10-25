@@ -206,11 +206,13 @@ export function buildSet(W) {
   const grilleM = (rx, ry) => { const t = grilleTex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshLambertMaterial({ map: t, alphaTest: .5, side: THREE.DoubleSide }); };
   const cage = grilleM(3, 1.5), cageSide = grilleM(1, 1.5);
   const shopFlat = (...a) => W.occluder(() => shopFlat0(...a)); // tall: see-through when you walk behind it
+  const shutterM = new THREE.MeshLambertMaterial({ map: (t => (t.center.set(.5, .5), t.rotation = Math.PI / 2, t))(stripeTex('#b4bcc4', '#8f99a3', 14)) }); L.shutters = []; // roller-shutter slats
   function shopFlat0(x, w, floors, wall, sign, signBg, signFg = '#fff6ea', opts = {}) {
     const D = 3.2, Z = 2.8, FH = 1.25, front = Z + D / 2, H = floors * FH;
     box(w, H + .1, D, wall, x, .02, Z); box(w + .2, .25, D + .2, PAL.frame, x, H + .1, Z);
     box(w - .3, 1.05, .06, '#3b3040', x, .14, front);                                          // open shop front (dark inside)
     box(w - .3, .22, .1, '#9aa3ad', x, 1.2, front + .02);                                      // rolled-up shutter
+    const sh = W.keep(mesh(new THREE.BoxGeometry(w - .3, 1.05, .04), shutterM, x, .66, front + .09, { cast: false })); sh.visible = false; L.shutters.push(sh); // …pulled down at night
     mesh(new THREE.PlaneGeometry(w - .15, .45), new THREE.MeshLambertMaterial({ map: textTex(sign, signBg, signFg, 512, 110, sign.length > 14 ? 40 : 50) }), x, 1.68, front + .05, { cast: false });
     const bays = Math.max(1, Math.round(w / 1.7)), bw = w / bays;
     for (let f = 1; f < floors; f++) {
@@ -420,13 +422,25 @@ export function buildSet(W) {
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
   for (const [x, z, s] of [[-6.5, 9.45, .8], [5.6, 9.45, .75], [17.5, 9.45, .8], [29.5, 9.45, .8], [12.4, .6, .8], [-9.4, 11.4, .8], [18.4, 23.4, .8]]) padauk(x, z, s);
+  // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+  L.lamp = { bulb: new THREE.MeshBasicMaterial({ color: '#d9d2c4' }), glow: new THREE.MeshBasicMaterial({ map: glowTex, color: '#ffc77a', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }) };
+  const lamp = (top, dx, dz) => {
+    box(Math.abs(dx) * .55 + .05, .05, Math.abs(dz) * .55 + .05, '#8f8794', top.x + dx * .27, top.y + .12, top.z + dz * .27, { cast: false });
+    box(.22, .08, .22, '#5a5560', top.x + dx * .55, top.y + .06, top.z + dz * .55, { cast: false });
+    mesh(new THREE.SphereGeometry(.08, 8, 6), L.lamp.bulb, top.x + dx * .55, top.y + .01, top.z + dz * .55, { cast: false });
+    const g = mesh(new THREE.PlaneGeometry(4.2, 4.2), L.lamp.glow, top.x + dx * 1.1, .07, top.z + dz * 1.1, { cast: false }); g.rotation.x = -Math.PI / 2; g.receiveShadow = false;
+  };
   const poleAt = ([x, z], h = 3.6) => { cyl(.06, .08, h, '#8f8794', x, .02, z, 6); box(.7, .06, .06, '#8f8794', x, h - .15, z); return new THREE.Vector3(x, h - .1, z); };
   const [p1, p2, p3, p4, p5] = [[-5.0, -3.85], [1.6, -3.85], [7.1, -3.85], [-5.0, 1.4], [-5.0, 5.4]].map(p => poleAt(p));
+  lamp(p2, 0, 1); lamp(p3, 0, 1); lamp(p4, 1, 0); // the lanes in ①
   box(.5, .6, .4, '#9aa3ad', 1.6, 2.4, -3.55);
   const off = (v, x = 0, y = 0, z = 0) => v.clone().add(new THREE.Vector3(x, y, z));
   for (const [a, b, d] of [[p1, p2, .6], [off(p1, 0, -.12), off(p2, 0, -.12), .9], [p2, p3, .55], [off(p2, 0, -.1), off(p3, 0, -.1), .8], [p1, p4, .7], [off(p1, .2), off(p4, .2), .95], [p4, p5, .6], [off(p4, 0, -.1), off(p5, 0, -.1), .85]]) sag(a, b, d);
   for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.75, 3.7, .6], .25], [p5, [-5.75, 4.4, 3.4], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
   const north = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x, 6.3])), south = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x + .4, 9.5], 3.3));
+  north.forEach((p, i) => i % 2 || lamp(p, 0, 1)); south.forEach((p, i) => i % 2 && lamp(p, 0, -1)); // lamps over the main street, staggered
   for (let i = 0; i + 1 < north.length; i++) { sag(north[i], north[i + 1], .6); sag(off(north[i], 0, -.12), off(north[i + 1], 0, -.12), .85); sag(south[i], south[i + 1], .5); }
   sag(p5, north[1], .4);
   const bunting = (a, b, drop) => {
