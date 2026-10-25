@@ -256,7 +256,8 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   let touch = null;
   renderer.domElement.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId }; });
   addEventListener('pointermove', e => { if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; } });
-  addEventListener('pointerup', e => { if (touch && e.pointerId === touch.id) touch = null; });
+  const endTouch = e => { if (touch && e.pointerId === touch.id) touch = null; };
+  addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch);
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
 
@@ -287,9 +288,12 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   });
   composer.addPass(look);
   composer.addPass(new OutputPass());
-  function resize() {
+  function fitCam() {
     const a = innerWidth / innerHeight, h = a < 1 ? VIEW * 1.15 / a : VIEW; // portrait phones: keep ~17 units across
     Object.assign(cam, { left: -h * a / 2, right: h * a / 2, top: h / 2, bottom: -h / 2 }); cam.updateProjectionMatrix();
+  }
+  function resize() {
+    fitCam();
     renderer.setSize(innerWidth, innerHeight); drawSky();
     const pr = renderer.getPixelRatio(); composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
     look.uniforms.res.value.set(innerWidth * pr, innerHeight * pr);
@@ -312,7 +316,8 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
     if (W.frozen) ix = iy = 0;
     const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
     const moving = mv.lengthSq() > .01;
-    if (pa.loop !== 'dance' || moving) pa.setLoop(moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle');
+    const loop = moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle';
+    if ((pa.loop !== 'dance' || moving) && loop !== pa.loop) pa.setLoop(loop); // setLoop() drops any one-shot, so only call it on a real change
     if (moving && pa.speed > 0) {
       mv.normalize();
       player.g.position.addScaledVector(mv, pa.speed * dt); collide(player.g.position);
@@ -387,7 +392,7 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
       scene.add(petals);
     }
     addEventListener('resize', resize); resize();
-    addEventListener('wheel', e => { VIEW = THREE.MathUtils.clamp(VIEW * (1 + Math.sign(e.deltaY) * .1), 7, 18); resize(); }, { passive: true });
+    addEventListener('wheel', e => { VIEW = THREE.MathUtils.clamp(VIEW * (1 + Math.sign(e.deltaY) * .1), 7, 18); fitCam(); }, { passive: true }); // zoom only changes the projection
     camTarget.copy(W.player.g.position); camTarget.y = 0;
     renderer.setAnimationLoop(frame);
   }

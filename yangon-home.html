@@ -41,7 +41,7 @@
   #splash.act{background:#f2a65a;box-shadow:0 4px 0 #c97f3a}
   #jump{position:fixed;z-index:2;right:104px;bottom:26px;width:60px;height:60px;border-radius:50%;border:0;background:#b39bd1;color:#fff;font:inherit;font-size:14px;box-shadow:0 4px 0 #8a74a8;display:none}
   @media (pointer:coarse){#splash,#jump{display:block}#hint{display:none}#prompt{bottom:112px}}
-  @media (max-width:600px){#where{top:auto;bottom:14px;left:16px;right:auto;text-align:left}#where #bag{justify-content:flex-start}}
+  @media (max-width:600px){#where{top:auto;bottom:14px;left:16px;right:auto;text-align:left}#where #bag{justify-content:flex-start}#hint{display:none}}
 </style>
 </head>
 <body>
@@ -327,9 +327,10 @@ W.addPet('dog', 'walker', 0, -2.4);      // on its rounds
 W.tick((dt, T) => {
   // vendor: walks the lane, stops for you, calls out every few seconds
   const near = vendor.g.position.distanceTo(player.g.position) < 1.8 || talking;
-  if (near) { vendor.anim.setLoop('idle'); let d = Math.atan2(player.g.position.x - vendor.g.position.x, player.g.position.z - vendor.g.position.z) - vendor.g.rotation.y; vendor.g.rotation.y += Math.atan2(Math.sin(d), Math.cos(d)) * Math.min(1, dt * 6); }
+  if (near) { if (vendor.anim.loop !== 'idle') vendor.anim.setLoop('idle'); let d = Math.atan2(player.g.position.x - vendor.g.position.x, player.g.position.z - vendor.g.position.z) - vendor.g.rotation.y; vendor.g.rotation.y += Math.atan2(Math.sin(d), Math.cos(d)) * Math.min(1, dt * 6); }
   else {
-    vendor.anim.setLoop('walk'); vendor.g.rotation.y = VD.dir * Math.PI / 2;
+    if (vendor.anim.loop !== 'walk') vendor.anim.setLoop('walk'); // setLoop() drops a splash reaction, so only on a change
+    vendor.g.rotation.y = VD.dir * Math.PI / 2;
     vendor.g.position.x += VD.dir * vendor.anim.speed * dt;
     if (vendor.g.position.x < VD.x0) VD.dir = 1; if (vendor.g.position.x > VD.x1) VD.dir = -1;
   }
@@ -353,14 +354,16 @@ W.tick((dt, T) => {
     if (bus.position.x - BUS.len / 2 > HALF + 6) { bus.position.x = -HALF - BUS.len; BUS.stopped = false; }
   }
   const p = player.g.position, bx = bus.position.x; // keep out from under the bus
-  if (p.x > bx - BUS.len / 2 - .3 && p.x < bx + BUS.len / 2 + .3 && Math.abs(p.z - BUS.lane) < 1.1) p.z = BUS.lane + Math.sign(p.z - BUS.lane || -1) * 1.1;
+  if (p.x > bx - BUS.len / 2 - .3 && p.x < bx + BUS.len / 2 + .3 && Math.abs(p.z - BUS.lane) < 1.1) {
+    p.z = BUS.lane + Math.sign(p.z - BUS.lane || -1) * 1.1; W.collide(p); p.y = ground(p.x, p.z); // don't shove you into the shelter
+  }
 });
 
 // ---------- save (STORY.md §၈: progress is the player's own) ----------
 const KEY = 'thingyan.story.v1';
 const FRESH = { step: 'arrive', parts: [], gifts: 5, intro: false };
-let S = { ...FRESH };
-try { if (new URLSearchParams(location.search).has('new')) localStorage.removeItem(KEY); S = { ...FRESH, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch {}
+let S = { ...FRESH, parts: [] }; // own copy: S.parts gets pushed to
+try { if (new URLSearchParams(location.search).has('new')) localStorage.removeItem(KEY); S = { ...FRESH, parts: [], ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 
 // ---------- HUD: goal, bag, prompt, dialogue, toast, bus menu ----------
@@ -439,7 +442,7 @@ function talkKids() {
     ['ဖိုးကျော်', 'အပေါ်ထပ်က အန်တီစိန်ဆီမှာ ပိတ်စ အဟောင်းတွေ ရှိတယ်။ ကြိုးဆွဲပုံး ချထားတဲ့ ဝရန်တာလေ!'],
   ], () => { S.step = 'kids'; S.gifts--; hud(); kids.forEach(k => k.anim.emote('heart')); toast('ကလေးမဏ္ဍပ် ဆောက်ဖို့ ပစ္စည်း ရှာမယ်'); });
   if (S.step === 'free') return talk([['မေသူ', `ပိတ်စ ရပြီ! နောက်ထပ် ${MM(NEED - S.parts.length)} ခု လိုသေးတယ် ဦးလေး။`], ['ချိုချို', 'ဝါးဆိုင် ဦးလေးကြီးဆီမှာ ဝါးလုံးတွေ ရှိတယ်။ ဈေးထဲမှာ!']]);
-  talk([[pick(['မေသူ', 'ဖိုးကျော်', 'ချိုချို']), 'အန်တီစိန်ဆီ မြန်မြန်သွားလေ ဦးလေး! ဟိုဝရန်တာ!']]);
+  talk([[pick(['မေသူ', 'ဖိုးကျော်', 'ချိုချို']), S.step === 'buy' ? 'ဟင်းသီးဟင်းရွက်သည် အဒေါ်က လမ်းကြားထဲမှာ ဦးလေး! အော်သံ ကြားရလား။' : 'အန်တီစိန်ဆီ မြန်မြန်သွားလေ ဦးလေး! ဟိုဝရန်တာ!']]);
 }
 function useBucket() {
   const A = 'အန်တီစိန်';
@@ -483,13 +486,17 @@ fill(atBottom[S.step] ?? null); BK.y = BK.to = S.step in atBottom ? BBOT.y : BTO
 const marker = mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false }); marker.rotation.x = Math.PI;
 const GOAL_AT = { arrive: () => KIDS_AT.clone().setY(1.6), kids: () => BUCKET_SPOT.clone().setY(1.2), money: () => bucket.position.clone().setY(1.2), buy: () => vendor.g.position.clone().setY(2.6),
   return: () => BUCKET_SPOT.clone().setY(1.2), cloth: () => bucket.position.clone().setY(1.2), free: () => STOP.clone().setY(2.9), lifting: () => null };
+const PP = new THREE.Vector3(), PROMPT = $('prompt'), PTEXT = $('ptext'), SPLASH = $('splash'); let lastUI = '';
 
 W.tick((dt, T) => {
   // nearest thing you can do
-  here = null; let best = 1e9;
-  if (!talking && !busOpen) for (const s of SPOTS) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(player.g.position.clone().setY(0)) - s.r; if (d < 0 && d < best) { best = d; here = s; } }
-  $('prompt').style.display = here ? 'block' : 'none'; if (here) $('ptext').textContent = here.label();
-  $('splash').classList.toggle('act', !!here || !!talking); $('splash').textContent = here || talking ? 'လုပ်' : 'ရေပက်';
+  here = null; let best = 1e9, label = null;
+  if (!talking && !busOpen) { const pp = PP.copy(player.g.position).setY(0); for (const s of SPOTS) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d < 0 && d < best) { best = d; here = s; label = l; } } }
+  const ui = `${label}|${!!talking}`; // touch the DOM only when what it shows changes
+  if (ui !== lastUI) {
+    lastUI = ui; PROMPT.style.display = label ? 'block' : 'none'; if (label) PTEXT.textContent = label;
+    SPLASH.classList.toggle('act', !!label || !!talking); SPLASH.textContent = label || talking ? 'လုပ်' : 'ရေပက်';
+  }
   const g = GOAL_AT[S.step]?.(); marker.visible = !!g && !talking;
   if (g) { marker.position.copy(g).add(new THREE.Vector3(0, .6 + Math.sin(T * 3) * .12, 0)); marker.rotation.y = T * 1.5; }
   if (toastT > 0 && (toastT -= dt) <= 0) $('toast').style.display = 'none';
@@ -499,10 +506,11 @@ hud(); W.start();
 if (new URLSearchParams(location.search).has('debug')) window.zone = { W, player, S: () => S, SPOTS, vendor, bucket, talking: () => !!talking, here: () => here?.label() };
 // arrival: off the airport bus after five years
 if (!S.intro) {
-  setTimeout(() => talk([
+  const intro = () => talking ? setTimeout(intro, 500) : talk([ // wait out a chat already under way instead of cutting it off
     ['', 'ငါးနှစ်ကြာပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ ပိတောက်နံ့ ရနေတုန်း…'],
     ['', 'ကွက်လပ်ဘက်က ကလေးတွေ ရေပက်သံ ကြားနေရတယ်။'],
-  ], () => { S.intro = true; save(); }), 1600);
+  ], () => { S.intro = true; save(); });
+  setTimeout(intro, 1600);
 }
 setTimeout(() => { $('title').style.opacity = 0; }, 1400);
 </script>
