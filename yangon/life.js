@@ -89,6 +89,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     const c = npc({ age: pick(['adult', 'adult', 'elder']), hair: pick(['bun', 'bun', 'short']), topStyle: pick(['yinphone', 'tee', 'shirt']), bottom: pick(['htamein', 'longyi']), hat: pick(['none', 'bucket']), x: st.x, z: st.z, ry: st.ry });
     c.anim.setLoop('vend'); c.g.position.y = .04; c.callT = 3 + rnd() * 8; return c;
   });
+  for (const st of L.SHED_SEATS) { // inside the sheds, up on the stall counters
+    const c = npc({ age: pick(['adult', 'adult', 'elder']), hair: pick(['bun', 'bun', 'short']), topStyle: pick(['yinphone', 'tee']), bottom: pick(['htamein', 'longyi']), hat: 'none', x: st.x, z: st.z, ry: st.ry });
+    c.anim.setLoop('vend'); c.g.position.y = st.y; c.callT = 3 + rnd() * 8; vendors.push(c);
+  }
   // ③ the mohinga stall's low tables: breakfast eaters (two each, on tiny stools)
   const dayOnly = []; // market folk: gone home after dark
   for (const tx of [8.0, 10.8]) {

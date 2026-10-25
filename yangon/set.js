@@ -21,6 +21,8 @@ const RECTS = [
   { x0: 10.6, x1: 34, z0: -2.2, z1: -.4, h: .05, c: '#cdc2b6' },       // back lane behind the shops
   { x0: -9.6, x1: 11.8, z0: 12.8, z1: 14.6, h: .05, c: '#bdb2a6' },    // ③ market lane 1
   { x0: -9.6, x1: 11.8, z0: 19.4, z1: 21.2, h: .05, c: '#bdb2a6' },    // ③ market lane 2
+  { x0: -9.5, x1: 9.9, z0: 15.6, z1: 18.6, h: .06, c: '#cfc8bc' },      // ③ concrete floor of market shed 1 (walk in)
+  { x0: -9.5, x1: 9.9, z0: 22.4, z1: 25.6, h: .06, c: '#cfc8bc' },      // ③ …and shed 2
 ];
 export const ground = (x, z) => { for (const r of RECTS) if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return r.h; return .01; };
 export const AREAS = [ // for the minimap and the "you are here" toast
@@ -334,13 +336,32 @@ export function buildSet(W) {
     if (z1 > 20 && side < 0 && x > 2 && x < 6) continue;   // lights stall goes here
     pitch(x, z, side, KINDS[k++ % KINDS.length], rnd() < .5 ? 'tarp' : 'umbrella');
   }
-  for (const [z0, z1] of [[15.6, 18.6], [22.4, 25.6]]) { // zinc-roofed market sheds between and behind the lanes
-    const X = .2, w = 19.4;
-    for (let x = X - w / 2 + .2; x <= X + w / 2; x += 2.4) for (const z of [z0 + .15, z1 - .15]) cyl(.12, .12, 2.6, '#bdb6ae', x, .02, z, 6);
-    box(w, .8, z1 - z0, '#d9cdb8', X, .02, (z0 + z1) / 2);   // brick half wall the stalls lean on
+  // zinc-roofed market sheds (ဈေးရုံ) you can walk into: a concrete floor, a raised stall counter down each long side with the
+  // sellers sitting up on it among their goods, an aisle down the middle (in from either end), gaps in the counters lined up
+  // with the gaps between the pitches outside so you can step in from the lanes
+  L.SHED_SEATS = [];
+  const SHED_GOODS = [[PAL.leaf, PAL.leafLight, '#7a4a9a'], ['#f2c14e', '#e8954a', '#86b96d'], ['#d9776a', '#c8553d', '#e9a0a0'], ['#9aa3ad', '#c9d2dc'], ['#c8553d', '#e8954a', '#d9b98f']];
+  for (const [z0, z1, gapsS, gapsN] of [[15.6, 18.6, [-7.0, 3.4], [-7.0, 1.5]], [22.4, 25.6, [-1.8, .8, 3.4, 6.0], []]]) {
+    const X = .2, w = 19.4, xa = X - w / 2, xb = X + w / 2;
+    for (const [z, gaps] of [[z0 + .15, gapsS], [z1 - .15, gapsN]]) for (let x = xa + .2; x <= xb; x += 2.4) {
+      if (gaps.some(g => Math.abs(g - x) < .7)) continue; // keep the way in clear
+      cyl(.12, .12, 2.6, '#bdb6ae', x, .02, z, 6); solid(x, z, .3, .3);
+    }
     gable(X, 3.2, (z0 + z1) / 2, w + .8, (z1 - z0) * .78, .38, fade(zinc));
-    for (let i = 0; i < 8; i++) box(.8, .5, .6, pick(['#c8553d', '#3f6fa8', '#e9e1d2', '#f2c14e']), X - w / 2 + 1.4 + i * 2.4, .82, z0 + .6);  // goods heaped along the shed's edge
-    solid(X, (z0 + z1) / 2, w, z1 - z0);
+    for (const [cz, gaps, face] of [[z0 + .6, gapsS, 0], [z1 - .6, gapsN, Math.PI]]) { // the two stall counters
+      const cuts = [xa + .9, ...gaps.flatMap(g => [g - .55, g + .55]), xb - .9]; // leave the ends open for the aisle
+      for (let i = 0; i + 1 < cuts.length; i += 2) {
+        const a = cuts[i], b = cuts[i + 1], cx = (a + b) / 2, L2 = b - a; if (L2 < .6) continue;
+        box(L2, .5, .7, '#bfb6a8', cx, .06, cz); box(L2 + .04, .06, .74, '#e4dccd', cx, .56, cz); solid(cx, cz, L2, .7);
+        for (let x = a + .45; x < b - .3; x += 1.1) { // goods along the counter: baskets, trays, heaps
+          const cs = pick(SHED_GOODS), k = rnd();
+          if (k < .4) { cyl(.22, .22, .04, '#c8a060', x, .62, cz, 10); for (let j = 0; j < 4; j++) mesh(new THREE.IcosahedronGeometry(.07, 0), pick(cs), x - .1 + (j % 2) * .2, .7, cz - .06 + (j >> 1) * .12); }
+          else if (k < .75) { cyl(.17, .13, .22, '#b8925a', x, .62, cz, 9); for (let j = 0; j < 3; j++) mesh(new THREE.IcosahedronGeometry(.07, 0), pick(cs), x + (j - 1) * .08, .86, cz); }
+          else { const h = mesh(new THREE.IcosahedronGeometry(.2, 0), pick(cs), x, .7, cz); h.scale.set(1.3, .6, 1); }
+        }
+        if (L2 > 2.5) L.SHED_SEATS.push({ x: a + L2 * (.3 + rnd() * .4), z: cz + (face ? -.12 : .12), ry: face, y: .36 }); // a seller up on the counter, facing the aisle
+      }
+    }
   }
   mesh(new THREE.PlaneGeometry(3, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး', '#c8553d', '#ffe7a3', 512, 90, 60) }), .2, 2.6, 18.65, { cast: false });
   // the frond + bamboo yard (အုန်းလက် · ဝါး) at the west end of the back lane
