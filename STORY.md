@@ -113,4 +113,6 @@ Mission ပုံစံ: သူငယ်ချင်းတစ်ယောက်�
 - **Zone တစ်ခု = scene/map သေးတစ်ခု**။ ဘတ်စ်မှတ်တိုင်က TECH.md §၃ portal ရဲ့ မြို့တွင်းပုံစံ (cutscene တိုတို)။
 - **Story progress က ကစားသူ တစ်ယောက်ချင်းစီရဲ့ ပိုင်** — zone ထဲမှာ တခြားကစားသူတွေ တွေ့ရပေမယ့် ရက်/mission အခြေအနေကို ကိုယ်ပိုင် save မှာ သိမ်း။ (ဒါမှ realtime multiplayer room နဲ့ မပဋိပက္ခ ဖြစ်မယ်)
 - **Art scope**: ရန်ကုန် ရက် ၁ (zone ၅ ခု) ကို vertical slice အဖြစ် အရင်ပြီးအောင် လုပ်မယ်။ မန္တလေး/ရွာ က zone ၄ ခုစီ။
+- **ဆောက်ပြီးသား**: zone ① → `yangon-home.html` (ပိတ်စ mission အစအဆုံး)။ zone တိုင်း မျှသုံးတဲ့ engine → `world.js` (diorama.html ထဲက renderer/လူ/ခွေးကြောင်/ရေ/input ကို ခွဲထုတ်ထား)။
+  `?new` = save ဖျက်ပြီး အစက ပြန်စ၊ `?debug` = console မှာ `zone` object။
 - သတိ: မြို့လယ် stage ကို အစိုးရ/အရာရှိ သင်္ကေတ မပါတဲ့ "မြို့မဏ္ဍပ်ကြီး" အဖြစ်ပဲ ဆွဲမယ်။ ဆိုင်/ကား brand အစစ် မသုံး။
