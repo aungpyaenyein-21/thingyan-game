@@ -49,23 +49,35 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
   const camTarget = new THREE.Vector3();
   scene.add(cam);
   const skyC = document.createElement('canvas'), skyT = new THREE.CanvasTexture(skyC); skyT.colorSpace = THREE.SRGBColorSpace; scene.background = skyT;
+  // time of day: 0 = the usual golden afternoon, 1 = dusk (setTime). Sky stops, sun and fill light all blend between the two.
+  const SKY = [['#ffd9a8', '#3d3470'], ['#f9b8a0', '#7a4f92'], ['#d9a3c0', '#d97a7a'], ['#b39bd1', '#f2a65a']], STOPS = [0, .45, .8, 1];
+  const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString();
+  let dusk = 0;
   function drawSky() { // gradient + soft sun, redrawn per aspect so the sun stays round
     const H = 512, W = Math.round(H * innerWidth / innerHeight); skyC.width = W; skyC.height = H; const g = skyC.getContext('2d');
-    const gr = g.createLinearGradient(0, 0, 0, H); [[0, '#ffd9a8'], [.45, '#f9b8a0'], [.8, '#d9a3c0'], [1, '#b39bd1']].forEach(([o, c]) => gr.addColorStop(o, c));
+    const gr = g.createLinearGradient(0, 0, 0, H); SKY.forEach(([a, b], i) => gr.addColorStop(STOPS[i], mix(a, b, dusk)));
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    const r = H * .14, cx = W / 2, cy = H * .2, rg = g.createRadialGradient(cx, cy, r * .2, cx, cy, r * 1.6);
-    rg.addColorStop(0, 'rgba(255,245,218,.95)'); rg.addColorStop(.6, 'rgba(255,240,205,.85)'); rg.addColorStop(.66, 'rgba(255,232,190,.25)'); rg.addColorStop(1, 'rgba(255,232,190,0)');
+    const r = H * .14 * (1 - dusk * .3), cx = W / 2, cy = H * (.2 + dusk * .55), rg = g.createRadialGradient(cx, cy, r * .2, cx, cy, r * 1.6), a = 1 - dusk * .45; // the sun sinks and reddens
+    rg.addColorStop(0, `rgba(255,245,218,${.95 * a})`); rg.addColorStop(.6, `rgba(255,${240 - dusk * 70},${205 - dusk * 90},${.85 * a})`); rg.addColorStop(.66, `rgba(255,232,190,${.25 * a})`); rg.addColorStop(1, 'rgba(255,232,190,0)');
     g.fillStyle = rg; g.fillRect(0, 0, W, H);
-    paintSky?.(g, W, H); skyT.needsUpdate = true;
+    paintSky?.(g, W, H, dusk); skyT.needsUpdate = true;
   }
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; scene.environmentIntensity = .45; // only the metals (Standard) use it
-  scene.add(new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.55)); // lavender fill = soft lilac shadows
+  const hemi = new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.55); scene.add(hemi); // lavender fill = soft lilac shadows
   const sun = new THREE.DirectionalLight('#ffb46b', 2.4);
   sun.position.set(-14, 11, 6); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 50 });
   scene.add(sun);
+  function setTime(t) { // 0 day .. 1 dusk; windows (PAL.window) glow as it gets dark
+    dusk = THREE.MathUtils.clamp(t, 0, 1);
+    sun.color.set(mix('#ffb46b', '#ff7a5a', dusk)); sun.intensity = 2.4 - dusk * 1.5;
+    hemi.color.set(mix('#ffe2c4', '#9a8ad0', dusk)); hemi.groundColor.set(mix('#9a7fb8', '#3f3368', dusk)); hemi.intensity = 1.55 - dusk * .35;
+    M(PAL.window).emissive.set('#ffc46b').multiplyScalar(dusk * dusk * .9);
+    document.body.style.background = mix('#f9b8a0', '#7a4f92', dusk);
+    drawSky();
+  }
 
   // ---------- builders ----------
   const matCache = {};
@@ -324,7 +336,7 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
       const want = Math.atan2(mv.x, mv.z); let d = want - player.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
       player.g.rotation.y += d * Math.min(1, dt * 12);
     }
-    player.g.position.y = ground(player.g.position.x, player.g.position.z);
+    player.g.position.y = ground(player.g.position.x, player.g.position.z) + W.lift; // lift: a zone raising you (up a tree …)
 
     // npcs in W.idlers do a little something now and then; zone code drives everyone else
     for (const c of W.idlers) { c.idleT -= dt; if (c.idleT < 0 && !c.anim.one) { const kid = c.ch.opts.age === 'kid'; c.anim.play(pick(kid ? ['jump', 'jump', 'wave'] : ['wave', 'jump', 'wave'])); c.idleT = kid ? 1.5 + rnd() * 2 : 5 + rnd() * 8; } }
@@ -399,6 +411,6 @@ export function createWorld({ half = 9, ground = () => .01, paintSky, camClamp =
 
   const W = { THREE, scene, cam, renderer, half, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, tick: f => ticks.push(f), start, time: () => T };
+    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk };
   return W;
 }

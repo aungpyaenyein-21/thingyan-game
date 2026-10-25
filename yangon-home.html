@@ -36,6 +36,19 @@
   #bus button.here{border-color:#f2c14e;background:#fff7dc}
   #bus button:disabled{cursor:default;opacity:.6}
   #bus .close{justify-content:center;background:#5a3550;color:#fff6ea;border-color:#5a3550}
+  #bus button.go{border-color:#7a4f92;background:#efe6fa}
+  #gtext .ok{opacity:.55}
+  #mini{left:50%;bottom:24px;transform:translateX(-50%);width:min(420px,calc(100% - 32px));box-sizing:border-box;padding:10px 16px 12px;display:none;cursor:pointer;text-align:center;font-size:15px}
+  #mini small{display:block;font-size:12px;opacity:.65;margin-top:6px}
+  #mbar{position:relative;height:18px;margin-top:8px;border-radius:9px;background:#e9cfa8;overflow:hidden}
+  #mband{position:absolute;top:0;bottom:0;background:#f2c14e}
+  #mcur{position:absolute;top:-2px;width:6px;height:22px;margin-left:-3px;border-radius:3px;background:#c8553d}
+  #fade{position:fixed;inset:0;z-index:5;background:#1c1426;opacity:0;pointer-events:none}
+  #end{left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:min(400px,calc(100% - 32px));box-sizing:border-box;padding:20px 22px;text-align:center;display:none;line-height:1.9}
+  #end h2{margin:0 0 6px;font-size:21px;font-weight:normal}
+  #end p{margin:4px 0;font-size:15px}
+  #end button{display:block;width:100%;margin-top:10px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:#5a3550;color:#fff6ea}
+  #end button.alt{background:#fff;color:#5a3550;border:2px solid #e9cfa8}
   #splash{position:fixed;z-index:2;right:18px;bottom:18px;width:76px;height:76px;border-radius:50%;border:0;
     background:#7ec8e3;color:#fff;font:inherit;font-size:15px;box-shadow:0 4px 0 #4f9fbd;display:none}
   #splash.act{background:#f2a65a;box-shadow:0 4px 0 #c97f3a}
@@ -56,13 +69,18 @@
 <div id="toast" class="panel"></div>
 <div id="title" class="panel">အိမ်နဲ့ လမ်းကြား<small>ရန်ကုန် · အကြိုနေ့</small></div>
 <div id="bus" class="panel"><h3>🚌 ဘယ်ကို သွားမလဲ</h3><div id="zones"></div><button class="close" id="busclose">မသွားသေးဘူး</button></div>
+<div id="mini" class="panel">ပိတောက်ခက် ခူး <b id="mcount"></b><div id="mbar"><div id="mband"></div><div id="mcur"></div></div><small>E / တို့ — အနီရောင်တံ ရွှေရောင်ထဲ ရောက်မှ ခူး</small></div>
+<div id="fade"></div>
+<div id="end" class="panel"><h2>ရက် ၁ · ရန်ကုန် ပြီးဆုံး</h2><p>ကလေးမဏ္ဍပ် ✓ · ပစ္စည်း <span id="epart"></span></p><p>ညကားနဲ့ မန္တလေးကို ထွက်ခဲ့ပြီ…</p><p style="opacity:.65">ရက် ၂ · မန္တလေး — မကြာခင်</p>
+  <button id="estay">ရပ်ကွက်ထဲ ဆက်နေမယ်</button><button id="eagain" class="alt">အစက ပြန်ကစားမယ်</button></div>
 <button id="splash" aria-label="ရေပက်">ရေပက်</button>
 <button id="jump" aria-label="ခုန်">ခုန်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
 // Story day 1 · Yangon zone ①: the home lane (STORY.md §၄). Old walk-up flats, a rope bucket, tangled cables, an empty lot
 // the kids want a mandat on, and the bus stop out to the other zones. Mission: help Auntie Sein upstairs, get her old cloth.
-import { createWorld, PAL, SKINS, LONGYI } from './world.js?v=1';
+import { createWorld, PAL, SKINS, LONGYI } from './world.js?v=2';
+import { CAT_COATS } from './critters.js?v=4';
 
 const HALF = 9;
 const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
@@ -77,7 +95,7 @@ const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solid, p
 
 // the Shwedagon far off below the island, over a hazy low city: you can always see which way home is.
 // The sky is screen space, so it sits low-left where the island never covers it at any zoom.
-function shwedagon(g, Wd, H) {
+function shwedagon(g, Wd, H, dusk = 0) { // dusk: floodlit, the glow grows as the sky darkens
   const base = H * .9, cx = Math.max(Wd * .1, 70), s = H * .0024;
   for (let x = 0, i = 0; x < cx * 2.6; x += 9 + (i * 37 % 15), i++) { // low city
     const h = 6 + (i * 53 % 17) * (1 - Math.abs(x - cx) / (cx * 2.8)), gr = g.createLinearGradient(0, base - h, 0, base + 20);
@@ -94,7 +112,7 @@ function shwedagon(g, Wd, H) {
   g.beginPath(); g.moveTo(cx - 9 * s, base - 42 * s); g.lineTo(cx, base - 92 * s); g.lineTo(cx + 9 * s, base - 42 * s); g.fill(); // spire
   for (const [w, y] of [[10, 46], [8.5, 52], [7, 58]]) tier(w, y, 2.2); // banana-bud rings
   g.fillStyle = 'rgba(255,248,220,.95)'; g.beginPath(); g.arc(cx, base - 93 * s, 1.6 * s, 0, 7); g.fill();
-  const glow = g.createRadialGradient(cx, base - 50 * s, 0, cx, base - 50 * s, 70 * s); glow.addColorStop(0, 'rgba(255,226,150,.3)'); glow.addColorStop(1, 'rgba(255,226,150,0)');
+  const glow = g.createRadialGradient(cx, base - 50 * s, 0, cx, base - 50 * s, 70 * s); glow.addColorStop(0, `rgba(255,226,150,${.3 + dusk * .45})`); glow.addColorStop(1, 'rgba(255,226,150,0)');
   g.fillStyle = glow; g.fillRect(cx - 70 * s, base - 120 * s, 140 * s, 140 * s);
 }
 
@@ -298,12 +316,21 @@ const auntie = bean({ hair: 'bun', flower: true, age: 'adult', skin: SKINS[1], s
 { const p = AB.at(-.3, .08, -.08); auntie.g.position.copy(p); auntie.dry = true; } // leaning on her rail, out of splash reach
 const grandma = bean({ age: 'elder', hair: 'bun', flower: true, shirt: '#fff6ea', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#3f6fa8', '#8fb8e8'], hat: 'none', x: 6.7, z: -4.45, ry: 0 });
 grandma.g.position.y = .32;
+// U Ba Tin: retired radio repairman at his door on the side lane, owner of the pagoda-festival amplifier and of Shwe Wa the cat
+const UNCLE = new THREE.Vector3(-5.15, 0, -.7);
+const uncle = bean({ age: 'elder', hair: 'short', topStyle: 'taikpon', shirt: '#f3ead8', bottom: 'longyi', longyi: LONGYI[0], hat: 'none', x: UNCLE.x, z: UNCLE.z, ry: Math.PI / 2 });
+{
+  box(.7, .5, .5, '#8a5a3a', -5.25, .02, .2); box(.4, .26, .2, '#3b3440', -5.25, .52, .2); cyl(.06, .06, .02, '#d9b98f', -5.13, .62, .31, 10); // table + transistor radio
+  box(.36, .7, .36, '#26222b', -5.3, .02, -1.55); mesh(new THREE.CircleGeometry(.12, 12), '#4a4452', -5.11, .4, -1.55).rotation.y = Math.PI / 2; // the amplifier, waiting
+  solid(-5.25, .2, .7, .5); solid(-5.3, -1.55, .4, .4);
+}
 const kids = [
   bean({ age: 'kid', hair: 'pigtails', shirt: '#ff7f6b', bottom: 'skirt', prop: 'gun', hat: 'none', x: 3.4, z: 4.0, ry: -2.2 }),
   bean({ age: 'kid', hair: 'buzz', shirt: '#4fd1c5', bottom: 'shorts', prop: 'gun', hat: 'band', x: 1.7, z: 3.5, ry: 2.2 }),
   bean({ age: 'kid', hair: 'bob', shirt: '#b388ff', bottom: 'overalls', prop: 'gun', hat: 'none', x: 4.9, z: 3.3, ry: -1.0 }),
 ];
 const KIDS_AT = new THREE.Vector3(3.3, 0, 3.6);
+const ON_STAGE = [[SX - .9, SZ + .35], [SX, SZ - .1], [SX + .9, SZ + .35]]; // where they dance once the mandat is up
 // vegetable seller pushing her cart up and down the back lane, calling out
 const vendor = bean({ hair: 'bun', age: 'adult', skin: SKINS[2], shirt: '#e9b44c', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#6e4428', '#a8743a'], hat: 'bucket', prop: 'none', print: '', x: 6, z: -2.65 });
 const cart = new THREE.Group(); scene.add(cart);
@@ -317,12 +344,26 @@ const cart = new THREE.Group(); scene.add(cart);
 }
 const call = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဟင်းသီး~ ဟင်းရွက်~'), depthWrite: false })); call.scale.set(2.8, .88, 1); call.position.y = 2.3; call.visible = false; vendor.g.add(call);
 const VD = { dir: -1, x0: -2.6, x1: 8.2, z: -2.65, callT: 2 };
-W.idlers.push(grandma, auntie);
+W.idlers.push(grandma, auntie, uncle);
 
 W.addPet('dog', 'house', 3.6, -3.75);     // home dog on the porch step
-W.addPet('cat', 'house', -5.3, 2.6);     // cat on the side-lane steps
-W.addPet('cat', 'house', -2.0, -4.6);    // cat at the stairwell
-W.addPet('dog', 'walker', 0, -2.4);      // on its rounds
+W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
+W.addPet('dog', 'walker', 0, -2.4);       // on its rounds
+// Shwe Wa (ရွှေဝါ), U Ba Tin's ginger cat: fled the kids' water this morning, now up on the old car's roof and won't come down
+const CAR = new THREE.Vector3(-3.95, 0, 4.3);
+{
+  const g = new THREE.Group(); g.position.copy(CAR); scene.add(g); const o = { parent: g };
+  box(1.2, .5, 2.7, '#7fb8a8', 0, .25, 0, o); box(1.1, .42, 1.4, '#7fb8a8', 0, .75, -.15, o);
+  for (const z of [-.86, .56]) box(1.0, .3, .04, '#5b6c9a', 0, .8, z, o); for (const x of [-.56, .56]) box(.04, .3, 1.2, '#5b6c9a', x, .8, -.15, o);
+  box(1.22, .12, .1, '#d9dde3', 0, .3, 1.36, o); box(1.22, .12, .1, '#d9dde3', 0, .3, -1.36, o);
+  for (const x of [-.6, .6]) for (const z of [-.85, .85]) { const w = mesh(new THREE.CylinderGeometry(.24, .24, .16, 12), '#2b2730', x, .24, z, o); w.rotation.z = Math.PI / 2; }
+  mesh(new THREE.PlaneGeometry(.5, .14), new THREE.MeshLambertMaterial({ map: textTex('ရန်ကုန် ၇က/၁၂၃၄', '#fff6ea', '#2b2730', 256, 72, 34) }), 0, .38, 1.42, { ...o, cast: false });
+  solid(CAR.x, CAR.z, 1.3, 2.8);
+}
+const ROOF = new THREE.Vector3(CAR.x, 1.2, CAR.z - .2);
+const shweWa = W.addPet('cat', 'house', CAR.x + 1.0, CAR.z, { coat: CAT_COATS[0], socks: true });
+const meow = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ညောင်~'), depthWrite: false })); meow.scale.set(1.3, .42, 1); meow.position.y = .7; meow.visible = false; shweWa.g.add(meow);
+const CAT = { meowT: 2, hop: null };
 
 W.tick((dt, T) => {
   // vendor: walks the lane, stops for you, calls out every few seconds
@@ -337,12 +378,15 @@ W.tick((dt, T) => {
   vendor.g.position.z = VD.z; vendor.g.position.y = ground(vendor.g.position.x, VD.z);
   if (!near) cart.position.set(vendor.g.position.x + VD.dir * .95, .02, VD.z); cart.rotation.y = VD.dir > 0 ? 0 : Math.PI;
   VD.callT -= dt; if (VD.callT < 0) { call.visible = !call.visible; VD.callT = call.visible ? 2.6 : 5 + rnd() * 3; }
-  // kids: splash each other every few seconds
+  // kids: splash each other every few seconds; once the mandat is up they dance on it and get you too
+  const party = S.step === 'evening' || S.step === 'done';
   for (const k of kids) {
     k.idleT -= dt;
-    if (k.idleT < 0 && !k.anim.one && !talking) {
-      const t = pick(kids.filter(o => o !== k)); k.g.rotation.y = Math.atan2(t.g.position.x - k.g.position.x, t.g.position.z - k.g.position.z);
-      k.anim.play(rnd() < .65 ? 'splash' : 'jump'); k.idleT = 2.5 + rnd() * 3;
+    if (k.idleT < 0 && !k.anim.one && !talking && !W.frozen) {
+      const you = party && k.g.position.distanceTo(player.g.position) < 4 && rnd() < .6, t = you ? player : pick(kids.filter(o => o !== k));
+      k.g.rotation.y = Math.atan2(t.g.position.x - k.g.position.x, t.g.position.z - k.g.position.z);
+      k.anim.play(rnd() < .65 ? 'splash' : 'jump'); k.idleT = (party ? 1.8 : 2.5) + rnd() * 3;
+      if (party && rnd() < .3) k.anim.emote('note');
     }
   }
   // bus: in from the left, wait at the stop, out to the right, back round
@@ -357,49 +401,101 @@ W.tick((dt, T) => {
   if (p.x > bx - BUS.len / 2 - .3 && p.x < bx + BUS.len / 2 + .3 && Math.abs(p.z - BUS.lane) < 1.1) {
     p.z = BUS.lane + Math.sign(p.z - BUS.lane || -1) * 1.1; W.collide(p); p.y = ground(p.x, p.z); // don't shove you into the shelter
   }
+  // Shwe Wa: on the roof (meowing) → hop down → trots after you → home by U Ba Tin
+  const c = shweWa, cp = c.g.position, q = S.q.cat;
+  if (CAT.hop) { // a little arc from the roof to the lane
+    const h = CAT.hop; h.t += dt / .7; const k = Math.min(1, h.t);
+    cp.lerpVectors(h.from, h.to, k); cp.y = THREE.MathUtils.lerp(h.from.y, h.to.y, k) + Math.sin(k * Math.PI) * .5;
+    if (k >= 1) CAT.hop = null;
+  } else if (c.held === 'roof') { cp.copy(ROOF); if (c.anim.loop !== 'sit') c.anim.setLoop('sit'); c.g.rotation.y = .6; }
+  else if (c.held === 'follow') {
+    const want = v.set(-Math.sin(player.g.rotation.y), 0, -Math.cos(player.g.rotation.y)).multiplyScalar(.8).add(player.g.position), d = Math.hypot(want.x - cp.x, want.z - cp.z);
+    const loop = d > 2.2 ? 'run' : d > .35 ? 'walk' : 'sit'; if (c.anim.loop !== loop) c.anim.setLoop(loop);
+    if (loop !== 'sit') { c.g.rotation.y = Math.atan2(want.x - cp.x, want.z - cp.z); const s = Math.min(d, c.anim.speed * dt); cp.x += (want.x - cp.x) / d * s; cp.z += (want.z - cp.z) / d * s; }
+    cp.y = ground(cp.x, cp.z);
+  }
+  meow.visible = c.held === 'roof' && (q === 'search' || q === 'fish' || q === 'lure') && (CAT.meowT -= dt) < 1.6;
+  if (CAT.meowT < 0) CAT.meowT = 4 + rnd() * 2;
 });
+const v = new THREE.Vector3();
+function catHome() { // back with U Ba Tin: an ordinary house cat again, home = his door
+  shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE.z + .6); shweWa.target = null; shweWa.anim.setLoop('sit');
+  if (!CAT.hop) shweWa.g.position.set(UNCLE.x + .6, ground(UNCLE.x + .6, UNCLE.z + .6), UNCLE.z + .6);
+}
+shweWa.hit = () => { shweWa.anim.soak(); shweWa.anim.emote('bang'); }; // up on the roof or following you, she just glares
 
 // ---------- save (STORY.md §၈: progress is the player's own) ----------
+// step: arrive → quests (three errands in any order) → build → evening → done
+// q: one errand per zone-① part — cloth (Auntie Sein's bucket), padauk (Grandma's tree), cat (U Ba Tin's amplifier)
 const KEY = 'thingyan.story.v1';
-const FRESH = { step: 'arrive', parts: [], gifts: 5, intro: false };
-let S = { ...FRESH, parts: [] }; // own copy: S.parts gets pushed to
-try { if (new URLSearchParams(location.search).has('new')) localStorage.removeItem(KEY); S = { ...FRESH, parts: [], ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch {}
+const fresh = () => ({ step: 'arrive', q: { cloth: 'ask', padauk: 'ask', cat: 'ask' }, parts: [], gifts: 5, intro: false });
+let S = fresh();
+try {
+  if (new URLSearchParams(location.search).has('new')) localStorage.removeItem(KEY);
+  const old = JSON.parse(localStorage.getItem(KEY) || '{}');
+  if (old.step && !old.q) { old.q = { cloth: old.step === 'free' ? 'done' : old.step === 'kids' ? 'ask' : old.step, padauk: 'ask', cat: 'ask' }; if (old.step !== 'arrive') old.step = 'quests'; } // saves from before the three errands
+  S = { ...fresh(), ...old }; S.q = { ...fresh().q, ...S.q };
+} catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+// TEMPORARY until zones ② ③ exist (STORY.md §၄ has bamboo from the market, the drum from the monastery):
+// once zone ①'s three parts are in, the neighbours bring those two so the mandat can go up today.
+const NEIGHBOURS_CHIP_IN = true;
 
-// ---------- HUD: goal, bag, prompt, dialogue, toast, bus menu ----------
+// ---------- HUD: goal, bag, prompt, dialogue, toast, bus menu, mini-game ----------
 const $ = id => document.getElementById(id);
+const QGOALS = {
+  cloth: { ask: 'အန်တီစိန်ကို မေးကြည့် — ကြိုးဆွဲပုံး ချထားတဲ့ ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံကို ယူ', buy: 'လမ်းကြားထဲက ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်', return: 'ဟင်းသီးဟင်းရွက်ကို ကြိုးဆွဲပုံးထဲ ထည့်ပေး', lifting: 'အန်တီစိန် ပုံးဆွဲတင်နေတယ်…', cloth: 'ပုံးထဲက ပိတ်စကို ယူ', done: 'ပိတ်စ' },
+  padauk: { ask: 'အဘွားကို ပိတောက်ပင်အကြောင်း မေး', climb: 'အိမ်ဘေးက ပိတောက်ပင်ပေါ် တက်ပြီး ခူး', shrine: 'ပထမဆုံးခက်ကို ဘုရားကပ်ဖို့ အဘွားဆီ ပေး', done: 'ပိတောက်ခက်' },
+  cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ရဲ့ အသံချဲ့စက် အကြောင်း မေး', search: 'ညောင်သံ လိုက်ရှာ — ရွှေဝါ ဘယ်မှာလဲ', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဈေးသည်ဆီမှာ ရှိမလား', lure: 'ငါးခြောက်နဲ့ ရွှေဝါကို ချော့', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ်သွား', done: 'အသံချဲ့စက်' },
+};
 const GOALS = {
   arrive: 'ကွက်လပ်မှာ ဆော့နေတဲ့ ကလေးတွေဆီ သွားပါ',
-  kids: 'အပေါ်ထပ်က အန်တီစိန်ကို မေးကြည့်ပါ — ကြိုးဆွဲပုံး ချထားတဲ့ ဝရန်တာ',
-  money: 'ပုံးထဲက ပိုက်ဆံကို ယူပါ',
-  buy: 'လမ်းကြားထဲက ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်ပါ',
-  return: 'ဟင်းသီးဟင်းရွက်ကို ကြိုးဆွဲပုံးထဲ ထည့်ပေးပါ',
-  cloth: 'ပုံးထဲက ပိတ်စကို ယူပါ',
-  free: 'ပိတ်စ ရပြီ! ကျန်တဲ့ ပစ္စည်းတွေအတွက် ဘတ်စ်ကားမှတ်တိုင်ကနေ တခြားနေရာ သွားရှာပါ',
+  build: 'ပစ္စည်း ပြည့်ပြီ! ကွက်လပ်မှာ ကလေးတွေနဲ့ မဏ္ဍပ်လေး ဆောက်ပါ',
+  evening: 'ညကား ထွက်ခါနီးပြီ — ဘတ်စ်ကားမှတ်တိုင်ကနေ မန္တလေး ထွက်ပါ',
+  done: 'ရက် ၁ ပြီးပြီ။ ရပ်ကွက်ထဲ ဆက်လည်လို့ရတယ်',
 };
+const ZONE1 = ['cloth', 'padauk', 'cat'], PART_OF = { cloth: 'cloth', padauk: 'padauk', cat: 'speaker' };
 function hud() {
-  $('gtext').textContent = GOALS[S.step];
+  $('gtext').innerHTML = S.step === 'quests'
+    ? ZONE1.map(k => S.q[k] === 'done' ? `<div class="ok">✓ ${QGOALS[k].done}</div>` : `<div>· ${QGOALS[k][S.q[k]]}</div>`).join('')
+    : GOALS[S.step];
   $('stage').style.display = S.step === 'arrive' ? 'none' : 'block';
   $('scount').textContent = `${MM(S.parts.length)}/${MM(NEED)}`;
   const bag = [];
   if (S.gifts) bag.push(`ဂျပန်လက်ဆောင် ×${MM(S.gifts)}`);
-  if (S.step === 'buy') bag.push('ပိုက်ဆံ ၁၀၀၀ ကျပ်');
-  if (S.step === 'return') bag.push('ချဉ်ပေါင်ရွက်', 'ခရမ်းချဉ်သီး');
+  if (S.q.cloth === 'buy') bag.push('ပိုက်ဆံ ၁၀၀၀ ကျပ်');
+  if (S.q.cloth === 'return') bag.push('ချဉ်ပေါင်ရွက်', 'ခရမ်းချဉ်သီး');
+  if (S.q.padauk === 'shrine') bag.push('ပိတောက်ခက် ×၃');
+  if (S.q.cat === 'lure') bag.push('ငါးခြောက်');
   $('bag').innerHTML = bag.map(b => `<span>${b}</span>`).join('');
   showParts(); save();
 }
 let toastT = 0;
 const toast = t => { $('toast').textContent = t; $('toast').style.display = 'block'; toastT = 2.6; };
+function gotPart(q) { // an errand finished: its part goes on the mandat; the third one brings the neighbours
+  S.q[q] = 'done'; S.parts.push(PART_OF[q]); hud(); toast(`+ ${ITEMS[PART_OF[q]]}  (${MM(S.parts.length)}/${MM(NEED)})`);
+  kids.forEach(k => { k.anim.play('jump'); k.anim.emote('heart'); });
+  if (ZONE1.every(k => S.q[k] === 'done')) setTimeout(() => after(() => NEIGHBOURS_CHIP_IN ? chipIn() : null), 1200);
+}
+const after = f => talking || W.frozen ? setTimeout(() => after(f), 400) : f(); // wait out a chat or the mini-game
+function chipIn() {
+  talk([
+    ['', 'ကလေးမဏ္ဍပ် သတင်းက ရပ်ကွက်ထဲ ပျံ့သွားတယ်…'],
+    ['ဦးဘတင်', 'ဟေ့ ကလေးတို့! ဦးလေး အိမ်နောက်မှာ ဝါးလုံး အပိုတွေ ရှိတယ်။ ယူသွားကြ!'],
+    ['အန်တီစိန်', 'ရေစည် အဟောင်းလည်း ယူသွား! ဆေးကြောပြီးသား!'],
+  ], () => { for (const k of ['bamboo', 'drum']) if (!S.parts.includes(k)) S.parts.push(k); S.step = 'build'; hud(); toast(`+ ဝါးလုံး၊ ရေစည်  (${MM(S.parts.length)}/${MM(NEED)})`); });
+}
 
 let talking = null; // { lines, i, done }
 const ME = 'ကျွန်တော်';
-function talk(lines, done, face) {
-  if (face) face.g.rotation.y = Math.atan2(player.g.position.x - face.g.position.x, player.g.position.z - face.g.position.z);
+const face = (c, t = player) => { c.g.rotation.y = Math.atan2(t.g.position.x - c.g.position.x, t.g.position.z - c.g.position.z); };
+function talk(lines, done, who) {
+  if (who) face(who);
   talking = { lines, i: -1, done }; W.frozen = true; next();
 }
 function next() {
   const t = talking; t.i++;
-  if (t.i >= t.lines.length) { $('dlg').style.display = 'none'; talking = null; W.frozen = !!busOpen; t.done?.(); return; }
+  if (t.i >= t.lines.length) { $('dlg').style.display = 'none'; talking = null; W.frozen = !!busOpen || !!mini; t.done?.(); return; }
   const [who, text] = t.lines[t.i];
   $('dname').textContent = who || ''; $('dtext').textContent = text; $('dlg').className = who ? 'panel' : 'panel say'; $('dlg').style.display = 'block';
 }
@@ -407,32 +503,69 @@ $('dlg').addEventListener('pointerdown', e => { e.stopPropagation(); if (talking
 
 let busOpen = false;
 const ZONES = [['① အိမ်နဲ့ လမ်းကြား', 'ဒီမှာ ရောက်နေ'], ['② ရပ်ကွက်လမ်းမ', 'ဆောက်ဆဲ'], ['③ ဈေး', 'ဆောက်ဆဲ'], ['④ ဘုရား · ဘုန်းကြီးကျောင်း', 'ဆောက်ဆဲ'], ['⑤ မြို့လယ် မဏ္ဍပ်တန်း', 'ညနေမှ']];
-$('zones').innerHTML = ZONES.map(([n, s], i) => `<button ${i ? 'disabled' : 'class="here"'}>${n}<em>${s}</em></button>`).join('');
-const setBus = open => { busOpen = open; $('bus').style.display = open ? 'block' : 'none'; W.frozen = open || !!talking; };
+function setBus(open) {
+  busOpen = open; $('bus').style.display = open ? 'block' : 'none'; W.frozen = open || !!talking;
+  if (!open) return;
+  const night = S.step === 'evening' || S.step === 'done';
+  $('zones').innerHTML = (night ? '<button class="go" data-go="mandalay">🌙 မန္တလေး · ညကားဂိတ်<em>ရက် ၂</em></button>' : '')
+    + ZONES.map(([n, s], i) => `<button ${i ? 'disabled' : 'class="here"'}>${n}<em>${s}</em></button>`).join('');
+}
 $('busclose').addEventListener('pointerdown', e => { e.stopPropagation(); setBus(false); });
-$('zones').querySelector('.here').addEventListener('pointerdown', e => { e.stopPropagation(); setBus(false); toast('ဒီ zone မှာ ရှိနေပြီ'); });
+$('zones').addEventListener('pointerdown', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return; e.stopPropagation(); setBus(false);
+  if (b.dataset.go === 'mandalay') leaveForMandalay(); else toast('ဒီ zone မှာ ရှိနေပြီ');
+});
+
+// padauk mini-game: a branch sways, snap a sprig when the cursor is in the gold band. Three sprigs; the band narrows each time.
+let mini = null;
+function climb() {
+  mini = { hits: 0, need: 3, band: .26, speed: 1.6, T: 0 };
+  player.g.position.set(TREE.x + .35, 0, TREE.z + .5); face(player, { g: { position: TREE } }); W.lift = .95; W.frozen = true;
+  $('mini').style.display = 'block'; drawMini();
+}
+function drawMini() { $('mcount').textContent = `${MM(mini.hits)}/${MM(mini.need)}`; $('mband').style.width = `${mini.band * 100}%`; $('mband').style.left = `${(1 - mini.band) / 2 * 100}%`; }
+function snap() {
+  const x = (Math.sin(mini.T * mini.speed) + 1) / 2, hit = Math.abs(x - .5) < mini.band / 2;
+  if (hit) { mini.hits++; mini.band *= .75; mini.speed *= 1.25; player.anim.emote('heart'); for (let i = 0; i < 12; i++) W.spawn(v.set(TREE.x + (rnd() - .5), 1.9, TREE.z + (rnd() - .5)), new THREE.Vector3((rnd() - .5) * 1.5, rnd() * 1.5, (rnd() - .5) * 1.5)); }
+  else { player.anim.play('shake'); toast('လွဲသွားတယ်… ပွင့်တွေ ကြွေကုန်ပြီ'); }
+  drawMini();
+  if (mini.hits >= mini.need) {
+    mini = null; $('mini').style.display = 'none'; W.lift = 0; W.frozen = !!talking || busOpen;
+    player.g.position.set(TREE.x + .2, 0, TREE.z + .85);
+    S.q.padauk = 'shrine'; hud(); toast('+ ပိတောက်ခက် ×၃');
+  }
+}
+$('mini').addEventListener('pointerdown', e => { e.stopPropagation(); if (mini) snap(); });
 
 // ---------- what you can do, where ----------
-const bucketLabel = () => bucketBusy() || BK.then ? null : { kids: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[S.step] ?? 'အန်တီစိန်နဲ့ စကားပြော';
+const TREE = new THREE.Vector3(2.2, 0, -4.4), STAGE_AT = new THREE.Vector3(SX, 0, SZ + 1.7);
+const bucketLabel = () => bucketBusy() || BK.then ? null : { ask: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[S.q.cloth] ?? 'အန်တီစိန်နဲ့ စကားပြော';
+const open = () => S.step === 'quests';
+// goal: true when this spot is where the current goal is, so it wins over a bystander who happens to be closer (the vendor walking past …)
 const SPOTS = [
-  { at: () => KIDS_AT, r: 2.3, label: () => 'ကလေးတွေနဲ့ စကားပြော', run: talkKids },
-  { at: () => BUCKET_SPOT, r: 1.5, label: bucketLabel, run: useBucket },
-  { at: () => vendor.g.position, r: 1.6, label: () => 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', run: talkVendor },
-  { at: () => grandma.g.position, r: 1.7, label: () => 'အဘွားနဲ့ စကားပြော', run: () => talk([['အဘွား', 'မြေးလေး ပြန်ရောက်ပြီပေါ့… ငါးနှစ်တောင် ရှိသွားပြီနော်။'], ['အဘွား', 'ဒီနေ့ ညနေ ဘွားဘွား မုန့်လုံးရေပေါ် လုပ်မယ်။ ကလေးတွေကိုပါ ခေါ်ခဲ့။']], null, grandma) },
-  { at: () => STAGE_SIGN, r: 1.5, label: () => S.step === 'arrive' ? null : 'မဏ္ဍပ်လေး ပစ္စည်းစာရင်း', run: () => talk([['', Object.entries(ITEMS).map(([k, n]) => (S.parts.includes(k) ? '✓ ' : '· ') + n).join('   ')], ['', `${MM(NEED)} ခု ရရင် ဆောက်လို့ရပြီ။ ပိုရလေ ပိုလှလေ။`]]) },
-  { at: () => STOP, r: 1.9, label: () => 'ဘတ်စ်ကား စီး', run: () => setBus(true) },
+  { at: () => KIDS_AT, r: 2.3, label: () => S.step === 'evening' || S.step === 'done' ? null : 'ကလေးတွေနဲ့ စကားပြော', goal: () => S.step === 'arrive', run: talkKids },
+  { at: () => STAGE_AT, r: 2.0, label: () => S.step === 'build' ? 'မဏ္ဍပ်လေး ဆောက်' : S.step === 'evening' || S.step === 'done' ? 'ကလေးတွေနဲ့ စကားပြော' : null, goal: () => S.step === 'build', run: () => S.step === 'build' ? build() : talkKids() },
+  { at: () => BUCKET_SPOT, r: 1.5, label: bucketLabel, goal: () => open() && ['ask', 'money', 'return', 'cloth'].includes(S.q.cloth), run: useBucket },
+  { at: () => vendor.g.position, r: 1.6, label: () => 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => open() && (S.q.cloth === 'buy' || S.q.cat === 'fish'), run: talkVendor },
+  { at: () => grandma.g.position, r: 1.7, label: () => S.q.padauk === 'shrine' ? 'ပိတောက်ခက် ပေး' : 'အဘွားနဲ့ စကားပြော', goal: () => open() && ['ask', 'shrine'].includes(S.q.padauk), run: talkGrandma },
+  { at: () => TREE, r: 1.4, label: () => open() && S.q.padauk === 'climb' ? 'ပိတောက်ပင် တက်' : null, goal: () => true, run: climb },
+  { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => open() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
+  { at: () => CAR, r: 1.8, label: () => open() && shweWa.held === 'roof' && ['search', 'fish', 'lure'].includes(S.q.cat) ? (S.q.cat === 'lure' ? 'ငါးခြောက်နဲ့ ချော့' : 'ရွှေဝါကို ခေါ်') : null, goal: () => true, run: callCat },
+  { at: () => STAGE_SIGN, r: 1.5, label: () => S.step === 'arrive' ? null : 'မဏ္ဍပ်လေး ပစ္စည်းစာရင်း', goal: () => false, run: () => talk([['', Object.entries(ITEMS).map(([k, n]) => (S.parts.includes(k) ? '✓ ' : '· ') + n).join('   ')], ['', `${MM(NEED)} ခု ရရင် ဆောက်လို့ရပြီ။ ပိုရလေ ပိုလှလေ။`]]) },
+  { at: () => STOP, r: 1.9, label: () => S.step === 'evening' || S.step === 'done' ? 'ညကား သွားစီး' : 'ဘတ်စ်ကား စီး', goal: () => S.step === 'evening', run: () => setBus(true) },
 ];
 let here = null;
 W.onAction = () => {
   if (talking) { next(); return true; }
+  if (mini) { snap(); return true; }
+  if ($('end').style.display === 'block') return true;
   if (busOpen) { setBus(false); return true; }
   if (here) { here.run(); return true; }
   return false;
 };
 
 function talkKids() {
-  const [mei, phoe, cho] = kids, face = () => kids.forEach(k => k.g.rotation.y = Math.atan2(player.g.position.x - k.g.position.x, player.g.position.z - k.g.position.z));
-  face();
+  kids.forEach(k => face(k));
   if (S.step === 'arrive') return talk([
     ['မေသူ', 'ဦးလေး! ဦးလေး ဂျပန်က ပြန်လာပြီ!'],
     ['ဖိုးကျော်', 'ဦးလေး… ဒီနှစ် ရပ်ကွက်မှာ မဏ္ဍပ် မဆောက်ကြဘူးတဲ့။ လမ်းမကြီးက မဏ္ဍပ်ကိုလည်း အမေက မသွားခိုင်းဘူး။'],
@@ -440,70 +573,163 @@ function talkKids() {
     [ME, 'ရော့… ဂျပန်က မုန့်လေးတွေ။ ပြီးတော့ — ဦးလေးတို့ ကိုယ်ပိုင် မဏ္ဍပ်လေး ဆောက်ကြမယ်! ဒီကွက်လပ်မှာ။'],
     ['မေသူ', 'ဟေး!! ဝါးတွေ၊ ပိတ်စတွေ၊ ရေပိုက်တွေ လိုမယ်နော်။'],
     ['ဖိုးကျော်', 'အပေါ်ထပ်က အန်တီစိန်ဆီမှာ ပိတ်စ အဟောင်းတွေ ရှိတယ်။ ကြိုးဆွဲပုံး ချထားတဲ့ ဝရန်တာလေ!'],
-  ], () => { S.step = 'kids'; S.gifts--; hud(); kids.forEach(k => k.anim.emote('heart')); toast('ကလေးမဏ္ဍပ် ဆောက်ဖို့ ပစ္စည်း ရှာမယ်'); });
-  if (S.step === 'free') return talk([['မေသူ', `ပိတ်စ ရပြီ! နောက်ထပ် ${MM(NEED - S.parts.length)} ခု လိုသေးတယ် ဦးလေး။`], ['ချိုချို', 'ဝါးဆိုင် ဦးလေးကြီးဆီမှာ ဝါးလုံးတွေ ရှိတယ်။ ဈေးထဲမှာ!']]);
-  talk([[pick(['မေသူ', 'ဖိုးကျော်', 'ချိုချို']), S.step === 'buy' ? 'ဟင်းသီးဟင်းရွက်သည် အဒေါ်က လမ်းကြားထဲမှာ ဦးလေး! အော်သံ ကြားရလား။' : 'အန်တီစိန်ဆီ မြန်မြန်သွားလေ ဦးလေး! ဟိုဝရန်တာ!']]);
+    ['ချိုချို', 'ဘွားဘွားရဲ့ ပိတောက်ပင်လည်း ပွင့်နေပြီ! ပြီးတော့ ဦးဘတင်ဆီမှာ အသံချဲ့စက် ရှိတယ်… ဒါပေမဲ့ သူ့ကြောင် ပျောက်နေလို့ စိတ်ညစ်နေတယ်။'],
+  ], () => { S.step = 'quests'; S.gifts--; hud(); kids.forEach(k => k.anim.emote('heart')); toast('ကလေးမဏ္ဍပ် ဆောက်ဖို့ ပစ္စည်း ရှာမယ်'); });
+  if (S.step === 'evening' || S.step === 'done') return talk([
+    ['မေသူ', 'ဦးလေး! ကျေးဇူးပဲ! ရပ်ကွက်မှာ အလှဆုံး မဏ္ဍပ်ပဲ!'],
+    ['ဖိုးကျော်', 'ဦးလေး ဒီည မန္တလေး သွားမှာလား… နောက်နှစ်လည်း ပြန်လာနော်။'],
+    ['ချိုချို', 'မသွားခင် ဦးလေးကို ရေပက်ချင်တယ်!'],
+  ], () => kids.forEach((k, i) => setTimeout(() => { face(k); k.anim.play('splash'); }, i * 250)));
+  if (S.step === 'build') return talk([['မေသူ', 'ပစ္စည်း ပြည့်ပြီ! ဆောက်ကြစို့ ဦးလေး!']]);
+  const lead = { cloth: 'အန်တီစိန်ဆီ သွားလေ ဦးလေး! ကြိုးဆွဲပုံး ဝရန်တာ!', padauk: 'ဘွားဘွားရဲ့ ပိတောက်ပွင့်လေးတွေ လိုချင်တယ်!', cat: 'ဦးဘတင်ရဲ့ ရွှေဝါ… ညောင်သံ ကြားရတယ်နော်။' };
+  if (S.q.cloth === 'buy') lead.cloth = 'ဟင်းသီးဟင်းရွက်သည် အဒေါ်က လမ်းကြားထဲမှာ ဦးလေး! အော်သံ ကြားရလား။';
+  const todo = ZONE1.filter(k => S.q[k] !== 'done');
+  talk([['မေသူ', `${MM(S.parts.length)} ခု ရပြီ! နောက်ထပ် ${MM(todo.length)} ခု ရှာရဦးမယ်။`], ...todo.map((k, i) => [['ဖိုးကျော်', 'ချိုချို', 'မေသူ'][i], lead[k]])]);
 }
 function useBucket() {
-  const A = 'အန်တီစိန်';
-  if (S.step === 'kids') return talk([
+  const A = 'အန်တီစိန်', q = S.q.cloth;
+  if (!open() || q === 'done') return talk([[A, S.step === 'arrive' ? 'ဟဲ့ သားလေး ပြန်ရောက်ပြီလား! ကလေးတွေ ကွက်လပ်မှာ မင်းကို စောင့်နေကြတယ်။' : 'ကလေးတွေ ပျော်နေတာ မြင်ရတော့ အန်တီလည်း ပျော်တယ်။ ရေတော့ အပေါ်ထပ်ကို မပက်နဲ့နော်!']]);
+  if (q === 'ask') return talk([
     [ME, 'အန်တီစိန်ရေ!'],
     [A, 'ဟဲ့… သားလေး မဟုတ်လား! ဂျပန်က ပြန်လာပြီကိုး။ ဝလာလိုက်တာ။'],
     [A, 'ပိတ်စလား… ရှိတယ် ရှိတယ်။ ဒါပေမဲ့ အန်တီ ဒူးနာနေလို့ အောက်မဆင်းနိုင်ဘူး။'],
     [A, 'ဟင်းသီးဟင်းရွက်သည် ဖြတ်သွားရင် ချဉ်ပေါင်ရွက် တစ်စည်းနဲ့ ခရမ်းချဉ်သီး ဝယ်ပေးပါလား။ ပိုက်ဆံ ပုံးထဲ ထည့်ချပေးမယ်။'],
-  ], () => { fill('money'); sendBucket(true, () => { S.step = 'money'; hud(); }); }, null);
-  if (S.step === 'money') { fill(null); S.step = 'buy'; hud(); toast('+ ပိုက်ဆံ ၁၀၀၀ ကျပ်'); return; }
-  if (S.step === 'return') {
-    fill('veg'); S.step = 'lifting'; $('gtext').textContent = '…';
+  ], () => { fill('money'); sendBucket(true, () => { S.q.cloth = 'money'; hud(); }); });
+  if (q === 'money') { fill(null); S.q.cloth = 'buy'; hud(); toast('+ ပိုက်ဆံ ၁၀၀၀ ကျပ်'); return; }
+  if (q === 'return') {
+    fill('veg'); S.q.cloth = 'lifting'; hud();
     return sendBucket(false, () => talk([
       [A, 'ကျေးဇူးပဲ သားလေး။ ခရမ်းချဉ်သီးတွေ လတ်လိုက်တာ။'],
       [A, 'ရော့… အန်တီ့ ထဘီ ပိတ်စ အဟောင်းတွေ။ ကလေးတွေ မဏ္ဍပ်အတွက်ဆို အန်တီ ဝမ်းသာတယ်။'],
-    ], () => { fill('cloth'); sendBucket(true, () => { S.step = 'cloth'; hud(); }); }));
+    ], () => { fill('cloth'); sendBucket(true, () => { S.q.cloth = 'cloth'; hud(); }); }));
   }
-  if (S.step === 'cloth') {
-    fill(null); S.parts.push('cloth'); S.step = 'free'; hud(); toast(`+ ပိတ်စ  (${MM(S.parts.length)}/${MM(NEED)})`);
-    kids.forEach(k => { k.anim.play('jump'); k.anim.emote('heart'); }); auntie.anim.play('wave');
-    return sendBucket(false);
-  }
-  talk([[A, { arrive: 'ဟဲ့ သားလေး ပြန်ရောက်ပြီလား! ကလေးတွေ ကွက်လပ်မှာ မင်းကို စောင့်နေကြတယ်။', buy: 'ဟင်းသီးဟင်းရွက်သည်က လမ်းကြားထဲ လှည့်နေတယ်။ အော်သံ ကြားရမှာပါ။', free: 'ကလေးတွေ ပျော်နေတာ မြင်ရတော့ အန်တီလည်း ပျော်တယ်။ ရေတော့ အပေါ်ထပ်ကို မပက်နဲ့နော်!' }[S.step]]]);
+  if (q === 'cloth') { fill(null); auntie.anim.play('wave'); sendBucket(false); return gotPart('cloth'); }
+  talk([[A, 'ဟင်းသီးဟင်းရွက်သည်က လမ်းကြားထဲ လှည့်နေတယ်။ အော်သံ ကြားရမှာပါ။']]);
 }
 function talkVendor() {
   const V = 'ဟင်းသီးဟင်းရွက်သည်';
-  if (S.step === 'buy') return talk([
+  if (open() && S.q.cloth === 'buy') return talk([
     [V, 'ချဉ်ပေါင်ရွက်~ ပဲပင်ပေါက်~ ဘာယူမလဲ မောင်လေး။'],
     [ME, 'ချဉ်ပေါင်ရွက် တစ်စည်းနဲ့ ခရမ်းချဉ်သီး ပေးပါ။ အန်တီစိန် မှာလိုက်တာပါ။'],
     [V, 'အော် အန်တီစိန်အတွက်လား။ ဒါဆို ခရမ်းချဉ်သီး တစ်လုံး ပိုထည့်ပေးမယ်။ သင်္ကြန်ပဲဟာ!'],
-  ], () => { S.step = 'return'; hud(); toast('+ ချဉ်ပေါင်ရွက်၊ ခရမ်းချဉ်သီး'); }, vendor);
+  ], () => { S.q.cloth = 'return'; hud(); toast('+ ချဉ်ပေါင်ရွက်၊ ခရမ်းချဉ်သီး'); }, vendor);
+  if (open() && S.q.cat === 'fish') return talk([
+    [ME, 'အဒေါ် ငါးခြောက် ရှိလား… ကြောင်တစ်ကောင် ချော့ဖို့ပါ။'],
+    [V, 'ဦးဘတင်ရဲ့ ရွှေဝါလား! မနက်ကတည်းက ကားခေါင်မိုးပေါ်က မဆင်းဘူး။ ရော့… ငါးခြောက်ခေါင်း၊ ပိုက်ဆံ မယူပါဘူး။'],
+  ], () => { S.q.cat = 'lure'; hud(); toast('+ ငါးခြောက်'); }, vendor);
   talk([[V, 'ချဉ်ပေါင်ရွက်~ ပဲပင်ပေါက်~ ခရမ်းချဉ်သီး~ သင်္ကြန်ကျရင် ဈေးပိတ်မှာ၊ အခုပဲ ဝယ်ထားကြ!']], null, vendor);
 }
+function talkGrandma() {
+  const G = 'အဘွား', q = S.q.padauk;
+  if (S.step === 'evening' || S.step === 'done') return talk([[G, 'မုန့်လုံးရေပေါ် ကျက်ပြီ… ငရုတ်သီးပါတဲ့လုံး ဘယ်သူ ကြုံမလဲ မသိဘူး။'], [G, 'ညကား မမီမှာ စိုးလို့ စောစောသွားနော် မြေးလေး။ မန္တလေးရောက်ရင် ဖုန်းဆက်။']], null, grandma);
+  if (open() && q === 'ask') return talk([
+    [ME, 'ဘွားဘွား… ကလေးတွေ မဏ္ဍပ်အတွက် ပိတောက်ခက်လေးတွေ ခူးလို့ရမလား။'],
+    [G, 'ဒီနှစ် ပိတောက် ညတွင်းချင်း ပွင့်တယ်၊ သင်္ကြန်နဲ့ အချိန်ကိုက်ပဲ။ ခူးပါ မြေးလေး။'],
+    [G, 'ဒါပေမဲ့ ပထမဆုံးခက်ကိုတော့ ဘွားဘွားကို ပေးနော်။ ဘုရားကပ်ရမယ်။ သတိထားတက်၊ အကိုင်းငယ်တွေ ကျိုးတတ်တယ်။'],
+  ], () => { S.q.padauk = 'climb'; hud(); }, grandma);
+  if (open() && q === 'shrine') return talk([
+    [ME, 'ဘွားဘွား… ပထမဆုံးခက်ပါ။'],
+    [G, 'သာဓု သာဓု။ မြေးလေး ငါးနှစ်အတွင်း ကြီးလာလိုက်တာ… ကျန်တဲ့ခက်တွေ ကလေးတွေ မဏ္ဍပ်မှာ ချိတ်လိုက်။'],
+  ], () => { grandma.anim.play('kadaw'); gotPart('padauk'); }, grandma);
+  talk([[G, 'မြေးလေး ပြန်ရောက်ပြီပေါ့… ငါးနှစ်တောင် ရှိသွားပြီနော်။'], [G, 'ဒီနေ့ ညနေ ဘွားဘွား မုန့်လုံးရေပေါ် လုပ်မယ်။ ကလေးတွေကိုပါ ခေါ်ခဲ့။']], null, grandma);
+}
+function talkUncle() {
+  const U = 'ဦးဘတင်', q = S.q.cat;
+  if (open() && q === 'ask') return talk([
+    [ME, 'ဦးဘတင်… ကလေးတွေ မဏ္ဍပ်အတွက် အသံချဲ့စက် ငှားလို့ရမလား။'],
+    [U, 'ရတာပေါ့ ငါ့တူရယ်… ဒါပေမဲ့ ဦးလေး ရွှေဝါ ပျောက်နေတယ်။ မနက်က ကလေးတွေ ရေပက်တာ လန့်ပြီး ထွက်ပြေးသွားတာ။'],
+    [U, 'ညောင်သံကတော့ ကြားနေရတယ်… ဝေးဝေး မရောက်ပါဘူး။ ရှာပေးပါလား။'],
+  ], () => { S.q.cat = 'search'; hud(); }, uncle);
+  if (open() && q === 'follow') return talk([
+    [U, 'ရွှေဝါ!! ဘယ်တွေ သွားနေတာလဲ သမီးရယ်…'],
+    [U, 'ကျေးဇူးပဲ ငါ့တူ။ ရော့ — ဘုရားပွဲသုံး အသံချဲ့စက်။ သင်္ကြန်သီချင်း ကက်ဆက်လည်း ပါတယ်။ အကျယ်ကြီး မဖွင့်နဲ့နော်… ဦးလေးအိပ်ချင်တယ်။'],
+  ], () => { catHome(); shweWa.anim.emote('heart'); gotPart('cat'); }, uncle);
+  if (q === 'search' || q === 'fish' || q === 'lure') return talk([[U, 'ညောင်သံ ကြားလား… ဘေးလမ်းဘက်ကပဲ ထင်တယ်။']], null, uncle);
+  talk([[U, S.step === 'arrive' ? 'ဂျပန်က ပြန်လာတဲ့ ကောင်လေး မဟုတ်လား! ကြီးလာလိုက်တာ။' : 'ဒီရေဒီယိုလေး အနှစ်သုံးဆယ် ရှိပြီ… သင်္ကြန်သီချင်း ဖွင့်ရင် အသံ ကြည်တုန်းပဲ။']], null, uncle);
+}
+function callCat() {
+  const q = S.q.cat;
+  if (q === 'lure') return talk([[ME, 'ရွှေဝါ… ငါးခြောက်လေး စားမလား…']], () => {
+    shweWa.held = 'hop'; CAT.hop = { from: shweWa.g.position.clone(), to: new THREE.Vector3(CAR.x + .95, .05, CAR.z - .6), t: 0 };
+    shweWa.anim.setLoop('idle'); shweWa.anim.emote('heart'); setTimeout(() => { shweWa.held = 'follow'; }, 750);
+    S.q.cat = 'follow'; hud(); toast('ရွှေဝါ လိုက်လာပြီ');
+  });
+  shweWa.anim.emote('bang'); shweWa.anim.play('hop');
+  talk([[ME, 'ရွှေဝါ… ဆင်းလာလေ…'], ['', 'ရွှေဝါက ကားခေါင်မိုးပေါ်ကနေ စိုက်ကြည့်ပြီး မဆင်းဘူး။ ရေစိုမှာ ကြောက်နေပုံပဲ။'], [ME, 'ငါးခြောက်လေး ရှိရင် ဆင်းလာမလား မသိဘူး…']],
+    () => { if (S.q.cat === 'search') { S.q.cat = 'fish'; hud(); } });
+}
 
-// bucket + parts as they should be for where the save left off
+// ---------- finale: build it, sunset, the kids' mandat in the evening, off to the night bus ----------
+const FADE = $('fade');
+const fade = (on, ms = 800) => new Promise(r => { FADE.style.transition = `opacity ${ms}ms`; FADE.style.opacity = on ? 1 : 0; setTimeout(r, ms); });
+function party() { // the mandat as built: only the parts you found, kids up on the platform
+  for (const k in parts) if (!S.parts.includes(k)) for (const m of parts[k]) m.visible = false;
+  kids.forEach((k, i) => { k.g.position.set(ON_STAGE[i][0], .47, ON_STAGE[i][1]); k.anim.setLoop('dance'); });
+}
+async function build() {
+  await new Promise(r => talk([['', 'ဦးလေးရယ်၊ ကလေးတွေရယ်၊ ရပ်ကွက်ထဲက လူကြီးတွေရယ် — ဝိုင်းဆောက်ကြတယ်…']], r));
+  W.frozen = true; await fade(true);
+  S.step = 'evening'; hud(); party(); W.setTime(.15);
+  player.g.position.set(SX + .4, 0, SZ + 2.4); face(player, { g: { position: new THREE.Vector3(SX, 0, SZ) } });
+  await fade(false);
+  const t0 = W.time(); // the sun goes down over the new mandat
+  await new Promise(r => { const k = () => { const t = Math.min(1, .15 + (W.time() - t0) / 4); W.setTime(t); t < 1 ? requestAnimationFrame(k) : r(); }; k(); });
+  W.frozen = false;
+  talk([
+    ['', 'ညနေစောင်း။ ကလေးမဏ္ဍပ်လေးမှာ သင်္ကြန်သီချင်း ထွက်လာတယ်။'],
+    ['မေသူ', 'ဦးလေး! လာ! ရေကစားမယ်!'],
+  ]);
+}
+async function leaveForMandalay() {
+  W.frozen = true; await fade(true, 1200);
+  S.step = 'done'; hud();
+  $('epart').textContent = `${MM(S.parts.length)}/${MM(Object.keys(ITEMS).length)}`;
+  $('end').style.display = 'block';
+}
+$('estay').addEventListener('pointerdown', async e => { e.stopPropagation(); $('end').style.display = 'none'; await fade(false); W.frozen = false; });
+$('eagain').addEventListener('pointerdown', e => { e.stopPropagation(); try { localStorage.removeItem(KEY); } catch {} location.search = ''; });
+
+// bucket, cat and mandat as they should be for where the save left off
 const atBottom = { money: 'money', buy: null, return: null, cloth: 'cloth' };
-if (S.step === 'lifting') S.step = 'return';
-fill(atBottom[S.step] ?? null); BK.y = BK.to = S.step in atBottom ? BBOT.y : BTOP.y;
+if (S.q.cloth === 'lifting') S.q.cloth = 'return';
+fill(atBottom[S.q.cloth] ?? null); BK.y = BK.to = S.q.cloth in atBottom ? BBOT.y : BTOP.y;
+if (S.q.cat === 'done') catHome(); else if (S.q.cat === 'follow') { shweWa.held = 'follow'; shweWa.g.position.copy(player.g.position); } else shweWa.held = 'roof';
+if (S.step === 'evening' || S.step === 'done') { party(); W.setTime(1); }
 
-// quest marker: a gold arrow over wherever the goal is
-const marker = mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false }); marker.rotation.x = Math.PI;
-const GOAL_AT = { arrive: () => KIDS_AT.clone().setY(1.6), kids: () => BUCKET_SPOT.clone().setY(1.2), money: () => bucket.position.clone().setY(1.2), buy: () => vendor.g.position.clone().setY(2.6),
-  return: () => BUCKET_SPOT.clone().setY(1.2), cloth: () => bucket.position.clone().setY(1.2), free: () => STOP.clone().setY(2.9), lifting: () => null };
+// quest markers: a gold arrow over each place a goal points to
+const GOAL_AT = () => {
+  if (S.step === 'arrive') return [KIDS_AT.clone().setY(1.6)];
+  if (S.step === 'build') return [STAGE_AT.clone().setY(1.9)];
+  if (S.step === 'evening') return [STOP.clone().setY(2.9)];
+  if (S.step !== 'quests') return [];
+  const c = { ask: BUCKET_SPOT.clone().setY(1.2), money: bucket.position.clone().setY(1.2), buy: vendor.g.position.clone().setY(2.6), return: BUCKET_SPOT.clone().setY(1.2), cloth: bucket.position.clone().setY(1.2) }[S.q.cloth];
+  const p = { ask: grandma.g.position.clone().setY(2.3), climb: TREE.clone().setY(3.0), shrine: grandma.g.position.clone().setY(2.3) }[S.q.padauk];
+  const k = { ask: UNCLE.clone().setY(2.0), search: ROOF.clone().setY(2.0), fish: vendor.g.position.clone().setY(2.6), lure: ROOF.clone().setY(2.0), follow: UNCLE.clone().setY(2.0) }[S.q.cat];
+  return [c, p, k].filter(Boolean);
+};
+const markers = [0, 1, 2].map(() => { const m = mesh(new THREE.ConeGeometry(.2, .42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.0, .9) }), 0, 0, 0, { cast: false }); m.rotation.x = Math.PI; return m; });
 const PP = new THREE.Vector3(), PROMPT = $('prompt'), PTEXT = $('ptext'), SPLASH = $('splash'); let lastUI = '';
 
 W.tick((dt, T) => {
-  // nearest thing you can do
+  // what you can do here: a spot your goal points at beats a nearer bystander
   here = null; let best = 1e9, label = null;
-  if (!talking && !busOpen) { const pp = PP.copy(player.g.position).setY(0); for (const s of SPOTS) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d < 0 && d < best) { best = d; here = s; label = l; } } }
-  const ui = `${label}|${!!talking}`; // touch the DOM only when what it shows changes
+  if (!talking && !busOpen && !mini && !W.frozen) {
+    const pp = PP.copy(player.g.position).setY(0);
+    for (const s of SPOTS) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d >= 0) continue; const score = d - (s.goal() ? 10 : 0); if (score < best) { best = score; here = s; label = l; } }
+  }
+  const ui = `${label}|${!!talking}|${!!mini}`; // touch the DOM only when what it shows changes
   if (ui !== lastUI) {
     lastUI = ui; PROMPT.style.display = label ? 'block' : 'none'; if (label) PTEXT.textContent = label;
-    SPLASH.classList.toggle('act', !!label || !!talking); SPLASH.textContent = label || talking ? 'လုပ်' : 'ရေပက်';
+    SPLASH.classList.toggle('act', !!label || !!talking || !!mini); SPLASH.textContent = label || talking || mini ? 'လုပ်' : 'ရေပက်';
   }
-  const g = GOAL_AT[S.step]?.(); marker.visible = !!g && !talking;
-  if (g) { marker.position.copy(g).add(new THREE.Vector3(0, .6 + Math.sin(T * 3) * .12, 0)); marker.rotation.y = T * 1.5; }
+  const goals = talking || mini ? [] : GOAL_AT();
+  markers.forEach((m, i) => { m.visible = !!goals[i]; if (goals[i]) { m.position.copy(goals[i]).add(v.set(0, .6 + Math.sin(T * 3 + i) * .12, 0)); m.rotation.y = T * 1.5; } });
+  if (mini) { mini.T += dt; $('mcur').style.left = `${(Math.sin(mini.T * mini.speed) + 1) / 2 * 100}%`; }
   if (toastT > 0 && (toastT -= dt) <= 0) $('toast').style.display = 'none';
 });
 
 hud(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, player, S: () => S, SPOTS, vendor, bucket, talking: () => !!talking, here: () => here?.label() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, player, S: () => S, SPOTS, vendor, bucket, shweWa, talking: () => !!talking, here: () => here?.label(), mini: () => mini };
 // arrival: off the airport bus after five years
 if (!S.intro) {
   const intro = () => talking ? setTimeout(intro, 500) : talk([ // wait out a chat already under way instead of cutting it off
