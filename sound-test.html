@@ -45,6 +45,7 @@
   .row .ctl { display: flex; gap: 8px; align-items: center }
   .row input[type=range] { width: 110px; accent-color: var(--accent) }
   .scenes { display: flex; flex-wrap: wrap; gap: 8px }
+  .row a { color: var(--accent); word-break: break-word }
   .note { font-size: 13px }
   @media (max-width: 480px) { .row input[type=range] { width: 80px } h1 { font-size: 21px } }
   @media (prefers-reduced-motion: reduce) { .meter i { transition: none } }
@@ -55,7 +56,7 @@
 <main>
   <header>
     <h1>သင်္ကြန် ရပ်ကွက် — အသံစစ်</h1>
-    <p>ဂိမ်းထဲမှာ သုံးထားတဲ့ အသံ အကုန်ပါ။ ဖိုင်မသုံးဘဲ browser ထဲမှာ ဖန်တီးထားတာပါ။ မကြိုက်တဲ့ အသံရှိရင် ဘယ်ဘက်က <b>နံပါတ်</b> (ဥပမာ B2) နဲ့ ပြောပေးပါ။</p>
+    <p>ဂိမ်းထဲမှာ သုံးထားတဲ့ အသံ အကုန်ပါ။ Wikimedia Commons ပေါ်က အခမဲ့ အသံဖိုင် အစစ်တွေကို ဖြတ်ညှိထားတာပါ (အောက်ဆုံးမှာ credit)။ မကြိုက်တဲ့ အသံရှိရင် ဘယ်ဘက်က <b>နံပါတ်</b> (ဥပမာ B2) နဲ့ ပြောပေးပါ။</p>
     <div class="bar">
       <button id="go" class="primary" type="button">▶ အသံ စဖွင့်</button>
       <button id="stop" type="button">■ အကုန်ရပ်</button>
@@ -84,13 +85,19 @@
     <h2><span class="tag">C</span>လုပ်ဆောင်ချက် အသံ</h2>
     <div class="rows" id="fx"></div>
   </section>
+
+  <section>
+    <h2><span class="tag">©</span>အသံ မူရင်း (credit)</h2>
+    <p class="note">ဖိုင်တစ်ခုချင်းရဲ့ မူရင်း၊ ဖမ်းသူ၊ လိုင်စင်။ CC BY-SA ဖိုင်တွေကို ဖန်တီးသူ နာမည် ပြရပါတယ်။</p>
+    <div class="rows" id="credits"></div>
+  </section>
 </main>
 
 <script type="module">
-  import { createSound, CATALOG } from './sound.js?v=1';
+  import { createSound, CATALOG } from './sound.js?v=2';
   const snd = createSound(null, { manual: true });
   const $ = id => document.getElementById(id);
-  const DEFAULT = { crowd: .4, engine: .35, tv: .25, roar: .05, fan: .12 };
+  const DEFAULT = { pagoda: .4, crowd: .4, traffic: .5, stadium: .2 };
   const loopOn = {};
   let scene = null;
 
@@ -134,6 +141,14 @@
   $('go').addEventListener('click', () => { snd.start(); $('go').textContent = '✓ အသံ ဖွင့်ပြီး'; });
   $('stop').addEventListener('click', () => { stopScene(); allLoopsOff(); });
 
+  fetch(new URL('./audio/credits.json', import.meta.url)).then(r => r.json()).then(c => {
+    const seen = new Map(); for (const v of Object.values(c)) { if (!seen.has(v.page)) seen.set(v.page, { ...v, whats: new Set() }); seen.get(v.page).whats.add(v.what); }
+    for (const v of seen.values()) {
+      const r = document.createElement('div'); r.className = 'row'; r.innerHTML = '<span class="id"></span><span class="name"></span><span class="ctl"></span><span class="where"></span>';
+      r.querySelector('.id').textContent = v.license.replace('CC BY-SA', 'BY-SA'); const a = document.createElement('a'); a.href = v.page; a.target = '_blank'; a.rel = 'noopener'; a.textContent = v.title;
+      r.querySelector('.name').append(a); r.querySelector('.where').textContent = [...v.whats].join(' · ') + ' — ' + v.author; $('credits').append(r);
+    }
+  }).catch(() => {});
   let last = performance.now();
   function frame(t) {
     const dt = Math.min(.1, (t - last) / 1000); last = t;
