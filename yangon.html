@@ -48,8 +48,11 @@
   #mlist button.go{border-color:#7a4f92;background:#efe6fa}
   #mlist button.pic{flex-direction:column;justify-content:flex-start;gap:2px;width:84px;flex-basis:auto;padding:4px;font-size:12px;text-align:center}
   #mlist button.pic img{width:72px;height:72px;border-radius:8px;background:#f3ead8;display:block}
+  #mlist button.pic img.wait{background:linear-gradient(90deg,#f3ead8,#fff6ea,#f3ead8);background-size:200% 100%;animation:shimmer 1s linear infinite}
+  @keyframes shimmer{to{background-position:-200% 0}} @media (prefers-reduced-motion:reduce){#mlist button.pic img.wait{animation:none}}
   #mlist button.pic em{display:none}
-  #mlist button.on{border-color:var(--accent);background:#fff1e6}
+  #mlist button.on{border-color:var(--accent);background:#fff1e6;box-shadow:0 0 0 2px var(--accent)}
+  #mlist button.pic{position:relative} #mlist button.pic.on::after{content:'✓';position:absolute;top:2px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;line-height:18px;text-align:center}
   #menu.side{left:auto;right:max(16px,env(safe-area-inset-right,0px));top:calc(14px + env(safe-area-inset-top,0px));transform:none;width:min(400px,calc(100% - 32px));max-height:calc(100% - 28px)}
   @media (max-width:640px){#menu.side{top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:16px;max-height:52%}}
   #mlist button:disabled{cursor:default;opacity:.55}

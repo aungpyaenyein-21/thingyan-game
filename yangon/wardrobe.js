@@ -33,13 +33,15 @@ function shot(W, look, frame) {
   return shots[key] = url;
 }
 
+// a picture already drawn comes straight from the cache; otherwise the menu draws it a frame later (hud.menu)
+const pic = (W, look, frame) => shots[JSON.stringify(look) + frame] ?? (() => shot(W, look, frame));
 // ctx: { W, hud, S, dress(), onClose } — dress() rebuilds the hero from S.look and saves. Picking re-opens the menu so every
 // picture shows the rest of your current look (pick a dye, and all the cuts show in that colour).
 export function openBarber(ctx) {
   const { W, hud, S, dress, onClose } = ctx;
   const set = (k, v) => () => { S.look[k] = v; dress(); openBarber(ctx); return true; };
   hud.menu({ title: '✂ ဆံပင်ညှပ်ဆိုင် — ဘယ်ပုံ ညှပ်မလဲ', close: 'ပြီးပြီ', side: true, onClose, items: [
-    { head: 'ဆံပင်ပုံ' }, ...HAIR_STYLES.map(([k, n]) => ({ label: n, img: shot(W, { ...S.look, hair: k, hat: 'none' }, 'head'), cls: S.look.hair === k ? 'on' : '', on: set('hair', k) })),
+    { head: 'ဆံပင်ပုံ' }, ...HAIR_STYLES.map(([k, n]) => ({ label: n, img: pic(W, { ...S.look, hair: k, hat: 'none' }, 'head'), cls: S.look.hair === k ? 'on' : '', on: set('hair', k) })),
     { head: 'ဆေးဆိုး (နောက်ဆုံး ၄ ရောင်က သင်္ကြန် အရောင်)' }, ...HAIR_COLORS.map(c => ({ label: '', swatch: c, cls: 'chip sw' + (S.look.hairColor === c ? ' on' : ''), on: set('hairColor', c) })),
   ] });
 }
@@ -47,10 +49,10 @@ export function openClothes(ctx) {
   const { W, hud, S, dress, onClose } = ctx;
   const set = (k, v) => () => { S.look[k] = v; dress(); openClothes(ctx); return true; };
   hud.menu({ title: '👕 အထည်ဆိုင် — မှန်ရှေ့မှာ ဝတ်ကြည့်', close: 'ပြီးပြီ', side: true, onClose, items: [
-    { head: 'အပေါ်ပိုင်း' }, ...TOP_STYLES.map(([k, n]) => ({ label: n, img: shot(W, { ...S.look, topStyle: k }, 'body'), cls: S.look.topStyle === k ? 'on' : '', on: set('topStyle', k) })),
+    { head: 'အပေါ်ပိုင်း' }, ...TOP_STYLES.map(([k, n]) => ({ label: n, img: pic(W, { ...S.look, topStyle: k }, 'body'), cls: S.look.topStyle === k ? 'on' : '', on: set('topStyle', k) })),
     { head: 'အင်္ကျီ အရောင်' }, ...TOP_COLORS.map(c => ({ label: '', swatch: c, cls: 'chip sw' + (S.look.top === c ? ' on' : ''), on: set('top', c) })),
-    { head: 'အောက်ပိုင်း' }, ...BOTTOMS.map(([k, n]) => ({ label: n, img: shot(W, { ...S.look, bottom: k }, 'body'), cls: S.look.bottom === k ? 'on' : '', on: set('bottom', k) })),
+    { head: 'အောက်ပိုင်း' }, ...BOTTOMS.map(([k, n]) => ({ label: n, img: pic(W, { ...S.look, bottom: k }, 'body'), cls: S.look.bottom === k ? 'on' : '', on: set('bottom', k) })),
     { head: 'အောက်ပိုင်း အရောင်' }, ...BOTTOM_COLORS.map(c => ({ label: '', swatch: `linear-gradient(90deg,${c[0]} 50%,${c[1]} 50%)`, cls: 'chip sw' + (S.look.bottomColor?.[0] === c[0] ? ' on' : ''), on: set('bottomColor', c) })),
-    { head: 'ခေါင်း' }, ...HATS.map(([k, n]) => ({ label: n, img: shot(W, { ...S.look, hat: k }, 'head'), cls: S.look.hat === k ? 'on' : '', on: set('hat', k) })),
+    { head: 'ခေါင်း' }, ...HATS.map(([k, n]) => ({ label: n, img: pic(W, { ...S.look, hat: k }, 'head'), cls: S.look.hat === k ? 'on' : '', on: set('hat', k) })),
   ] });
 }

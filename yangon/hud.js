@@ -24,7 +24,10 @@ export function createHud(W) {
   const area = t => { $('area').textContent = t; $('area').classList.add('on'); areaT = 2.2; };
 
   // ---------- menus: one list of choices; an item's on() returning true keeps the menu open (live previews) ----------
-  function menu({ title, items, close = 'ပိတ်မယ်', onClose, side = false }) { // side: dock to the right so you can see yourself (wardrobe)
+  const later = []; // pictures still to draw, one per frame so nothing stalls
+  W.tick(() => { const f = later.shift(); if (f) f(); });
+  function menu({ title, items, close = 'ပိတ်မယ်', onClose, side = false }) {
+    later.length = 0; // side: dock to the right so you can see yourself (wardrobe)
     menuOpen = { onClose }; sync(); $('menu').classList.toggle('side', side);
     $('mtitle').textContent = title;
     const list = $('mlist'); list.innerHTML = '';
@@ -32,13 +35,16 @@ export function createHud(W) {
       if (it.head) { const h = document.createElement('div'); h.className = 'mhead'; h.textContent = it.head; list.appendChild(h); continue; }
       const b = document.createElement('button'); b.type = 'button'; b.disabled = !!it.disabled; if (it.cls) b.className = it.cls;
       if (it.swatch) { const s = document.createElement('i'); s.style.background = it.swatch; b.appendChild(s); }
-      if (it.img) { const im = document.createElement('img'); im.src = it.img; im.alt = ''; b.appendChild(im); b.classList.add('pic'); }
+      if (it.img) { // a picture; a function means "draw it when there's a moment" — the menu opens at once and fills in
+        const im = document.createElement('img'); im.alt = ''; b.appendChild(im); b.classList.add('pic');
+        if (typeof it.img === 'function') { im.classList.add('wait'); later.push(() => { if (im.isConnected) { im.src = it.img(); im.classList.remove('wait'); } }); } else im.src = it.img;
+      }
       b.append(it.label); if (it.note) { const em = document.createElement('em'); em.textContent = it.note; b.appendChild(em); }
-      b.addEventListener('click', e => { e.stopPropagation(); if (it.on?.(b)) { list.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on'); } else closeMenu(); });
+      b.addEventListener('click', e => { e.stopPropagation(); if (it.on?.(b)) { if (b.isConnected) { list.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on'); } } else closeMenu(); }); // isConnected: a pick that re-opened the menu has marked its own choice
       list.appendChild(b);
     }
     $('mclose').textContent = close; $('menu').hidden = false;
-    list.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+    (list.querySelector('button.on:not(:disabled)') ?? list.querySelector('button:not(:disabled)'))?.focus({ preventScroll: true }); // keyboard starts on your current choice
   }
   function closeMenu() { if (!menuOpen) return; const f = menuOpen.onClose; menuOpen = null; $('menu').hidden = true; sync(); f?.(); }
   $('mclose').addEventListener('click', e => { e.stopPropagation(); closeMenu(); });
