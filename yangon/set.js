@@ -453,22 +453,23 @@ export function buildSet(W) {
     solid(x, z, .4, .4);
   }
   palm(24.4, 22.0, 3.4, -.5); palm(11.1, 28.1, 3.0, -.4); palm(33.2, 14.8, 3.3, -.5);
-  // east of the kyaung: two compounds and a four-storey block of flats at the back corner
-  // the trishaw stand (ဆိုက်ကားဂိတ်) on the corner plot east of the kyaung: a zinc lean-to with a bench, two trishaws by the kerb
-  // waiting for fares; the riders sit about on them (life.js) and talk football
+  // east of the kyaung: a compound and a four-storey block of flats at the back corner
+  compound(26.4, 33.6, 14.0, 19.6, { c: '#f7d58b', tree: true });
+  // the trishaw stand (ဆိုက်ကားဂိတ်) on the plot south of the kyaung, on the market street, a step from the market: a zinc
+  // lean-to with a bench, two trishaws at the kerb waiting for shoppers with heavy bags; the riders sit about on them
+  // (life.js) and talk football
   {
-    const X = 31.0, Z = 15.6;
-    box(7.0, .02, 5.6, '#c9a27a', 30.0, 0, 16.7, { cast: false });          // beaten earth
+    const X = 18.6, Z = 27.0;
+    box(7.2, .02, 3.9, '#c9a27a', 19.0, 0, 27.05, { cast: false });         // beaten earth
     for (const sx of [-1.5, 1.5]) for (const sz of [-.9, .9]) cyl(.06, .06, 2.3, '#8f8794', X + sx, .02, Z + sz, 6);
     gable(X, 2.4, Z, 3.6, 1.4, .3);
     box(2.4, .1, .45, '#8a5a3a', X, .45, Z + .4); for (const sx of [-1, 1]) box(.08, .45, .4, '#8a5a3a', X + sx, .02, Z + .4); solid(X, Z + .4, 2.4, .45);
     cyl(.22, .18, .45, '#b8653d', X + 1.25, .02, Z - .5, 10);                // a pot of drinking water
-    mesh(new THREE.PlaneGeometry(1.8, .4), new THREE.MeshLambertMaterial({ map: textTex('ဆိုက်ကားဂိတ်', '#2f6f8f', '#fff6ea', 512, 110, 60), side: THREE.DoubleSide }), X, 2.0, Z - 1.0, { cast: false });
+    mesh(new THREE.PlaneGeometry(1.8, .4), new THREE.MeshLambertMaterial({ map: textTex('ဆိုက်ကားဂိတ်', '#2f6f8f', '#fff6ea', 512, 110, 60), side: THREE.DoubleSide }), X, 1.75, Z + 1.05, { cast: false }); // under the eave on the side you see
     for (const sx of [-1.5, 1.5]) solid(X + sx, Z - .9, .2, .2); for (const sx of [-1.5, 1.5]) solid(X + sx, Z + .9, .2, .2);
-    L.STAND = new THREE.Vector3(X, 0, Z); L.STAND_TRIKES = [[27.2, 13.95], [28.8, 13.95]].map(([x, z]) => ({ x, z, ry: Math.PI, y: .02 }));
+    L.STAND = new THREE.Vector3(X, 0, Z); L.STAND_TRIKES = [[14.95, 25.9], [14.95, 27.7]].map(([x, z]) => ({ x, z, ry: Math.PI / 2, y: .02 })); // nose to the market, sidecars off the street
     for (const t of L.STAND_TRIKES) trishaw(t.x, t.z, t.ry, t.y);
   }
-  compound(15.4, 22.6, 25.1, 29.0, { c: '#e9c8d8', w: 3.4 });
   flats(29.6, 25.6, 2, 0, '#f4c9a8', 7);
 
   // ---------- south of the market, either side of the market street: the big tea shop (west) and the ward primary school (east) ----------
@@ -542,7 +543,7 @@ export function buildSet(W) {
 
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
-  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [32.6, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
+  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [21.9, 25.7, .8]]) padauk(x, z, s);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();

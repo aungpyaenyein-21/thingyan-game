@@ -3,7 +3,7 @@
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=5';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=7';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=8';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=3';
@@ -216,7 +216,7 @@ W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
 W.addPet('dog', 'walker', 0, -2.4);
 W.addPet('dog', 'shop', 11.2, 30.0);      // waiting by the tea shop for scraps
 W.addPet('dog', 'shop', 7.6, 25.6);       // and by the mohinga pot
-W.addPet('dog', 'park', 30, 17.8);        // asleep in the shade at the pagoda
+W.addPet('dog', 'park', 21.0, 28.4);      // asleep in the shade at the trishaw stand
 W.addPet('cat', 'house', 28.6, 5.0);      // pharmacy step
 // Shwe Wa (ရွှေဝါ), U Ba Tin's ginger cat: up on the old car's roof since the kids' water scared her this morning
 const ROOF = new THREE.Vector3(L.CAR.x, 1.2, L.CAR.z - .2);
