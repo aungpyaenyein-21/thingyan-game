@@ -436,18 +436,18 @@ const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 const clamp01 = t => Math.min(1, Math.max(0, t));
 
 // loops: idle | walk | run | dance | sit | eat (seated, spoon to mouth) | vend (low stool, fanning) | squat | ready (chinlone stance)
-//        | push (a cart) | carry (a tray at the chest) | cycle (pedalling; the zone moves the bike)
+//        | push (a cart) | carry (a tray at the chest) | cycle (pedalling; the zone moves the bike) | coast (on the saddle, feet still: stopped or parked)
 // one-shots: jump | splash (bucket throw) | squirt (water gun) | shake | wave | kadaw | kick (chinlone) | laugh | call (vendor beckon)
 //            | sitdown | standup
 // anim.chat = 'speak' | 'listen' | null: an upper-body layer over idle / sit / eat / vend for people talking in a group
 export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 },
   eat: { f: 0, A: 0, speed: 0 }, vend: { f: 0, A: 0, speed: 0 }, squat: { f: 0, A: 0, speed: 0 }, ready: { f: 0, A: 0, speed: 0 },
-  push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 } };
+  push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 }, coast: { f: 0, A: 0, speed: 0 } };
 const LEG = UP + LO;
 for (const k of ['walk', 'run', 'push', 'carry']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
 export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6 };
 const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup']; // one-shots you can't walk through
-const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle'];
+const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle', 'coast'];
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
 function sitPose(p, T) {
   const b = Math.sin(T * 1.8);
@@ -578,7 +578,7 @@ export class ChibiAnimator {
       const b = Math.sin(T * 6 + this.seed);
       p.y = -.04 + .02 * b; p.kneeL = p.kneeR = .35; p.legLx = p.legRx = -.18; p.footL = p.footR = -.17; p.legLz = .08; p.legRz = -.08;
       p.spineRx = .14; p.headRx = -.3; p.armLz = .5; p.armRz = -.5; p.armLx = p.armRx = -.2; p.elbowL = p.elbowR = -.35;
-    } else if (name === 'cycle') { // pedalling: feet go round, hands on the bars, a lean over them
+    } else if (name === 'cycle' || name === 'coast') { // pedalling: feet go round, hands on the bars, a lean over them (coast: the cranks wind down and stop)
       const f = this.phi, s = Math.sin(f), co = Math.cos(f);
       p.y = 0; p.legLx = -1.05 + .38 * s; p.kneeL = 1.25 - .45 * co; p.legRx = -1.05 - .38 * s; p.kneeR = 1.25 + .45 * co;
       p.footL = -(p.legLx + p.kneeL) * .7; p.footR = -(p.legRx + p.kneeR) * .7; p.legLz = .05; p.legRz = -.05; p.hipsRz = .04 * s;

@@ -2,8 +2,8 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=3';
-import { ROAD } from './set.js?v=3';
+import { PAL } from '../world.js?v=4';
+import { ROAD } from './set.js?v=4';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -19,7 +19,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const TEX = new Map(), tex = t => TEX.get(t) ?? (TEX.set(t, bubbleTex(t)), TEX.get(t));
   function say(c, text, dur = 2.4, y = 2.3) {
     if (!c.say) { c.say = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(text), depthWrite: false })); c.say.scale.set(2.6, .82, 1); c.g.add(c.say); }
-    c.say.material.map = tex(text); c.say.position.y = y / c.g.scale.x; c.say.visible = true; c.sayT = dur;
+    const t = tex(text); c.say.material.map = t; c.say.scale.y = t.userData.tall ? 1.24 : .82; c.say.position.y = (y + (t.userData.tall ? .2 : 0)) / c.g.scale.x; c.say.visible = true; c.sayT = dur;
   }
 
   // ---------- a tiny script runtime: scripts are async functions that walk paths and wait ----------
@@ -64,7 +64,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
 
   // ---------- people talking in a knot: one speaks (hands going), the others nod; now and then they all laugh ----------
   const knots = [];
-  function knot(list, seated = false) { const k = { ppl: list, t: rnd() * 2, who: -1, seated }; list.forEach(c => { c.anim.chat = 'listen'; }); knots.push(k); return k; }
+  // lines: optional [speaker, text] in order — then they really say them (bubbles) when you're near enough to hear
+  function knot(list, seated = false, lines = null) { const k = { ppl: list, t: rnd() * 2, who: -1, seated, lines, li: 0 }; list.forEach(c => { c.anim.chat = 'listen'; }); knots.push(k); return k; }
   function standingKnot(cx, cz, n, look = () => ({}), r = .62) {
     const list = [];
     for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rnd() * .4; const c = npc({ x: cx + Math.sin(a) * r, z: cz + Math.cos(a) * r, ...look(i) }); c.g.rotation.y = a + Math.PI; list.push(c); }
@@ -76,8 +77,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       k.ppl.forEach((c, i) => { if (!c.anim.one) setTimeout(() => c.anim.play('laugh'), i * 90); }); k.ppl[k.who].anim.emote('haha', 1.4); k.t = 1.6; return;
     }
     let w; do w = (rnd() * k.ppl.length) | 0; while (w === k.who && k.ppl.length > 1);
+    const pp = W.player.g.position, line = k.lines && Math.hypot(pp.x - k.ppl[0].g.position.x, pp.z - k.ppl[0].g.position.z) < 9 ? k.lines[k.li++ % k.lines.length] : null;
+    if (line) { w = line[0]; say(k.ppl[w], line[1], 3.4, 2.1); }
     k.who = w; k.ppl.forEach((c, i) => { c.anim.chat = i === w ? 'speak' : 'listen'; }); if (rnd() < .3) k.ppl[w].anim.emote('dots', 1.2);
-    k.t = 2.4 + rnd() * 3.5;
+    k.t = line ? 3.6 + rnd() * 1.2 : 2.4 + rnd() * 3.5;
   }
   standingKnot(-.5, 2.6, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
   standingKnot(23.6, 13.1, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }), .5);                                // ② men on the corner
@@ -250,6 +253,21 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   trishawRun();
 
+  // ---------- the trishaw stand: the riders wait for a fare, perched on their trishaws and the bench, talking last night's match ----------
+  const TALK = [[0, 'မနေ့ညက မန်ယူပွဲ ကြည့်လိုက်လား'], [1, 'ကြည့်တာပေါ့ကွ၊ ည ၂ နာရီထိ'], [0, 'ဒီဂီယာ မရှိရင် ပြီးပြီ'], [1, 'ရက်ရှ်ဖို့ဒ် ဂိုးက လှလိုက်တာ!'],
+    [2, 'ငါကတော့ အိပ်ပျော်သွားတယ်… ဘယ်လောက်နဲ့ ပြီးလဲ'], [0, '၂ ဂိုး ၁ ဂိုး၊ နိုင်တယ်ကွ!'], [1, 'ဒီနှစ် ချန်ပီယံ ဖြစ်မယ်'], [2, 'မင်း နှစ်တိုင်း အဲ့လိုပဲ ပြောတာပဲ'],
+    [0, 'ပေါ့ဘာ ပြန်ကစားလာရင် ကြည့်'], [2, 'အေးပါ… ခရီးသည် လာပြီလား ကြည့်ဦး']];
+  const RIDER = () => ({ age: 'adult', topStyle: pick(['tank', 'tee', 'shirt']), shirt: pick(['#fff6ea', '#4fb3d9', '#e0574f', '#c8a070']), bottom: 'longyi', hat: pick(['bucket', 'none']) });
+  const [T1, T2] = L.STAND_TRIKES, at = (t, lx, lz) => [t.x + lx * Math.cos(t.ry) + lz * Math.sin(t.ry), t.z - lx * Math.sin(t.ry) + lz * Math.cos(t.ry)];
+  const standers = [npc(RIDER()), npc(RIDER()), npc(RIDER())];
+  { // one on his saddle, one lounging back in his sidecar, one on the bench
+    const [a, b, c] = standers, [ax, az] = at(T1, -.17, 0), [bx, bz] = at(T2, -.15, .78);
+    a.g.position.set(ax, T1.y + .76 - (a.ch.hipH + .02) * a.g.scale.x, az); a.g.rotation.y = T1.ry + Math.PI / 2; a.anim.setLoop('coast');
+    b.g.position.set(bx, T2.y + .26, bz); b.g.rotation.y = T2.ry + Math.PI; b.anim.setLoop('sit');
+    c.g.position.set(L.STAND.x - .4, .3, L.STAND.z + .45); c.g.rotation.y = Math.atan2((ax + bx) / 2 - c.g.position.x, (az + bz) / 2 - c.g.position.z); c.anim.setLoop('sit');
+  }
+  knot(standers, true, TALK); people.push(...standers);
+
   // ---------- morning: shoppers with baskets, old people taking food to the monks ----------
   function basket(c) { // a woven basket hanging from the left hand
     const g = new THREE.Group(); c.g.add(g); const o = { parent: g };
@@ -362,6 +380,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; if (j.f ? j.f() : (j.t -= dt) <= 0) { jobs.splice(i, 1); j.r(); } }
     for (const c of walkers) stepWalker(c, dt);
     for (const v of drivers) stepDriver(v, dt);
+    for (const v of [trike, ...bikes]) { const want = v.moving ? 'cycle' : 'coast'; if (v.rider.anim.loop !== want) v.rider.anim.setLoop(want); } // feet still when stopped or parked
     for (const c of [...people, ...vendors, lolly, alighter]) {
       if (c.ty) { const t = c.ty; t.t += dt / t.k; c.g.position.y = t.from + (t.to - t.from) * Math.min(1, t.t * t.t * (3 - 2 * t.t)); if (t.t >= 1) c.ty = null; }
     }

@@ -3,7 +3,7 @@
 //   ③ the ward market: vendors on mats along two lanes, sheds   ④ the ward monastery            + compounds, a chinlone lot, a condo going up
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and errands live in story.js.
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=3';
+import { PAL } from '../world.js?v=4';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 29.2 };
@@ -392,11 +392,11 @@ export function buildSet(W) {
   box(1.6, .7, .7, '#8a5a3a', 4.0, .02, 22.1); tarp(4.0, 22.1, 2.2, 1.2, '#3f6fa8', 2.0); solid(4.0, 22.1, 1.6, .7);
   for (let i = 0; i < 14; i++) mesh(new THREE.SphereGeometry(.05, 6, 4), new THREE.MeshBasicMaterial({ color: [new THREE.Color(2.8, 2.3, 1.2), new THREE.Color(2.8, 1.4, 1.4), new THREE.Color(1.3, 2.4, 2.8)][i % 3] }), 3.0 + i * .15, 1.75 - Math.sin(i / 13 * Math.PI) * .3, 21.5, { cast: false });
   // trishaws (ဆိုက်ကား) parked along the street edge of the market, waiting for shoppers with heavy bags
-  function trishaw(x, z, ry) {
-    const g = new THREE.Group(); g.position.set(x, .14, z); g.rotation.y = ry; scene.add(g); const o = { parent: g }, tm = pick(['#2f6f8f', '#8a3a4a', '#3f7a5a']);
+  function trishaw(x, z, ry, y = .14) {
+    const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g); const o = { parent: g }, tm = pick(['#2f6f8f', '#8a3a4a', '#3f7a5a']);
     for (const [wx, wz, r] of [[-.5, 0, .32], [.45, 0, .32], [-.05, .75, .26]]) mesh(new THREE.TorusGeometry(r, .03, 6, 16), '#2b2730', wx, r, wz, o);
     box(.9, .06, .1, tm, 0, .62, 0, o); box(.7, .08, .5, tm, -.05, .45, .72, o); box(.62, .32, .08, tm, -.05, .52, .95, o); box(.5, .06, .36, '#c8553d', -.05, .55, .72, o);
-    solid(x, z + .3, 1.2, 1.2);
+    solid(x + Math.sin(ry) * .35, z + Math.cos(ry) * .35, 1.2, 1.2); // the bike and its sidecar
   }
   trishaw(-7.6, 13.8, -.4); trishaw(-5.6, 13.9, .3); trishaw(.6, 13.8, -.2);
   mesh(new THREE.PlaneGeometry(3.2, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး ↓', '#c8553d', '#ffe7a3', 512, 90, 56), side: THREE.DoubleSide }), 11.45, 2.7, 16.9, { cast: false }).rotation.y = Math.PI / 2;
@@ -445,15 +445,28 @@ export function buildSet(W) {
     for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(.1, 8, 6), '#7a8a3a', top.x + Math.cos(i * 2.1) * .12, top.y - .12, top.z + Math.sin(i * 2.1) * .12);
     solid(x, z, .4, .4);
   }
-  palm(24.6, 15.2, 3.4, -.5); palm(11.1, 28.1, 3.0, -.4); palm(33.2, 14.8, 3.3, -.5);
+  palm(24.4, 22.0, 3.4, -.5); palm(11.1, 28.1, 3.0, -.4); palm(33.2, 14.8, 3.3, -.5);
   // east of the kyaung: two compounds and a four-storey block of flats at the back corner
-  compound(26.4, 33.6, 14.0, 19.6, { c: '#f7d58b', tree: true });
+  // the trishaw stand (ဆိုက်ကားဂိတ်) on the corner plot east of the kyaung: a zinc lean-to with a bench, two trishaws by the kerb
+  // waiting for fares; the riders sit about on them (life.js) and talk football
+  {
+    const X = 31.0, Z = 15.6;
+    box(7.0, .02, 5.6, '#c9a27a', 30.0, 0, 16.7, { cast: false });          // beaten earth
+    for (const sx of [-1.5, 1.5]) for (const sz of [-.9, .9]) cyl(.06, .06, 2.3, '#8f8794', X + sx, .02, Z + sz, 6);
+    gable(X, 2.4, Z, 3.6, 1.4, .3);
+    box(2.4, .1, .45, '#8a5a3a', X, .45, Z + .4); for (const sx of [-1, 1]) box(.08, .45, .4, '#8a5a3a', X + sx, .02, Z + .4); solid(X, Z + .4, 2.4, .45);
+    cyl(.22, .18, .45, '#b8653d', X + 1.25, .02, Z - .5, 10);                // a pot of drinking water
+    mesh(new THREE.PlaneGeometry(1.8, .4), new THREE.MeshLambertMaterial({ map: textTex('ဆိုက်ကားဂိတ်', '#2f6f8f', '#fff6ea', 512, 110, 60), side: THREE.DoubleSide }), X, 2.0, Z - 1.0, { cast: false });
+    for (const sx of [-1.5, 1.5]) solid(X + sx, Z - .9, .2, .2); for (const sx of [-1.5, 1.5]) solid(X + sx, Z + .9, .2, .2);
+    L.STAND = new THREE.Vector3(X, 0, Z); L.STAND_TRIKES = [[27.2, 13.95], [28.8, 13.95]].map(([x, z]) => ({ x, z, ry: Math.PI, y: .02 }));
+    for (const t of L.STAND_TRIKES) trishaw(t.x, t.z, t.ry, t.y);
+  }
   compound(15.4, 22.6, 25.1, 29.0, { c: '#e9c8d8', w: 3.4 });
   flats(29.6, 25.6, 2, 0, '#f4c9a8', 7);
 
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
-  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
+  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [32.6, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();

@@ -10,7 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=26';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=27';
 import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
 
 export { THREE };
@@ -114,13 +114,18 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.magFilter = THREE.NearestFilter; return t;
   }
-  function bubbleTex(text) { // speech bubble for street calls ("ဟင်းသီး… ဟင်းရွက်…")
-    const c = document.createElement('canvas'); c.width = 512; c.height = 160; const g = c.getContext('2d');
+  function bubbleTex(text) { // speech bubble for street calls ("ဟင်းသီး… ဟင်းရွက်…"); a long line wraps onto two rows (texture.userData.tall)
+    const c = document.createElement('canvas'), g = c.getContext('2d'); c.width = 512;
+    const fit = (t, px) => { g.font = `${px}px ${FONT}`; const w = g.measureText(t).width; return w > 460 ? Math.floor(px * 460 / w) : px; };
+    let px = fit(text, 60), sp = text.indexOf(' ', text.length / 2 - 4), rows = [text];
+    if (px < 44 && sp > 0) { rows = [text.slice(0, sp), text.slice(sp + 1)]; px = Math.min(fit(rows[0], 56), fit(rows[1], 56)); }
+    const H = rows.length > 1 ? 196 : 112; c.height = H + 48;
     g.fillStyle = '#fff6ea'; g.strokeStyle = '#5a3550'; g.lineWidth = 6;
-    g.beginPath(); g.roundRect(6, 6, 500, 112, 40); g.moveTo(230, 118); g.lineTo(256, 152); g.lineTo(282, 118); g.fill(); g.stroke();
-    g.fillStyle = '#fff6ea'; g.fillRect(234, 110, 44, 12);
-    g.fillStyle = '#5a3550'; g.font = `60px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 64);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    g.beginPath(); g.roundRect(6, 6, 500, H, 40); g.moveTo(230, H + 6); g.lineTo(256, H + 40); g.lineTo(282, H + 6); g.fill(); g.stroke();
+    g.fillStyle = '#fff6ea'; g.fillRect(234, H - 2, 44, 12);
+    g.fillStyle = '#5a3550'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `${px}px ${FONT}`;
+    rows.forEach((r, i) => g.fillText(r, 256, rows.length > 1 ? 56 + i * 86 : 64));
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.tall = rows.length > 1; return t;
   }
 
   const solids = []; // AABBs the player can't walk into
@@ -306,18 +311,18 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
 
-  // ---------- post: bloom -> tilt-shift/grade/grain -> output ----------
+  // ---------- post: bloom -> depth of field round you/grade/grain -> output ----------
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q === 'off' ? 0 : 4 });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, cam));
   const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25) : null; if (bloom) composer.addPass(bloom);
   const look = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: .52 }, blur: { value: Q === 'off' ? 0 : 3.2 } },
+    uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: new THREE.Vector2(.5, .52) }, blur: { value: Q === 'off' ? 0 : 5.0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 res; uniform float time, focus, blur; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 res, focus; uniform float time, blur; varying vec2 vUv;
       void main(){
-        float d = abs(vUv.y - focus);
-        float r = smoothstep(.12, .5, d) * blur;                 // tilt-shift: sharp band, soft top/bottom
+        float d = length((vUv - focus) * vec2(res.x / res.y, 1.));
+        float r = smoothstep(.15, .6, d) * blur;                // sharp round you, softening the further away it is
         vec4 col = vec4(0.);
         for (int i = 0; i < 16; i++) { float fi = float(i); float a = fi * 2.39996; vec2 o = vec2(cos(a), sin(a)) * sqrt((fi + .5) / 16.) * r / res; col += texture2D(tDiffuse, vUv + o); }
         vec3 c = col.rgb / 16.;
@@ -346,7 +351,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   // ---------- loop ----------
   const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize();
-  const tmp = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v3 = new THREE.Vector3();
+  const tmp = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v3 = new THREE.Vector3(), fv = new THREE.Vector3(), fv2 = new THREE.Vector2();
   const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
   const clock = new THREE.Clock(); let T = 0;
   const ndc = new THREE.Vector3();
@@ -456,6 +461,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget);
     sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
     look.uniforms.time.value = T % 100;
+    cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
+    look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
     composer.render();
   }
   const ticks = [];
