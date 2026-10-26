@@ -1,7 +1,7 @@
 // yangon/rooms.js — the shop interiors you can walk into from the main street: tea shop, clothes shop (a tailor's),
 // barber. Each is a cut-away room built far off the island (only two walls, so the camera sees in), switched in with
 // world.setRoom(). People and what you do inside live in main.js; this is the set and where things are.
-import { PAL } from '../world.js?v=4';
+import { PAL } from '../world.js?v=5';
 import { icon, TEA_MENU } from './icons.js?v=1';
 
 export function buildRooms(W) {
@@ -22,39 +22,53 @@ export function buildRooms(W) {
   const poster = (x, y, z, w, h, tex, ry = 0) => { const m = mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }), x, y, z, { cast: false }); m.rotation.y = ry; return m; };
   const R = {};
 
-  // ---------- tea shop (လက်ဖက်ရည်ဆိုင်): low tables and tiny stools, the counter with the kettle and the snack case, the TV on the wall ----------
+  // ---------- the big tea shop (လက်ဖက်ရည်ဆိုင်ကြီး): rows of wooden tables and chairs, ceiling fans, a thermos of green tea and a red
+  // tissue box on every table, a little bin by the legs, the long counter with the kettle and the snack case, the name banner
+  // across the back wall, the picture menu, the TV with football on. Who sits where, and the boys waiting tables, are main.js's.
   {
-    const cx = 130, cz = 0, r = R.tea = room(cx, cz, 11, 8, '#f3ead8', '#7fae9a', floorTex('#e9e1d2', '#cfc4b4', 10), { view: 11.5 });
-    const z0 = cz - 4, x0 = cx - 5.5;
-    box(5.4, 1.0, .7, '#8a5a3a', cx - 1.6, .05, z0 + .75); box(5.5, .06, .8, '#d9cdb8', cx - 1.6, 1.05, z0 + .75);           // counter
-    box(1.6, .5, .5, '#cfe6f2', cx - 3.2, 1.1, z0 + .75); for (let i = 0; i < 6; i++) mesh(new THREE.SphereGeometry(.09, 8, 6), pick(['#e8b85a', '#fbf4e6', '#d99a4a']), cx - 3.8 + (i % 3) * .4, 1.25 + (i >> 1 & 1) * .14, z0 + .7); // glass case of snacks
-    cyl(.3, .26, .7, '#c9a24a', cx + .4, 1.08, z0 + .7, 14); cyl(.12, .3, .3, '#c9a24a', cx + .4, 1.78, z0 + .7, 14); cyl(.04, .04, .3, '#5a4a52', cx + .75, 1.3, z0 + .7, 6).rotation.z = 1.2; // the big brass kettle
-    for (let i = 0; i < 5; i++) cyl(.06, .05, .1, '#fff6ea', cx - 1.8 + i * .3, 1.08, z0 + .95, 8);  // cups lined up for the pour
-    solid(cx - 1.6, z0 + .75, 5.5, .8);
-    // wall: the menu board with pictures, a calendar, a wall fan, the TV with football on
+    const cx = 130, cz = 0, W2 = 14, D2 = 10, r = R.tea = room(cx, cz, W2, D2, '#f6efe0', '#7fae9a', floorTex('#b9b2a8', '#aaa298', 12), { view: 14.5 });
+    const z0 = cz - D2 / 2, x0 = cx - W2 / 2;
+    box(5.0, 1.0, .7, '#8a5a3a', cx - 3.6, .05, z0 + .75); box(5.1, .06, .8, '#d9cdb8', cx - 3.6, 1.05, z0 + .75);           // counter
+    box(1.6, .5, .5, '#cfe6f2', cx - 5.2, 1.1, z0 + .75); for (let i = 0; i < 6; i++) mesh(new THREE.SphereGeometry(.09, 8, 6), pick(['#e8b85a', '#fbf4e6', '#d99a4a']), cx - 5.8 + (i % 3) * .4, 1.25 + (i >> 1 & 1) * .14, z0 + .7); // glass case of snacks
+    cyl(.3, .26, .7, '#c9a24a', cx - 2.0, 1.08, z0 + .7, 14); cyl(.12, .3, .3, '#c9a24a', cx - 2.0, 1.78, z0 + .7, 14); cyl(.04, .04, .3, '#5a4a52', cx - 1.65, 1.3, z0 + .7, 6).rotation.z = 1.2; // the big brass kettle
+    for (let i = 0; i < 6; i++) cyl(.06, .05, .1, '#fff6ea', cx - 4.3 + i * .3, 1.08, z0 + .95, 8);                          // cups lined up for the pour
+    for (let i = 0; i < 4; i++) { cyl(.07, .07, .26, i % 2 ? '#d9dde3' : '#fbf4e6', cx - 2.9 + i * .2, 1.1, z0 + .5, 8); cyl(.05, .05, .05, '#e0302f', cx - 2.9 + i * .2, 1.36, z0 + .5, 8); } // thermoses waiting to go out
+    solid(cx - 3.6, z0 + .75, 5.1, .8);
+    poster(cx + 2.6, 2.45, z0 + .02, 6.6, .62, textTex('ရွှေလမင်း လက်ဖက်ရည်ဆိုင် · ကြိုဆိုပါ၏', '#fbf4e6', '#5a3a8a', 1024, 96, 56)); // the name banner
+    box(6.8, .08, .1, '#c8a070', cx + 2.6, 2.1, z0 + .05);
+    poster(cx + 5.6, 1.4, z0 + .02, .7, .9, textTex('၂၀၁၈', '#fff6ea', '#c8553d', 128, 160, 44));
+    // the picture menu on the side wall, "FOOD" across its top like the real ones
     const board = document.createElement('canvas'); board.width = 512; board.height = 256; const g = board.getContext('2d');
-    g.fillStyle = '#2f4a44'; g.fillRect(0, 0, 512, 256); g.fillStyle = '#ffe7a3'; g.font = '30px "Noto Sans Myanmar",Padauk,sans-serif'; g.textAlign = 'center'; g.fillText('ဆိုင်မှာ ရနိုင်သော', 256, 34);
+    g.fillStyle = '#fbf4e6'; g.fillRect(0, 0, 512, 256); g.fillStyle = '#f2c14e'; g.fillRect(0, 0, 512, 44); g.fillStyle = '#c8553d'; g.font = 'bold 32px sans-serif'; g.textAlign = 'center'; g.fillText('FOOD', 256, 34);
     const imgs = [...TEA_MENU.drinks.slice(0, 4), ...TEA_MENU.snacks.slice(0, 4)];
     const tex = new THREE.CanvasTexture(board); tex.colorSpace = THREE.SRGBColorSpace;
-    imgs.forEach(([k, n], i) => { const im = new Image(); im.onload = () => { g.drawImage(im, 20 + (i % 4) * 124, 50 + (i >> 2) * 100, 64, 64); g.font = '18px "Noto Sans Myanmar",Padauk,sans-serif'; g.fillStyle = '#fff6ea'; g.fillText(n, 52 + (i % 4) * 124 + 40, 132 + (i >> 2) * 100); tex.needsUpdate = true; }; im.src = icon(k); });
-    poster(cx + 2.6, 2.1, z0 + .02, 2.4, 1.2, tex);
-    poster(cx + 4.6, 1.9, z0 + .02, .7, .9, textTex('၂၀၁၈', '#fff6ea', '#c8553d', 128, 160, 44));
-    const fan = W.keep(new THREE.Group()); fan.position.set(cx - 4.2, 2.4, z0 + .2); scene.add(fan);
-    cyl(.1, .1, .12, '#9aa3ad', 0, 0, 0, 10, { parent: fan }).rotation.x = Math.PI / 2;
-    for (let i = 0; i < 3; i++) { const bg = new THREE.BoxGeometry(.09, .42, .02); bg.translate(0, .23, 0); mesh(bg, '#cfe6f2', 0, 0, .08, { parent: fan }).rotation.z = i * 2.09; }
-    r.spin = [fan];
-    box(.06, .9, 1.5, '#26222b', x0 + .03, 1.7, cz - 1.2, { cast: false }); poster(x0 + .07, 2.15, cz - 1.2, 1.3, .75, (() => { // the TV: a match is on
+    imgs.forEach(([k, n], i) => { const im = new Image(); im.onload = () => { g.drawImage(im, 20 + (i % 4) * 124, 54 + (i >> 2) * 100, 64, 64); g.font = '18px "Noto Sans Myanmar",Padauk,sans-serif'; g.fillStyle = '#5a3550'; g.fillText(n, 52 + (i % 4) * 124 + 40, 136 + (i >> 2) * 100); tex.needsUpdate = true; }; im.src = icon(k); });
+    poster(x0 + .03, 1.95, cz - 2.2, 2.8, 1.4, tex, Math.PI / 2);
+    box(.06, .9, 1.5, '#26222b', x0 + .03, 1.7, cz + 1.6, { cast: false }); poster(x0 + .07, 2.15, cz + 1.6, 1.3, .75, (() => { // the TV: a match is on
       const c = document.createElement('canvas'); c.width = 160; c.height = 90; const q = c.getContext('2d'); q.fillStyle = '#3f8f4a'; q.fillRect(0, 0, 160, 90); q.strokeStyle = '#fff'; q.lineWidth = 2; q.strokeRect(8, 8, 144, 74); q.beginPath(); q.moveTo(80, 8); q.lineTo(80, 82); q.stroke(); q.beginPath(); q.arc(80, 45, 12, 0, 7); q.stroke();
       for (let i = 0; i < 10; i++) { q.fillStyle = i % 2 ? '#e0574f' : '#4fb3d9'; q.fillRect(20 + (i * 37) % 120, 20 + (i * 23) % 50, 3, 5); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })(), Math.PI / 2);
-    // low tables, tiny plastic stools; who sits where is main.js's business
-    r.tables = [];
-    for (const tz of [cz - 1.0, cz + 1.4]) for (const tx of [cx - 3.4, cx - .4, cx + 2.6]) {
-      box(.8, .38, .6, '#c8a070', tx, .05, tz); box(.85, .04, .65, '#e9e1d2', tx, .43, tz);
-      const seats = [-1, 1].map(s => { cyl(.14, .12, .24, pick(['#4fb3d9', '#e0574f', '#8bd17c', '#f2c14e']), tx + s * .62, .05, tz, 8); return { x: tx + s * .62, z: tz, ry: s < 0 ? Math.PI / 2 : -Math.PI / 2 }; });
-      cyl(.07, .07, .18, '#4f8f5a', tx + .25, .47, tz - .15, 8); // the green-tea thermos every table gets
-      solid(tx, tz, .8, .6); r.tables.push({ x: tx, z: tz, seats });
+    // ceiling fans
+    r.spin = [];
+    for (const [fx, fz] of [[cx - 2.3, cz - 1.6], [cx + 2.9, cz - 1.6], [cx + .3, cz + 1.8]]) {
+      cyl(.02, .02, .35, '#8f8794', fx, 2.75, fz, 4);
+      const fan = W.keep(new THREE.Group()); fan.position.set(fx, 2.72, fz); scene.add(fan); cyl(.1, .1, .1, '#e9e1d2', 0, -.05, 0, 10, { parent: fan });
+      for (let i = 0; i < 3; i++) { const bg = new THREE.BoxGeometry(.6, .02, .12); bg.translate(.38, 0, 0); mesh(bg, '#e9e1d2', 0, -.02, 0, { parent: fan }).rotation.y = i * 2.09; }
+      r.spin.push(fan);
     }
-    r.counter = new THREE.Vector3(cx - 1.6, 0, z0 + 1.6); r.boss = { x: cx - 1.6, z: z0 + .2 };
+    // wooden tables in rows, a chair either side; main.js seats people on them (seat.lift raises a sitter to chair height)
+    r.tables = [];
+    for (const tz of [cz - 2.0, cz + .4, cz + 2.8]) for (const tx of [cx - 3.6, cx - 1.0, cx + 1.6, cx + 4.2]) {
+      box(.9, .05, .65, '#c89a6a', tx, .62, tz); box(.82, .1, .57, '#a8744a', tx, .53, tz); for (const lx of [-.38, .38]) for (const lz of [-.26, .26]) box(.05, .5, .05, '#6b4a32', tx + lx, .05, tz + lz);
+      const seats = [-1, 1].map(s => { const x = tx + s * .62;
+        box(.36, .05, .36, '#8a5a3a', x, .42, tz); box(.05, .5, .36, '#8a5a3a', x + s * .17, .45, tz); for (const lx of [-.14, .14]) for (const lz of [-.14, .14]) box(.04, .37, .04, '#6b4a32', x + lx, .05, tz + lz);
+        return { x, z: tz, ry: s < 0 ? Math.PI / 2 : -Math.PI / 2, lift: .18 }; });
+      cyl(.07, .07, .26, pick(['#d9dde3', '#fbf4e6']), tx + .25, .67, tz - .18, 8); cyl(.05, .05, .05, '#e0302f', tx + .25, .93, tz - .18, 8); // green tea thermos
+      box(.16, .09, .11, '#e0302f', tx - .22, .67, tz - .2);                                                                          // red tissue box
+      if (rnd() < .6) cyl(.12, .1, .2, pick(['#f48fb1', '#4fb3d9', '#e0574f']), tx + .3, .05, tz + .48, 8);                             // the little bin
+      solid(tx, tz, .9, .65); r.tables.push({ x: tx, z: tz, top: .67, seats });
+    }
+    r.counter = new THREE.Vector3(cx - 3.6, 0, z0 + 1.6); r.boss = { x: cx - 3.6, z: z0 + .2 };
+    r.aisle = { xs: [cx - 2.3, cx + .3, cx + 2.9], zs: [z0 + 1.8, cz - .8, cz + 1.6] }; // walkways between the tables, for the boys and the paper seller
   }
 
   // ---------- clothes shop / tailor (အထည်ဆိုင်): longyi bolts stacked on the shelves, shirts on rails, a sewing machine, a tall mirror ----------

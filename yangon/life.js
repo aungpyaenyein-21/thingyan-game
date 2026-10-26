@@ -2,8 +2,8 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=4';
-import { ROAD } from './set.js?v=4';
+import { PAL } from '../world.js?v=5';
+import { ROAD } from './set.js?v=5';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -36,7 +36,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     if (blocked) { if (c.anim.loop !== 'idle' && !c.anim.one) c.anim.setLoop('idle'); return; }
     if (c.anim.loop !== c.walkLoop) c.anim.setLoop(c.walkLoop);
     let a = Math.atan2(dx, dz) - c.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); c.g.rotation.y += a * Math.min(1, dt * 8);
-    const s = Math.min(d, c.anim.speed * dt); p.x += dx / d * s; p.z += dz / d * s; p.y = ground(p.x, p.z);
+    const s = Math.min(d, c.anim.speed * dt); p.x += dx / d * s; p.z += dz / d * s; p.y = (c.floor ?? ground)(p.x, p.z); // c.floor: someone walking about inside a shop
   }
   // vehicles: a group that faces +x locally, moved along a path at its own speed (bike, trishaw, cart)
   function drive(v, list) { return new Promise(r => { v.path = pts(list); v.pi = 0; v.arrive = r; drivers.add(v); }); }
@@ -105,7 +105,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const s of [-1, 1]) { cyl(.1, .07, .07, '#fff6ea', tx + s * .14, .32, 14.4, 10); cyl(.085, .085, .01, '#d9a04a', tx + s * .14, .39, 14.4, 10); } // bowls of mohinga
   }
   // browsers squatting over the trays
-  for (const [x, z, ry] of [[-5.6, 16.45, Math.PI], [2.2, 17.35, 0], [-.4, 23.05, Math.PI], [7.2, 23.95, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
+  for (const [x, z, ry] of [[-.4, 16.45, Math.PI], [2.2, 17.35, 0], [-.4, 23.05, Math.PI], [7.2, 23.95, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
+
+  // the big tea shop's terrace: a few people over tea, talking (gone home after dark like the market)
+  const terrace = L.TERRACE.filter((_, i) => i !== 2).map(st => { const c = npc({ age: pick(['adult', 'adult', 'elder']), x: st.x, z: st.z, ry: st.ry }); c.g.position.y = st.y; c.anim.setLoop(rnd() < .4 ? 'eat' : 'sit'); dayOnly.push(c); return c; });
+  knot(terrace.slice(0, 2), true); 
 
   // ---------- the YBS bus (yellow, 2017–) westbound in the kerb lane: stops, the conductor calls, people get on and off ----------
   const BUS = { len: 4.6, lane: ROAD.west[0], speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
@@ -286,11 +290,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   // people come into the ward along the main street from either end (off the map), and leave the same way
   const WEST = [[BOUNDS.x0 - .6, 12.2], ...SIDEWALK], EAST = [[BOUNDS.x1 + .6, 12.2], [14.6, 12.2], [13.4, 12.8]]; // on the pavement's edge, clear of the bikes (z 11.7)
   const way = () => pick([WEST, EAST]), MARKET_IN = [[12.6, 13.6], [12.6, 16.9]];
-  const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
+  const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7]; // (lane 1 starts east of the big tea shop: only from -1.7 on)
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
     const lz = laneI ? 23.5 : 16.9;
     if (laneI) await walk(c, [[12.6, 23.5]]);
-    for (const x of [...LANE_X].sort(() => rnd() - .5).slice(0, 2 + (rnd() * 2 | 0)).sort((a, b) => b - a)) {
+    for (const x of LANE_X.filter(x => laneI || x > -2.5).sort(() => rnd() - .5).slice(0, 2 + (rnd() * 2 | 0)).sort((a, b) => b - a)) {
       const side = rnd() < .5 ? -1 : 1; await walk(c, [[x, lz], [x, lz + side * .45]]); c.g.rotation.y = side < 0 ? Math.PI : 0;
       c.anim.setLoop('squat'); await wait(2 + rnd() * 3); c.anim.setLoop('idle'); if (rnd() < .4) c.anim.play('laugh');
       await wait(.6);
@@ -401,5 +405,5 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   });
   people.push(...ring, ...roadKids, alighter);
   const vehicles = () => [...(BUS.away <= 0 ? [bus.position] : []), ...CARS.filter(v => v.on).map(v => v.g.position)]; // for the engine sound
-  return { bus, BUS, knot, people, say, vehicles };
+  return { bus, BUS, knot, people, say, vehicles, walk, wait };
 }

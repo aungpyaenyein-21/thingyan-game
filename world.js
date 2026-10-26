@@ -103,6 +103,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
     g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg;
     g.font = `${size}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const tw = g.measureText(text).width; if (tw > w * .92) g.font = `${Math.floor(size * w * .92 / tw)}px ${FONT}`; // too long for the board: shrink to fit
     g.fillText(text, w / 2, h / 2 + 4);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
   }
