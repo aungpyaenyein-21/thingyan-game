@@ -3,12 +3,12 @@
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=7';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=10';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=11';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=3';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=6';
+import { startLife } from './life.js?v=7';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=3';
 

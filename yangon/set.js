@@ -26,6 +26,7 @@ const RECTS = [
   { x0: 10.6, x1: 34, z0: -2.2, z1: -.4, h: .05, c: '#cdc2b6' },       // back lane behind the shops
   { x0: -9.6, x1: 11.8, z0: 16.0, z1: 17.8, h: .05, c: '#bdb2a6' },    // ③ market lane 1
   { x0: 9.8, x1: 11.8, z0: 30.2, z1: 35.8, h: .08, c: '#d9cdb8' },      // the tea shop's tiled terrace along the market street
+  { x0: -9.6, x1: 11.8, z0: 28.95, z1: 30.1, h: .05, c: '#cdc2b6' },    // the back lane behind the market, out to the market street
   { x0: -9.6, x1: 11.8, z0: 22.6, z1: 24.4, h: .05, c: '#bdb2a6' },    // ③ market lane 2
   { x0: -9.5, x1: 9.9, z0: 18.8, z1: 21.8, h: .06, c: '#cfc8bc' },      // ③ concrete floor of market shed 1 (walk in)
   { x0: -9.5, x1: 9.9, z0: 25.6, z1: 28.8, h: .06, c: '#cfc8bc' },      // ③ …and shed 2
@@ -505,6 +506,48 @@ export function buildSet(W) {
     }
     L.TEA = new THREE.Vector3(10.4, 0, 33.0); // in off the terrace
   }
+  // ---------- behind the tea shop: its kitchen yard (A2), and the market's loading yard where the morning pickup unloads (A1) ----------
+  {
+    // the kitchen yard (မီးဖိုချောင်ဝင်း) against the tea shop's west wall: charcoal stoves with the big pots on, firewood, water drums, a wash place
+    const kx0 = -1.9, kx1 = 2.3;
+    box(kx1 - kx0, .03, 5.2, '#bdb3a4', (kx0 + kx1) / 2, 0, 33.0, { cast: false });                                 // a concrete apron
+    box(.06, 1.9, 1.0, '#3b2a24', 2.28, .02, 33.6);                                                                    // the back door into the shop
+    for (let i = 0; i < 7; i++) if (i !== 3) cyl(.04, .04, 1.1, PAL.bamboo, kx0, .02, 30.6 + i * .8, 5);              // a bamboo fence, open in the middle
+    box(.04, .04, 5.0, PAL.bamboo, kx0, .9, 33.0); box(.04, .04, 5.0, PAL.bamboo, kx0, .5, 33.0);
+    L.STOVES = [];
+    for (const [sx, sz] of [[1.5, 31.0], [1.5, 32.1]]) {                                                                // two charcoal bucket stoves, a pot on each
+      cyl(.24, .2, .38, '#a0522d', sx, .03, sz, 10); mesh(new THREE.CircleGeometry(.17, 10), new THREE.MeshBasicMaterial({ color: '#ff8a3a' }), sx, .42, sz, { cast: false }).rotation.x = -Math.PI / 2;
+      cyl(.26, .22, .34, '#9aa3ad', sx, .44, sz, 12); cyl(.27, .27, .03, '#7a828a', sx, .78, sz, 12); L.STOVES.push(new THREE.Vector3(sx, .85, sz));
+      solid(sx, sz, .5, .5);
+    }
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 3 - (i >> 1); j++) { const lg = cyl(.07, .07, .9, '#7a5038', -1.2 + j * .15, .05 + i * .13, 31.1, 6); lg.rotation.x = Math.PI / 2; } // firewood stacked
+    box(1.1, .1, .3, '#3b3040', -1.0, .02, 32.0);                                                                       // a sack of charcoal
+    solid(-1.0, 31.3, .7, 1.1);
+    for (const dz of [34.0, 34.7]) { cyl(.28, .26, .75, '#3f8fd0', 1.6, .03, dz, 12); mesh(new THREE.CircleGeometry(.25, 12), '#8fd3f0', 1.6, .79, dz, { cast: false }).rotation.x = -Math.PI / 2; solid(1.6, dz, .55, .55); } // water drums
+    L.WASH = [];
+    for (const [wx, wz] of [[-.3, 34.6], [.5, 35.2]]) {                                                                 // wash basins, cups and plates stacked by them
+      cyl(.32, .26, .16, '#c9d2dc', wx, .03, wz, 14); mesh(new THREE.CircleGeometry(.29, 14), '#bfeaff', wx, .17, wz, { cast: false }).rotation.x = -Math.PI / 2;
+      for (let k = 0; k < 4; k++) cyl(.05, .04, .08, '#fff6ea', wx + .4, .03 + k * .08, wz - .1, 8);
+      L.WASH.push({ x: wx, z: wz - .5, ry: 0 });
+    }
+    L.COOK = { x: .9, z: 31.55, ry: Math.PI / 2 };                                                                    // the cook between his stoves
+  }
+  {
+    // the loading yard (ကုန်ချတဲ့နေရာ): the morning pickup in from the market street, baskets of greens on its bed, crates and banana leaf piles
+    const tx = -6.4, tz = 31.4, g = new THREE.Group(); g.position.set(tx, .02, tz); scene.add(g); const o = { parent: g };
+    box(2.4, .5, 1.1, '#4f8f5a', 0, .18, 0, o); box(.9, .62, 1.06, '#4f8f5a', .8, .66, 0, o); box(.06, .36, .98, PAL.window, 1.26, .78, 0, o);      // cab + body
+    for (const z of [-.54, .54]) box(1.45, .24, .05, '#4f8f5a', -.42, .68, z, o); box(.05, .24, 1.1, '#4f8f5a', -1.17, .68, 0, o);                    // the bed's sides
+    for (const [x, z] of [[.75, .5], [.75, -.5], [-.75, .5], [-.75, -.5]]) { const w = mesh(new THREE.CylinderGeometry(.22, .22, .14, 10), '#2b2730', x, .22, z, o); w.rotation.x = Math.PI / 2; }
+    for (let i = 0; i < 4; i++) { const bx = -.95 + (i % 2) * .5, bz = i < 2 ? -.22 : .22; cyl(.2, .16, .26, '#b8925a', bx, .7, bz, 9, o); for (let k = 0; k < 3; k++) mesh(new THREE.IcosahedronGeometry(.08, 0), pick([PAL.leaf, PAL.leafLight, '#e0574f']), bx - .06 + k * .06, .98, bz, o); }
+    solid(tx, tz, 2.5, 1.2);
+    for (const [cx2, cz2] of [[-8.6, 33.6], [-8.0, 33.6], [-8.3, 33.6]]) for (let k = 0; k < 2; k++) box(.5, .3, .4, pick(['#e0574f', '#3f6fa8', '#f2c14e']), cx2, .02 + k * .3, cz2 + (cx2 === -8.3 ? .45 : 0)); // plastic crates
+    solid(-8.3, 33.8, 1.2, .9);
+    for (let i = 0; i < 6; i++) { const lf = mesh(new THREE.PlaneGeometry(1.0, .45), M('#6fa04a', { side: THREE.DoubleSide }), -4.2 + (i % 3) * .2, .05 + i * .03, 34.2 + (i >> 1) * .1); lf.rotation.set(-Math.PI / 2, 0, rnd() - .5); } // banana leaves for wrapping
+    for (const [bx, bz] of [[-5.2, 33.2], [-4.7, 33.5]]) { cyl(.22, .18, .28, '#b8925a', bx, .02, bz, 9); for (let k = 0; k < 3; k++) mesh(new THREE.IcosahedronGeometry(.08, 0), pick([PAL.leaf, '#e8954a', '#f2c14e']), bx - .06 + k * .06, .32, bz); solid(bx, bz, .45, .45); }
+    L.UNLOAD = new THREE.Vector3(tx - 1.6, 0, tz);                                                                     // where the porters take the baskets off the back
+    L.SHED2_IN = [[-8.9, 29.5], [-8.9, 27.2], [-5.2, 27.2]];                                                           // round the back lane into shed 2's aisle
+  }
+
   // ---------- the ward primary school (အ.မ.က), across the market street from the tea shop: shut for Thingyan ----------
   // a long one-storey block, white over school green, a red zinc roof, its front on the yard; a wall all round, the gate onto
   // the market street; a swing and a slide in the yard, a notice on the gate: closed for the holidays

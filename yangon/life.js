@@ -3,7 +3,7 @@
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
 import { PAL } from '../world.js?v=7';
-import { ROAD } from './set.js?v=10';
+import { ROAD } from './set.js?v=11';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -115,6 +115,31 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const swinger = npc({ age: 'kid', hair: 'pigtails', topStyle: 'tee', bottom: 'skirt', hat: 'none' }), waiting = npc({ age: 'kid', hair: 'buzz', bottom: 'shorts', hat: 'none', x: L.SWING.position.x + .9, z: L.SWING.position.z + .6, ry: -2.4 });
   L.SWING.add(swinger.g); swinger.g.position.set(0, -.98 - .24, 0); swinger.g.rotation.y = 0; swinger.anim.setLoop('sit'); dayOnly.push(swinger, waiting);
   W.tick((dt, T) => { L.SWING.rotation.x = swinger.g.visible ? Math.sin(T * 2.3) * .5 : 0; if (swinger.g.visible && rnd() < dt * .15) waiting.anim.play(pick(['jump', 'wave', 'laugh'])); });
+
+  // ---------- behind the tea shop: the kitchen boys washing up, the cook at his stoves (smoke going up); the porters
+  // carrying the pickup's baskets on their heads round the back lane into the market ----------
+  const cook = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'none', x: L.COOK.x, z: L.COOK.z, ry: L.COOK.ry });
+  const washers = L.WASH.map(st => { const c = npc({ age: 'kid', hair: 'buzz', topStyle: 'tee', shirt: pick(['#e0574f', '#4fb3d9', '#f2c14e']), bottom: 'longyi', hat: 'none', x: st.x, z: st.z, ry: st.ry }); c.anim.setLoop('squat'); return c; });
+  knot(washers, true); dayOnly.push(cook, ...washers);
+  const puffM = new THREE.MeshBasicMaterial({ color: '#d9d2c4', transparent: true, opacity: .45, depthWrite: false });
+  const puffs = L.STOVES.flatMap(p0 => [0, 1, 2].map(k => { const m = W.keep(mesh(new THREE.SphereGeometry(.14, 8, 6), puffM, p0.x, p0.y, p0.z, { cast: false })); m.userData = { p0, t: k / 3 }; return m; }));
+  const headBasket = c => { const g = new THREE.Group(); c.g.add(g); g.position.set(0, 1.32, 0); cyl(.26, .2, .16, '#b8925a', 0, 0, 0, 10, { parent: g });
+    for (let k = 0; k < 5; k++) mesh(new THREE.IcosahedronGeometry(.08, 0), pick([PAL.leaf, PAL.leafLight, '#e0574f']), -.12 + (k % 3) * .12, .17, k > 2 ? .07 : -.05, { parent: g }); return g; };
+  const driver = npc({ age: 'adult', hair: 'short', topStyle: 'shirt', shirt: '#9aa3ad', bottom: 'longyi', hat: 'bucket', x: L.UNLOAD.x + 3.6, z: L.UNLOAD.z + 1.0, ry: -2.6 }); dayOnly.push(driver);
+  async function porter(c, delay) {
+    const load = headBasket(c); c.lean = true; await wait(delay);
+    for (;;) {
+      load.visible = true; if (rnd() < .3) say(c, pick(['ဖယ်ပါ~ ဖယ်ပါ~', 'ဟင်းရွက် ရောက်ပြီ~']), 1.6, 2.1);
+      await walk(c, L.SHED2_IN, 'carry'); load.visible = false; c.anim.play('wave'); await wait(1.2);
+      await walk(c, [...L.SHED2_IN].reverse().slice(1).concat([[L.UNLOAD.x, L.UNLOAD.z + (rnd() - .5) * .6]])); c.g.rotation.y = Math.PI / 2; await wait(1.5 + rnd() * 2);
+    }
+  }
+  const porters = [0, 1].map(i => npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: pick(['#fff6ea', '#c8a070']), bottom: 'longyi', hat: 'none', x: L.UNLOAD.x, z: L.UNLOAD.z + i * .5 }));
+  porters.forEach((c, i) => { dayOnly.push(c); porter(c, i * 5); });
+  W.tick(dt => { // smoke from the stoves, drifting up and fading
+    for (const m of puffs) { const u = m.userData; u.t = (u.t + dt * .35) % 1; m.visible = cook.g.visible; m.position.set(u.p0.x + Math.sin(u.t * 5) * .12, u.p0.y + u.t * 1.6, u.p0.z + u.t * .3); m.scale.setScalar(.6 + u.t * 1.6); }
+    puffM.opacity = .4; if ((cook.stirT = (cook.stirT ?? 3) - dt) < 0) { cook.stirT = 3 + rnd() * 4; if (cook.g.visible && !cook.anim.one) cook.anim.play(pick(['call', 'wave'])); }
+  });
 
   // ---------- the YBS bus (yellow, 2017–) westbound in the kerb lane: stops, the conductor calls, people get on and off ----------
   const BUS = { len: 4.6, lane: ROAD.west[0], speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
