@@ -3,7 +3,7 @@
 // Era 2015–19: floats still allowed. The stage is a generic city mandat — no officials, no state symbols (STORY.md §၈).
 // Favour #9: the water crew will give you a brass sprinkler for the kids' mandat, once you've been soaked at all three stages.
 import { createWorld, PAL } from '../world.js?v=5';
-import { shwedagon, MM } from './set.js?v=5';
+import { shwedagon, MM } from './set.js?v=6';
 import { createHud, play } from './hud.js?v=2';
 import { makePlayer } from './wardrobe.js?v=2';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=2';

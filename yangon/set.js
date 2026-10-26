@@ -32,6 +32,7 @@ const RECTS = [
 ];
 export const ground = (x, z) => { for (const r of RECTS) if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return r.h; return .01; };
 export const AREAS = [ // for the minimap and the "you are here" toast
+  { id: 7, short: '', name: '① ရပ်ကွက် မူလတန်းကျောင်း', x0: -10, x1: -5.3, z0: .4, z1: 5.8, c: '#cfe6c4' },
   { id: 1, short: '①', name: '① အိမ်နဲ့ လမ်းကြား', x0: -10, x1: 10.6, z0: -10, z1: 5.8, c: '#f4c9a8' },
   { id: 2, short: '', name: '② ရပ်ကွက်လမ်းမ', x0: -10, x1: 34, z0: 5.8, z1: 13.0, c: '#c9b6d6' },
   { id: 2, short: '②', name: '② ရပ်ကွက်လမ်းမ', x0: 10.6, x1: 34, z0: 0, z1: 5.8, c: '#e9c8d8' },
@@ -156,7 +157,8 @@ export function buildSet(W) {
     return { g, balconies, bal: (u, f) => balconies.find(b => b.u === u && b.f === f) };
   }
   L.flatsA = flats(-3.6, -6.6, 4, 0, '#efdcc0', 32);            // along the back lane
-  flats(-7.3, .1, 4, Math.PI / 2, '#cfe3d2', 18);               // along the side lane
+  flats(-7.3, -2.5, 2, Math.PI / 2, '#cfe3d2', 18);             // along the side lane (U Ba Tin's below)
+
 
   // ---------- ① home: two-storey timber house (ပျဉ်ထောင်အိမ်), zinc roof, porch ----------
   const plank = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#a8744a'; g.fillRect(0, 0, 64, 64);
@@ -276,6 +278,42 @@ export function buildSet(W) {
   box(1.1, .55, .6, '#86b96d', 27.4, .3, 5.2); for (const s of [-1, 1]) mesh(new THREE.TorusGeometry(.2, .04, 6, 12), '#2b2730', 27.4 + s * .35, .3, 5.52, {});
   for (let i = 0; i < 5; i++) { const c = cyl(.03, .03, 1, '#b8a060', 27.0 + i * .08, .85, 5.0, 5); c.rotation.z = .25; }
   solid(27.4, 5.2, 1.1, .6);
+
+  // ---------- ① the ward primary school (အ.မ.က), across the street from the big tea shop: shut for Thingyan ----------
+  // a long one-storey block, white over school green, a red zinc roof; a low wall and an iron gate onto the pavement,
+  // a swing and a slide in the front yard, a notice on the gate: closed for the holidays
+  {
+    const x0 = -9.8, x1 = -5.3, z0 = .5, z1 = 5.6, cx = (x0 + x1) / 2;
+    box(x1 - x0, .02, z1 - z0, '#d9c8a8', cx, 0, (z0 + z1) / 2, { cast: false });                               // the swept yard
+    const wall = (a, b, z) => { box(b - a, .7, .16, '#fbf4e6', (a + b) / 2, .02, z); box(b - a + .04, .06, .2, '#4f8f5a', (a + b) / 2, .72, z); solid((a + b) / 2, z, b - a, .16); };
+    wall(x0, cx - .8, z1); wall(cx + .8, x1, z1); wall(x0, x1, z0);
+    for (const x of [x0, x1]) { box(.16, .7, z1 - z0, '#fbf4e6', x, .02, (z0 + z1) / 2); box(.2, .06, z1 - z0 + .04, '#4f8f5a', x, .72, (z0 + z1) / 2); solid(x, (z0 + z1) / 2, .16, z1 - z0); }
+    for (const s of [-1, 1]) box(.22, 1.3, .22, '#fbf4e6', cx + s * .85, .02, z1);
+    mesh(new THREE.PlaneGeometry(1.5, .95), grilleM(2, 1), cx, .55, z1 + .02);                                       // the iron gate, shut
+    mesh(new THREE.PlaneGeometry(.9, .5), new THREE.MeshLambertMaterial({ map: textTex('သင်္ကြန် ကျောင်းပိတ်ရက်', '#fff6ea', '#c8553d', 256, 140, 30) }), cx, .8, z1 + .05, { cast: false });
+    const bz = 2.0, bw = x1 - x0 - .5, bd = 2.2, H = 1.6;                                                             // the classroom block
+    box(bw, H, bd, '#fbf4e6', cx, .02, bz); box(bw + .02, .7, bd + .02, '#4f8f5a', cx, .02, bz);
+    for (let i = 0; i < 4; i++) { const x = x0 + .7 + i * 1.05; box(.6, .55, .06, '#3b5a4a', x, .8, bz + bd / 2 + .01); box(.64, .06, .1, '#d9cdb8', x, .76, bz + bd / 2 + .04); } // windows with green shutters
+    box(.7, 1.15, .07, '#6b4a32', x1 - .7, .02, bz + bd / 2 + .01);                                                  // the door
+    box(bw + .5, .06, .9, '#c8553d', cx, H + .02, bz + bd / 2 + .3); gable(cx, H + .05, bz, bw + .5, bd * .62, .3, M('#c8553d', { flatShading: true }));
+    mesh(new THREE.PlaneGeometry(bw - .2, .42), new THREE.MeshLambertMaterial({ map: textTex('အ.မ.က (၁၂) · အခြေခံပညာ မူလတန်းကျောင်း', '#4f8f5a', '#fff6ea', 512, 64, 30) }), cx, H - .26, bz + bd / 2 + .03, { cast: false });
+    solid(cx, bz, bw, bd);
+    { // the swing (ဒန်း) and a little slide
+      const sx = x0 + 1.0, sz = 4.3;
+      for (const s of [-1, 1]) { const l = cyl(.04, .04, 1.5, '#e0a84f', sx + s * .55, .02, sz, 5); l.rotation.z = s * .12; }
+      box(1.3, .06, .06, '#e0a84f', sx, 1.45, sz);
+      const sw = W.keep(new THREE.Group()); sw.position.set(sx, 1.45, sz); scene.add(sw); L.SWING = sw;
+      for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.01, .01, 1.0, 3), '#5a5560', s * .2, -.5, 0, { parent: sw });
+      box(.5, .05, .22, '#3f6fa8', 0, -1.03, 0, { parent: sw });
+      solid(sx, sz, 1.3, .4);
+      const lx = x1 - 1.0, lz = 4.4;
+      box(.5, .9, .5, '#3f8fd0', lx, .02, lz - .5); const sl = box(.45, .05, 1.2, '#f2c14e', lx, .5, lz + .2); sl.rotation.x = .6;
+      for (let i = 0; i < 4; i++) box(.4, .04, .08, '#8f8794', lx, .2 + i * .2, lz - .78);
+      solid(lx, lz - .2, .6, 1.1);
+    }
+    padauk(cx + .3, 4.6, .6);                                                                                        // shade over the yard
+    L.SCHOOL = new THREE.Vector3(cx, 0, z1 + .5);
+  }
 
   // ---------- behind the shops: walled compounds (ခြံဝင်း), a small chinlone lot, a condo going up ----------
   const wallM = '#e9e1d2';
@@ -518,7 +556,7 @@ export function buildSet(W) {
   box(.5, .6, .4, '#9aa3ad', 1.6, 2.4, -3.55);
   const off = (v, x = 0, y = 0, z = 0) => v.clone().add(new THREE.Vector3(x, y, z));
   for (const [a, b, d] of [[p1, p2, .6], [off(p1, 0, -.12), off(p2, 0, -.12), .9], [p2, p3, .55], [off(p2, 0, -.1), off(p3, 0, -.1), .8], [p1, p4, .7], [off(p1, .2), off(p4, .2), .95], [p4, p5, .6], [off(p4, 0, -.1), off(p5, 0, -.1), .85]]) sag(a, b, d);
-  for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.75, 3.7, .6], .25], [p5, [-5.75, 4.4, 3.4], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
+  for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.6, 1.8, 1.4], .25], [p5, [-5.6, 1.8, 2.8], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
   const north = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x, 6.3])), south = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x + .4, 12.7], 3.3));
   north.forEach((p, i) => i % 2 || lamp(p, 0, 1)); south.forEach((p, i) => i % 2 && lamp(p, 0, -1)); // lamps over the main street, staggered
   for (let i = 0; i + 1 < north.length; i++) { sag(north[i], north[i + 1], .6); sag(off(north[i], 0, -.12), off(north[i + 1], 0, -.12), .85); sag(south[i], south[i + 1], .5); }
@@ -528,7 +566,7 @@ export function buildSet(W) {
     for (let i = 1; i < 16; i++) { const p = cv.getPoint(i / 16); const t = mesh(new THREE.ConeGeometry(.12, .24, 3), pick([PAL.padauk, PAL.pink, PAL.mint, '#9fb7e8', PAL.red]), p.x, p.y - .14, p.z, { cast: false }); t.rotation.x = Math.PI; }
   };
   for (let i = 0; i < north.length; i += 2) bunting(off(north[i], 0, -.3), off(south[i], 0, -.3), .5); // paper flags across the street, Thingyan colours
-  cyl(.05, .06, 3.2, PAL.bamboo, -1.1, .02, -.5, 6); bunting(new THREE.Vector3(-5.75, 3.4, 2.4), new THREE.Vector3(-1.1, 3.1, -.5), .5);
+  cyl(.05, .06, 3.2, PAL.bamboo, -1.1, .02, -.5, 6); bunting(new THREE.Vector3(-5.0, 3.3, 1.4), new THREE.Vector3(-1.1, 3.1, -.5), .5);
   bunting(new THREE.Vector3(12, 3.0, 12.8), new THREE.Vector3(14.6, 2.8, 19.2), .4); // down the market street
   bunting(new THREE.Vector3(-3.6, 2.4, 15.6), new THREE.Vector3(10, 2.4, 15.6), .3); bunting(new THREE.Vector3(-8, 2.4, 22.2), new THREE.Vector3(10, 2.4, 22.2), .3); // over the market lanes
 

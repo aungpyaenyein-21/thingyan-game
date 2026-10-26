@@ -3,7 +3,7 @@
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
 import { PAL } from '../world.js?v=5';
-import { ROAD } from './set.js?v=5';
+import { ROAD } from './set.js?v=6';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -110,6 +110,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   // the big tea shop's terrace: a few people over tea, talking (gone home after dark like the market)
   const terrace = L.TERRACE.filter((_, i) => i !== 2).map(st => { const c = npc({ age: pick(['adult', 'adult', 'elder']), x: st.x, z: st.z, ry: st.ry }); c.g.position.y = st.y; c.anim.setLoop(rnd() < .4 ? 'eat' : 'sit'); dayOnly.push(c); return c; });
   knot(terrace.slice(0, 2), true); 
+
+  // ---------- ① the school's shut for Thingyan, but the yard isn't: a girl on the swing, her little brother waiting his turn ----------
+  const swinger = npc({ age: 'kid', hair: 'pigtails', topStyle: 'tee', bottom: 'skirt', hat: 'none' }), waiting = npc({ age: 'kid', hair: 'buzz', bottom: 'shorts', hat: 'none', x: L.SWING.position.x + .9, z: L.SWING.position.z + .6, ry: -2.4 });
+  L.SWING.add(swinger.g); swinger.g.position.set(0, -.98 - .24, 0); swinger.g.rotation.y = 0; swinger.anim.setLoop('sit'); dayOnly.push(swinger, waiting);
+  W.tick((dt, T) => { L.SWING.rotation.x = swinger.g.visible ? Math.sin(T * 2.3) * .5 : 0; if (swinger.g.visible && rnd() < dt * .15) waiting.anim.play(pick(['jump', 'wave', 'laugh'])); });
 
   // ---------- the YBS bus (yellow, 2017–) westbound in the kerb lane: stops, the conductor calls, people get on and off ----------
   const BUS = { len: 4.6, lane: ROAD.west[0], speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
