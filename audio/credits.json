@@ -9,11 +9,19 @@
  },
  "crowd": {
   "file": "audio/crowd.mp3",
-  "what": "လူစကားပြောသံ (ဈေး၊ လူများတဲ့နေရာ)",
-  "title": "442697-SBssa-Crowd Talking 003.wav",
-  "license": "CC0",
-  "page": "https://commons.wikimedia.org/wiki/File:442697-SBssa-Crowd_Talking_003.wav",
-  "author": "SoundSnap"
+  "what": "လူစကားပြောသံ (ရန်ကုန် ဘိုချုပ်ဈေး)",
+  "title": "Q5J4+673, Rangoun, Myanmar (Birmanie) - Scott Market ambience",
+  "license": "Public domain",
+  "page": "https://archive.org/details/aporee_66201_76544",
+  "author": "Flavien Gillié"
+ },
+ "night": {
+  "file": "audio/night.mp3",
+  "what": "ည ပုရစ်သံ",
+  "title": "Night original format.wav",
+  "license": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Night_original_format.wav",
+  "author": "Fortunamarco2003"
  },
  "traffic": {
   "file": "audio/traffic.mp3",
@@ -106,10 +114,10 @@
  "dog": {
   "file": "audio/dog.mp3",
   "what": "ခွေးဟောင်သံ",
-  "title": "Bark (avk).wav",
-  "license": "CC0",
-  "page": "https://commons.wikimedia.org/wiki/File:Bark_(avk).wav",
-  "author": "Luce VERGNEAUX"
+  "title": "Dog barking.webm",
+  "license": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Dog_barking.webm",
+  "author": "User:Dr. Nono YesMaybe"
  },
  "horn": {
   "file": "audio/horn.mp3",
@@ -129,7 +137,15 @@
  },
  "bell": {
   "file": "audio/bell.mp3",
-  "what": "ခေါင်းလောင်း (ကျောင်း · ရေခဲချောင်းလှည်း)",
+  "what": "ဘုန်းကြီးကျောင်း ခေါင်းလောင်း (အင်းဝ)",
+  "title": "Ava, Birmanie - Bell at Ava monastry Maha Aung Mye Bon Zan",
+  "license": "CC BY-NC 3.0",
+  "page": "https://archive.org/details/aporee_15696_18255",
+  "author": "Flavien Gillié"
+ },
+ "handbell": {
+  "file": "audio/handbell.mp3",
+  "what": "လက်ခေါင်းလောင်း (ရေခဲချောင်းလှည်း)",
   "title": "274316 the-very-real-horst ghanta-leather-mallet-2015-05-16.wav",
   "license": "CC0",
   "page": "https://commons.wikimedia.org/wiki/File:274316_the-very-real-horst_ghanta-leather-mallet-2015-05-16.wav",
@@ -138,18 +154,18 @@
  "splash": {
   "file": "audio/splash.mp3",
   "what": "ရေပုံးနဲ့ ပက်သံ",
-  "title": "Wav splash.wav",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Wav_splash.wav",
-  "author": "5343953upjs"
+  "title": "Jump into Water (Gravity Sound).mp3",
+  "license": "CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Jump_into_Water_(Gravity_Sound).mp3",
+  "author": "Gravity Sound"
  },
  "hit": {
   "file": "audio/hit.mp3",
   "what": "ရေထိသံ",
-  "title": "Wav splash.wav",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Wav_splash.wav",
-  "author": "5343953upjs"
+  "title": "Jump into Water (Gravity Sound).mp3",
+  "license": "CC BY 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Jump_into_Water_(Gravity_Sound).mp3",
+  "author": "Gravity Sound"
  },
  "squirt": {
   "file": "audio/squirt.mp3",

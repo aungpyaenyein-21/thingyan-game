@@ -7,7 +7,7 @@ import { shwedagon, MM } from './set.js?v=2';
 import { createHud, play } from './hud.js?v=2';
 import { makePlayer } from './wardrobe.js?v=2';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=2';
-import { createSound } from '../sound.js?v=2';
+import { createSound } from '../sound.js?v=3';
 
 const S = load(); S.at = 'downtown';
 const save = () => store(S);

@@ -1,25 +1,28 @@
-// sound.js — the soundscape from real recordings (audio/*.mp3, cut from CC0 / CC BY-SA files on Wikimedia Commons; who made
-// each one is in audio/credits.json and on the in-game credits panel). No music yet.
-// Beds loop quietly under everything and follow where you are (the Shwedagon crows-bells-voices by day, people talking,
-// traffic only near a vehicle, the football crowd on the tea-shop TV); creatures and effects play as one-shots, placed in
+// sound.js — the soundscape from real recordings (audio/*.mp3, cut from free-licence files on Wikimedia Commons and from
+// radio aporee field recordings made in Myanmar (Internet Archive); who made each one is in audio/credits.json and on the
+// in-game credits panel). No music yet.
+// Beds loop quietly under everything and follow where you are (the Shwedagon crows-bells-voices by day, Scott Market talk
+// where people are, crickets at night, traffic only near a vehicle, the football crowd on the tea-shop TV); creatures and effects play as one-shots, placed in
 // the world so they pan and fade with distance. Audio starts on the first tap or key (browser rule).
 export const ENABLED = true;
-const FILES = { pagoda: 'pagoda', crowd: 'crowd', traffic: 'traffic', stadium: 'stadium', gecko: 'gecko', dog: 'dog', horn: 'horn', bike: 'bike',
-  bell: 'bell', splash: 'splash', hit: 'hit', squirt: 'squirt', sparrow: ['sparrow1', 'sparrow2', 'sparrow3', 'sparrow4'], crow: ['crow1', 'crow2', 'crow3', 'crow4'] };
-const BEDS = ['pagoda', 'crowd', 'traffic', 'stadium'];
-const url = name => new URL(`./audio/${name}.mp3`, import.meta.url).href;
+const FILES = { pagoda: 'pagoda', crowd: 'crowd', night: 'night', traffic: 'traffic', stadium: 'stadium', gecko: 'gecko', dog: 'dog', horn: 'horn', bike: 'bike',
+  bell: 'bell', handbell: 'handbell', splash: 'splash', hit: 'hit', squirt: 'squirt', sparrow: ['sparrow1', 'sparrow2', 'sparrow3', 'sparrow4'], crow: ['crow1', 'crow2', 'crow3', 'crow4'] };
+const BEDS = ['pagoda', 'crowd', 'night', 'traffic', 'stadium'];
+const url = name => new URL(`./audio/${name}.mp3?v=3`, import.meta.url).href; // bump when the files change
 
 // for the test page: every sound, where it plays
 export const CATALOG = [
   { key: 'pagoda', kind: 'loop', name: 'ဘုရား/ကျောင်း နောက်ခံ (ကျီး၊ ခေါင်းလောင်း၊ လူသံ)', where: 'နေ့ဘက် အပြင် တိုးတိုး — ဘုန်းကြီးကျောင်းနား ကျယ်' },
-  { key: 'crowd', kind: 'loop', name: 'လူစကားပြောသံ', where: 'လူများတဲ့နေရာ၊ ဈေးထဲ (ညဘက် ဈေးပိတ်ရင် မရှိ)' },
+  { key: 'crowd', kind: 'loop', name: 'လူစကားပြောသံ (ရန်ကုန် ဘိုချုပ်ဈေး)', where: 'လူများတဲ့နေရာ၊ ဈေးထဲ (ညဘက် ဈေးပိတ်ရင် မရှိ)' },
+  { key: 'night', kind: 'loop', name: 'ည ပုရစ်သံ', where: 'ညဘက် အပြင်' },
   { key: 'traffic', kind: 'loop', name: 'ကားသံ', where: 'ကား / ဘတ်စ်ကား အနားရောက်မှ' },
   { key: 'stadium', kind: 'loop', name: 'TV ဘောလုံးပွဲ ပရိသတ်', where: 'လက်ဖက်ရည်ဆိုင်ထဲ' },
   { key: 'sparrow', kind: 'once', name: 'စာကလေး တွန်သံ', where: 'နေ့ဘက် အပြင် (မနက် ပိုများ)' },
   { key: 'crow', kind: 'once', name: 'ကျီးအာသံ', where: 'နေ့ဘက် အပြင်' },
   { key: 'gecko', kind: 'once', name: 'တောက်တဲ့ အော်သံ', where: 'ညဘက် (မိနစ်ဝက်တစ်ခါလောက်)' },
   { key: 'dog', kind: 'once', name: 'ခွေးဟောင်သံ', where: 'ညဘက် ပိုများ၊ နေ့ဘက် တခါတလေ' },
-  { key: 'bell', kind: 'once', name: 'ခေါင်းလောင်း', where: 'ဘုန်းကြီးကျောင်း (ထိုးရင်/မနက်) · ရေခဲချောင်းလှည်း (အသံမြင့်)' },
+  { key: 'bell', kind: 'once', name: 'ဘုန်းကြီးကျောင်း ခေါင်းလောင်း', where: 'ဘုန်းကြီးကျောင်းနား (မနက် ပိုများ)' },
+  { key: 'handbell', kind: 'fx', name: 'လက်ခေါင်းလောင်း', where: 'ရေခဲချောင်းလှည်း' },
   { key: 'splash', kind: 'fx', name: 'ရေပုံးနဲ့ ပက်သံ', where: 'ရေပုံးနဲ့ ပက်ရင် · ဝေးဝေးက ရေကစားသံ (တိုး)' },
   { key: 'squirt', kind: 'fx', name: 'ရေသေနတ်သံ', where: 'ရေသေနတ်နဲ့ ပက်ရင်' },
   { key: 'hit', kind: 'fx', name: 'ရေထိသံ', where: 'ရေက လူကို ထိရင်' },
@@ -34,9 +37,9 @@ export async function showCredits() {
     box = document.createElement('div'); box.id = 'credits'; box.className = 'panel'; document.body.appendChild(box);
     box.addEventListener('click', e => { e.stopPropagation(); if (e.target === box || e.target.dataset.close != null) box.hidden = true; });
   }
-  const c = await fetch(new URL('./audio/credits.json', import.meta.url)).then(r => r.json()).catch(() => ({}));
+  const c = await fetch(new URL('./audio/credits.json?v=3', import.meta.url)).then(r => r.json()).catch(() => ({}));
   const seen = new Map(); for (const v of Object.values(c)) { const k = v.page; if (!seen.has(k)) seen.set(k, { ...v, whats: new Set() }); seen.get(k).whats.add(v.what); }
-  box.innerHTML = '<b>အသံ — ကျေးဇူးတင်ပါတယ်</b><p>Wikimedia Commons ပေါ်က အခမဲ့ အသံဖိုင်တွေကို ဖြတ်ညှိပြီး သုံးထားပါတယ်။</p><ul></ul><button type="button" data-close>ပိတ်မယ်</button>';
+  box.innerHTML = '<b>အသံ — ကျေးဇူးတင်ပါတယ်</b><p>Wikimedia Commons နဲ့ radio aporee (Internet Archive — မြန်မာပြည်မှာ ဖမ်းထားတဲ့ အသံ) ပေါ်က အခမဲ့ အသံဖိုင်တွေကို ဖြတ်ညှိပြီး သုံးထားပါတယ်။</p><ul></ul><button type="button" data-close>ပိတ်မယ်</button>';
   const ul = box.querySelector('ul');
   for (const v of seen.values()) { const li = document.createElement('li'); const a = document.createElement('a'); a.href = v.page; a.target = '_blank'; a.rel = 'noopener'; a.textContent = v.title;
     li.append([...v.whats].join(' · ') + ' — ', a, ` · ${v.author} · ${v.license}`); ul.appendChild(li); }
@@ -87,7 +90,7 @@ export function createSound(W, { manual = false } = {}) {
     if (!started || !buf[k]) return; const o = out(pos, vol); if (!o) return;
     const s = ctx.createBufferSource(); s.buffer = pickOne(buf[k]); s.playbackRate.value = rate * rr(.96, 1.04); s.connect(o); s.start();
   }
-  const FX = { splash: [1], squirt: [.7], hit: [.6], horn: [.8], bike: [.8], bell: [.9], icebell: [.6, 'bell', 1.6] }; // name: [volume, sample?, rate]
+  const FX = { splash: [1], squirt: [.7], hit: [.6], horn: [.8], bike: [.8], bell: [.9], handbell: [.6], icebell: [.6, 'handbell', 1.6] }; // name: [volume, sample?, rate]
   function fx(name, pos) { if (muted) return; const f = FX[name]; if (f) shot(f[1] || name, pos, f[0], f[2] || 1); }
   function play(key) { start(); if (ctx.state === 'suspended') ctx.resume(); shot(key, null, 1); } // test page
 
@@ -100,6 +103,7 @@ export function createSound(W, { manual = false } = {}) {
     const night = e.night || 0, day = 1 - night, inn = !!e.inside, outside = inn ? 0 : 1, tea = e.inside === 'tea', morning = e.phase === 'morning' ? 1 : 0;
     setBed('pagoda', outside * day * (.12 + .5 * (e.kyaung || 0)));
     setBed('crowd', outside * ((e.crowd || 0) * .35 + (e.market || 0) * .35) + (tea ? .15 : 0));
+    setBed('night', outside * night * .45);
     setBed('traffic', outside * (e.engine || 0) * .6);
     setBed('stadium', tea ? .12 : 0);
     if (inn) return;
@@ -108,7 +112,7 @@ export function createSound(W, { manual = false } = {}) {
     if ((SCH.gecko -= dt) < 0) { SCH.gecko = rr(40, 75); if (night > .5) shot('gecko', null, .5); }
     if ((SCH.dog -= dt) < 0) { SCH.dog = rr(12, 30); if (night > .3 || R() < .25) shot('dog', null, .3); }
     if ((SCH.splash -= dt) < 0) { SCH.splash = rr(.8, 3); if ((e.water || 0) > .1) shot('splash', null, .15 * e.water, rr(.85, 1.1)); }
-    if ((SCH.bell -= dt) < 0) { SCH.bell = rr(20, 40); if ((e.kyaung || 0) > .1 && (morning || R() < .3)) shot('bell', null, .5 * e.kyaung); }
+    if ((SCH.bell -= dt) < 0) { SCH.bell = rr(45, 90); if ((e.kyaung || 0) > .1 && (morning || R() < .3)) shot('bell', null, .5 * e.kyaung); }
   }
   function setLoop(key, v) { start(); if (ctx.state === 'suspended') ctx.resume(); setBed(key, v); } // test page
   function toggle() {

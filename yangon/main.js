@@ -9,7 +9,7 @@ import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2'
 import { buildRooms } from './rooms.js?v=1';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=1';
-import { createSound } from '../sound.js?v=2';
+import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 19 }, view: 16 });

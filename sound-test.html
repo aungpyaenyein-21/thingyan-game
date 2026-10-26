@@ -56,7 +56,7 @@
 <main>
   <header>
     <h1>သင်္ကြန် ရပ်ကွက် — အသံစစ်</h1>
-    <p>ဂိမ်းထဲမှာ သုံးထားတဲ့ အသံ အကုန်ပါ။ Wikimedia Commons ပေါ်က အခမဲ့ အသံဖိုင် အစစ်တွေကို ဖြတ်ညှိထားတာပါ (အောက်ဆုံးမှာ credit)။ မကြိုက်တဲ့ အသံရှိရင် ဘယ်ဘက်က <b>နံပါတ်</b> (ဥပမာ B2) နဲ့ ပြောပေးပါ။</p>
+    <p>ဂိမ်းထဲမှာ သုံးထားတဲ့ အသံ အကုန်ပါ။ Wikimedia Commons နဲ့ radio aporee (မြန်မာပြည်မှာ ဖမ်းထားတဲ့ အသံ) ပေါ်က အခမဲ့ အသံဖိုင် အစစ်တွေကို ဖြတ်ညှိထားတာပါ (အောက်ဆုံးမှာ credit)။ မကြိုက်တဲ့ အသံရှိရင် ဘယ်ဘက်က <b>နံပါတ်</b> (ဥပမာ B2) နဲ့ ပြောပေးပါ။</p>
     <div class="bar">
       <button id="go" class="primary" type="button">▶ အသံ စဖွင့်</button>
       <button id="stop" type="button">■ အကုန်ရပ်</button>
@@ -94,7 +94,7 @@
 </main>
 
 <script type="module">
-  import { createSound, CATALOG } from './sound.js?v=2';
+  import { createSound, CATALOG } from './sound.js?v=3';
   const snd = createSound(null, { manual: true });
   const $ = id => document.getElementById(id);
   const DEFAULT = { pagoda: .4, crowd: .4, traffic: .5, stadium: .2 };
@@ -141,7 +141,7 @@
   $('go').addEventListener('click', () => { snd.start(); $('go').textContent = '✓ အသံ ဖွင့်ပြီး'; });
   $('stop').addEventListener('click', () => { stopScene(); allLoopsOff(); });
 
-  fetch(new URL('./audio/credits.json', import.meta.url)).then(r => r.json()).then(c => {
+  fetch(new URL('./audio/credits.json?v=3', import.meta.url)).then(r => r.json()).then(c => {
     const seen = new Map(); for (const v of Object.values(c)) { if (!seen.has(v.page)) seen.set(v.page, { ...v, whats: new Set() }); seen.get(v.page).whats.add(v.what); }
     for (const v of seen.values()) {
       const r = document.createElement('div'); r.className = 'row'; r.innerHTML = '<span class="id"></span><span class="name"></span><span class="ctl"></span><span class="where"></span>';
