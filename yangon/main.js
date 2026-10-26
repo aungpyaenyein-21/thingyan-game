@@ -3,16 +3,16 @@
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=5';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=6';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=7';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=3';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=5';
+import { startLife } from './life.js?v=6';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
-const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -6, x1: 27, z0: -4, z1: 22.2 }, view: 16 });
+const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's — walk in from the street
@@ -214,7 +214,7 @@ W.onTool = t => { S.tool = t; save(); hud.tool(t); };
 W.addPet('dog', 'house', 3.6, -3.75);     // home dog on the porch step
 W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
 W.addPet('dog', 'walker', 0, -2.4);
-W.addPet('dog', 'shop', -3.7, 13.6);      // waiting by the tea shop for scraps
+W.addPet('dog', 'shop', 11.2, 30.0);      // waiting by the tea shop for scraps
 W.addPet('dog', 'shop', 7.6, 25.6);       // and by the mohinga pot
 W.addPet('dog', 'park', 30, 17.8);        // asleep in the shade at the pagoda
 W.addPet('cat', 'house', 28.6, 5.0);      // pharmacy step

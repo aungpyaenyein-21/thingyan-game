@@ -3,7 +3,7 @@
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
 import { PAL } from '../world.js?v=5';
-import { ROAD } from './set.js?v=6';
+import { ROAD } from './set.js?v=7';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -105,9 +105,9 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const s of [-1, 1]) { cyl(.1, .07, .07, '#fff6ea', tx + s * .14, .32, 14.4, 10); cyl(.085, .085, .01, '#d9a04a', tx + s * .14, .39, 14.4, 10); } // bowls of mohinga
   }
   // browsers squatting over the trays
-  for (const [x, z, ry] of [[-.4, 16.45, Math.PI], [2.2, 17.35, 0], [-.4, 23.05, Math.PI], [7.2, 23.95, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
+  for (const [x, z, ry] of [[-5.6, 16.45, Math.PI], [2.2, 17.35, 0], [-.4, 23.05, Math.PI], [7.2, 23.95, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
 
-  // the big tea shop's terrace: a few people over tea, talking (gone home after dark like the market)
+  // the big tea shop's terrace by the market street: a few people over tea, talking (gone home after dark like the market)
   const terrace = L.TERRACE.filter((_, i) => i !== 2).map(st => { const c = npc({ age: pick(['adult', 'adult', 'elder']), x: st.x, z: st.z, ry: st.ry }); c.g.position.y = st.y; c.anim.setLoop(rnd() < .4 ? 'eat' : 'sit'); dayOnly.push(c); return c; });
   knot(terrace.slice(0, 2), true); 
 
@@ -219,7 +219,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     [[BOUNDS.x0 - 2, 11.7], [BOUNDS.x1 + 2, 11.7]], [[BOUNDS.x1 + 2, 6.95], [BOUNDS.x0 - 2, 6.95]], // along each kerb
     [[BOUNDS.x0 - 2, 11.7], [-4.1, 11.7], [-3.6, 9.4], [-3.05, 6.9], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -2.4], [9.8, -2.4], [9.8, -10.4]],  // in on the eastbound side, across at the gap by the side lane, up it, along the back lane, out by the east lane
     [[9.8, -10.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.0, 6.95], [BOUNDS.x0 - 2, 6.95]], // …and the other way
-    [[13.6, 28.8], [13.6, 13.4], [13.8, 11.7], [BOUNDS.x1 + 2, 11.7]],                                            // down the market street (the ice cart keeps to the other side)
+    [[13.6, BOUNDS.z1 + 1], [13.6, 13.4], [13.8, 11.7], [BOUNDS.x1 + 2, 11.7]],                                            // down the market street (the ice cart keeps to the other side)
   ];
   async function cyclist(v, first) {
     for (let k = first; ; k++) {
@@ -295,11 +295,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   // people come into the ward along the main street from either end (off the map), and leave the same way
   const WEST = [[BOUNDS.x0 - .6, 12.2], ...SIDEWALK], EAST = [[BOUNDS.x1 + .6, 12.2], [14.6, 12.2], [13.4, 12.8]]; // on the pavement's edge, clear of the bikes (z 11.7)
   const way = () => pick([WEST, EAST]), MARKET_IN = [[12.6, 13.6], [12.6, 16.9]];
-  const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7]; // (lane 1 starts east of the big tea shop: only from -1.7 on)
+  const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
     const lz = laneI ? 23.5 : 16.9;
     if (laneI) await walk(c, [[12.6, 23.5]]);
-    for (const x of LANE_X.filter(x => laneI || x > -2.5).sort(() => rnd() - .5).slice(0, 2 + (rnd() * 2 | 0)).sort((a, b) => b - a)) {
+    for (const x of [...LANE_X].sort(() => rnd() - .5).slice(0, 2 + (rnd() * 2 | 0)).sort((a, b) => b - a)) {
       const side = rnd() < .5 ? -1 : 1; await walk(c, [[x, lz], [x, lz + side * .45]]); c.g.rotation.y = side < 0 ? Math.PI : 0;
       c.anim.setLoop('squat'); await wait(2 + rnd() * 3); c.anim.setLoop('idle'); if (rnd() < .4) c.anim.play('laugh');
       await wait(.6);
@@ -337,7 +337,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   async function lollyRun() {
     for (let up = true; ; up = !up) {
-      const z0 = up ? 13.6 : 28.4, z1 = up ? 28.4 : 13.6;
+      const z0 = up ? 13.6 : 32.1, z1 = up ? 32.1 : 13.6; // up the market street past the market to the tea shop and back
       for (let z = z0; up ? z < z1 : z > z1; z += up ? 3.7 : -3.7) {
         await walk(lolly, [[12.9, z + (up ? 3.7 : -3.7)]], 'push'); if (rnd() < .6) { say(lolly, 'ဒင် ဒင်~ ရေခဲချောင်း~', 2.2); W.onFx?.('icebell', lolly.g.position); await wait(2.6); }
       }

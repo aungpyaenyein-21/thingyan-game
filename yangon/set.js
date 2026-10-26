@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PAL } from '../world.js?v=5';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
-export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 29.2 };
+export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 37 };
 
 // ② the main street: two lanes each way (drive on the right), a row of white blocks down the middle, broken only where
 // it meets the side lane and the market street — the zebra crossings are there
@@ -19,27 +19,28 @@ const RECTS = [
   { x0: -10, x1: 34, z0: 5.8, z1: 6.6, h: .14, c: PAL.walk },          // its north sidewalk
   { x0: 10.6, x1: 34, z0: 4.4, z1: 5.8, h: .14, c: PAL.walk },         // the shop fronts' apron
   { x0: -10, x1: 34, z0: 12.2, z1: 13.0, h: .14, c: PAL.walk },        // south sidewalk
-  { x0: 11.8, x1: 14.2, z0: 13.0, z1: 29.2, h: .045, c: PAL.road },   // market street (cross street)
+  { x0: 11.8, x1: 14.2, z0: 13.0, z1: 37, h: .045, c: PAL.road },     // market street, on past the market to the tea shop and the school (cross street)
   { x0: -4.6, x1: 10.6, z0: -3.4, z1: -1.4, h: .05, c: '#cdc2b6' },    // ① back lane along the flats
   { x0: -4.6, x1: -2.6, z0: -3.4, z1: 5.8, h: .05, c: '#cdc2b6' },     // ① side lane out to the street
   { x0: 9.0, x1: 10.6, z0: -9.6, z1: -1.4, h: .05, c: '#cdc2b6' },     // east lane past the compounds
   { x0: 10.6, x1: 34, z0: -2.2, z1: -.4, h: .05, c: '#cdc2b6' },       // back lane behind the shops
-  { x0: -4.1, x1: 11.8, z0: 16.0, z1: 17.8, h: .05, c: '#bdb2a6' },    // ③ market lane 1 (the big tea shop takes the corner west of it)
-  { x0: -10, x1: -4.1, z0: 13.0, z1: 15.2, h: .08, c: '#d9cdb8' },      // the tea shop's tiled terrace on the pavement
+  { x0: -9.6, x1: 11.8, z0: 16.0, z1: 17.8, h: .05, c: '#bdb2a6' },    // ③ market lane 1
+  { x0: 9.8, x1: 11.8, z0: 30.2, z1: 35.8, h: .08, c: '#d9cdb8' },      // the tea shop's tiled terrace along the market street
   { x0: -9.6, x1: 11.8, z0: 22.6, z1: 24.4, h: .05, c: '#bdb2a6' },    // ③ market lane 2
   { x0: -9.5, x1: 9.9, z0: 18.8, z1: 21.8, h: .06, c: '#cfc8bc' },      // ③ concrete floor of market shed 1 (walk in)
   { x0: -9.5, x1: 9.9, z0: 25.6, z1: 28.8, h: .06, c: '#cfc8bc' },      // ③ …and shed 2
 ];
 export const ground = (x, z) => { for (const r of RECTS) if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return r.h; return .01; };
 export const AREAS = [ // for the minimap and the "you are here" toast
-  { id: 7, short: '', name: '① ရပ်ကွက် မူလတန်းကျောင်း', x0: -10, x1: -5.3, z0: .4, z1: 5.8, c: '#cfe6c4' },
+  { id: 8, short: '', name: '③ ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', x0: 2.4, x1: 11.8, z0: 29.6, z1: 37, c: '#f4b8b0' },
+  { id: 7, short: '', name: '④ ရပ်ကွက် မူလတန်းကျောင်း', x0: 14.6, x1: 26, z0: 29.6, z1: 37, c: '#cfe6c4' },
   { id: 1, short: '①', name: '① အိမ်နဲ့ လမ်းကြား', x0: -10, x1: 10.6, z0: -10, z1: 5.8, c: '#f4c9a8' },
   { id: 2, short: '', name: '② ရပ်ကွက်လမ်းမ', x0: -10, x1: 34, z0: 5.8, z1: 13.0, c: '#c9b6d6' },
   { id: 2, short: '②', name: '② ရပ်ကွက်လမ်းမ', x0: 10.6, x1: 34, z0: 0, z1: 5.8, c: '#e9c8d8' },
   { id: 6, short: '', name: 'ခြံဝင်းတွေ · ခြင်းလုံးကွင်း', x0: 10.6, x1: 34, z0: -10, z1: 0, c: '#d8d0a0' },
-  { id: 3, short: '③', name: '③ ဈေး', x0: -10, x1: 11.8, z0: 13.0, z1: 29.2, c: '#f2d39a' },
-  { id: 4, short: '④', name: '④ ဘုန်းကြီးကျောင်း', x0: 14.2, x1: 34, z0: 13.0, z1: 29.2, c: '#f6e7b8' },
-  { id: 3, short: '', name: '③ ဈေးလမ်း', x0: 11.8, x1: 14.2, z0: 13.0, z1: 29.2, c: '#b8a8c8' },
+  { id: 3, short: '③', name: '③ ဈေး', x0: -10, x1: 11.8, z0: 13.0, z1: 37, c: '#f2d39a' },
+  { id: 4, short: '④', name: '④ ဘုန်းကြီးကျောင်း', x0: 14.2, x1: 34, z0: 13.0, z1: 37, c: '#f6e7b8' },
+  { id: 3, short: '', name: '③ ဈေးလမ်း', x0: 11.8, x1: 14.2, z0: 13.0, z1: 37, c: '#b8a8c8' },
 ];
 export const areaAt = (x, z) => AREAS.find(a => x > a.x0 && x < a.x1 && z > a.z0 && z < a.z1);
 
@@ -157,7 +158,7 @@ export function buildSet(W) {
     return { g, balconies, bal: (u, f) => balconies.find(b => b.u === u && b.f === f) };
   }
   L.flatsA = flats(-3.6, -6.6, 4, 0, '#efdcc0', 32);            // along the back lane
-  flats(-7.3, -2.5, 2, Math.PI / 2, '#cfe3d2', 18);             // along the side lane (U Ba Tin's below)
+  flats(-7.3, .1, 4, Math.PI / 2, '#cfe3d2', 18);               // along the side lane
 
 
   // ---------- ① home: two-storey timber house (ပျဉ်ထောင်အိမ်), zinc roof, porch ----------
@@ -279,41 +280,6 @@ export function buildSet(W) {
   for (let i = 0; i < 5; i++) { const c = cyl(.03, .03, 1, '#b8a060', 27.0 + i * .08, .85, 5.0, 5); c.rotation.z = .25; }
   solid(27.4, 5.2, 1.1, .6);
 
-  // ---------- ① the ward primary school (အ.မ.က), across the street from the big tea shop: shut for Thingyan ----------
-  // a long one-storey block, white over school green, a red zinc roof; a low wall and an iron gate onto the pavement,
-  // a swing and a slide in the front yard, a notice on the gate: closed for the holidays
-  {
-    const x0 = -9.8, x1 = -5.3, z0 = .5, z1 = 5.6, cx = (x0 + x1) / 2;
-    box(x1 - x0, .02, z1 - z0, '#d9c8a8', cx, 0, (z0 + z1) / 2, { cast: false });                               // the swept yard
-    const wall = (a, b, z) => { box(b - a, .7, .16, '#fbf4e6', (a + b) / 2, .02, z); box(b - a + .04, .06, .2, '#4f8f5a', (a + b) / 2, .72, z); solid((a + b) / 2, z, b - a, .16); };
-    wall(x0, cx - .8, z1); wall(cx + .8, x1, z1); wall(x0, x1, z0);
-    for (const x of [x0, x1]) { box(.16, .7, z1 - z0, '#fbf4e6', x, .02, (z0 + z1) / 2); box(.2, .06, z1 - z0 + .04, '#4f8f5a', x, .72, (z0 + z1) / 2); solid(x, (z0 + z1) / 2, .16, z1 - z0); }
-    for (const s of [-1, 1]) box(.22, 1.3, .22, '#fbf4e6', cx + s * .85, .02, z1);
-    mesh(new THREE.PlaneGeometry(1.5, .95), grilleM(2, 1), cx, .55, z1 + .02);                                       // the iron gate, shut
-    mesh(new THREE.PlaneGeometry(.9, .5), new THREE.MeshLambertMaterial({ map: textTex('သင်္ကြန် ကျောင်းပိတ်ရက်', '#fff6ea', '#c8553d', 256, 140, 30) }), cx, .8, z1 + .05, { cast: false });
-    const bz = 2.0, bw = x1 - x0 - .5, bd = 2.2, H = 1.6;                                                             // the classroom block
-    box(bw, H, bd, '#fbf4e6', cx, .02, bz); box(bw + .02, .7, bd + .02, '#4f8f5a', cx, .02, bz);
-    for (let i = 0; i < 4; i++) { const x = x0 + .7 + i * 1.05; box(.6, .55, .06, '#3b5a4a', x, .8, bz + bd / 2 + .01); box(.64, .06, .1, '#d9cdb8', x, .76, bz + bd / 2 + .04); } // windows with green shutters
-    box(.7, 1.15, .07, '#6b4a32', x1 - .7, .02, bz + bd / 2 + .01);                                                  // the door
-    box(bw + .5, .06, .9, '#c8553d', cx, H + .02, bz + bd / 2 + .3); gable(cx, H + .05, bz, bw + .5, bd * .62, .3, M('#c8553d', { flatShading: true }));
-    mesh(new THREE.PlaneGeometry(bw - .2, .42), new THREE.MeshLambertMaterial({ map: textTex('အ.မ.က (၁၂) · အခြေခံပညာ မူလတန်းကျောင်း', '#4f8f5a', '#fff6ea', 512, 64, 30) }), cx, H - .26, bz + bd / 2 + .03, { cast: false });
-    solid(cx, bz, bw, bd);
-    { // the swing (ဒန်း) and a little slide
-      const sx = x0 + 1.0, sz = 4.3;
-      for (const s of [-1, 1]) { const l = cyl(.04, .04, 1.5, '#e0a84f', sx + s * .55, .02, sz, 5); l.rotation.z = s * .12; }
-      box(1.3, .06, .06, '#e0a84f', sx, 1.45, sz);
-      const sw = W.keep(new THREE.Group()); sw.position.set(sx, 1.45, sz); scene.add(sw); L.SWING = sw;
-      for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.01, .01, 1.0, 3), '#5a5560', s * .2, -.5, 0, { parent: sw });
-      box(.5, .05, .22, '#3f6fa8', 0, -1.03, 0, { parent: sw });
-      solid(sx, sz, 1.3, .4);
-      const lx = x1 - 1.0, lz = 4.4;
-      box(.5, .9, .5, '#3f8fd0', lx, .02, lz - .5); const sl = box(.45, .05, 1.2, '#f2c14e', lx, .5, lz + .2); sl.rotation.x = .6;
-      for (let i = 0; i < 4; i++) box(.4, .04, .08, '#8f8794', lx, .2 + i * .2, lz - .78);
-      solid(lx, lz - .2, .6, 1.1);
-    }
-    padauk(cx + .3, 4.6, .6);                                                                                        // shade over the yard
-    L.SCHOOL = new THREE.Vector3(cx, 0, z1 + .5);
-  }
 
   // ---------- behind the shops: walled compounds (ခြံဝင်း), a small chinlone lot, a condo going up ----------
   const wallM = '#e9e1d2';
@@ -385,7 +351,6 @@ export function buildSet(W) {
     const z = side < 0 ? z0 - .6 : z1 + .6;
     if (z1 > 20 && side > 0 && x < -5) continue;          // frond yard goes here
     if (z1 < 18 && side < 0 && x > 7) continue;            // mohinga stall goes here
-    if (z1 < 18 && x < -2) continue;                        // the big tea shop
     if (z1 > 20 && side < 0 && x > 2 && x < 6) continue;   // lights stall goes here
     pitch(x, z, side, KINDS[k++ % KINDS.length], rnd() < .5 ? 'tarp' : 'umbrella');
   }
@@ -394,7 +359,7 @@ export function buildSet(W) {
   // with the gaps between the pitches outside so you can step in from the lanes
   L.SHED_SEATS = [];
   const SHED_GOODS = [[PAL.leaf, PAL.leafLight, '#7a4a9a'], ['#f2c14e', '#e8954a', '#86b96d'], ['#d9776a', '#c8553d', '#e9a0a0'], ['#9aa3ad', '#c9d2dc'], ['#c8553d', '#e8954a', '#d9b98f']];
-  for (const [z0, z1, gapsS, gapsN] of [[18.8, 21.8, [3.4], [-7.0, 1.5]], [25.6, 28.8, [-1.8, .8, 3.4, 6.0], []]]) {
+  for (const [z0, z1, gapsS, gapsN] of [[18.8, 21.8, [-7.0, 3.4], [-7.0, 1.5]], [25.6, 28.8, [-1.8, .8, 3.4, 6.0], []]]) {
     const X = .2, w = 19.4, xa = X - w / 2, xb = X + w / 2;
     for (const [z, gaps] of [[z0 + .15, gapsS], [z1 - .15, gapsN]]) for (let x = xa + .2; x <= xb; x += 2.4) {
       if (gaps.some(g => Math.abs(g - x) < .7)) continue; // keep the way in clear
@@ -440,38 +405,7 @@ export function buildSet(W) {
     box(.9, .06, .1, tm, 0, .62, 0, o); box(.7, .08, .5, tm, -.05, .45, .72, o); box(.62, .32, .08, tm, -.05, .52, .95, o); box(.5, .06, .36, '#c8553d', -.05, .55, .72, o);
     solid(x + Math.sin(ry) * .35, z + Math.cos(ry) * .35, 1.2, 1.2); // the bike and its sidecar
   }
-  trishaw(-1.4, 13.8, .3); trishaw(.6, 13.8, -.2);
-  // the big tea shop (လက်ဖက်ရည်ဆိုင်ကြီး) on the market corner: an open-fronted hall under a zinc roof, its name board across
-  // the top, a couple of tables out on the tiled terrace by the pavement. Inside (rooms.js) it's packed.
-  {
-    const x0 = -10, x1 = -4.1, cx = (x0 + x1) / 2, w = x1 - x0, zf = 15.2, zb = 18.6, d = zb - zf, H = 2.7, cz = (zf + zb) / 2;
-    // open on two sides — onto the street (north) and onto the market lane (east, the side you see) — walled at the back and the west
-    box(w, H, .2, '#f3ead8', cx, .02, zb - .1); box(w, 1.0, .22, '#7fae9a', cx, .02, zb - .1);
-    box(.2, H, d, '#f3ead8', x0 + .1, .02, cz); box(.22, 1.0, d, '#7fae9a', x0 + .1, .02, cz);                     // the lower half green like every tea shop
-    box(w - .4, .06, d - .2, '#9a948c', cx, .03, cz, { cast: false });                                           // concrete floor
-    box(w - 1.9, 2.2, .06, '#4a3c3a', cx - .75, .08, zf + 1.5, { cast: false }); box(.06, 2.2, d - 1.6, '#4a3c3a', x1 - 1.5, .08, cz + .75, { cast: false }); // the dim inside beyond the front tables
-    for (const x of [x0 + .2, cx - 1.0, cx + 1.0, x1 - .1]) box(.16, H, .16, '#e9e1d2', x, .02, zf + .1);       // columns along the street side…
-    for (const z of [cz, zb - .2]) box(.16, H, .16, '#e9e1d2', x1 - .1, .02, z);                                // …and the lane side
-    box(w + .3, .14, d + .5, '#bdb6ae', cx, H + .02, cz - .1); gable(cx, H + .15, cz, w + .3, d * .62, .22);     // roof
-    const sign = (txt, bg, fg, W2, h, y) => [[cx, zf - .02, Math.PI, w - .2], [x1 + .02, cz, Math.PI / 2, d - .2]].forEach(([x, z, ry, len]) => { const ch = Math.round(512 * h / (len * W2)); mesh(new THREE.PlaneGeometry(len * W2, h), new THREE.MeshLambertMaterial({ map: textTex(txt, bg, fg, 512, ch, Math.round(ch * .62)) }), x, y, z, { cast: false }).rotation.y = ry; });
-    sign('ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', '#c8553d', '#ffe7a3', 1, .62, H - .2);                                 // the name board, on both open sides
-    sign('လက်ဖက်ရည် · ပလာတာ · ပေါက်စီ · မုန့်ဟင်းခါး', '#fbf4e6', '#5a3a8a', .94, .34, H - .72);
-    for (const tx of [cx - 1.6, cx]) { box(.7, .6, .5, '#a8744a', tx, .08, zf + .9); box(.76, .04, .56, '#c89a6a', tx, .66, zf + .9); cyl(.05, .05, .2, '#d9dde3', tx + .2, .7, zf + .85, 8); } // tables you can see from outside
-    for (const tz of [cz, zb - .9]) { box(.5, .6, .7, '#a8744a', x1 - .9, .08, tz); box(.56, .04, .76, '#c89a6a', x1 - .9, .66, tz); box(.16, .1, .12, '#e0302f', x1 - .9, .7, tz + .15); }
-    solid(cx, cz + .25, w, d - .5);
-    // the terrace: a striped awning, two tables with wooden chairs (life.js seats people there)
-    const aw = mesh(new THREE.BoxGeometry(w, .05, 2.3), new THREE.MeshLambertMaterial({ map: stripeTex('#fff1e0', '#4f8f5a') }), cx, 2.1, 14.1); aw.rotation.x = -.12;
-    for (const x of [x0 + .15, x1 - .15]) cyl(.04, .04, 2.0, '#8f8794', x, .08, 13.1, 5);
-    L.TERRACE = [];
-    for (const tx of [cx - 2.0, cx + 2.0]) {
-      box(.7, .54, .55, '#a8744a', tx, .08, 14.2); box(.76, .04, .6, '#c89a6a', tx, .62, 14.2);
-      cyl(.06, .06, .22, '#d9dde3', tx + .18, .66, 14.1, 8); box(.16, .1, .12, '#e0302f', tx - .15, .66, 14.3); // thermos of green tea, the red tissue box
-      for (const s of [-1, 1]) { const x = tx + s * .58; box(.38, .06, .38, '#8a5a3a', x, .44, 14.2); box(.06, .5, .38, '#8a5a3a', x + s * .19, .5, 14.2); for (const lx of [-.15, .15]) for (const lz of [-.15, .15]) box(.04, .36, .04, '#6b4a32', x + lx, .08, 14.2 + lz);
-        L.TERRACE.push({ x, z: 14.2, ry: s < 0 ? Math.PI / 2 : -Math.PI / 2, y: .26 }); }
-      solid(tx, 14.2, .7, .55);
-    }
-    L.TEA = new THREE.Vector3(x1 + .5, 0, 16.9); // in from the market lane
-  }
+  trishaw(-7.6, 13.8, -.4); trishaw(-5.6, 13.9, .3); trishaw(.6, 13.8, -.2);
   mesh(new THREE.PlaneGeometry(3.2, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး ↓', '#c8553d', '#ffe7a3', 512, 90, 56), side: THREE.DoubleSide }), 11.45, 2.7, 16.9, { cast: false }).rotation.y = Math.PI / 2;
   for (const s of [-1, 1]) cyl(.06, .06, 3, '#c8553d', 11.4, .02, 16.9 + s * 1.5, 6);
 
@@ -537,9 +471,78 @@ export function buildSet(W) {
   compound(15.4, 22.6, 25.1, 29.0, { c: '#e9c8d8', w: 3.4 });
   flats(29.6, 25.6, 2, 0, '#f4c9a8', 7);
 
+  // ---------- south of the market, either side of the market street: the big tea shop (west) and the ward primary school (east) ----------
+  box(21.6, .02, 7.4, '#cfae86', .9, 0, 33.3, { cast: false });                                                   // beaten earth behind the market
+  // the big tea shop (လက်ဖက်ရည်ဆိုင်ကြီး): an open hall under a zinc roof, open to the market (north) and to the street (east),
+  // its name board on every side you can see; two tables out on the terrace by the street. Inside (rooms.js) it's packed.
+  {
+    const x0 = 2.4, x1 = 9.8, cx = (x0 + x1) / 2, w = x1 - x0, zf = 30.2, zb = 35.8, d = zb - zf, H = 2.7, cz = (zf + zb) / 2;
+    box(w, H, .2, '#f3ead8', cx, .02, zb - .1); box(w, 1.0, .22, '#7fae9a', cx, .02, zb - .1);
+    box(.2, H, d, '#f3ead8', x0 + .1, .02, cz); box(.22, 1.0, d, '#7fae9a', x0 + .1, .02, cz);                     // the lower half green like every tea shop
+    box(w - .4, .06, d - .2, '#9a948c', cx, .03, cz, { cast: false });                                           // concrete floor
+    box(w - 1.9, 2.2, .06, '#4a3c3a', cx - .75, .08, zf + 1.5, { cast: false }); box(.06, 2.2, d - 1.6, '#4a3c3a', x1 - 1.5, .08, cz + .75, { cast: false }); // the dim inside beyond the front tables
+    for (const x of [x0 + .2, cx - 1.2, cx + 1.2, x1 - .1]) box(.16, H, .16, '#e9e1d2', x, .02, zf + .1);       // columns along the market side…
+    for (const z of [cz, zb - .2]) box(.16, H, .16, '#e9e1d2', x1 - .1, .02, z);                                // …and the street side
+    box(w + .3, .14, d + .5, '#bdb6ae', cx, H + .02, cz); gable(cx, H + .15, cz, w + .3, d * .62, .22);          // roof
+    const sign = (txt, bg, fg, W2, h, y) => [[cx, zf - .02, Math.PI, w - .2], [x1 + .02, cz, Math.PI / 2, d - .2], [cx, zb + .02, 0, w - .2]].forEach(([x, z, ry, len]) => {
+      const ch = Math.round(512 * h / (len * W2)); mesh(new THREE.PlaneGeometry(len * W2, h), new THREE.MeshLambertMaterial({ map: textTex(txt, bg, fg, 512, ch, Math.round(ch * .62)) }), x, y, z, { cast: false }).rotation.y = ry; });
+    sign('ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', '#c8553d', '#ffe7a3', 1, .62, H - .2);
+    sign('လက်ဖက်ရည် · ပလာတာ · ပေါက်စီ · မုန့်ဟင်းခါး', '#fbf4e6', '#5a3a8a', .94, .34, H - .72);
+    for (const tx of [cx - 2.0, cx - .4]) { box(.7, .6, .5, '#a8744a', tx, .08, zf + .9); box(.76, .04, .56, '#c89a6a', tx, .66, zf + .9); cyl(.05, .05, .2, '#e86aa6', tx + .2, .7, zf + .85, 8); } // tables you can see from outside
+    for (const tz of [cz, zb - .9]) { box(.5, .6, .7, '#a8744a', x1 - .9, .08, tz); box(.56, .04, .76, '#c89a6a', x1 - .9, .66, tz); box(.16, .1, .12, '#e0302f', x1 - .9, .7, tz + .15); }
+    solid(cx - .25, cz, w - .5, d);
+    // the terrace by the street: a striped awning, two tables with stools (life.js seats people there)
+    const aw = mesh(new THREE.BoxGeometry(2.1, .05, d), new THREE.MeshLambertMaterial({ map: stripeTex('#fff1e0', '#4f8f5a') }), 10.8, 2.1, cz); aw.rotation.z = -.12;
+    for (const z of [zf + .1, zb - .1]) cyl(.04, .04, 2.0, '#8f8794', 11.7, .08, z, 5);
+    L.TERRACE = [];
+    for (const tz of [31.6, 34.4]) {
+      box(.55, .54, .7, '#a8744a', 10.8, .08, tz); box(.6, .04, .76, '#c89a6a', 10.8, .62, tz);
+      cyl(.08, .09, .22, '#4f7fd0', 10.7, .66, tz + .18, 8); box(.12, .1, .16, '#e0302f', 10.9, .66, tz - .15); // the tea jug, the red tissue box
+      for (const s of [-1, 1]) { const z = tz + s * .62; box(.42, .05, .32, '#d9944a', 10.8, .4, z); for (const lx of [-.16, .16]) for (const lz of [-.12, .12]) box(.04, .32, .04, '#a8683a', 10.8 + lx, .08, z + lz);
+        L.TERRACE.push({ x: 10.8, z, ry: s < 0 ? 0 : Math.PI, y: .21 }); }
+      solid(10.8, tz, .55, .7);
+    }
+    L.TEA = new THREE.Vector3(10.4, 0, 33.0); // in off the terrace
+  }
+  // ---------- the ward primary school (အ.မ.က), across the market street from the tea shop: shut for Thingyan ----------
+  // a long one-storey block, white over school green, a red zinc roof, its front on the yard; a wall all round, the gate onto
+  // the market street; a swing and a slide in the yard, a notice on the gate: closed for the holidays
+  {
+    const x0 = 14.8, x1 = 25.8, z0 = 29.8, z1 = 36.7, gz = 34.6;
+    box(x1 - x0, .02, z1 - z0, '#d9c8a8', (x0 + x1) / 2, 0, (z0 + z1) / 2, { cast: false });                     // the swept yard
+    const along = (a, b, z) => { box(b - a, .7, .16, '#fbf4e6', (a + b) / 2, .02, z); box(b - a + .04, .06, .2, '#4f8f5a', (a + b) / 2, .72, z); solid((a + b) / 2, z, b - a, .16); };
+    const across = (x, a, b) => { box(.16, .7, b - a, '#fbf4e6', x, .02, (a + b) / 2); box(.2, .06, b - a + .04, '#4f8f5a', x, .72, (a + b) / 2); solid(x, (a + b) / 2, .16, b - a); };
+    along(x0, x1, z0); along(x0, x1, z1); across(x1, z0, z1); across(x0, z0, gz - .8); across(x0, gz + .8, z1);
+    for (const s of [-1, 1]) box(.22, 1.3, .22, '#fbf4e6', x0, .02, gz + s * .85);
+    mesh(new THREE.PlaneGeometry(1.5, .95), grilleM(2, 1), x0 - .02, .55, gz).rotation.y = Math.PI / 2;          // the iron gate, shut
+    mesh(new THREE.PlaneGeometry(.9, .5), new THREE.MeshLambertMaterial({ map: textTex('သင်္ကြန် ကျောင်းပိတ်ရက်', '#fff6ea', '#c8553d', 256, 140, 30), side: THREE.DoubleSide }), x0 - .05, .8, gz, { cast: false }).rotation.y = -Math.PI / 2;
+    const bx0 = 15.6, bx1 = 24.6, cx = (bx0 + bx1) / 2, bw = bx1 - bx0, bz = 31.5, bd = 2.4, H = 1.6, fz = bz + bd / 2;  // the classroom block, its front on the yard
+    box(bw, H, bd, '#fbf4e6', cx, .02, bz); box(bw + .02, .7, bd + .02, '#4f8f5a', cx, .02, bz);
+    for (let i = 0; i < 7; i++) { const x = bx0 + .8 + i * 1.2; if (i === 3) continue; box(.62, .55, .06, '#3b5a4a', x, .8, fz + .01); box(.66, .06, .1, '#d9cdb8', x, .76, fz + .04); } // windows with green shutters
+    box(.8, 1.15, .07, '#6b4a32', cx, .02, fz + .01);                                                                 // the door
+    box(bw + .5, .06, .9, '#c8553d', cx, H + .02, fz + .3); gable(cx, H + .05, bz, bw + .5, bd * .62, .3, M('#c8553d', { flatShading: true }));
+    mesh(new THREE.PlaneGeometry(6.4, .42), new THREE.MeshLambertMaterial({ map: textTex('အ.မ.က (၁၂) · အခြေခံပညာ မူလတန်းကျောင်း', '#4f8f5a', '#fff6ea', 768, 64, 34) }), cx, H - .26, fz + .03, { cast: false });
+    solid(cx, bz, bw, bd);
+    { // the swing (ဒန်း) and a little slide
+      const sx = 17.4, sz = 35.2;
+      for (const s of [-1, 1]) { const l = cyl(.04, .04, 1.5, '#e0a84f', sx + s * .55, .02, sz, 5); l.rotation.z = s * .12; }
+      box(1.3, .06, .06, '#e0a84f', sx, 1.45, sz);
+      const sw = W.keep(new THREE.Group()); sw.position.set(sx, 1.45, sz); scene.add(sw); L.SWING = sw;
+      for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(.01, .01, 1.0, 3), '#5a5560', s * .2, -.5, 0, { parent: sw });
+      box(.5, .05, .22, '#3f6fa8', 0, -1.03, 0, { parent: sw });
+      solid(sx, sz, 1.3, .4);
+      const lx = 23.2, lz = 34.6;
+      box(.5, .9, .5, '#3f8fd0', lx, .02, lz - .5); const sl = box(.45, .05, 1.2, '#f2c14e', lx, .5, lz + .2); sl.rotation.x = .6;
+      for (let i = 0; i < 4; i++) box(.4, .04, .08, '#8f8794', lx, .2 + i * .2, lz - .78);
+      solid(lx, lz - .2, .6, 1.1);
+    }
+    padauk(20.4, 35.6, .65);                                                                                         // shade over the yard
+    L.SCHOOL = new THREE.Vector3(x0 - .6, 0, gz);
+  }
+
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
-  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [32.6, 12.65, .8], [12.4, .6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
+  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [32.6, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
@@ -556,7 +559,7 @@ export function buildSet(W) {
   box(.5, .6, .4, '#9aa3ad', 1.6, 2.4, -3.55);
   const off = (v, x = 0, y = 0, z = 0) => v.clone().add(new THREE.Vector3(x, y, z));
   for (const [a, b, d] of [[p1, p2, .6], [off(p1, 0, -.12), off(p2, 0, -.12), .9], [p2, p3, .55], [off(p2, 0, -.1), off(p3, 0, -.1), .8], [p1, p4, .7], [off(p1, .2), off(p4, .2), .95], [p4, p5, .6], [off(p4, 0, -.1), off(p5, 0, -.1), .85]]) sag(a, b, d);
-  for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.6, 1.8, 1.4], .25], [p5, [-5.6, 1.8, 2.8], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
+  for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.75, 3.7, .6], .25], [p5, [-5.75, 4.4, 3.4], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
   const north = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x, 6.3])), south = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x + .4, 12.7], 3.3));
   north.forEach((p, i) => i % 2 || lamp(p, 0, 1)); south.forEach((p, i) => i % 2 && lamp(p, 0, -1)); // lamps over the main street, staggered
   for (let i = 0; i + 1 < north.length; i++) { sag(north[i], north[i + 1], .6); sag(off(north[i], 0, -.12), off(north[i + 1], 0, -.12), .85); sag(south[i], south[i + 1], .5); }
@@ -566,9 +569,9 @@ export function buildSet(W) {
     for (let i = 1; i < 16; i++) { const p = cv.getPoint(i / 16); const t = mesh(new THREE.ConeGeometry(.12, .24, 3), pick([PAL.padauk, PAL.pink, PAL.mint, '#9fb7e8', PAL.red]), p.x, p.y - .14, p.z, { cast: false }); t.rotation.x = Math.PI; }
   };
   for (let i = 0; i < north.length; i += 2) bunting(off(north[i], 0, -.3), off(south[i], 0, -.3), .5); // paper flags across the street, Thingyan colours
-  cyl(.05, .06, 3.2, PAL.bamboo, -1.1, .02, -.5, 6); bunting(new THREE.Vector3(-5.0, 3.3, 1.4), new THREE.Vector3(-1.1, 3.1, -.5), .5);
+  cyl(.05, .06, 3.2, PAL.bamboo, -1.1, .02, -.5, 6); bunting(new THREE.Vector3(-5.75, 3.4, 2.4), new THREE.Vector3(-1.1, 3.1, -.5), .5);
   bunting(new THREE.Vector3(12, 3.0, 12.8), new THREE.Vector3(14.6, 2.8, 19.2), .4); // down the market street
-  bunting(new THREE.Vector3(-3.6, 2.4, 15.6), new THREE.Vector3(10, 2.4, 15.6), .3); bunting(new THREE.Vector3(-8, 2.4, 22.2), new THREE.Vector3(10, 2.4, 22.2), .3); // over the market lanes
+  bunting(new THREE.Vector3(-8, 2.4, 15.6), new THREE.Vector3(10, 2.4, 15.6), .3); bunting(new THREE.Vector3(-8, 2.4, 22.2), new THREE.Vector3(10, 2.4, 22.2), .3); // over the market lanes
 
   // ---------- bus stop (ဘတ်စ်ကားမှတ်တိုင်) on the main street ----------
   L.STOP = new THREE.Vector3(2.6, 0, 6.2);
