@@ -6,7 +6,7 @@ import { CAT_COATS } from '../critters.js?v=4';
 import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=5';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
-import { buildRooms } from './rooms.js?v=2';
+import { buildRooms } from './rooms.js?v=3';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=4';
 import { createSound } from '../sound.js?v=3';
@@ -153,13 +153,19 @@ const PHASE = { morning: 'မနက်ခင်း', day: 'နေ့လယ်', 
 const phase = () => S.step === 'arrive' || (S.step === 'quests' && S.parts.length < 3) ? 'morning' : ['evening', 'done'].includes(S.step) ? 'evening' : S.step === 'build' || S.parts.length >= 6 ? 'late' : 'day';
 const life = startLife(W, { L, BOUNDS, ground, phase }); // the ward going about its day
 life.knot(oldMen, true);
-{ // and everyone else: the place is full — pairs over their tea, talking; a few on their own with a palata
+// a weekly journal held open (ဂျာနယ်): football, film stars — what everyone reads over their tea
+const JOURNAL = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 84; const q = c.getContext('2d'); q.fillStyle = '#f6f1e6'; q.fillRect(0, 0, 64, 84);
+  q.fillStyle = '#c8553d'; q.fillRect(4, 4, 56, 10); q.fillStyle = '#7a8fd0'; q.fillRect(6, 20, 26, 22); q.fillStyle = '#5a5560'; for (let y = 22; y < 80; y += 6) q.fillRect(y < 44 ? 36 : 6, y, y < 44 ? 22 : 52, 2);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }); })();
+const journal = (c, y = .56, z = .3) => { const g = new THREE.Group(); c.g.add(g); g.position.set(0, y, z); for (const s of [-1, 1]) mesh(new THREE.PlaneGeometry(.26, .34), JOURNAL, s * .12, 0, 0, { parent: g, cast: false }).rotation.y = -s * .4; return g; };
+{ // and everyone else: the place is full — pairs over their tea, talking; on their own, most have a journal open
   const look = () => ({ age: pick(['adult', 'adult', 'adult', 'elder']), hat: 'none' });
   for (const [t, both] of [[0, 0], [3, 0], [6, 1], [7, 0], [8, 1], [9, 1], [10, 1], [11, 0]]) {
     const tb = TR.tables[t], who = (both ? tb.seats : [tb.seats[t < 6 ? 1 : 0]]).map(st => seat(look(), st));
-    if (who.length > 1) life.knot(who, true); else who[0].anim.setLoop('eat');
+    if (who.length > 1) life.knot(who, true); else if (t % 2) journal(who[0]); else who[0].anim.setLoop('eat');
   }
 }
+journal(oldMen[0]); // one reads the football out loud to the other
 // the boys who wait tables (စားပွဲထိုးလေး): to a table and back with a tray, calling the orders to the counter; one minds the door
 // and asks what you'll have; an old man goes round the tables selling the papers
 const ROOM_FLOOR = () => .05, AI = TR.aisle;
@@ -178,10 +184,12 @@ async function waitTables(c, i) {
   }
 }
 boys.forEach((c, i) => setTimeout(() => waitTables(c, i), i * 1800));
+const cook = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'none', x: TR.boss.x - 1.6, z: TR.boss.z, ry: 0 }, .05); // the palata man at his griddle
+box(.9, .08, .5, '#3b3040', TR.boss.x - 1.6, 1.05, TR.boss.z + .55); cyl(.22, .22, .02, '#e8b85a', TR.boss.x - 1.6, 1.13, TR.boss.z + .55, 12);
 const DOOR_POST = new THREE.Vector3(TR.door.x + 1.4, 0, TR.door.z - .9);
 const doorBoy = npc({ ...BOY, shirt: '#e9e1d2', x: DOOR_POST.x, z: DOOR_POST.z, ry: -Math.PI / 2 }, .05); doorBoy.floor = ROOM_FLOOR;
 const paperMan = npc({ age: 'elder', hair: 'short', topStyle: 'shirt', shirt: '#dfe8f0', bottom: 'longyi', hat: 'bucket', x: AI.xs[2], z: AI.zs[2] }, .05); paperMan.floor = ROOM_FLOOR;
-{ const g = new THREE.Group(); paperMan.g.add(g); g.position.set(0, .72, .28); for (let i = 0; i < 4; i++) box(.34, .02, .26, i % 2 ? '#fbf4e6' : '#d9d2c4', 0, i * .02, 0, { parent: g }); } // a stack of papers on his arm
+journal(paperMan, .95, .32); // he holds one open so you can see what's in it this week
 (async () => {
   const P = [[AI.xs[2], AI.zs[2]], [AI.xs[0], AI.zs[2]], [AI.xs[0], AI.zs[1]], [AI.xs[2], AI.zs[1]]];
   for (let k = 1; ; k++) { await life.walk(paperMan, [P[k % 4]], 'carry'); if (rnd() < .7) life.say(paperMan, pick(['သတင်းစာ~ ဂျာနယ်~', 'ဘောလုံးဂျာနယ်~ ဒီနေ့ထွက်~', 'ရုပ်ရှင်ဂျာနယ်~ ယူမလား~']), 2, 1.9); await life.wait(1 + rnd() * 2); }
