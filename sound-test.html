@@ -87,6 +87,18 @@
   </section>
 
   <section>
+    <h2><span class="tag">D</span>သင်္ကြန် အသံ — စမ်းနားထောင်ရန် (ဂိမ်းထဲ မထည့်ရသေး)</h2>
+    <p class="note">ရှာတွေ့တဲ့ အခမဲ့ အသံတွေ။ ကြိုက်တာကို နံပါတ် (ဥပမာ D1) နဲ့ ပြောရင် ဂိမ်းထဲ ထည့်ပေးမယ်။</p>
+    <div class="rows" id="try"></div>
+  </section>
+
+  <section>
+    <h2><span class="tag">E</span>Freesound မှာ ရှိတဲ့ မြန်မာ အသံ (ကိုယ်တိုင် download လုပ်ရ)</h2>
+    <p class="note">Freesound က စက်နဲ့ download ကို ပိတ်ထားလို့ account ဝင်ပြီး ကိုယ်တိုင် download လုပ်ပေးရပါမယ်။ လိုင်စင်ကို စာမျက်နှာမှာ စစ်ပါ။</p>
+    <div class="rows" id="fs"></div>
+  </section>
+
+  <section>
     <h2><span class="tag">©</span>အသံ မူရင်း (credit)</h2>
     <p class="note">ဖိုင်တစ်ခုချင်းရဲ့ မူရင်း၊ ဖမ်းသူ၊ လိုင်စင်။ CC BY-SA ဖိုင်တွေကို ဖန်တီးသူ နာမည် ပြရပါတယ်။</p>
     <div class="rows" id="credits"></div>
@@ -149,6 +161,26 @@
       r.querySelector('.name').append(a); r.querySelector('.where').textContent = [...v.whats].join(' · ') + ' — ' + v.author; $('credits').append(r);
     }
   }).catch(() => {});
+  fetch(new URL('./audio/try/candidates.json?v=3', import.meta.url)).then(r => r.json()).then(c => Object.values(c).forEach((v, i) => {
+    const r = document.createElement('div'); r.className = 'row'; r.innerHTML = '<span class="id"></span><span class="name"></span><span class="ctl"></span><span class="where"></span>';
+    r.querySelector('.id').textContent = 'D' + (i + 1); r.querySelector('.name').textContent = v.what;
+    const au = new Audio(new URL('./' + v.file + '?v=3', import.meta.url).href); au.preload = 'none';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '▶ နားထောင်'; btn.id = 't-' + i; r.querySelector('.ctl').append(btn);
+    btn.addEventListener('click', () => { if (au.paused) { au.currentTime = 0; au.play(); } else au.pause(); });
+    au.addEventListener('play', () => { btn.textContent = '■ ရပ်'; btn.classList.add('on'); });
+    au.addEventListener('pause', () => { btn.textContent = '▶ နားထောင်'; btn.classList.remove('on'); }); au.addEventListener('ended', () => au.dispatchEvent(new Event('pause')));
+    const a = document.createElement('a'); a.href = v.page; a.target = '_blank'; a.rel = 'noopener'; a.textContent = v.title; r.querySelector('.where').append(a, ` · ${v.author} · ${v.license}`); $('try').append(r);
+  })).catch(() => {});
+  [['မြန်မာ ဗုံ/စည် — "Thingyan Doe" (သင်္ကြန် အိုးစည်ဗုံ စည်းချက်) ပါတဲ့ pack', 'ManDaKi · Myanmar Percussion instruments', 'https://freesound.org/people/ManDaKi/packs/38892/'],
+   ['မြန်မာ ပလွေ', 'ManDaKi · Small Flute (Burmese)', 'https://freesound.org/people/ManDaKi/sounds/751628/'],
+   ['မြန်မာ ခေါင်းလောင်း', 'LozKaye · BurmaBell', 'https://freesound.org/s/94024/'],
+   ['ဘုန်းကြီး ဘုရားရှိခိုးသံ', 'kyles · monks chanting', 'https://freesound.org/s/177597/'],
+   ['ကြံရည်ကြိတ်စက်', 'rsn267', 'https://freesound.org/s/275589/'],
+  ].forEach(([what, who, url], i) => {
+    const r = document.createElement('div'); r.className = 'row'; r.innerHTML = '<span class="id"></span><span class="name"></span><span class="ctl"></span><span class="where"></span>';
+    r.querySelector('.id').textContent = 'E' + (i + 1); r.querySelector('.name').textContent = what;
+    const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = who; r.querySelector('.where').append(a); $('fs').append(r);
+  });
   let last = performance.now();
   function frame(t) {
     const dt = Math.min(.1, (t - last) / 1000); last = t;
