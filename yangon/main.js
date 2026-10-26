@@ -3,16 +3,16 @@
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=3';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=2';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=3';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=1';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=1';
+import { startLife } from './life.js?v=2';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
 
-const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 19 }, view: 16 });
+const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 22.2 }, view: 16 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's — walk in from the street
@@ -138,9 +138,9 @@ const barber = npc({ age: 'adult', hair: 'spiky', hairColor: '#2b1d1a', topStyle
 const tailor = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#7a4a9a', bottom: 'htamein', hat: 'none', x: ROOMS.clothes.boss.x, z: ROOMS.clothes.boss.z, ry: Math.PI }, .05);
 const phoneGirl = npc({ age: 'adult', hair: 'long', topStyle: 'tee', shirt: '#f2c14e', bottom: 'skirt', hat: 'none', x: 26.1, z: 4.95 }, .14);
 // ③ market
-const frondMan = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#86b96d', bottom: 'longyi', hat: 'bucket', x: -6.9, z: 21.9 });
-const mohingaLady = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#e9a0b4', bottom: 'htamein', hat: 'none', x: 9.4, z: 11.8, ry: 0 });
-const lightsMan = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: 3.0, z: 19.5, ry: 0 });
+const frondMan = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#86b96d', bottom: 'longyi', hat: 'bucket', x: -6.9, z: 25.1 });
+const mohingaLady = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#e9a0b4', bottom: 'htamein', hat: 'none', x: 9.4, z: 15.0, ry: 0 });
+const lightsMan = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: 3.0, z: 22.7, ry: 0 });
 // (vendors, shoppers, the bus, traffic, chinlone, knots of people chatting … live in life.js)
 // ④ pagoda + monastery: monks are never splashed (dry) and never joked about (VISION.md §၉)
 const ROBE = { topStyle: 'long', shirt: '#9a3a2a', bottom: 'longyi', bottomColor: ['#8a3a2a', '#a8432f'], hair: 'buzz', hairColor: '#3a2a26', hat: 'none', thanaka: false, flower: false, garland: false };
@@ -159,8 +159,8 @@ W.addPet('dog', 'house', 3.6, -3.75);     // home dog on the porch step
 W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
 W.addPet('dog', 'walker', 0, -2.4);
 W.addPet('dog', 'shop', 12.4, 5.5);       // waiting by the tea shop for scraps
-W.addPet('dog', 'shop', 7.6, 22.4);       // and by the mohinga pot
-W.addPet('dog', 'park', 30, 14.6);        // asleep in the shade at the pagoda
+W.addPet('dog', 'shop', 7.6, 25.6);       // and by the mohinga pot
+W.addPet('dog', 'park', 30, 17.8);        // asleep in the shade at the pagoda
 W.addPet('cat', 'house', 28.6, 5.0);      // pharmacy step
 // Shwe Wa (ရွှေဝါ), U Ba Tin's ginger cat: up on the old car's roof since the kids' water scared her this morning
 const ROOF = new THREE.Vector3(L.CAR.x, 1.2, L.CAR.z - .2);
@@ -204,14 +204,14 @@ W.tick((dt, T) => {
   meow.visible = c.held === 'roof' && ['search', 'fish', 'lure'].includes(q) && (CAT.meowT -= dt) < 1.6;
   if (CAT.meowT < 0) CAT.meowT = 4 + rnd() * 2;
   // in the market the roofs go see-through, so you can see the lanes and yourself under them
-  const inMarket = !inside && p.x < 11.8 && p.z > 9.8; roofA += ((inMarket ? .15 : 1) - roofA) * Math.min(1, dt * 4);
+  const inMarket = !inside && p.x < 11.8 && p.z > 13.0; roofA += ((inMarket ? .15 : 1) - roofA) * Math.min(1, dt * 4);
   for (const m of L.roofFade) { m.opacity = roofA; m.depthWrite = roofA > .95; }
   const lit = THREE.MathUtils.clamp((W.dusk() - .7) / .3, 0, 1) * (.5 + .5 * W.night());
   if (Math.abs(lit - lampK) > .005) { lampK = lit; L.lamp.bulb.color.setRGB(.85 + 2.0 * lit, .82 + 1.5 * lit, .77 + .6 * lit); L.lamp.glow.opacity = .5 * lit; }
   const shut = closed(); if (shut !== wasClosed) { wasClosed = shut; for (const n of [vendor, frondMan, mohingaLady, lightsMan, betelMan, phoneGirl]) n.g.visible = !shut; call.visible = false; for (const sh of L.shutters) sh.visible = shut; }
   { // what you hear: the street, the market, people near you, water, the kyaung — or the inside of a shop
     let crowd = 0; for (const ch of W.chars) if (ch.on && ch !== player && ch.g.parent === scene && Math.abs(ch.g.position.x - p.x) + Math.abs(ch.g.position.z - p.z) < 7) crowd++;
-    const mk = p.x < 11.8 && p.z > 9.8 ? 1 : THREE.MathUtils.clamp(1 - Math.max(p.x - 11.8, 9.8 - p.z) / 6, 0, 1);
+    const mk = p.x < 11.8 && p.z > 13.0 ? 1 : THREE.MathUtils.clamp(1 - Math.max(p.x - 11.8, 13.0 - p.z) / 6, 0, 1);
     let engine = 0; for (const vp of life.vehicles()) engine = Math.max(engine, 1 - Math.hypot(vp.x - p.x, vp.z - p.z) / 9);
     sound.env({ phase: phase(), night: W.night(), inside, engine, market: closed() ? 0 : mk, crowd: Math.min(1, crowd / 10),
       water: THREE.MathUtils.clamp(1 - p.distanceTo(KIDS_AT) / 9, 0, 1) * (party() ? 1.5 : 1), kyaung: THREE.MathUtils.clamp(1 - p.distanceTo(L.MONASTERY) / 14, 0, 1) });
@@ -615,7 +615,7 @@ function goalsAt() {
   if (q.nozzle !== 'done') add(L.STOP); // ⑤ is a bus ride away
   return out;
 }
-hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BOUNDS.x1, z0: 6.6, z1: 9 }, { x0: 11.8, x1: 14.2, z0: 9.8, z1: BOUNDS.z1 }], BOUNDS);
+hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BOUNDS.x1, z0: 6.6, z1: 12.2 }, { x0: 11.8, x1: 14.2, z0: 13.0, z1: BOUNDS.z1 }], BOUNDS);
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();

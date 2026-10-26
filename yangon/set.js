@@ -6,33 +6,38 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PAL } from '../world.js?v=3';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
-export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 26 };
+export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 29.2 };
+
+// ② the main street: two lanes each way (drive on the right), a row of white blocks down the middle, broken only where
+// it meets the side lane and the market street — the zebra crossings are there
+export const ROAD = { z0: 6.6, z1: 12.2, mid: 9.4, west: [7.25, 8.55], east: [10.25, 11.55] }; // lane centres: westbound kerb/inner, eastbound inner/kerb
+export const CROSSINGS = [-3.4, 13.0];
 
 // walk heights: asphalt .045, raised sidewalks .14, concrete lanes .05, everything else .01 (first match wins)
 const RECTS = [
-  { x0: -10, x1: 34, z0: 6.6, z1: 9.0, h: .045, c: PAL.road },        // ② main street
+  { x0: -10, x1: 34, z0: 6.6, z1: 12.2, h: .045, c: PAL.road },       // ② main street: two lanes each way, a line of white blocks down the middle
   { x0: -10, x1: 34, z0: 5.8, z1: 6.6, h: .14, c: PAL.walk },          // its north sidewalk
   { x0: 10.6, x1: 34, z0: 4.4, z1: 5.8, h: .14, c: PAL.walk },         // the shop fronts' apron
-  { x0: -10, x1: 34, z0: 9.0, z1: 9.8, h: .14, c: PAL.walk },          // south sidewalk
-  { x0: 11.8, x1: 14.2, z0: 9.8, z1: 26, h: .045, c: PAL.road },       // market street (cross street)
+  { x0: -10, x1: 34, z0: 12.2, z1: 13.0, h: .14, c: PAL.walk },        // south sidewalk
+  { x0: 11.8, x1: 14.2, z0: 13.0, z1: 29.2, h: .045, c: PAL.road },   // market street (cross street)
   { x0: -4.6, x1: 10.6, z0: -3.4, z1: -1.4, h: .05, c: '#cdc2b6' },    // ① back lane along the flats
   { x0: -4.6, x1: -2.6, z0: -3.4, z1: 5.8, h: .05, c: '#cdc2b6' },     // ① side lane out to the street
   { x0: 9.0, x1: 10.6, z0: -9.6, z1: -1.4, h: .05, c: '#cdc2b6' },     // east lane past the compounds
   { x0: 10.6, x1: 34, z0: -2.2, z1: -.4, h: .05, c: '#cdc2b6' },       // back lane behind the shops
-  { x0: -9.6, x1: 11.8, z0: 12.8, z1: 14.6, h: .05, c: '#bdb2a6' },    // ③ market lane 1
-  { x0: -9.6, x1: 11.8, z0: 19.4, z1: 21.2, h: .05, c: '#bdb2a6' },    // ③ market lane 2
-  { x0: -9.5, x1: 9.9, z0: 15.6, z1: 18.6, h: .06, c: '#cfc8bc' },      // ③ concrete floor of market shed 1 (walk in)
-  { x0: -9.5, x1: 9.9, z0: 22.4, z1: 25.6, h: .06, c: '#cfc8bc' },      // ③ …and shed 2
+  { x0: -9.6, x1: 11.8, z0: 16.0, z1: 17.8, h: .05, c: '#bdb2a6' },    // ③ market lane 1
+  { x0: -9.6, x1: 11.8, z0: 22.6, z1: 24.4, h: .05, c: '#bdb2a6' },    // ③ market lane 2
+  { x0: -9.5, x1: 9.9, z0: 18.8, z1: 21.8, h: .06, c: '#cfc8bc' },      // ③ concrete floor of market shed 1 (walk in)
+  { x0: -9.5, x1: 9.9, z0: 25.6, z1: 28.8, h: .06, c: '#cfc8bc' },      // ③ …and shed 2
 ];
 export const ground = (x, z) => { for (const r of RECTS) if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return r.h; return .01; };
 export const AREAS = [ // for the minimap and the "you are here" toast
   { id: 1, short: '①', name: '① အိမ်နဲ့ လမ်းကြား', x0: -10, x1: 10.6, z0: -10, z1: 5.8, c: '#f4c9a8' },
-  { id: 2, short: '', name: '② ရပ်ကွက်လမ်းမ', x0: -10, x1: 34, z0: 5.8, z1: 9.8, c: '#c9b6d6' },
+  { id: 2, short: '', name: '② ရပ်ကွက်လမ်းမ', x0: -10, x1: 34, z0: 5.8, z1: 13.0, c: '#c9b6d6' },
   { id: 2, short: '②', name: '② ရပ်ကွက်လမ်းမ', x0: 10.6, x1: 34, z0: 0, z1: 5.8, c: '#e9c8d8' },
   { id: 6, short: '', name: 'ခြံဝင်းတွေ · ခြင်းလုံးကွင်း', x0: 10.6, x1: 34, z0: -10, z1: 0, c: '#d8d0a0' },
-  { id: 3, short: '③', name: '③ ဈေး', x0: -10, x1: 11.8, z0: 9.8, z1: 26, c: '#f2d39a' },
-  { id: 4, short: '④', name: '④ ဘုန်းကြီးကျောင်း', x0: 14.2, x1: 34, z0: 9.8, z1: 26, c: '#f6e7b8' },
-  { id: 3, short: '', name: '③ ဈေးလမ်း', x0: 11.8, x1: 14.2, z0: 9.8, z1: 26, c: '#b8a8c8' },
+  { id: 3, short: '③', name: '③ ဈေး', x0: -10, x1: 11.8, z0: 13.0, z1: 29.2, c: '#f2d39a' },
+  { id: 4, short: '④', name: '④ ဘုန်းကြီးကျောင်း', x0: 14.2, x1: 34, z0: 13.0, z1: 29.2, c: '#f6e7b8' },
+  { id: 3, short: '', name: '③ ဈေးလမ်း', x0: 11.8, x1: 14.2, z0: 13.0, z1: 29.2, c: '#b8a8c8' },
 ];
 export const areaAt = (x, z) => AREAS.find(a => x > a.x0 && x < a.x1 && z > a.z0 && z < a.z1);
 
@@ -86,13 +91,19 @@ export function buildSet(W) {
   box(sx - .6, .5, sz - .6, PAL.soilDark, cx, -1.9, cz, { cast: false });
   box(sx - .02, .06, sz - .02, PAL.grass, cx, -0.05, cz, { cast: false });
   for (const r of [...RECTS].reverse()) box(r.x1 - r.x0, r.h, r.z1 - r.z0, r.c, (r.x0 + r.x1) / 2, 0, (r.z0 + r.z1) / 2, { cast: false });
-  for (let x = B.x0 + .6; x < B.x1; x += 1.4) box(.7, .05, .1, PAL.roadLine, x, 0, 7.85, { cast: false });
-  for (let z = 10.4; z < B.z1; z += 1.4) box(.1, .05, .7, PAL.roadLine, 13, 0, z, { cast: false });
-  box(21.6, .02, 15.8, '#cfae86', .9, 0, 17.9, { cast: false });    // ③ market: packed earth
-  box(10.4, .02, 10.6, '#e9dcc8', 20.3, 0, 16.2, { cast: false });  // ④ monastery yard: swept earth, pale
+  for (const lz of [7.9, 10.9]) for (let x = B.x0 + .6; x < B.x1; x += 1.4) if (!CROSSINGS.some(c => Math.abs(x - c) < 1.3)) box(.7, .05, .1, PAL.roadLine, x, 0, lz, { cast: false }); // lane lines
+  for (let z = 13.6; z < B.z1; z += 1.4) box(.1, .05, .7, PAL.roadLine, 13, 0, z, { cast: false });
+  for (const cx of CROSSINGS) for (let z = ROAD.z0 + .35; z < ROAD.z1 - .2; z += .55) if (Math.abs(z - ROAD.mid) > .35) box(2.0, .05, .3, '#f3f1ea', cx, 0, z, { cast: false }); // zebra (မြင်းကျား)
+  { // the median: short white concrete blocks with gaps between, one solid strip per run so you cross at the zebras
+    const gap = 1.3, runs = []; let a = B.x0;
+    for (const cx of CROSSINGS) { runs.push([a, cx - gap]); a = cx + gap; } runs.push([a, B.x1]);
+    for (const [x0, x1] of runs) { for (let x = x0 + .4; x < x1 - .2; x += .85) box(.6, .26, .3, '#f3f1ea', x, .045, ROAD.mid, { cast: false }); solid((x0 + x1) / 2, ROAD.mid, x1 - x0, .34); }
+  }
+  box(21.6, .02, 15.8, '#cfae86', .9, 0, 21.1, { cast: false });    // ③ market: packed earth
+  box(10.4, .02, 10.6, '#e9dcc8', 20.3, 0, 19.4, { cast: false });  // ④ monastery yard: swept earth, pale
   for (let x = -4.4; x < 10.4; x += .62) box(.56, .07, .3, '#9d9198', x, 0, -3.58, { cast: false });       // drain slabs (ရေမြောင်း) along the flats
   for (let z = -3.1; z < 5.5; z += .62) box(.3, .07, .56, '#9d9198', -4.78, 0, z, { cast: false });
-  for (const [x, z, r] of [[-3.6, -2.2, .45], [6.2, -2.6, .5], [-3.4, 3.2, .4], [4, 14.8, .5], [-5, 18.7, .45], [9.8, -6, .4], [20, 8.2, .5]]) {
+  for (const [x, z, r] of [[-3.6, -2.2, .45], [6.2, -2.6, .5], [-3.4, 3.2, .4], [4, 18.0, .5], [-5, 21.9, .45], [9.8, -6, .4], [20, 11.4, .5]]) {
     const p = mesh(new THREE.CircleGeometry(r, 14), new THREE.MeshLambertMaterial({ color: PAL.puddle, transparent: true, opacity: .8 }), x, .08, z, { cast: false }); p.rotation.x = -Math.PI / 2;
   }
 
@@ -326,13 +337,13 @@ export function buildSet(W) {
     if (cover === 'tarp') tarp(x, z, 2.2, 1.6, pick(TARP)); else umbrella(x + .2, z, pick(['#e0574f', '#3f6fa8', '#f2c14e', '#4f8f5a']), '#fff6ea');
     solid(x - .1, z, 1.7, .9);
   }
-  const LANES = [[12.8, 14.6], [19.4, 21.2]];
+  const LANES = [[16.0, 17.8], [22.6, 24.4]];
   const KINDS = ['veg', 'fruit', 'fish', 'flower', 'dry', 'veg', 'guns', 'fruit'];
   let k = 0;
   for (const [z0, z1] of LANES) for (const side of [-1, 1]) for (let x = -8.2; x < 10; x += 2.6) {
     const z = side < 0 ? z0 - .6 : z1 + .6;
     if (z1 > 20 && side > 0 && x < -5) continue;          // frond yard goes here
-    if (z1 < 15 && side < 0 && x > 7) continue;            // mohinga stall goes here
+    if (z1 < 18 && side < 0 && x > 7) continue;            // mohinga stall goes here
     if (z1 > 20 && side < 0 && x > 2 && x < 6) continue;   // lights stall goes here
     pitch(x, z, side, KINDS[k++ % KINDS.length], rnd() < .5 ? 'tarp' : 'umbrella');
   }
@@ -341,7 +352,7 @@ export function buildSet(W) {
   // with the gaps between the pitches outside so you can step in from the lanes
   L.SHED_SEATS = [];
   const SHED_GOODS = [[PAL.leaf, PAL.leafLight, '#7a4a9a'], ['#f2c14e', '#e8954a', '#86b96d'], ['#d9776a', '#c8553d', '#e9a0a0'], ['#9aa3ad', '#c9d2dc'], ['#c8553d', '#e8954a', '#d9b98f']];
-  for (const [z0, z1, gapsS, gapsN] of [[15.6, 18.6, [-7.0, 3.4], [-7.0, 1.5]], [22.4, 25.6, [-1.8, .8, 3.4, 6.0], []]]) {
+  for (const [z0, z1, gapsS, gapsN] of [[18.8, 21.8, [-7.0, 3.4], [-7.0, 1.5]], [25.6, 28.8, [-1.8, .8, 3.4, 6.0], []]]) {
     const X = .2, w = 19.4, xa = X - w / 2, xb = X + w / 2;
     for (const [z, gaps] of [[z0 + .15, gapsS], [z1 - .15, gapsN]]) for (let x = xa + .2; x <= xb; x += 2.4) {
       if (gaps.some(g => Math.abs(g - x) < .7)) continue; // keep the way in clear
@@ -363,23 +374,23 @@ export function buildSet(W) {
       }
     }
   }
-  mesh(new THREE.PlaneGeometry(3, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး', '#c8553d', '#ffe7a3', 512, 90, 60) }), .2, 2.6, 18.65, { cast: false });
+  mesh(new THREE.PlaneGeometry(3, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး', '#c8553d', '#ffe7a3', 512, 90, 60) }), .2, 2.6, 21.85, { cast: false });
   // the frond + bamboo yard (အုန်းလက် · ဝါး) at the west end of the back lane
-  L.FRONDS = new THREE.Vector3(-6.6, 0, 20.9);
-  for (let i = 0; i < 9; i++) { const f = mesh(FROND, i % 3 ? frondM : dryM, -9.4 + rnd() * .3, .1 + i * .05, 21.6 + (i % 3) * .35); f.scale.setScalar(2.2); f.rotation.y = rnd() * .2; }
-  for (let i = 0; i < 7; i++) { const b = cyl(.05, .05, 3.2, PAL.bamboo, -5.4 + i * .14, .02, 22.1, 6); b.rotation.x = .3; }
-  solid(-8.2, 22.0, 2.6, 1.0); solid(-4.9, 22.2, 1.2, .5);
+  L.FRONDS = new THREE.Vector3(-6.6, 0, 24.1);
+  for (let i = 0; i < 9; i++) { const f = mesh(FROND, i % 3 ? frondM : dryM, -9.4 + rnd() * .3, .1 + i * .05, 24.8 + (i % 3) * .35); f.scale.setScalar(2.2); f.rotation.y = rnd() * .2; }
+  for (let i = 0; i < 7; i++) { const b = cyl(.05, .05, 3.2, PAL.bamboo, -5.4 + i * .14, .02, 25.3, 6); b.rotation.x = .3; }
+  solid(-8.2, 25.2, 2.6, 1.0); solid(-4.9, 25.4, 1.2, .5);
   // mohinga stall (မုန့်ဟင်းခါး) on the first lane, by the street
-  L.MOHINGA = new THREE.Vector3(9.4, 0, 12.6);
-  cyl(.45, .4, .5, '#5a4a4a', 9.4, .02, 11.0, 12); cyl(.42, .36, .55, '#9aa3ad', 9.4, .52, 11.0, 14); cyl(.4, .4, .02, '#d9a04a', 9.4, 1.07, 11.0, 14);
-  for (const tx of [8.0, 10.8]) { box(.6, .3, .5, '#c8a070', tx, .02, 11.2); cyl(.1, .1, .16, '#4fb3d9', tx + .45, .02, 11.2, 8); solid(tx, 11.2, .6, .5); }
-  tarp(9.4, 11.1, 3.6, 1.4, '#e0843f', 2.1);
-  mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshLambertMaterial({ map: textTex('မုန့်ဟင်းခါး', '#c8553d', '#fff6ea', 512, 120, 64), side: THREE.DoubleSide }), 9.4, 1.7, 11.85, { cast: false });
-  solid(9.4, 11.0, 1.0, 1.0);
+  L.MOHINGA = new THREE.Vector3(9.4, 0, 15.8);
+  cyl(.45, .4, .5, '#5a4a4a', 9.4, .02, 14.2, 12); cyl(.42, .36, .55, '#9aa3ad', 9.4, .52, 14.2, 14); cyl(.4, .4, .02, '#d9a04a', 9.4, 1.07, 14.2, 14);
+  for (const tx of [8.0, 10.8]) { box(.6, .3, .5, '#c8a070', tx, .02, 14.4); cyl(.1, .1, .16, '#4fb3d9', tx + .45, .02, 14.4, 8); solid(tx, 14.4, .6, .5); }
+  tarp(9.4, 14.3, 3.6, 1.4, '#e0843f', 2.1);
+  mesh(new THREE.PlaneGeometry(1.6, .4), new THREE.MeshLambertMaterial({ map: textTex('မုန့်ဟင်းခါး', '#c8553d', '#fff6ea', 512, 120, 64), side: THREE.DoubleSide }), 9.4, 1.7, 15.05, { cast: false });
+  solid(9.4, 14.2, 1.0, 1.0);
   // lights + electrics stall (မီးကြိုးဆိုင်) on the back lane: bulbs strung off its tarp
-  L.LIGHTS = new THREE.Vector3(4.0, 0, 19.9);
-  box(1.6, .7, .7, '#8a5a3a', 4.0, .02, 18.9); tarp(4.0, 18.9, 2.2, 1.2, '#3f6fa8', 2.0); solid(4.0, 18.9, 1.6, .7);
-  for (let i = 0; i < 14; i++) mesh(new THREE.SphereGeometry(.05, 6, 4), new THREE.MeshBasicMaterial({ color: [new THREE.Color(2.8, 2.3, 1.2), new THREE.Color(2.8, 1.4, 1.4), new THREE.Color(1.3, 2.4, 2.8)][i % 3] }), 3.0 + i * .15, 1.75 - Math.sin(i / 13 * Math.PI) * .3, 18.3, { cast: false });
+  L.LIGHTS = new THREE.Vector3(4.0, 0, 23.1);
+  box(1.6, .7, .7, '#8a5a3a', 4.0, .02, 22.1); tarp(4.0, 22.1, 2.2, 1.2, '#3f6fa8', 2.0); solid(4.0, 22.1, 1.6, .7);
+  for (let i = 0; i < 14; i++) mesh(new THREE.SphereGeometry(.05, 6, 4), new THREE.MeshBasicMaterial({ color: [new THREE.Color(2.8, 2.3, 1.2), new THREE.Color(2.8, 1.4, 1.4), new THREE.Color(1.3, 2.4, 2.8)][i % 3] }), 3.0 + i * .15, 1.75 - Math.sin(i / 13 * Math.PI) * .3, 21.5, { cast: false });
   // trishaws (ဆိုက်ကား) parked along the street edge of the market, waiting for shoppers with heavy bags
   function trishaw(x, z, ry) {
     const g = new THREE.Group(); g.position.set(x, .14, z); g.rotation.y = ry; scene.add(g); const o = { parent: g }, tm = pick(['#2f6f8f', '#8a3a4a', '#3f7a5a']);
@@ -387,22 +398,22 @@ export function buildSet(W) {
     box(.9, .06, .1, tm, 0, .62, 0, o); box(.7, .08, .5, tm, -.05, .45, .72, o); box(.62, .32, .08, tm, -.05, .52, .95, o); box(.5, .06, .36, '#c8553d', -.05, .55, .72, o);
     solid(x, z + .3, 1.2, 1.2);
   }
-  trishaw(-7.6, 10.6, -.4); trishaw(-5.6, 10.7, .3); trishaw(.6, 10.6, -.2);
-  mesh(new THREE.PlaneGeometry(3.2, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး ↓', '#c8553d', '#ffe7a3', 512, 90, 56), side: THREE.DoubleSide }), 11.45, 2.7, 13.7, { cast: false }).rotation.y = Math.PI / 2;
-  for (const s of [-1, 1]) cyl(.06, .06, 3, '#c8553d', 11.4, .02, 13.7 + s * 1.5, 6);
+  trishaw(-7.6, 13.8, -.4); trishaw(-5.6, 13.9, .3); trishaw(.6, 13.8, -.2);
+  mesh(new THREE.PlaneGeometry(3.2, .55), new THREE.MeshLambertMaterial({ map: textTex('ရပ်ကွက် ဈေး ↓', '#c8553d', '#ffe7a3', 512, 90, 56), side: THREE.DoubleSide }), 11.45, 2.7, 16.9, { cast: false }).rotation.y = Math.PI / 2;
+  for (const s of [-1, 1]) cyl(.06, .06, 3, '#c8553d', 11.4, .02, 16.9 + s * 1.5, 6);
 
   // ---------- ④ the ward monastery (ဘုန်းကြီးကျောင်း): a walled yard, a two-storey kyaung, a bell, a well, a fish tank ----------
   const wallSeg = (x0, z0, x1, z1) => { const len = Math.hypot(x1 - x0, z1 - z0), along = Math.abs(x1 - x0) > Math.abs(z1 - z0);
     box(along ? len : .2, .9, along ? .2 : len, '#fbf4e6', (x0 + x1) / 2, .02, (z0 + z1) / 2); solid((x0 + x1) / 2, (z0 + z1) / 2, along ? len : .2, along ? .2 : len); };
-  wallSeg(15, 10.8, 25.6, 10.8); wallSeg(15, 10.8, 15, 14.6); wallSeg(15, 16.6, 15, 21.6); wallSeg(15, 21.6, 25.6, 21.6); wallSeg(25.6, 10.8, 25.6, 21.6);
+  wallSeg(15, 14.0, 25.6, 14.0); wallSeg(15, 14.0, 15, 17.8); wallSeg(15, 19.8, 15, 24.8); wallSeg(15, 24.8, 25.6, 24.8); wallSeg(25.6, 14.0, 25.6, 24.8);
   { // gate arch with the kyaung's name board
-    for (const s of [14.6, 16.6]) box(.4, 2.2, .4, '#fbf4e6', 15, .02, s);
-    box(.4, .3, 2.4, '#fbf4e6', 15, 2.2, 15.6); const t = mesh(new THREE.CylinderGeometry(.2, 1.0, .5, 4), '#8a3a2a', 15, 2.75, 15.6); t.rotation.y = Math.PI / 4; t.scale.set(.5, 1, 1.4);
-    mesh(new THREE.PlaneGeometry(2, .4), new THREE.MeshLambertMaterial({ map: textTex('ဓမ္မာရုံ ကျောင်း', '#8a3a2a', '#ffe7a3', 512, 100, 56), side: THREE.DoubleSide }), 14.75, 1.9, 15.6, { cast: false }).rotation.y = -Math.PI / 2;
+    for (const s of [17.8, 19.8]) box(.4, 2.2, .4, '#fbf4e6', 15, .02, s);
+    box(.4, .3, 2.4, '#fbf4e6', 15, 2.2, 18.8); const t = mesh(new THREE.CylinderGeometry(.2, 1.0, .5, 4), '#8a3a2a', 15, 2.75, 18.8); t.rotation.y = Math.PI / 4; t.scale.set(.5, 1, 1.4);
+    mesh(new THREE.PlaneGeometry(2, .4), new THREE.MeshLambertMaterial({ map: textTex('ဓမ္မာရုံ ကျောင်း', '#8a3a2a', '#ffe7a3', 512, 100, 56), side: THREE.DoubleSide }), 14.75, 1.9, 18.8, { cast: false }).rotation.y = -Math.PI / 2;
   }
-  L.GATE = new THREE.Vector3(15.8, 0, 15.6);
+  L.GATE = new THREE.Vector3(15.8, 0, 18.8);
   W.occluder(() => { // the kyaung: whitewashed brick below, teak above, a plain hipped zinc roof with one small tiered finial
-    const X = 21.2, Z = 15.4, w = 6.2, d = 4.0;
+    const X = 21.2, Z = 18.6, w = 6.2, d = 4.0;
     box(w, 1.4, d, '#fbf4e6', X, .02, Z); mesh(new THREE.BoxGeometry(w + .2, 1.3, d + .2), plankM, X, 2.07, Z);
     for (let i = 0; i < 4; i++) { const ax = X - 2.2 + i * 1.47; box(.5, .8, .06, '#5a4a52', ax, .3, Z + d / 2 + .01); mesh(new THREE.CylinderGeometry(.25, .25, .06, 10, 1, false, 0, Math.PI), '#5a4a52', ax, 1.1, Z + d / 2 + .01).rotation.set(Math.PI / 2, 0, 0); box(.55, .55, .06, '#3b2a24', ax, 1.85, Z + d / 2 + .12); }
     const rg = new THREE.CylinderGeometry(2.6, 2.6, w + .7, 3); rg.rotateX(-Math.PI / 2); rg.rotateY(Math.PI / 2); rg.scale(1, .42, 1); // a plain zinc gable, like the houses round it
@@ -414,14 +425,14 @@ export function buildSet(W) {
     L.MONASTERY = new THREE.Vector3(X, 0, Z + d / 2 + 1.5);
   });
   { // bell (ခေါင်းလောင်း), well (ရေတွင်း), fish tank (ငါးကန်) in the yard; a coconut palm and a padauk
-    for (const s of [-1, 1]) cyl(.05, .05, 1.6, '#8a5a38', 17.2 + s * .45, .02, 12.2, 6); box(1.1, .1, .1, '#8a5a38', 17.2, 1.6, 12.2);
-    mesh(new THREE.CylinderGeometry(.16, .26, .42, 14), new THREE.MeshStandardMaterial({ color: '#c99a4a', metalness: .9, roughness: .4 }), 17.2, 1.1, 12.2);
-    solid(17.2, 12.2, 1.1, .4); L.BELL = new THREE.Vector3(17.2, 0, 12.9);
-    const WX = 17.0, WZ = 19.6;
+    for (const s of [-1, 1]) cyl(.05, .05, 1.6, '#8a5a38', 17.2 + s * .45, .02, 15.4, 6); box(1.1, .1, .1, '#8a5a38', 17.2, 1.6, 15.4);
+    mesh(new THREE.CylinderGeometry(.16, .26, .42, 14), new THREE.MeshStandardMaterial({ color: '#c99a4a', metalness: .9, roughness: .4 }), 17.2, 1.1, 15.4);
+    solid(17.2, 15.4, 1.1, .4); L.BELL = new THREE.Vector3(17.2, 0, 16.1);
+    const WX = 17.0, WZ = 22.8;
     cyl(.5, .55, .6, '#9aa3ad', WX, .02, WZ, 14); mesh(new THREE.CircleGeometry(.42, 14), '#2a3a4a', WX, .63, WZ, { cast: false }).rotation.x = -Math.PI / 2;
     for (const s of [-1, 1]) cyl(.04, .04, 1.4, '#8a5a38', WX + s * .55, .02, WZ, 5); box(1.2, .06, .06, '#8a5a38', WX, 1.42, WZ);
     solid(WX, WZ, 1.2, 1.2); L.WELL = new THREE.Vector3(WX + .9, 0, WZ);
-    const TX = 23.6, TZ = 19.9;
+    const TX = 23.6, TZ = 23.1;
     box(2.4, .55, 1.4, '#d9cdb8', TX, .02, TZ); mesh(new THREE.PlaneGeometry(2.1, 1.1), new THREE.MeshLambertMaterial({ color: '#7fc6d9' }), TX, .56, TZ, { cast: false }).rotation.x = -Math.PI / 2;
     for (let i = 0; i < 5; i++) { const f = mesh(new THREE.SphereGeometry(.06, 6, 4), '#e8954a', TX - .8 + i * .4, .58, TZ - .3 + (i % 2) * .5, { cast: false }); f.scale.set(1.8, .5, .8); }
     solid(TX, TZ, 2.4, 1.4); L.POND = new THREE.Vector3(TX - 1.8, 0, TZ);
@@ -434,15 +445,15 @@ export function buildSet(W) {
     for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(.1, 8, 6), '#7a8a3a', top.x + Math.cos(i * 2.1) * .12, top.y - .12, top.z + Math.sin(i * 2.1) * .12);
     solid(x, z, .4, .4);
   }
-  palm(24.6, 12.0, 3.4, -.5); palm(11.1, 24.9, 3.0, -.4); palm(33.2, 11.6, 3.3, -.5);
+  palm(24.6, 15.2, 3.4, -.5); palm(11.1, 28.1, 3.0, -.4); palm(33.2, 14.8, 3.3, -.5);
   // east of the kyaung: two compounds and a four-storey block of flats at the back corner
-  compound(26.4, 33.6, 10.8, 16.4, { c: '#f7d58b', tree: true });
-  compound(15.4, 22.6, 21.9, 25.8, { c: '#e9c8d8', w: 3.4 });
-  flats(29.6, 22.4, 2, 0, '#f4c9a8', 7);
+  compound(26.4, 33.6, 14.0, 19.6, { c: '#f7d58b', tree: true });
+  compound(15.4, 22.6, 25.1, 29.0, { c: '#e9c8d8', w: 3.4 });
+  flats(29.6, 25.6, 2, 0, '#f4c9a8', 7);
 
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
-  for (const [x, z, s] of [[-6.5, 9.45, .8], [5.6, 9.45, .75], [17.5, 9.45, .8], [29.5, 9.45, .8], [12.4, .6, .8], [-9.4, 11.4, .8], [18.4, 23.4, .8]]) padauk(x, z, s);
+  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [18.4, 26.6, .8]]) padauk(x, z, s);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
@@ -460,7 +471,7 @@ export function buildSet(W) {
   const off = (v, x = 0, y = 0, z = 0) => v.clone().add(new THREE.Vector3(x, y, z));
   for (const [a, b, d] of [[p1, p2, .6], [off(p1, 0, -.12), off(p2, 0, -.12), .9], [p2, p3, .55], [off(p2, 0, -.1), off(p3, 0, -.1), .8], [p1, p4, .7], [off(p1, .2), off(p4, .2), .95], [p4, p5, .6], [off(p4, 0, -.1), off(p5, 0, -.1), .85]]) sag(a, b, d);
   for (const [p, t, d] of [[p1, [-6.2, 4.2, -5.0], .3], [p2, [-.4, 3.8, -5.0], .35], [p2, [.9, 4.6, -5.0], .25], [p3, [4.2, 2.9, -4.75], .3], [p3, [6.6, 2.9, -4.75], .2], [p4, [-5.75, 3.7, .6], .25], [p5, [-5.75, 4.4, 3.4], .3], [p3, [7.6, 3.1, 1.4], .6]]) sag(p, new THREE.Vector3(...t), d);
-  const north = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x, 6.3])), south = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x + .4, 9.5], 3.3));
+  const north = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x, 6.3])), south = [-8, -1, 6, 11, 16, 21, 26, 31].map(x => poleAt([x + .4, 12.7], 3.3));
   north.forEach((p, i) => i % 2 || lamp(p, 0, 1)); south.forEach((p, i) => i % 2 && lamp(p, 0, -1)); // lamps over the main street, staggered
   for (let i = 0; i + 1 < north.length; i++) { sag(north[i], north[i + 1], .6); sag(off(north[i], 0, -.12), off(north[i + 1], 0, -.12), .85); sag(south[i], south[i + 1], .5); }
   sag(p5, north[1], .4);
@@ -470,8 +481,8 @@ export function buildSet(W) {
   };
   for (let i = 0; i < north.length; i += 2) bunting(off(north[i], 0, -.3), off(south[i], 0, -.3), .5); // paper flags across the street, Thingyan colours
   cyl(.05, .06, 3.2, PAL.bamboo, -1.1, .02, -.5, 6); bunting(new THREE.Vector3(-5.75, 3.4, 2.4), new THREE.Vector3(-1.1, 3.1, -.5), .5);
-  bunting(new THREE.Vector3(12, 3.0, 9.6), new THREE.Vector3(14.6, 2.8, 16), .4); // down the market street
-  bunting(new THREE.Vector3(-8, 2.4, 12.4), new THREE.Vector3(10, 2.4, 12.4), .3); bunting(new THREE.Vector3(-8, 2.4, 19.0), new THREE.Vector3(10, 2.4, 19.0), .3); // over the market lanes
+  bunting(new THREE.Vector3(12, 3.0, 12.8), new THREE.Vector3(14.6, 2.8, 19.2), .4); // down the market street
+  bunting(new THREE.Vector3(-8, 2.4, 15.6), new THREE.Vector3(10, 2.4, 15.6), .3); bunting(new THREE.Vector3(-8, 2.4, 22.2), new THREE.Vector3(10, 2.4, 22.2), .3); // over the market lanes
 
   // ---------- bus stop (ဘတ်စ်ကားမှတ်တိုင်) on the main street ----------
   L.STOP = new THREE.Vector3(2.6, 0, 6.2);

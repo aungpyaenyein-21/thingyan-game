@@ -3,6 +3,7 @@
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
 import { PAL } from '../world.js?v=3';
+import { ROAD } from './set.js?v=3';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -79,9 +80,9 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     k.t = 2.4 + rnd() * 3.5;
   }
   standingKnot(-.5, 2.6, 2, i => ({ age: i ? 'adult' : 'elder', hair: pick(['bun', 'bob', 'long']), topStyle: 'yinphone', bottom: 'htamein', flower: true })); // ① aunties by the lot
-  standingKnot(23.6, 9.9, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }), .5);                                // ② men on the corner
-  const marketKnot = standingKnot(8.7, 20.3, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
-  const yardElders = standingKnot(20.4, 12.1, 2, () => ({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }), .5);              // ④ in the kyaung yard
+  standingKnot(23.6, 13.1, 2, () => ({ age: 'adult', bottom: pick(['longyi', 'longyi', 'pants']), hat: 'none' }), .5);                                // ② men on the corner
+  const marketKnot = standingKnot(8.7, 23.5, 3, () => ({ age: pick(['adult', 'elder']), hair: pick(['bun', 'short']), bottom: pick(['htamein', 'longyi']) }));        // ③ in the market lane
+  const yardElders = standingKnot(20.4, 15.3, 2, () => ({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }), .5);              // ④ in the kyaung yard
 
   // ---------- ③ vendors on their low stools: fanning, watching, calling you over ----------
   const CALLS = ['ဝယ်ကြ~ ဝယ်ကြ~', 'လတ်လတ်ဆတ်ဆတ်~', 'ဈေးချိုတယ်နော်~', 'လာ လာ ကြည့်ဦး~', 'သင်္ကြန် ရေသေနတ်~'];
@@ -96,15 +97,15 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   // ③ the mohinga stall's low tables: breakfast eaters (two each, on tiny stools)
   const dayOnly = []; // market folk: gone home after dark
   for (const tx of [8.0, 10.8]) {
-    for (const [sx, ry] of [[.45, -Math.PI / 2], [-.45, Math.PI / 2]]) { const c = npc({ age: pick(['adult', 'adult', 'elder', 'kid']), x: tx + sx, z: 11.2, ry }); c.anim.setLoop('eat'); c.g.position.y = -.08; dayOnly.push(c); }
-    cyl(.1, .1, .16, '#e0574f', tx - .45, .02, 11.2, 8);
-    for (const s of [-1, 1]) { cyl(.1, .07, .07, '#fff6ea', tx + s * .14, .32, 11.2, 10); cyl(.085, .085, .01, '#d9a04a', tx + s * .14, .39, 11.2, 10); } // bowls of mohinga
+    for (const [sx, ry] of [[.45, -Math.PI / 2], [-.45, Math.PI / 2]]) { const c = npc({ age: pick(['adult', 'adult', 'elder', 'kid']), x: tx + sx, z: 14.4, ry }); c.anim.setLoop('eat'); c.g.position.y = -.08; dayOnly.push(c); }
+    cyl(.1, .1, .16, '#e0574f', tx - .45, .02, 14.4, 8);
+    for (const s of [-1, 1]) { cyl(.1, .07, .07, '#fff6ea', tx + s * .14, .32, 14.4, 10); cyl(.085, .085, .01, '#d9a04a', tx + s * .14, .39, 14.4, 10); } // bowls of mohinga
   }
   // browsers squatting over the trays
-  for (const [x, z, ry] of [[-5.6, 13.25, Math.PI], [2.2, 14.15, 0], [-.4, 19.85, Math.PI], [7.2, 20.75, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
+  for (const [x, z, ry] of [[-5.6, 16.45, Math.PI], [2.2, 17.35, 0], [-.4, 23.05, Math.PI], [7.2, 23.95, 0]]) { const c = npc({ age: pick(['adult', 'elder']), hair: pick(['bun', 'long', 'short']), x, z, ry }); c.anim.setLoop('squat'); dayOnly.push(c); }
 
-  // ---------- the YBS bus (yellow, 2017–) westbound on the north lane: stops, the conductor calls, people get on and off ----------
-  const BUS = { len: 4.6, lane: 7.3, speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
+  // ---------- the YBS bus (yellow, 2017–) westbound in the kerb lane: stops, the conductor calls, people get on and off ----------
+  const BUS = { len: 4.6, lane: ROAD.west[0], speed: 2.4, wait: 0, stopped: false, away: 2, boarding: 0, alight: false };
   const bus = group(), STOPX = L.STOP.x - 1.6; // bus x when its front door is at the shelter
   {
     const o = { parent: bus }, Y = '#f2c230';
@@ -145,7 +146,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     if (bus.position.x + BUS.len / 2 < BOUNDS.x0 - 4) { bus.position.x = BOUNDS.x1 + BUS.len; BUS.stopped = false; BUS.away = 6 + rnd() * 10; }
   }
 
-  // ---------- cars: now and then one goes by (westbound north lane, eastbound south lane) ----------
+  // ---------- cars: now and then one goes by (westbound in the north lanes, eastbound in the south ones; mostly the inner lane) ----------
   const CARS = [];
   function car(kind) {
     const g = group(), o = { parent: g }, col = { taxi: '#f3f1ea', sedan: pick(['#c8553d', '#3f6fa8', '#9aa3ad', '#2b2730']), wagon: '#e9e1d2', pickup: '#4f8f5a' }[kind];
@@ -155,7 +156,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     if (kind === 'taxi') { box(.4, .14, .22, '#f2c230', -.05, 1.04, 0, o); }
     for (const [x, z] of [[.6, .47], [.6, -.47], [-.6, .47], [-.6, -.47]]) { const w = mesh(new THREE.CylinderGeometry(.19, .19, .12, 10), '#2b2730', x, .19, z, o); w.rotation.x = Math.PI / 2; }
     for (const z of [-.3, .3]) box(.04, .08, .16, '#fff6ea', .96, .34, z, o);
-    const v = { g, kind, on: false, dir: 1, lane: 8.3, speed: 0, max: 3.2 + rnd() * .8, honkT: 0, who: { g } }; g.visible = false; CARS.push(v); return v;
+    const v = { g, kind, on: false, dir: 1, lane: ROAD.east[0], speed: 0, max: 3.2 + rnd() * .8, honkT: 0, who: { g } }; g.visible = false; CARS.push(v); return v;
   }
   ['taxi', 'sedan', 'wagon', 'pickup', 'taxi'].forEach(car);
   let carT = 4;
@@ -168,7 +169,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   function stepCars(dt) {
     if ((carT -= dt) < 0) {
       carT = 12 + rnd() * 14; const v = pick(CARS.filter(c => !c.on)); // a car now and then, not traffic
-      if (v) { v.since = W.time(); v.on = true; v.dir = rnd() < .5 ? 1 : -1; v.lane = v.dir > 0 ? 8.3 : 7.3; v.g.rotation.y = v.dir > 0 ? 0 : Math.PI; v.g.position.set(v.dir > 0 ? BOUNDS.x0 - 3 : BOUNDS.x1 + 3, .045, v.lane); v.g.visible = true; v.speed = v.max; }
+      if (v) { v.since = W.time(); v.on = true; v.dir = rnd() < .5 ? 1 : -1; v.lane = v.dir > 0 ? ROAD.east[rnd() < .7 ? 0 : 1] : ROAD.west[rnd() < .7 ? 1 : 0]; v.g.rotation.y = v.dir > 0 ? 0 : Math.PI; v.g.position.set(v.dir > 0 ? BOUNDS.x0 - 3 : BOUNDS.x1 + 3, .045, v.lane); v.g.visible = true; v.speed = v.max; }
     }
     for (const v of CARS) {
       if (!v.on) continue;
@@ -203,10 +204,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     g.visible = false; return v;
   }
   const ROUTES = [
-    [[BOUNDS.x0 - 2, 8.5], [BOUNDS.x1 + 2, 8.5]], [[BOUNDS.x1 + 2, 6.75], [BOUNDS.x0 - 2, 6.75]],
-    [[BOUNDS.x0 - 2, 6.75], [-3.0, 6.75], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -2.4], [9.8, -2.4], [9.8, -10.4]],  // up the side lane, along the back lane, out by the east lane
-    [[9.8, -10.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.0, 6.75], [BOUNDS.x0 - 2, 6.75]], // …and the other way
-    [[13.6, 25.6], [13.6, 10.2], [13.6, 8.5], [BOUNDS.x1 + 2, 8.5]],                                                  // down the market street (the ice cart keeps to the other side)
+    [[BOUNDS.x0 - 2, 11.7], [BOUNDS.x1 + 2, 11.7]], [[BOUNDS.x1 + 2, 6.95], [BOUNDS.x0 - 2, 6.95]], // along each kerb
+    [[BOUNDS.x0 - 2, 11.7], [-4.1, 11.7], [-3.6, 9.4], [-3.05, 6.9], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -2.4], [9.8, -2.4], [9.8, -10.4]],  // in on the eastbound side, across at the gap by the side lane, up it, along the back lane, out by the east lane
+    [[9.8, -10.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.0, 6.95], [BOUNDS.x0 - 2, 6.95]], // …and the other way
+    [[13.6, 28.8], [13.6, 13.4], [13.8, 11.7], [BOUNDS.x1 + 2, 11.7]],                                            // down the market street (the ice cart keeps to the other side)
   ];
   async function cyclist(v, first) {
     for (let k = first; ; k++) {
@@ -228,7 +229,9 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     g.position.set(-2.2, .03, 1.0); g.rotation.y = -Math.PI / 2; // waits on the verge by the side lane (clear of the old car)
   }
   const fare = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }); fare.ch.hang = basket(fare); people.push(fare); show(fare, false);
-  const TRIKE_OUT = [[-2.2, 5.0], [-2.6, 8.3], [12.0, 8.3], [12.6, 10.6], [12.6, 12.3]], TRIKE_BACK = [[13.4, 11.6], [13.4, 9.9], [12.4, 6.85], [-2.0, 6.85], [-2.2, 5.0], [-2.2, 1.0]];
+  // out: across the westbound lanes through the gap in the median at the side lane, east in the kerb lane, down the market street;
+  // back the same way round. Kept far enough off each kerb that the sidecar clears the kids, the walkers and the bus-stop bench
+  const TRIKE_OUT = [[-2.2, 5.0], [-3.0, 7.4], [-3.1, 10.8], [11.6, 10.8], [12.6, 13.8], [12.6, 15.5]], TRIKE_BACK = [[13.4, 14.8], [13.4, 13.1], [12.8, 7.6], [-2.0, 7.6], [-2.2, 5.0], [-2.2, 1.0]];
   async function trishawRun() {
     for (;;) {
       await wait(6 + rnd() * 8); await until(() => !isNight()); // parked for the night
@@ -239,7 +242,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
       }
       await drive(trike, TRIKE_OUT);
       if (fetch) { // off at the market lane; she goes shopping and walks home
-        scene.add(fare.g); fare.g.position.set(12.0, ground(12, 12.3), 12.3); fare.anim.setLoop('idle'); fare.anim.play('standup'); await wait(.6);
+        scene.add(fare.g); fare.g.position.set(12.0, ground(12, 15.5), 15.5); fare.anim.setLoop('idle'); fare.anim.play('standup'); await wait(.6);
         shopper(fare, 0);
       }
       await drive(trike, TRIKE_BACK);
@@ -261,20 +264,20 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     cyl(.05, .05, .07, '#c99a4a', .1, .04, -.07, 8, o); cyl(.05, .05, .07, '#c99a4a', .1, .04, .08, 8, o);
     for (let i = 0; i < 4; i++) mesh(new THREE.IcosahedronGeometry(.04, 0), PAL.padauk, .02 + (i % 2) * .05, .1 + (i >> 1) * .04, .02, o); return g;
   }
-  const SIDEWALK = [[-3.2, 8.98], [.2, 8.98], [.6, 9.45], [5.0, 9.45], [5.6, 9.1], [6.2, 9.45], [12.2, 9.45]]; // the south pavement: past the kids' drum on the road edge, round the padauk tree
+  const SIDEWALK = [[-3.2, 12.18], [.2, 12.18], [.6, 12.65], [5.0, 12.65], [5.6, 12.3], [6.2, 12.65], [12.2, 12.65]]; // the south pavement: past the kids' drum on the road edge, round the padauk tree
   // people come into the ward along the main street from either end (off the map), and leave the same way
-  const WEST = [[BOUNDS.x0 - .6, 9.0], ...SIDEWALK], EAST = [[BOUNDS.x1 + .6, 9.0], [14.6, 9.0], [13.4, 9.6]]; // on the pavement's edge, clear of the bikes (z 8.5)
-  const way = () => pick([WEST, EAST]), MARKET_IN = [[12.6, 10.4], [12.6, 13.7]];
+  const WEST = [[BOUNDS.x0 - .6, 12.2], ...SIDEWALK], EAST = [[BOUNDS.x1 + .6, 12.2], [14.6, 12.2], [13.4, 12.8]]; // on the pavement's edge, clear of the bikes (z 11.7)
+  const way = () => pick([WEST, EAST]), MARKET_IN = [[12.6, 13.6], [12.6, 16.9]];
   const LANE_X = [-6.9, -4.3, -1.7, .9, 3.5, 6.1, 8.7];
   async function shopper(c, laneI = rnd() < .5 ? 0 : 1) {
-    const lz = laneI ? 20.3 : 13.7;
-    if (laneI) await walk(c, [[12.6, 20.3]]);
+    const lz = laneI ? 23.5 : 16.9;
+    if (laneI) await walk(c, [[12.6, 23.5]]);
     for (const x of [...LANE_X].sort(() => rnd() - .5).slice(0, 2 + (rnd() * 2 | 0)).sort((a, b) => b - a)) {
       const side = rnd() < .5 ? -1 : 1; await walk(c, [[x, lz], [x, lz + side * .45]]); c.g.rotation.y = side < 0 ? Math.PI : 0;
       c.anim.setLoop('squat'); await wait(2 + rnd() * 3); c.anim.setLoop('idle'); if (rnd() < .4) c.anim.play('laugh');
       await wait(.6);
     }
-    await walk(c, [[11.6, lz], [12.6, lz], [12.6, 10.4], ...back(way())]); show(c, false);
+    await walk(c, [[11.6, lz], [12.6, lz], [12.6, 13.6], ...back(way())]); show(c, false);
   }
   async function marketGoer(c, delay) {
     for (;;) {
@@ -286,20 +289,20 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   [{ hair: 'bun', topStyle: 'yinphone', bottom: 'htamein' }, { age: 'elder', hair: 'bun', bottom: 'htamein' }, { hair: 'long', topStyle: 'tee', bottom: 'skirt' }]
     .forEach((o, i) => { const c = npc({ age: 'adult', ...o }); c.ch.hang = basket(c); people.push(c); marketGoer(c, i * 7); });
   // offerings to the kyaung: trays held out in front, in at the gate, three bows to the abbot, home again
-  const TO_KYAUNG = [[12.8, 10.4], [12.8, 15.6], [14.4, 15.6], [15.8, 15.6], [17.3, 15.8], [17.4, 18.6]];
+  const TO_KYAUNG = [[12.8, 13.6], [12.8, 18.8], [14.4, 18.8], [15.8, 18.8], [17.3, 19.0], [17.4, 21.8]];
   async function pilgrim(c, i) {
     show(c, false); await wait(4 + i * 3); await until(morning);
     const w = way(); c.g.position.set(w[0][0] + (w === WEST ? -i : i) * .8, 0, w[0][1]); show(c, true);
-    await walk(c, [...w.slice(1), ...TO_KYAUNG, [20.2 + i * .7, 19.7]], 'carry');
+    await walk(c, [...w.slice(1), ...TO_KYAUNG, [20.2 + i * .7, 22.9]], 'carry');
     c.g.rotation.y = Math.PI; for (let k = 0; k < 3; k++) { c.anim.play('kadaw'); await wait(2.7); }
     c.tray.visible = false; c.dry = false; c.anim.chat = 'listen'; await wait(8 + rnd() * 6); c.anim.chat = null;
-    await walk(c, [[17.4, 18.6], ...back(TO_KYAUNG).slice(1), ...back(way())]); show(c, false);
+    await walk(c, [[17.4, 21.8], ...back(TO_KYAUNG).slice(1), ...back(way())]); show(c, false);
   }
   [{ age: 'elder', hair: 'bun', topStyle: 'yinphone', bottom: 'htamein', flower: true }, { age: 'elder', topStyle: 'taikpon', bottom: 'longyi', hat: 'none' }]
     .forEach((o, i) => { const c = npc(o); c.tray = tray(c); c.dry = true; people.push(c); pilgrim(c, i); }); // nobody splashes someone carrying food for the monks
 
   // ---------- ② push cart on the market street: ice lollies, the little bell ----------
-  const lolly = npc({ age: 'adult', topStyle: 'tank', bottom: 'longyi', hat: 'bucket', x: 12.9, z: 10.4 }); people.push(lolly);
+  const lolly = npc({ age: 'adult', topStyle: 'tank', bottom: 'longyi', hat: 'bucket', x: 12.9, z: 13.6 }); people.push(lolly);
   const icecart = group(); {
     const o = { parent: icecart }; box(.9, .55, .6, '#4fb3d9', 0, .3, 0, o); box(.95, .06, .65, '#fff6ea', 0, .86, 0, o); for (const s of [-1, 1]) mesh(new THREE.TorusGeometry(.18, .03, 6, 12), '#2b2730', 0, .2, s * .32, o);
     mesh(new THREE.PlaneGeometry(.8, .3), new THREE.MeshLambertMaterial({ map: textTex('ရေခဲချောင်း', '#4fb3d9', '#fff6ea', 256, 96, 48) }), 0, .6, .31, { ...o, cast: false });
@@ -307,7 +310,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   async function lollyRun() {
     for (let up = true; ; up = !up) {
-      const z0 = up ? 10.4 : 25.2, z1 = up ? 25.2 : 10.4;
+      const z0 = up ? 13.6 : 28.4, z1 = up ? 28.4 : 13.6;
       for (let z = z0; up ? z < z1 : z > z1; z += up ? 3.7 : -3.7) {
         await walk(lolly, [[12.9, z + (up ? 3.7 : -3.7)]], 'push'); if (rnd() < .6) { say(lolly, 'ဒင် ဒင်~ ရေခဲချောင်း~', 2.2); W.onFx?.('icebell', lolly.g.position); await wait(2.6); }
       }
@@ -316,9 +319,9 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   lollyRun();
 
   // ---------- ② kids with a drum of water by the road: they get whoever comes past ----------
-  const DRUM = V(-1.7, 9.45); cyl(.3, .3, .7, '#3f8fd0', DRUM.x, .14, DRUM.z, 12); mesh(new THREE.CircleGeometry(.27, 12), '#8fd3f0', DRUM.x, .85, DRUM.z, { cast: false }).rotation.x = -Math.PI / 2;
+  const DRUM = V(-1.7, 12.65); cyl(.3, .3, .7, '#3f8fd0', DRUM.x, .14, DRUM.z, 12); mesh(new THREE.CircleGeometry(.27, 12), '#8fd3f0', DRUM.x, .85, DRUM.z, { cast: false }).rotation.x = -Math.PI / 2;
   W.solid(DRUM.x, DRUM.z, .6, .6);
-  const roadKids = [npc({ age: 'kid', tool: 'bucket', hat: 'none', x: -2.5, z: 9.4, ry: Math.PI }), npc({ age: 'kid', tool: 'gun', hat: 'goggles', x: -.9, z: 9.4, ry: Math.PI })];
+  const roadKids = [npc({ age: 'kid', tool: 'bucket', hat: 'none', x: -2.5, z: 12.6, ry: Math.PI }), npc({ age: 'kid', tool: 'gun', hat: 'goggles', x: -.9, z: 12.6, ry: Math.PI })];
   roadKids.forEach(k => { k.home = k.g.position.clone(); k.coolT = 1 + rnd() * 2; k.dryT = 0; });
   function stepRoadKids(dt) {
     for (const k of roadKids) {
