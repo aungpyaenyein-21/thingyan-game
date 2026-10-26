@@ -186,13 +186,19 @@ const paperMan = npc({ age: 'elder', hair: 'short', topStyle: 'shirt', shirt: '#
   const P = [[AI.xs[2], AI.zs[2]], [AI.xs[0], AI.zs[2]], [AI.xs[0], AI.zs[1]], [AI.xs[2], AI.zs[1]]];
   for (let k = 1; ; k++) { await life.walk(paperMan, [P[k % 4]], 'carry'); if (rnd() < .7) life.say(paperMan, pick(['သတင်းစာ~ ဂျာနယ်~', 'ဘောလုံးဂျာနယ်~ ဒီနေ့ထွက်~', 'ရုပ်ရှင်ဂျာနယ်~ ယူမလား~']), 2, 1.9); await life.wait(1 + rnd() * 2); }
 })();
-// in at the door: the boy comes over and asks what you'll have
+// in at the door: the boy comes over and asks what you'll have (press E by him to order); he goes back to the door after a while
 async function greet() {
-  const p = W.player.g.position, B = 'စားပွဲထိုးလေး';
-  await life.walk(doorBoy, [[p.x + 1.0, p.z - .6]]); face(doorBoy);
+  const p = W.player.g.position;
+  await life.walk(doorBoy, [[p.x + 1.0, p.z - .6]]); face(doorBoy); doorBoy.asking = true;
+  life.say(doorBoy, 'ကြွပါ ကြွပါ! ဘာသုံးဆောင်မလဲ ခင်ဗျာ', 4, 1.6);
+  await life.wait(9); if (doorBoy.asking) boyBack();
+}
+const boyBack = () => { doorBoy.asking = false; life.walk(doorBoy, [DOOR_POST]).then(() => { doorBoy.g.rotation.y = -Math.PI / 2; }); };
+function askBoy() {
+  const B = 'စားပွဲထိုးလေး'; face(doorBoy);
   talk([[B, 'ကြွပါ ကြွပါ! ဘာသုံးဆောင်မလဲ ခင်ဗျာ။'], [B, 'လက်ဖက်ရည်၊ ကော်ဖီ၊ ပလာတာ၊ ပေါက်စီ… အကုန်ရတယ်။ ဟိုဘက်မှာ စားပွဲလွတ် ရှိတယ်နော်။']], () => {
     hud.menu({ title: '☕ ' + B, close: 'ခဏ ကြည့်ဦးမယ်', items: [{ label: 'ထိုင်ပြီး မှာမယ်', note: 'စားပွဲလွတ်မှာ', on: () => { order(MY_TABLE, MY_TABLE.seats[0]); return true; } }] });
-    life.walk(doorBoy, [DOOR_POST]).then(() => { doorBoy.g.rotation.y = -Math.PI / 2; });
+    boyBack();
   }, doorBoy);
 }
 W.onTool = t => { S.tool = t; save(); hud.tool(t); };
@@ -534,7 +540,7 @@ function order(t, st, done) {
 function talkFriend() {
   const F = 'ဖိုးသာ (ငယ်သူငယ်ချင်း)';
   const INVITE = [[F, 'ဒါနဲ့ ငါ မနက်ဖြန် မန္တလေး သွားမယ်ကွ။ ဒီည ညကားနဲ့ ထွက်မှာ။'], [F, 'ငါတို့ အတန်းဖော်တွေ မန္တလေးမှာ စောင့်နေကြတယ်။ မင်းလည်း လိုက်ခဲ့! မင်း ပြန်လာတယ်ဆိုရင် အကုန် ဝမ်းသာမှာ။'], [ME, 'ဟုတ်ပြီ! မဏ္ဍပ်လေး ပြီးရင် ညကားမှာ အတူတူ သွားမယ်။']];
-  if (party() && W.night() > .5) return talk([[F, 'ညကား ထွက်တော့မယ်! လာ လာ… မန္တလေးမှာ ကောင်တွေ စောင့်နေပြီ။']], null, friend);
+  if (party() && W.night() > .5) return talk([[F, 'ညကား ထွက်တော့မယ်! လာ လာ… မန္တလေးမှာ ကောင်တွေ စောင့်နေပြီ။']], () => { S.metFriend = S.invited = true; save(); }, friend);
   if (party()) return talk([[F, 'ဒါ မင်းဆောက်တဲ့ မဏ္ဍပ်လား! ငါတို့ ငယ်ငယ်က ဆောက်ခဲ့တာထက် လှတယ်ကွာ။'], ...(S.invited ? [] : INVITE), [F, 'မှောင်ရင် ဘတ်စ်ကားမှတ်တိုင်မှာ စောင့်နေမယ်။ ညကား အတူတူ စီးမယ်နော်!']], () => { S.metFriend = S.invited = true; save(); }, friend);
   if (!S.metFriend) return talk([
     [F, 'ဟေ့… ဟေ့ကောင်! မင်းမဟုတ်လား! ပြန်လာပြီလား!'],
@@ -563,7 +569,7 @@ function partyPose() {
 W.tick(() => { // after dark Phoe Tha goes on to the bus stop to wait for the night bus with you (when you're not looking)
   if (!party() || friend.atStop || W.night() < .5 || inside) return;
   const p = W.player.g.position; if (p.distanceTo(friend.g.position) < 9 || p.distanceTo(L.STOP) < 6) return;
-  friend.atStop = true; friend.g.position.set(L.STOP.x + 1.6, ground(L.STOP.x + 1.6, L.STOP.z + .3), L.STOP.z + .3); friend.g.rotation.y = 0;
+  friend.atStop = true; friend.g.position.set(L.STOP.x + 2.3, ground(L.STOP.x + 2.3, L.STOP.z + .3), L.STOP.z + .3); friend.g.rotation.y = 0;
 });
 async function build() {
   await hud.say([['', 'ကလေးတွေ၊ ရပ်ကွက်ထဲက လူကြီးတွေ — ဝါးချည်၊ အုန်းလက်မိုး၊ ပိတောက်ချိတ်… ဝိုင်းဆောက်ကြတယ်။']]);
@@ -620,7 +626,8 @@ const SPOTS = [
   ...Object.values(ROOMS).map(r => ({ at: () => r.door, r: .9, label: () => 'အပြင် ထွက်', goal: () => false, run: goOut })),
   { at: () => TR.counter, r: 1.4, label: () => 'ဆရာနဲ့ စကားပြော', goal: () => Q() && ['ask', 'back'].includes(S.q.tea), run: talkTea },
   ...SERVE.map((t, i) => ({ at: () => customers[i].g.position, r: 1.1, label: () => S.q.tea === 'serve' && !S.served.includes(i) ? `${ORDERS[i][0]} ချပေး` : null, goal: () => true, run: () => serve(i) })),
-  { at: () => friend.g.position, r: 1.6, label: () => 'ဖိုးသာနဲ့ စကားပြော', goal: () => !S.metFriend, run: talkFriend },
+  { at: () => friend.g.position, r: 1.6, label: () => 'ဖိုးသာနဲ့ စကားပြော', goal: () => !S.metFriend && !party(), run: talkFriend },
+  { at: () => doorBoy.g.position, r: 1.4, label: () => inside === 'tea' && !seated ? 'စားပွဲထိုးလေးကို မှာမယ် ☕' : null, goal: () => false, run: askBoy },
   { at: () => MY_SEAT, r: 1.1, label: () => seated ? null : 'ထိုင်ပြီး မှာစား ☕', goal: () => false, run: () => order(MY_TABLE, MY_TABLE.seats[0]) },
   { at: () => CHAIR, r: 1.3, label: () => seated ? null : 'ခုံပေါ် ထိုင်ပြီး ညှပ် ✂', goal: () => false, run: sitBarber },
   { at: () => ROOMS.clothes.mirror, r: 1.4, label: () => 'မှန်ရှေ့မှာ ဝတ်ကြည့် 👕', goal: () => false, run: tryOn },
