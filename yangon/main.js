@@ -1,16 +1,16 @@
 // yangon/main.js — story day 1, Yangon (STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
-import { createWorld, PAL, SKINS } from '../world.js?v=5';
+import { createWorld, PAL, SKINS } from '../world.js?v=7';
 import { CAT_COATS } from '../critters.js?v=4';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=8';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=10';
 import { createHud, play } from './hud.js?v=2';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
 import { buildRooms } from './rooms.js?v=3';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=6';
 import { createSound } from '../sound.js?v=3';
-import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=2';
+import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=3';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;
@@ -22,6 +22,7 @@ const v = new THREE.Vector3();
 
 // ---------- save (shared with downtown: save.js) ----------
 const S = loadSave(); S.at = 'ward';
+if (S.q.padauk === 'climb') S.q.padauk = 'school'; // older saves: the padauk errand now goes by the school
 const save = () => store(S);
 
 // ---------- the stage parts: one per favour; ghosts until found ----------
@@ -280,7 +281,7 @@ W.tick((dt, T) => {
 const $ = id => document.getElementById(id);
 const QGOALS = {
   cloth: { ask: 'အန်တီစိန်ကို မေး — ကြိုးဆွဲပုံး ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံ ယူ', buy: 'လမ်းကြားထဲက ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်', return: 'ဟင်းသီးဟင်းရွက်ကို ပုံးထဲ ထည့်ပေး', lifting: 'အန်တီစိန် ပုံးဆွဲတင်နေတယ်…', cloth: 'ပုံးထဲက ပိတ်စ ယူ' },
-  padauk: { ask: 'အဘွားကို ပိတောက်ပင်အကြောင်း မေး', climb: 'အိမ်ဘေး ပိတောက်ပင်ပေါ် တက်ပြီး ခူး', shrine: 'ပထမခက်ကို ဘုရားကပ်ဖို့ အဘွားဆီ ပေး' },
+  padauk: { ask: 'အဘွားကို ပိတောက်ပန်းအကြောင်း မေး', school: 'ဈေးနောက်က မူလတန်းကျောင်းထဲ ပိတောက်ပင်ဆီ သွား', dad: 'ထူးထူးနောက် လိုက် — သူ့အဖေဆီက လှေကား ငှား', carry: 'လှေကားနဲ့ ကျောင်းက ပိတောက်ပင် တက်ပြီး ခူး', shrine: 'ပထမခက်ကို ဘုရားကပ်ဖို့ အဘွားကို ပေး' },
   cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ကို မေး', search: 'ညောင်သံ လိုက်ရှာ — ရွှေဝါ ဘယ်မှာလဲ', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဟင်းသီးဟင်းရွက်သည်ဆီ', lure: 'ငါးခြောက်နဲ့ ရွှေဝါကို ချော့', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ်' },
   tea: { ask: 'လက်ဖက်ရည်ဆိုင် ဆရာကို မေး', serve: 'စားပွဲ ၃ ဝိုင်းကို လက်ဖက်ရည် ချပေး', back: 'ဆရာဆီ ပြန်သွား' },
   sign: { ask: 'ကွမ်းယာဆိုင် အဘကို မေး' },
@@ -303,7 +304,7 @@ function hud2() {
   if (S.gifts) bag.push(`လက်ဆောင်ထုပ် ×${MM(S.gifts)}`);
   if (S.q.cloth === 'buy') bag.push('ပိုက်ဆံ ၁၀၀၀ ကျပ်');
   if (S.q.cloth === 'return') bag.push('ချဉ်ပေါင်ရွက်', 'ခရမ်းချဉ်သီး');
-  if (S.q.padauk === 'shrine') bag.push('ပိတောက်ခက် ×၃');
+  if (S.q.padauk === 'carry') bag.push('ဝါးလှေကား'); if (S.q.padauk === 'shrine') bag.push('ပိတောက်ခက် ×၃');
   if (S.q.cat === 'lure') bag.push('ငါးခြောက်');
   if (S.q.tea === 'serve') bag.push(`လက်ဖက်ရည် ×${MM(3 - S.served.length)}`);
   if (S.q.fronds === 'bring') bag.push('မုန့်ဟင်းခါး တစ်ပွဲ');
@@ -343,8 +344,8 @@ function talkKids() {
     ['ချိုချို', 'မသွားခင် ဦးလေးကို ရေပက်ချင်တယ်!'],
   ], () => kids.forEach((k, i) => setTimeout(() => { face(k); k.anim.play('splash'); }, i * 250)));
   if (S.step === 'build') return talk([['မေသူ', 'ပစ္စည်း စုံပြီ! ဆောက်ကြစို့ ဦးလေး!']]);
-  const LEAD = { cloth: 'အန်တီစိန်ဆီမှာ ပိတ်စ အဟောင်းတွေ ရှိတယ်။ ကြိုးဆွဲပုံး ဝရန်တာ!', padauk: 'ဘွားဘွားရဲ့ ပိတောက်ပင် ပွင့်နေပြီ!', cat: 'ဦးဘတင်ဆီမှာ အသံချဲ့စက် ရှိတယ်… ကြောင် ပျောက်နေလို့ စိတ်ညစ်နေတယ်။',
-    tea: 'လမ်းမက လက်ဖက်ရည်ဆိုင်မှာ ရေပိုက်ခွေ အပို ရှိတယ်။ ဆရာ အလုပ်များနေတယ်။', sign: 'ကွမ်းယာဆိုင် အဘက စာလှလှ ရေးတတ်တယ်!', fronds: 'ဈေးထဲမှာ အုန်းလက်နဲ့ ဝါး ရောင်းတဲ့ ကိုအောင် ရှိတယ်။',
+  const LEAD = { cloth: 'အန်တီစိန်ဆီမှာ ပိတ်စ အဟောင်းတွေ ရှိတယ်။ ကြိုးဆွဲပုံး ဝရန်တာ!', padauk: 'ဘွားဘွားက ပိတောက်ပန်း ဘယ်မှာ ပွင့်လဲ သိတယ်! သွားမေးကြည့်။', cat: 'ဦးဘတင်ဆီမှာ အသံချဲ့စက် ရှိတယ်… ကြောင် ပျောက်နေလို့ စိတ်ညစ်နေတယ်။',
+    tea: 'ဈေးနောက်က လက်ဖက်ရည်ဆိုင်ကြီးမှာ ရေပိုက်ခွေ အပို ရှိတယ်။ ဆရာ အလုပ်များနေတယ်။', sign: 'ကွမ်းယာဆိုင် အဘက စာလှလှ ရေးတတ်တယ်!', fronds: 'ဈေးထဲမှာ အုန်းလက်နဲ့ ဝါး ရောင်းတဲ့ ကိုအောင် ရှိတယ်။',
     lights: 'ဈေးထဲက ကိုဇော်ဆီမှာ မီးကြိုး ရှိတယ်။', drum: 'ဘုန်းကြီးကျောင်းမှာ ရေစည် အဟောင်းတွေ ရှိတယ်တဲ့။ ကိုရင်လေးတွေကို မေးကြည့်။',
     nozzle: 'ဆူးလေက မဏ္ဍပ်ကြီးမှာ ရေပန်းခေါင်း ရှိတယ်! သမီးတို့ မသွားရဘူး… ဦးလေး ဘတ်စ်ကားနဲ့ သွားယူပေး!' };
   const todo = ERRANDS.filter(k => S.q[k] !== 'done'), names = ['ဖိုးကျော်', 'ချိုချို', 'မေသူ'];
@@ -379,21 +380,50 @@ function talkGrandma() {
   const G = 'အဘွား', q = S.q.padauk;
   if (party()) return talk([[G, 'မုန့်လုံးရေပေါ် ကျက်ပြီ… ငရုတ်သီးပါတဲ့လုံး ဘယ်သူ ကြုံမလဲ မသိဘူး။'], [G, 'ညကား မမီမှာ စိုးလို့ စောစောသွားနော် မြေးလေး။ ရောက်ရင် ဖုန်းဆက်။']], null, grandma);
   if (S.step === 'quests' && q === 'ask') return talk([
-    [ME, 'ဘွားဘွား… ကလေးတွေ မဏ္ဍပ်အတွက် ပိတောက်ခက်လေးတွေ ခူးလို့ရမလား။'],
-    [G, 'ဒီနှစ် ပိတောက် ညတွင်းချင်း ပွင့်တယ်၊ သင်္ကြန်နဲ့ အချိန်ကိုက်ပဲ။ ခူးပါ မြေးလေး။'],
-    [G, 'ဒါပေမဲ့ ပထမဆုံးခက်ကိုတော့ ဘွားဘွားကို ပေးနော်။ ဘုရားကပ်ရမယ်။ သတိထားတက်၊ အကိုင်းငယ်တွေ ကျိုးတတ်တယ်။'],
-  ], () => { S.q.padauk = 'climb'; hud2(); }, grandma);
+    [ME, 'ဘွားဘွား… ကလေးတွေ မဏ္ဍပ်အတွက် ပိတောက်ပန်း ဘယ်မှာ ရနိုင်မလဲ။ အိမ်ဘေးက အပင်က မပွင့်သေးဘူး။'],
+    [G, 'ဒီနှစ် ပိတောက် နောက်ကျနေတယ် မြေးလေး။ ရပ်ကွက်ထဲမှာ မူလတန်းကျောင်းထဲက အပင်ကြီးတစ်ပင်ပဲ ပွင့်သေးတယ်။'],
+    [G, 'ဈေးနောက်က ကျောင်းလေ။ ခူးရင် ဘွားဘွားကိုလည်း ပေးဦးနော်… ပထမဆုံးခက်ကို ဘုရားကပ်ချင်လို့။'],
+  ], () => { S.q.padauk = 'school'; hud2(); }, grandma);
+  if (['school', 'dad', 'carry'].includes(q)) return talk([[G, 'မူလတန်းကျောင်းထဲက ပိတောက်ပင်လေ မြေးလေး… ဈေးနောက်ဘက်မှာ။ အပင်က မြင့်တယ်၊ သတိထားနော်။']], null, grandma);
   if (q === 'shrine') return talk([[ME, 'ဘွားဘွား… ပထမဆုံးခက်ပါ။'], [G, 'သာဓု သာဓု။ မြေးလေး ကြီးလာလိုက်တာ… ကျန်တဲ့ခက်တွေ ကလေးတွေ မဏ္ဍပ်မှာ ချိတ်လိုက်။']],
     () => { grandma.anim.play('kadaw'); gotPart('padauk'); }, grandma);
   talk([[G, 'မြေးလေး ပြန်ရောက်ပြီပေါ့… ဘယ်လောက်တောင် ကြာသွားပြီလဲ။'], [G, 'ဒီနေ့ ညနေ ဘွားဘွား မုန့်လုံးရေပေါ် လုပ်မယ်။ ကလေးတွေကိုပါ ခေါ်ခဲ့။']], null, grandma);
 }
-const TREE = new THREE.Vector3(2.2, 0, -4.4);
+// ---------- the padauk: only the big tree in the school yard is out in flower; Htoo Htoo's dad lends a bamboo ladder ----------
+const TREE = L.SCHOOL_TREE, HTOO = 'ထူးထူး', DAD_N = 'ဦးမြင့် (ထူးထူးအဖေ)';
+const ladderMesh = () => { const g = W.keep(new THREE.Group()); for (const s2 of [-.22, .22]) cyl(.035, .035, 2.4, PAL.bamboo, 0, 0, s2, 5, { parent: g }); for (let i = 1; i < 7; i++) box(.05, .04, .5, PAL.bamboo, 0, i * .33, 0, { parent: g }); return g; };
+const carried = ladderMesh(); carried.position.set(0, .35, -.28); carried.rotation.set(.12, Math.PI / 2, -.35); carried.scale.setScalar(.8); // on your back
+const atTree = ladderMesh(); atTree.position.set(TREE.x + .55, 0, TREE.z + .55); atTree.rotation.set(0, Math.PI / 4, -.3); scene.add(atTree); // left leaning on the tree
+const htoo = npc({ age: 'kid', hair: 'buzz', topStyle: 'tee', shirt: '#4fb3d9', bottom: 'shorts', hat: 'none', name: HTOO, x: TREE.x - 1.2, z: TREE.z - 1.0, ry: 2.2 });
+const dad = npc({ age: 'adult', hair: 'short', topStyle: 'shirt', shirt: '#dfe8f0', bottom: 'longyi', hat: 'none', x: L.DAD.x, z: L.DAD.z, ry: 0 });
+const HOME_WAY = [[15.3, 34.6], [14.4, 34.6], [14.4, 29.4], [26.2, 29.4], [26.2, 34.9], [L.DAD.x + .8, L.DAD.z + .2]];
+W.tick(() => {
+  const q = S.q.padauk, carry = q === 'carry';
+  if (carry && carried.parent !== W.player.g) W.player.g.add(carried); // (re-attach if the wardrobe rebuilt you)
+  carried.visible = carry; L.LADDER_WALL.visible = !['carry', 'shrine', 'done'].includes(q); atTree.visible = ['shrine', 'done'].includes(q);
+});
+function askHtoo() {
+  const q = S.q.padauk;
+  if (q === 'school') return talk([
+    [ME, 'ပိတောက်ပင်က မြင့်လိုက်တာ… အကိုင်းတွေ ဒီအတိုင်း လှမ်းလို့ မမီဘူး။'],
+    [HTOO, 'ဦးလေး ပိတောက် ခူးမလို့လား? ကျွန်တော့်အဖေဆီမှာ ဝါးလှေကား ရှိတယ်!'],
+    [HTOO, 'အိမ်က ကျောင်းနောက်မှာပဲ — လာ၊ လိုက်ခဲ့!'],
+  ], () => { S.q.padauk = 'dad'; hud2(); life.walk(htoo, HOME_WAY, 'run').then(() => face(htoo, dad)); }, htoo);
+  if (q === 'dad') return talk([[HTOO, 'အဖေ! အဖေ! ဦးလေးက လှေကား ငှားချင်လို့တဲ့!']], null, htoo);
+  talk([[HTOO, pick(['ပိတောက်ပန်း မွှေးတယ်နော် ဦးလေး!', 'သင်္ကြန်ပြီးရင် ကျောင်းပြန်ဖွင့်မယ်… မဖွင့်စေချင်ဘူး!', 'ကျွန်တော် ဒန်းအမြင့်ဆုံး စီးနိုင်တယ်!'])]], null, htoo);
+}
+function talkDad() {
+  if (S.q.padauk === 'dad') return talk([
+    [DAD_N, 'ထူးထူး ပြောပြပြီ။ ကျောင်းက ပိတောက်ခူးမလို့ဆို — ရော့ ဝါးလှေကား။ ဟောင်းပေမယ့် ခိုင်တယ်။'],
+    [DAD_N, 'အကိုင်းငယ်တွေ ကျိုးတတ်တယ်၊ သတိထားတက်။ ပြီးရင် အပင်မှာပဲ ထောင်ထားခဲ့၊ ညနေ ကျွန်တော် လာယူမယ်။'],
+  ], () => { S.q.padauk = 'carry'; hud2(); hud.toast('+ ဝါးလှေကား'); life.walk(htoo, [...HOME_WAY].reverse().slice(1).concat([[TREE.x - 1.2, TREE.z - 1.0]]), 'run'); }, dad);
+  talk([[DAD_N, pick(['သင်္ကြန်ကျရင် ကလေးတွေ ကျောင်းထဲ သွားဆော့နေကြတာပဲ။', 'ညနေ မဏ္ဍပ်ပွဲ ကျွန်တော်တို့လည်း လာမယ်။'])]], null, dad);
+}
 function climb() {
-  const back = W.player.g.position.clone();
-  W.player.g.position.set(TREE.x + .35, 0, TREE.z + .5); face(W.player, { g: { position: TREE } }); W.lift = .95;
+  W.player.g.position.set(TREE.x + .35, 0, TREE.z + .5); face(W.player, { g: { position: TREE } }); W.lift = .95; carried.visible = false; atTree.visible = true;
   hud.timing({ title: 'ပိတောက်ခက် ခူး', onHit: () => { W.player.anim.emote('heart'); for (let i = 0; i < 12; i++) W.spawn(v.set(TREE.x + (rnd() - .5), 1.9, TREE.z + (rnd() - .5)), new THREE.Vector3((rnd() - .5) * 1.5, rnd() * 1.5, (rnd() - .5) * 1.5)); },
     onMiss: () => { W.player.anim.play('shake'); hud.toast('လွဲသွားတယ်… ပွင့်တွေ ကြွေကုန်ပြီ'); },
-    onDone: () => { W.lift = 0; W.player.g.position.set(TREE.x + .2, 0, TREE.z + .85); S.q.padauk = 'shrine'; hud2(); hud.toast('+ ပိတောက်ခက် ×၃'); } });
+    onDone: () => { W.lift = 0; W.player.g.position.set(TREE.x - .3, 0, TREE.z - 1.1); S.q.padauk = 'shrine'; hud2(); hud.toast('+ ပိတောက်ခက် ×၃'); } });
 }
 function talkUncle() {
   const U = 'ဦးဘတင်', q = S.q.cat;
@@ -625,7 +655,9 @@ const SPOTS = [
   { at: () => BUCKET_SPOT, r: 1.5, label: () => bucketBusy() ? null : ({ ask: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[Q() && S.q.cloth] ?? 'အန်တီစိန်နဲ့ စကားပြော'), goal: () => Q() && ['ask', 'money', 'return', 'cloth'].includes(S.q.cloth), run: useBucket },
   { at: () => vendor.g.position, r: 1.6, label: () => closed() ? null : 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => S.q.cloth === 'buy' || S.q.cat === 'fish', run: talkVendor },
   { at: () => grandma.g.position, r: 1.7, label: () => S.q.padauk === 'shrine' ? 'ပိတောက်ခက် ပေး' : 'အဘွားနဲ့ စကားပြော', goal: () => Q() && ['ask', 'shrine'].includes(S.q.padauk), run: talkGrandma },
-  { at: () => TREE, r: 1.4, label: () => S.q.padauk === 'climb' ? 'ပိတောက်ပင် တက်' : null, goal: () => true, run: climb },
+  { at: () => TREE, r: 1.9, label: () => ({ school: 'ပိတောက်ပင်ကို ကြည့်', carry: 'လှေကားထောင်ပြီး တက် 🪜' }[S.q.padauk] ?? null), goal: () => S.q.padauk === 'carry', run: () => S.q.padauk === 'carry' ? climb() : askHtoo() },
+  { at: () => htoo.g.position, r: 1.6, label: () => 'ထူးထူးနဲ့ စကားပြော', goal: () => S.q.padauk === 'school', run: askHtoo },
+  { at: () => dad.g.position, r: 1.7, label: () => 'ဦးမြင့်နဲ့ စကားပြော', goal: () => S.q.padauk === 'dad', run: talkDad },
   { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' && near(shweWa, 3) ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
   { at: () => L.CAR, r: 1.8, label: () => shweWa.held === 'roof' && ['search', 'fish', 'lure'].includes(S.q.cat) ? (S.q.cat === 'lure' ? 'ငါးခြောက်နဲ့ ချော့' : 'ရွှေဝါကို ခေါ်') : null, goal: () => true, run: callCat },
   { at: () => L.TEA, r: 1.4, label: () => closed() ? SHUT : 'လက်ဖက်ရည်ဆိုင်ထဲ ဝင်', goal: () => Q() && S.q.tea !== 'done', run: () => closed() ? hud.toast(SHUT) : enter('tea') },
@@ -672,7 +704,7 @@ function goalsAt() {
   const q = S.q, out = [];
   const add = p => p && out.push(p);
   add({ ask: BUCKET_SPOT, money: bucket.position, buy: vendor.g.position, return: BUCKET_SPOT, cloth: bucket.position }[q.cloth]);
-  add({ ask: grandma.g.position, climb: TREE, shrine: grandma.g.position }[q.padauk]);
+  add({ ask: grandma.g.position, school: htoo.g.position, dad: dad.g.position, carry: TREE, shrine: grandma.g.position }[q.padauk]);
   add({ ask: UNCLE, search: ROOF, fish: vendor.g.position, lure: ROOF, follow: UNCLE }[q.cat]);
   if (q.tea !== 'done') add(L.TEA); // the tea shop's door
   add({ ask: L.BETEL }[q.sign]);

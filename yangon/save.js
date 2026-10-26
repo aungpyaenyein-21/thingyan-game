@@ -6,7 +6,7 @@ const KEY = 'thingyan.day1.v2';
 // nine favours, one part of the kids' coconut-frond mandat each; all are needed
 export const ERRANDS = ['cloth', 'padauk', 'cat', 'tea', 'sign', 'fronds', 'lights', 'drum', 'nozzle'];
 export const ITEMS = { fronds: 'အုန်းလက်နဲ့ ဝါး', cloth: 'ပိတ်စ', padauk: 'ပိတောက်ခက်', cat: 'အသံချဲ့စက်', tea: 'ရေပိုက်', sign: 'ဆိုင်းဘုတ်', lights: 'မီးကြိုး', drum: 'ရေစည်', nozzle: 'ရေပန်းခေါင်း' };
-export const WHERE = { fronds: '③ ဈေး', cloth: '① အန်တီစိန်', padauk: '① အဘွား', cat: '① ဦးဘတင်', tea: '② လက်ဖက်ရည်ဆိုင်', sign: '② ကွမ်းယာဆိုင်', lights: '③ ဈေး', drum: '④ ဘုန်းကြီးကျောင်း', nozzle: '⑤ မြို့လယ် (ဘတ်စ်ကား)' };
+export const WHERE = { fronds: '③ ဈေး', cloth: '① အန်တီစိန်', padauk: '① အဘွား → မူလတန်းကျောင်း', cat: '① ဦးဘတင်', tea: '② လက်ဖက်ရည်ဆိုင်', sign: '② ကွမ်းယာဆိုင်', lights: '③ ဈေး', drum: '④ ဘုန်းကြီးကျောင်း', nozzle: '⑤ မြို့လယ် (ဘတ်စ်ကား)' };
 export const NEED = ERRANDS.length;
 
 // step: arrive → quests (the favours, any order) → build → evening → done;  at: 'ward' | 'downtown'

@@ -3,7 +3,7 @@
 //   ③ the ward market: vendors on mats along two lanes, sheds   ④ the ward monastery            + compounds, a chinlone lot, a condo going up
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and errands live in story.js.
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=5';
+import { PAL } from '../world.js?v=7';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 37 };
@@ -515,7 +515,7 @@ export function buildSet(W) {
     const across = (x, a, b) => { box(.16, .7, b - a, '#fbf4e6', x, .02, (a + b) / 2); box(.2, .06, b - a + .04, '#4f8f5a', x, .72, (a + b) / 2); solid(x, (a + b) / 2, .16, b - a); };
     along(x0, x1, z0); along(x0, x1, z1); across(x1, z0, z1); across(x0, z0, gz - .8); across(x0, gz + .8, z1);
     for (const s of [-1, 1]) box(.22, 1.3, .22, '#fbf4e6', x0, .02, gz + s * .85);
-    mesh(new THREE.PlaneGeometry(1.5, .95), grilleM(2, 1), x0 - .02, .55, gz).rotation.y = Math.PI / 2;          // the iron gate, shut
+    mesh(new THREE.PlaneGeometry(1.5, .95), grilleM(2, 1), x0 - .5, .55, gz - .6).rotation.y = Math.PI / 2 + 1.1;  // the iron gate, left open a crack
     mesh(new THREE.PlaneGeometry(.9, .5), new THREE.MeshLambertMaterial({ map: textTex('သင်္ကြန် ကျောင်းပိတ်ရက်', '#fff6ea', '#c8553d', 256, 140, 30), side: THREE.DoubleSide }), x0 - .05, .8, gz, { cast: false }).rotation.y = -Math.PI / 2;
     const bx0 = 15.6, bx1 = 24.6, cx = (bx0 + bx1) / 2, bw = bx1 - bx0, bz = 31.5, bd = 2.4, H = 1.6, fz = bz + bd / 2;  // the classroom block, its front on the yard
     box(bw, H, bd, '#fbf4e6', cx, .02, bz); box(bw + .02, .7, bd + .02, '#4f8f5a', cx, .02, bz);
@@ -537,13 +537,26 @@ export function buildSet(W) {
       for (let i = 0; i < 4; i++) box(.4, .04, .08, '#8f8794', lx, .2 + i * .2, lz - .78);
       solid(lx, lz - .2, .6, 1.1);
     }
-    padauk(20.4, 35.6, .65);                                                                                         // shade over the yard
+    padauk(20.6, 35.3, 1.15, 18); L.SCHOOL_TREE = new THREE.Vector3(20.6, 0, 35.3);                                        // the one padauk in the ward that's out in flower: tall, you'll need a ladder
     L.SCHOOL = new THREE.Vector3(x0 - .6, 0, gz);
+  }
+  // behind the school: Htoo Htoo's family's timber house (the boy in the school yard), banana plants, a bamboo ladder against the wall
+  {
+    const X = 29.4, Z = 31.8, w = 4.6, d = 3.2;
+    box(w, 1.3, d, '#cfe3d2', X, .02, Z); mesh(new THREE.BoxGeometry(w + .2, 1.2, d + .2), plankM, X, 1.94, Z); gable(X, 2.95, Z, w + .6, d * .62, .45);
+    box(.7, 1.0, .06, '#6b4a32', X - .9, .02, Z + d / 2 + .01); for (const wx of [.4, 1.5]) { box(.5, .45, .06, '#3b2a24', X + wx, .55, Z + d / 2 + .01); box(.5, .45, .06, '#3b2a24', X + wx, 1.8, Z + d / 2 + .11); }
+    box(w, .2, .9, '#8a5a3a', X, .02, Z + d / 2 + .45); box(.8, .12, .35, '#8a5a3a', X - .9, .02, Z + d / 2 + 1.05);    // porch + step
+    solid(X, Z + .2, w, d + .4);
+    const L2 = W.keep(new THREE.Group()); L2.position.set(X + w / 2 + .2, 0, Z + .4); L2.rotation.z = .25; scene.add(L2); L.LADDER_WALL = L2; // the ladder, leaning
+    for (const s2 of [-.22, .22]) cyl(.035, .035, 2.6, PAL.bamboo, 0, 0, s2, 5, { parent: L2 }); for (let i = 1; i < 8; i++) box(.05, .04, .5, PAL.bamboo, 0, i * .32, 0, { parent: L2 });
+    for (const [bx, bz] of [[33.0, 30.6], [33.2, 33.6], [26.9, 35.8]]) { cyl(.07, .1, 1.1, '#9aa66a', bx, .02, bz, 6); for (let i = 0; i < 5; i++) { const lf = mesh(new THREE.PlaneGeometry(.9, .3), M('#7fae5a', { side: THREE.DoubleSide }), bx, 1.15, bz); lf.rotation.set(-.6, i * 1.25, 0); lf.translateX(.4); } solid(bx, bz, .3, .3); } // banana plants
+    L.DAD = new THREE.Vector3(X - .2, 0, Z + d / 2 + 1.2); // where Htoo Htoo's father sits on the porch step
   }
 
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
-  padauk(2.2, -4.4, .8); padauk(7.7, 2.6, .95); padauk(-1.3, 5.1, .8);
-  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [21.9, 25.7, .8]]) padauk(x, z, s);
+  // the ward's padauk trees haven't flowered yet this year (only the one in the school yard has)
+  padauk(2.2, -4.4, .8, false); padauk(7.7, 2.6, .95, false); padauk(-1.3, 5.1, .8, false);
+  for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [21.9, 25.7, .8]]) padauk(x, z, s, false);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();

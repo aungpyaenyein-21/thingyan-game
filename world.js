@@ -143,11 +143,11 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   // padauk trees: their blossom spots feed the instanced flowers + falling petals (built in start())
   const flowerSpots = [];
-  function padauk(x, z, s = 1) {
+  function padauk(x, z, s = 1, bloom = true) { // bloom: false for a tree that hasn't flowered yet
     cyl(.12 * s, .18 * s, 1.4 * s, PAL.trunk, x, 0, z, 6);
     for (const [ox, oy, oz, r, c] of [[0, 1.9, 0, .95, PAL.leaf], [.55, 1.6, .3, .6, PAL.leafLight], [-.5, 1.65, -.25, .65, PAL.leafLight], [.1, 2.5, -.1, .6, PAL.leaf]]) {
       mesh(new THREE.IcosahedronGeometry(r * s, 0), c, x + ox * s, oy * s, z + oz * s);
-      for (let k = 0; k < 7; k++) {
+      for (let k = 0; k < (bloom === true ? 7 : bloom || 0); k++) { // bloom: a number for a tree in full flower
         const v = new THREE.Vector3(rnd() - .5, rnd() * .9 - .1, rnd() - .5).normalize().multiplyScalar(r * s * .95);
         flowerSpots.push(new THREE.Vector3(x + ox * s + v.x, oy * s + v.y, z + oz * s + v.z));
       }
