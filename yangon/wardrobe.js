@@ -9,11 +9,11 @@ export const makePlayer = (W, S, x, z, ry = 0) => W.bean({ ...BODY, ...S.look, t
 // rebuild the hero in place after a look change
 export function redress(W, S) { const old = W.player, p = makePlayer(W, S, old.g.position.x, old.g.position.z, old.g.rotation.y); W.removeChar(old); W.setPlayer(p); W.snapCam(); p.anim.play('wave'); } // snapCam: keep the room's camera, no jerk
 
-const HAIR_STYLES = [['short', 'အတို'], ['buzz', 'ဆံပင်ကပ်'], ['spiky', 'ထောင်ထောင်'], ['mohawk', 'မိုဟော့'], ['bob', 'ဘော့ကတ်'], ['bun', 'ဆံထုံး'], ['long', 'ဆံပင်ရှည်'], ['pigtails', 'ကျစ်ဆံမြီး']];
+const HAIR_STYLES = [['short', 'အတို'], ['buzz', 'ကပ်ညှပ်'], ['spiky', 'ဆံပင်ထောင်'], ['mohawk', 'မိုဟော့'], ['bob', 'ဘော့ကတ်'], ['bun', 'ဆံထုံး'], ['long', 'ဆံပင်ရှည်'], ['pigtails', 'ကျစ်ဆံမြီး']];
 const HAIR_COLORS = [...HAIRS, ...HAIRS_DYED]; // natural, then the Thingyan dye jobs
 const TOP_STYLES = [['tee', 'တီရှပ်'], ['stripe', 'အစင်းတီရှပ်'], ['shirt', 'ရှပ်အင်္ကျီ'], ['tank', 'စွပ်ကျယ်'], ['long', 'လက်ရှည်'], ['hoodie', 'ဟူဒီ'], ['jacket', 'ဂျာကင်'], ['yinphone', 'ရင်ဖုံး'], ['taikpon', 'တိုက်ပုံ']];
 const TOP_COLORS = [...TOPS, '#86b96d', '#e9a0b4'];
-const BOTTOMS = [['longyi', 'လုံချည် (ပုဆိုး)'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို'], ['skirt', 'စကတ်'], ['overalls', 'ဘောင်းဘီကြိုး']];
+const BOTTOMS = [['longyi', 'လုံချည် (ပုဆိုး)'], ['htamein', 'ထဘီ'], ['pants', 'ဘောင်းဘီရှည်'], ['shorts', 'ဘောင်းဘီတို'], ['skirt', 'စကတ်'], ['overalls', 'ကြိုးသိုင်းဘောင်းဘီ']];
 const BOTTOM_COLORS = [['#3f7a5a', '#72b08b'], ['#4a5aa8', '#7f8fd6'], ['#a8434a', '#d97a7f'], ['#7a4a9a', '#a985c8'], ['#a8743a', '#d6a76a'], ['#2e2e38', '#5a5a68']];
 const HATS = [['none', 'မဆောင်းဘူး'], ['band', 'ခေါင်းစည်း'], ['goggles', 'ရေကူးမျက်မှန်'], ['bucket', 'ဦးထုပ်']];
 
