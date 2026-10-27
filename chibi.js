@@ -361,9 +361,10 @@ export function makeChibi(opts = {}) {
     part(new THREE.TorusGeometry(.33, .015, 6, 26), lighten(o.accent, .4), h, 0, -.04).rotation.x = Math.PI / 2;
   }
 
-  // water gun in the right hand (points along the forearm; hidden while the bucket is out)
+  // water: o.tools = which to build ('gun' in the right hand, 'bucket' hanging from the left), o.tool = which one is out
+  const tools = o.tools ?? [o.tool ?? (o.prop === 'gun' ? 'gun' : 'none')];
   let gun = null;
-  if (o.prop === 'gun') {
+  if (tools.includes('gun')) {
     gun = pivot(arms[1].hand, 0, -.02, .03); gun.rotation.x = -.15;
     part(new THREE.CylinderGeometry(.034, .03, .3, 12), '#ff7f3f', gun, 0, -.1, .04);
     part(new THREE.CylinderGeometry(.012, .018, .08, 8), '#ffd24d', gun, 0, -.29, .04);
@@ -377,10 +378,11 @@ export function makeChibi(opts = {}) {
     part(new THREE.CylinderGeometry(.015, .015, .5, 8), '#7a4a2e', cane, 0, -.25, 0); part(new THREE.SphereGeometry(.03, 8, 6), '#7a4a2e', cane);
   }
 
-  // the bucket for the splash action (shown only while throwing)
+  // the water bucket: origin at the top of its handle, so it hangs from the left hand; both hands swing it to throw
   const bucketG = new THREE.Group(); bucketG.visible = false; root.add(bucketG);
-  part(new THREE.CylinderGeometry(.13, .1, .18, 16), o.accent, bucketG);
-  part(new THREE.CircleGeometry(.12, 16), '#8fd3f0', bucketG, 0, .085, 0).rotation.x = -Math.PI / 2;
+  part(new THREE.CylinderGeometry(.15, .11, .22, 16), o.accent, bucketG, 0, -.25);
+  part(new THREE.CircleGeometry(.14, 16), '#8fd3f0', bucketG, 0, -.15, 0, false).rotation.x = -Math.PI / 2;
+  part(new THREE.TorusGeometry(.145, .012, 4, 16, Math.PI), '#5a4a52', bucketG, 0, -.14, 0, false);
   const blob = new THREE.Mesh(new THREE.CircleGeometry(.34, 20), new THREE.MeshBasicMaterial({ map: blobTex(), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = .005; root.add(blob);
   for (const m of vol) m.userData.sy = m.scale.y;
@@ -391,7 +393,7 @@ export function makeChibi(opts = {}) {
   root.scale.setScalar(scale);
   const hunch = o.age === 'elder' ? .3 : 0, gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
+  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
 }
 
@@ -410,6 +412,9 @@ export function emoteTex(kind) {
   if (kind === 'note') { g.fillStyle = '#e0578a'; g.save(); g.translate(52, 80); g.rotate(-.4); g.beginPath(); g.ellipse(0, 0, 15, 11, 0, 0, 7); g.fill(); g.restore();
     g.fillRect(62, 28, 7, 52); g.beginPath(); g.moveTo(69, 28); g.quadraticCurveTo(92, 38, 86, 60); g.quadraticCurveTo(84, 44, 69, 44); g.fill(); }
   if (kind === 'bang') { g.fillStyle = '#e8862e'; g.beginPath(); g.roundRect(56, 20, 16, 50, 8); g.fill(); g.beginPath(); g.arc(64, 84, 9, 0, 7); g.fill(); }
+  if (kind === 'dots') { g.fillStyle = '#5b3a52'; for (const x of [42, 64, 86]) { g.beginPath(); g.arc(x, 60, 8, 0, 7); g.fill(); } } // chatting
+  if (kind === 'haha') { g.strokeStyle = '#e0578a'; g.lineWidth = 8; g.lineCap = 'round'; for (const [x, y] of [[48, 44], [80, 44]]) { g.beginPath(); g.arc(x, y + 12, 12, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+    g.fillStyle = '#e0578a'; g.beginPath(); g.arc(64, 70, 18, 0, Math.PI); g.fill(); } // laughing
   if (kind === 'heart') { g.fillStyle = '#e0574f'; g.beginPath(); g.moveTo(64, 88); g.bezierCurveTo(26, 64, 34, 26, 64, 44); g.bezierCurveTo(94, 26, 102, 64, 64, 88); g.fill(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return emoteCache[kind] = t;
 }
@@ -430,29 +435,61 @@ const base = () => Object.fromEntries(KEYS.map(k => [k, k === 'sy' ? 1 : 0]));
 const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
 const clamp01 = t => Math.min(1, Math.max(0, t));
 
-// loops: idle | walk | run | dance ; one-shots: jump | splash | shake | wave | kadaw
-export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 } };
+// loops: idle | walk | run | dance | sit | eat (seated, spoon to mouth) | vend (low stool, fanning) | squat | ready (chinlone stance)
+//        | push (a cart) | carry (a tray at the chest) | cycle (pedalling; the zone moves the bike) | coast (on the saddle, feet still: stopped or parked)
+// one-shots: jump | splash (bucket throw) | squirt (water gun) | shake | wave | kadaw | kick (chinlone) | laugh | call (vendor beckon)
+//            | sitdown | standup
+// anim.chat = 'speak' | 'listen' | null: an upper-body layer over idle / sit / eat / vend for people talking in a group
+export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 },
+  eat: { f: 0, A: 0, speed: 0 }, vend: { f: 0, A: 0, speed: 0 }, squat: { f: 0, A: 0, speed: 0 }, ready: { f: 0, A: 0, speed: 0 },
+  push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 }, coast: { f: 0, A: 0, speed: 0 } };
 const LEG = UP + LO;
-for (const k of ['walk', 'run']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
-export const ONESHOT = { jump: .98, splash: .95, shake: 1.0, wave: 1.5, kadaw: 2.6 };
+for (const k of ['walk', 'run', 'push', 'carry']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
+export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6 };
+const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup']; // one-shots you can't walk through
+const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle', 'coast'];
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+function sitPose(p, T) {
+  const b = Math.sin(T * 1.8);
+  p.y = -.2; p.legLx = p.legRx = -1.45; p.kneeL = p.kneeR = 1.45; p.footL = p.footR = 0; p.legLz = .12; p.legRz = -.12;
+  p.spineRx = .06 + .01 * b; p.armLx = p.armRx = -.55; p.armLz = .18; p.armRz = -.18; p.elbowL = p.elbowR = -.55; p.headRz = .04 * Math.sin(T * .7);
+  return p;
+}
+const mix = (a, b, w) => { const o = { ...a }; for (const k of KEYS) o[k] = a[k] + (b[k] - a[k]) * w; return o; };
 
 export class ChibiAnimator {
   constructor(ch, emit = () => {}) {
     this.ch = ch; this.emit = emit;
     this.loop = 'idle'; this.one = null; this.oneT = 0; this.T = 0; this.phi = 0; this.freq = 0;
     this.from = base(); this.out = base(); this.blendT = 1;
-    this.tailA = 0; this.tailV = 0; this.lastStance = 0;
+    this.tailA = 0; this.tailV = 0; this.lastStance = 0; this.seed = Math.random() * 10; this.chat = null;
+  }
+  _chat(p, sat) { // talking in a group: the speaker's hands go, the others nod along
+    const T = this.T + this.seed;
+    if (this.chat === 'speak') {
+      p.armRx = (sat ? -.75 : -.45) - .35 * (.5 + .5 * Math.sin(T * 2.3)); p.elbowR = -1.0 - .4 * Math.sin(T * 4.1); p.armRz = -.28; p.handRz = .35 * Math.sin(T * 5.3);
+      if (Math.sin(T * .9) > .2) { p.armLx = (sat ? -.75 : -.35) - .25 * (.5 + .5 * Math.sin(T * 1.7 + 1)); p.elbowL = -.75; p.armLz = .3; }
+      p.headRy = .25 * Math.sin(T * .8); p.headRx = -.06 + .05 * Math.sin(T * 3); p.mouth = (T * 6.5) % 1 < .5 ? 'open' : 'smile';
+    } else {
+      p.headRx = .14 * Math.max(0, Math.sin(T * 2.6)) ** 2; p.headRz = .06 * Math.sin(T * .7);
+      if (!sat) { p.armLx = p.armRx = -.5; p.armLz = -.3; p.armRz = .3; p.elbowL = p.elbowR = -1.45; } // arms folded
+    }
   }
   setCharacter(ch) { this.ch = ch; }
   setLoop(name) { if (name === this.loop && !this.one) return; this.loop = name; this.one = null; this._xfade(); }
-  play(name) { this.one = name; this.oneT = 0; this._xfade(); this.thrown = false; }
+  play(name) {
+    if (name === 'splash' && this.ch.tool === 'gun' && this.ch.gun) name = 'squirt'; // whatever's in your hands
+    this.one = name; this.oneT = 0; this._xfade(); this.thrown = false; this.sq = 0;
+  }
+  setTool(t) { if (this.ch.tools.includes(t)) this.ch.tool = t; }
+  skip(dt) { if (this.one && (this.oneT += dt) >= ONESHOT[this.one]) { this.one = null; this._xfade(); } } // off screen: no pose, but one-shots still end (scripts wait on them)
   soak(k = 1) { this.ch.wet = Math.min(1, this.ch.wet + k); this.hitT = .7; } // hit by water: >_< for a moment, then dries over ~10 s
   emote(kind, dur = 1.6) {
     const c = this.ch;
     if (!c.bubble) { c.bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: emoteTex(kind), depthWrite: false })); c.bubble.renderOrder = 10; c.root.add(c.bubble); }
     c.bubble.material.map = emoteTex(kind); c.bubble.visible = true; this.emT = 0; this.emDur = dur;
   }
-  get speed() { return ['kadaw', 'shake', 'splash', 'wave'].includes(this.one) ? 0 : LOOPS[this.loop].speed * this.ch.scale * this.ch.legK * this.ch.gait; } // ground speed (units/s)
+  get speed() { return STILL.includes(this.one) ? 0 : LOOPS[this.loop].speed * this.ch.scale * this.ch.legK * this.ch.gait; } // ground speed (units/s)
   _xfade() { this.from = { ...this.out }; this.blendT = 0; }
 
   update(dt) {
@@ -461,7 +498,10 @@ export class ChibiAnimator {
     this.freq += ((L.f || 0) * this.ch.gait - this.freq) * clamp01(dt * 6);
     this.phi += this.freq * Math.PI * 2 * dt;
     let pose = this._loopPose(this.loop);
-    if (this.ch.cane && this.loop !== 'dance') { pose.armRx = pose.armRx * .3 - .3; pose.armRz = -.1; pose.elbowR = -.5; } // cane hand held forward
+    const c = this.ch, sat = SEATED.includes(this.loop), walking = ['idle', 'walk', 'run'].includes(this.loop);
+    if (c.cane && walking) { pose.armRx = pose.armRx * .3 - .3; pose.armRz = -.1; pose.elbowR = -.5; } // cane hand held forward
+    if ((c.tool === 'bucket' || c.hang) && walking) { pose.armLx *= .3; pose.armLz = Math.max(pose.armLz, .3); pose.elbowL = -.06; } // a heavy bucket / basket: arm straight, out from the leg
+    if (this.chat && !['walk', 'run', 'push', 'carry', 'cycle'].includes(this.loop)) this._chat(pose, sat);
     if (this.one) {
       this.oneT += dt; const d = ONESHOT[this.one];
       if (this.oneT >= d) { this.one = null; this._xfade(); }
@@ -480,7 +520,7 @@ export class ChibiAnimator {
     if (name === 'idle') {
       const b = Math.sin(T * 2.2);
       p.sy = 1 + .012 * b; p.spineRx = .02 * b; p.armLz = .14 + .03 * b; p.armRz = -.14 - .03 * b; p.elbowL = p.elbowR = -.15; p.headRz = .05 * Math.sin(T * .9);
-    } else if (name === 'walk' || name === 'run') {
+    } else if (name === 'walk' || name === 'run' || name === 'push' || name === 'carry') {
       const run = name === 'run', A = LOOPS[name].A, f = this.phi, s = Math.sin(f), c = Math.cos(f);
       const thL = A * s, thR = -thL;
       p.legLx = -thL; p.legRx = -thR;
@@ -511,10 +551,38 @@ export class ChibiAnimator {
         p.armLx = .55 * s; p.armRx = -.55 * s; p.armLz = .12; p.armRz = -.12;
         p.elbowL = -.25 - .2 * Math.max(0, -s); p.elbowR = -.25 - .2 * Math.max(0, s);
       }
+      if (name === 'push') { p.armLx = p.armRx = -1.2; p.armLz = .14; p.armRz = -.14; p.elbowL = p.elbowR = -.4; p.spineRx = .28; p.headRx = -.12; } // both hands on the cart's handle
+      if (name === 'carry') { p.armLx = p.armRx = -.85; p.armLz = -.1; p.armRz = .1; p.elbowL = p.elbowR = -1.15; p.spineRx = -.02; p.headRx = .05; } // a tray held out in front
       p.mouth = run ? 'open' : 'smile';
       const stance = c > 0 ? 1 : -1; // dust on each foot strike while running
       if (run && stance !== this.lastStance) this.emit('dust', this.ch.legs[stance > 0 ? 1 : 0].foot);
       this.lastStance = stance;
+    } else if (name === 'sit' || name === 'eat') { // on a tea-shop stool: thighs forward, shins down, hands on the knees, a slow breath
+      sitPose(p, T); p.expr = 'normal'; p.mouth = 'smile';
+      if (name === 'eat') { // every few seconds: a bite (hand up to the mouth), then chewing
+        const u = (T + this.seed) % 3.2, up = ease(clamp01(u / .45)) * (1 - ease(clamp01((u - 1.0) / .5)));
+        p.armRx = -.55 - .75 * up; p.elbowR = -.55 - 1.55 * up; p.armRz = -.18 + .32 * up; p.headRx = .12 - .1 * up; p.spineRx = .14;
+        p.armLx = -.85; p.elbowL = -.85; p.armLz = .05; // the other hand on the table
+        p.mouth = up > .7 || (u > 1 && u < 2.4 && (T * 6) % 1 < .5) ? 'open' : 'smile';
+      }
+    } else if (name === 'vend') { // on a low market stool: knees up, leaning in, fanning herself, eyes on whoever goes by
+      const fan = (T + this.seed) % 7 < 2.4;
+      p.y = -.34; p.legLx = p.legRx = -1.25; p.kneeL = p.kneeR = 2.0; p.footL = p.footR = -.6; p.legLz = .2; p.legRz = -.2;
+      p.spineRx = .22; p.armLx = p.armRx = -.75; p.armLz = .22; p.armRz = -.22; p.elbowL = p.elbowR = -.35; p.headRy = .45 * Math.sin(T * .35 + this.seed);
+      if (fan) { p.armRx = -1.0; p.elbowR = -1.75; p.armRz = .1; p.handRz = .7 * Math.sin(T * 14); p.headRx = -.1; }
+    } else if (name === 'squat') { // squatting down: looking over a vendor's tray, scooping water from a basin
+      const b = Math.sin(T * 1.6);
+      p.y = -.44; p.legLx = p.legRx = -1.55; p.kneeL = p.kneeR = 2.45; p.footL = p.footR = -.85; p.legLz = .28; p.legRz = -.28;
+      p.spineRx = .5 + .02 * b; p.headRx = -.25; p.armLx = p.armRx = -.95; p.armLz = .15; p.armRz = -.15; p.elbowL = p.elbowR = -.5 - .15 * b;
+    } else if (name === 'ready') { // chinlone: up on the toes, knees soft, arms loose and out, eyes on the ball
+      const b = Math.sin(T * 6 + this.seed);
+      p.y = -.04 + .02 * b; p.kneeL = p.kneeR = .35; p.legLx = p.legRx = -.18; p.footL = p.footR = -.17; p.legLz = .08; p.legRz = -.08;
+      p.spineRx = .14; p.headRx = -.3; p.armLz = .5; p.armRz = -.5; p.armLx = p.armRx = -.2; p.elbowL = p.elbowR = -.35;
+    } else if (name === 'cycle' || name === 'coast') { // pedalling: feet go round, hands on the bars, a lean over them (coast: the cranks wind down and stop)
+      const f = this.phi, s = Math.sin(f), co = Math.cos(f);
+      p.y = 0; p.legLx = -1.05 + .38 * s; p.kneeL = 1.25 - .45 * co; p.legRx = -1.05 - .38 * s; p.kneeR = 1.25 + .45 * co;
+      p.footL = -(p.legLx + p.kneeL) * .7; p.footR = -(p.legRx + p.kneeR) * .7; p.legLz = .05; p.legRz = -.05; p.hipsRz = .04 * s;
+      p.spineRx = .32; p.headRx = -.22; p.armLx = p.armRx = -1.15; p.armLz = .22; p.armRz = -.22; p.elbowL = p.elbowR = -.35;
     } else if (name === 'dance') { // yein: hips sway, knee dips, raised arms with wrist flicks
       const b = T * Math.PI * 2 * 1.1, s = Math.sin(b), d = (1 + Math.sin(2 * b)) / 2;
       p.x = .05 * s; p.hipsRz = .08 * s; p.spineRz = -.1 * s; p.headRz = .14 * Math.sin(b + 1.2);
@@ -542,17 +610,53 @@ export class ChibiAnimator {
     }
     return p;
   }
-  _splash(p, t) { // grab → wind-up (twist back) → throw → settle
-    p = { ...p, hold: 0 }; const B = this.ch.bucket; B.visible = t < .82;
-    const k1 = clamp01(t / .32), k2 = clamp01((t - .32) / .14), k3 = clamp01((t - .46) / .4);
-    const wind = ease(k1) * (1 - ease(k2)), thr = ease(k2) * (1 - ease(k3) * .7);
+  _splash(p, t) { // both hands on the bucket in front → swing it back to the side → heave it forward → settle
+    const g = ease(clamp01(t / .16)), k1 = clamp01((t - .12) / .26), k2 = clamp01((t - .38) / .14), k3 = clamp01((t - .52) / .38);
+    const wind = ease(k1) * (1 - ease(k2)), thr = ease(k2) * (1 - ease(k3) * .75), hold = g * (1 - wind) * (1 - thr);
+    p = { ...p, hold: 0 };
     Object.assign(p, {
-      spineRy: .55 * wind - .35 * thr, spineRx: -.08 * wind + .3 * thr, hipsRy: .2 * wind - .15 * thr,
-      armLx: .7 * wind - 1.9 * thr, armRx: .7 * wind - 1.9 * thr, armLz: -.25, armRz: .25, elbowL: -.9 + .7 * thr, elbowR: -.9 + .7 * thr,
-      kneeL: .25 * wind, kneeR: .35 * wind, legLx: -.1 * wind - .3 * thr, footL: .1 * wind + .3 * thr, legRx: .1 * wind, footR: -.1 * wind,
+      spineRy: .55 * wind - .35 * thr, spineRx: .12 * hold - .05 * wind + .3 * thr, hipsRy: .2 * wind - .15 * thr,
+      armLx: -.55 * hold + .5 * wind - 1.9 * thr, armRx: -.55 * hold + .5 * wind - 1.9 * thr, armLz: -.3 * g, armRz: .3 * g,
+      elbowL: -.5 * hold - .7 * wind - .2 * thr, elbowR: -.5 * hold - .7 * wind - .2 * thr,
+      kneeL: .15 * hold + .25 * wind, kneeR: .15 * hold + .35 * wind, legLx: -.1 * wind - .3 * thr, footL: .1 * wind + .3 * thr, legRx: .1 * wind, footR: -.1 * wind,
       expr: thr > .5 ? 'happy' : 'normal', mouth: thr > .3 ? 'open' : 'smile' });
-    if (!this.thrown && t > .44) { this.thrown = true; this.emit('splash', B); }
+    if (!this.thrown && t > .46) { this.thrown = true; this.emit('splash', this.ch.bucket); }
     return p;
+  }
+  _squirt(p, t) { // water gun: up to the shoulder, the other hand under it, a thin stream for half a second
+    const up = ease(clamp01(t / .14)) * (1 - ease(clamp01((t - .72) / .13)));
+    Object.assign(p, { hold: 0, armRx: -1.5 * up + p.armRx * (1 - up), armRz: -.05 * up + p.armRz * (1 - up), elbowR: -.08 * up + p.elbowR * (1 - up),
+      armLx: -1.2 * up + p.armLx * (1 - up), armLz: -.45 * up + p.armLz * (1 - up), elbowL: -.65 * up + p.elbowL * (1 - up),
+      spineRy: -.12 * up, headRy: -.08 * up, expr: 'happy', mouth: up > .5 ? 'open' : 'smile' });
+    const n = Math.floor((Math.min(t, .7) - .14) * 45); if (this.sq === 0 && n > 0) this.emit('squirtStart', this.ch.gun);
+    while (this.sq < n) { this.sq++; this.emit('squirt', this.ch.gun); }
+    return p;
+  }
+  _kick(p, t) { // chinlone: inside-of-the-foot kick, the leg swings up and out, arms out for balance, a little hop
+    const k = Math.sin(Math.PI * clamp01(t / ONESHOT.kick));
+    Object.assign(p, { y: .05 * k, legRx: -.85 * k, legRz: -.7 * k, kneeR: .2 + 1.5 * k, footR: .35 * k, kneeL: .3 + .15 * k, legLx: -.15, footL: -.15,
+      spineRz: .22 * k, spineRx: .1, armLz: .7 + .3 * k, armRz: -.7 - .2 * k, elbowL: -.3, elbowR: -.3, headRx: .2 * k, mouth: k > .6 ? 'open' : 'smile' });
+    return p;
+  }
+  _laugh(p, t) { // lean back, shoulders shaking, a hand on the belly
+    const e = ease(clamp01(t / .15)) * (1 - ease(clamp01((t - .85) / .25))), b = Math.abs(Math.sin(t * 26));
+    Object.assign(p, { spineRx: p.spineRx - .22 * e, headRx: p.headRx - .28 * e, y: p.y + .018 * e * b, sy: p.sy + .02 * e * b,
+      armLx: p.armLx + (-.6 - p.armLx) * e, elbowL: p.elbowL + (-1.35 - p.elbowL) * e, armLz: p.armLz + (.05 - p.armLz) * e, expr: 'happy', mouth: 'open' });
+    return p;
+  }
+  _call(p, t) { // a vendor calling you over: arm out, palm-down beckon (the Myanmar way), mouth open
+    const up = ease(clamp01(t / .2)) * (1 - ease(clamp01((t - 1.0) / .2)));
+    Object.assign(p, { armRx: p.armRx + (-1.35 - p.armRx) * up, armRz: p.armRz + (-.1 - p.armRz) * up, elbowR: p.elbowR + (-.25 - .55 * (.5 + .5 * Math.sin(t * 15)) - p.elbowR) * up,
+      handRz: 0, headRx: -.12 * up, expr: 'happy', mouth: 'open' });
+    return p;
+  }
+  _sitdown(p, t) { // p is already the seated pose: come down into it from standing, leaning forward as you go
+    const k = ease(clamp01(t / ONESHOT.sitdown)), o = mix(this._loopPose('idle'), p, k);
+    o.spineRx += .45 * Math.sin(Math.PI * k); o.armLx += -.4 * Math.sin(Math.PI * k); o.armRx += -.4 * Math.sin(Math.PI * k); return o;
+  }
+  _standup(p, t) { // p is the standing pose: lean forward, push on the knees, rise
+    const k = ease(clamp01(t / ONESHOT.standup)), o = mix(sitPose(base(), this.T), p, k), m = Math.sin(Math.PI * k);
+    o.spineRx += .55 * m; o.armLx += -.5 * m; o.armRx += -.5 * m; o.elbowL -= .4 * m; o.elbowR -= .4 * m; return o;
   }
   _shake(p, t) { // wet-dog shake
     const d = 1 - t / ONESHOT.shake, w = Math.sin(t * 34) * d;
@@ -582,8 +686,9 @@ export class ChibiAnimator {
     c.body.position.set(p.x, p.y * c.legK, 0); c.body.scale.set(1 / Math.sqrt(p.sy), p.sy, 1 / Math.sqrt(p.sy));
     c.hips.rotation.set(0, p.hipsRy, p.hipsRz); c.spine.rotation.set(p.spineRx + (c.hunch || 0), p.spineRy, p.spineRz);
     c.head.rotation.set(p.headRx - (c.hunch || 0) * .7, p.headRy, p.headRz);
-    if (c.gun) c.gun.visible = !c.bucket.visible;
-    if (c.cane) { c.cane.visible = !c.bucket.visible; c.cane.rotation.x = -(p.armRx + p.elbowR + p.spineRx + c.hunch); }
+    const throwing = this.one === 'splash';
+    if (c.gun) c.gun.visible = c.tool === 'gun' && !throwing;
+    if (c.cane) { c.cane.visible = !throwing; c.cane.rotation.x = -(p.armRx + p.elbowR + p.spineRx + c.hunch); }
     const [lL, lR] = c.legs;
     lL.hip.rotation.set(p.legLx, 0, p.legLz); lR.hip.rotation.set(p.legRx, 0, p.legRz);
     lL.knee.rotation.x = p.kneeL; lR.knee.rotation.x = p.kneeR; lL.foot.rotation.x = p.footL; lR.foot.rotation.x = p.footR;
@@ -593,11 +698,22 @@ export class ChibiAnimator {
     // face
     const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : c.opts.age === 'elder' ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes
     const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, eye, p.mouth); }
-    // bucket rides between the hands
-    if (c.bucket.visible) {
-      const a = c.arms[0].hand.getWorldPosition(new THREE.Vector3()), b = c.arms[1].hand.getWorldPosition(new THREE.Vector3());
-      c.root.worldToLocal(a.add(b).multiplyScalar(.5)); c.bucket.position.copy(a).add(new THREE.Vector3(0, -.02, .06));
-      c.bucket.rotation.x = p.armLx < -1 ? -1.1 : 0;
+    // the bucket hangs from the left hand; while throwing it moves out in front between both hands (never through the body), then tips
+    const B = c.bucket; B.visible = c.tool === 'bucket' || throwing;
+    if (B.visible || c.hang) {
+      const hL = c.root.worldToLocal(c.arms[0].hand.getWorldPosition(_a)).add(_c.set(0, -.02, 0));
+      if (c.hang) { c.hang.visible = !throwing; c.hang.position.copy(hL); }
+      if (B.visible) {
+        let rx = 0;
+        if (throwing) {
+          const t = this.oneT, hR = c.root.worldToLocal(c.arms[1].hand.getWorldPosition(_b));
+          const mid = hR.add(hL).multiplyScalar(.5), out = _c.set(mid.x, 0, mid.z), l = out.length();
+          if (l < .05) out.set(0, 0, 1); else out.divideScalar(l);
+          mid.addScaledVector(out, .14); hL.lerp(mid, ease(clamp01(t / .16)) * (1 - ease(clamp01((t - .8) / .15))));
+          rx = 1.9 * ease(clamp01((t - .42) / .14)) * (1 - ease(clamp01((t - .66) / .25)));
+        }
+        B.position.copy(hL); B.rotation.set(rx, 0, Math.sin(this.phi) * .08);
+      }
     }
     // ponytail spring (follows body bounce + speed)
     if (c.tail) {

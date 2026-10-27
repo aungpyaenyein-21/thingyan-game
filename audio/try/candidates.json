@@ -1,0 +1,34 @@
+{
+ "fest_crowd": {
+  "file": "audio/try/fest_crowd.mp3",
+  "what": "ရေပွဲ မဏ္ဍပ်နား လူသံ + ကလေးသံ (မြန်မာစကား)",
+  "title": "Utica Burmese Water Festival (2009)",
+  "license": "Public domain",
+  "page": "https://archive.org/details/Utica_Burmese_Water_Festival",
+  "author": "Marco_X"
+ },
+ "fest_crowd2": {
+  "file": "audio/try/fest_crowd2.mp3",
+  "what": "ရေပွဲ လူအုပ် စကားပြောသံ (မြန်မာစကား)",
+  "title": "Utica Burmese Water Festival (2009)",
+  "license": "Public domain",
+  "page": "https://archive.org/details/Utica_Burmese_Water_Festival",
+  "author": "Marco_X"
+ },
+ "fest_cheer": {
+  "file": "audio/try/fest_cheer.mp3",
+  "what": "လူအုပ် / ကလေး အော်ဟစ်သံ (တစ်ချက်)",
+  "title": "Utica Burmese Water Festival (2009)",
+  "license": "Public domain",
+  "page": "https://archive.org/details/Utica_Burmese_Water_Festival",
+  "author": "Marco_X"
+ },
+ "fest_cheer2": {
+  "file": "audio/try/fest_cheer2.mp3",
+  "what": "လူအုပ် / ကလေး အော်ဟစ်သံ (နှစ်ချက်)",
+  "title": "Utica Burmese Water Festival (2009)",
+  "license": "Public domain",
+  "page": "https://archive.org/details/Utica_Burmese_Water_Festival",
+  "author": "Marco_X"
+ }
+}
