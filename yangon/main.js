@@ -1,14 +1,14 @@
 // yangon/main.js — story day 1, Yangon (STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
-import { createWorld, PAL, SKINS } from '../world.js?v=8';
+import { createWorld, PAL, SKINS } from '../world.js?v=9';
 import { CAT_COATS } from '../critters.js?v=5';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=12';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=13';
 import { createHud, play } from './hud.js?v=3';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=3';
-import { buildRooms } from './rooms.js?v=4';
+import { buildRooms } from './rooms.js?v=5';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=8';
+import { startLife } from './life.js?v=9';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=4';
 
@@ -118,7 +118,7 @@ const cart = W.keep(new THREE.Group()); scene.add(cart);
   for (let i = 0; i < 6; i++) mesh(new THREE.IcosahedronGeometry(.13, 0), pick([PAL.leaf, PAL.leafLight]), -.3 + (i % 3) * .3, .95, (i < 3 ? -.15 : .15), o);
   for (let i = 0; i < 4; i++) mesh(new THREE.SphereGeometry(.07, 8, 6), PAL.red, .35 + (i % 2) * .12, .92, -.2 + (i >> 1) * .14, o);
 }
-const call = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဟင်းသီး~ ဟင်းရွက်~'), depthWrite: false })); call.scale.set(2.8, .88, 1); call.position.y = 2.3; call.visible = false; vendor.g.add(call);
+const call = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဟင်းသီး~ ဟင်းရွက်~'), depthWrite: false }))); call.scale.set(2.8, .88, 1); call.position.y = 2.3; call.visible = false; vendor.g.add(call);
 const VD = { callT: 2 }, CORNER = new THREE.Vector3(-2.0, 0, -1.0); // ① where the side lane meets the back lane
 vendor.g.position.set(CORNER.x, ground(CORNER.x, CORNER.z + .7), CORNER.z + .7); vendor.g.rotation.y = Math.PI; // behind her cart, facing the lane
 cart.position.set(CORNER.x, .02, CORNER.z); W.solid(CORNER.x, CORNER.z, 1.3, .8);
@@ -222,7 +222,7 @@ W.addPet('cat', 'house', 28.6, 5.0);      // pharmacy step
 // Shwe Wa (ရွှေဝါ), U Ba Tin's ginger cat: up on the old car's roof since the kids' water scared her this morning
 const ROOF = new THREE.Vector3(L.CAR.x, 1.2, L.CAR.z - .2);
 const shweWa = W.addPet('cat', 'house', L.CAR.x + 1.0, L.CAR.z, { coat: CAT_COATS[0], socks: true });
-const meow = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ညောင်~'), depthWrite: false })); meow.scale.set(1.3, .42, 1); meow.position.y = .7; meow.visible = false; shweWa.g.add(meow);
+const meow = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ညောင်~'), depthWrite: false }))); meow.scale.set(1.3, .42, 1); meow.position.y = .7; meow.visible = false; shweWa.g.add(meow);
 const CAT = { meowT: 2, hop: null };
 shweWa.hit = () => { shweWa.anim.soak(); shweWa.anim.emote('bang'); };
 function catHome() { shweWa.held = false; shweWa.home.set(UNCLE.x + .6, 0, UNCLE.z + .6); shweWa.target = null; shweWa.anim.setLoop('sit'); if (!CAT.hop) shweWa.g.position.set(UNCLE.x + .6, ground(UNCLE.x + .6, UNCLE.z + .6), UNCLE.z + .6); }

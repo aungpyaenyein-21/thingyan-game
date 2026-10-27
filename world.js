@@ -131,7 +131,43 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     g.fillStyle = '#fff6ea'; g.fillRect(234, H - 2, 44, 12);
     g.fillStyle = '#5a3550'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `${px}px ${FONT}`;
     rows.forEach((r, i) => g.fillText(r, 256, rows.length > 1 ? 56 + i * 86 : 64));
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.tall = rows.length > 1; return t;
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.tall = rows.length > 1; t.userData.text = text; return t;
+  }
+  // ---------- speech: a bubble sprite handed to speak() is shown as HTML over the canvas instead, so it stays sharp, a
+  // readable size on a phone (the world is drawn half size there), never cut by a roof or blurred with the distance, and
+  // two that overlap get nudged apart. Callers keep driving the sprite (visible, map, position) exactly as before. ----------
+  const speech = [], bubLayer = document.createElement('div'); bubLayer.id = 'bubbles';
+  const bubCss = document.createElement('style');
+  bubCss.textContent = `#bubbles{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+    #bubbles .bub{position:absolute;left:0;top:0;display:none;max-width:min(240px,46vw);padding:3px 12px 4px;border:2px solid #5a3550;border-radius:14px;background:#fff6ea;color:#5a3550;
+      font:15px/1.55 ${FONT};text-align:center;white-space:normal;box-shadow:0 2px 0 rgba(90,53,80,.18);will-change:transform}
+    #bubbles .bub::after{content:'';position:absolute;left:50%;bottom:-8px;margin-left:-7px;border:7px solid transparent;border-bottom:0;border-top-color:#5a3550}
+    #bubbles .bub::before{content:'';position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#fff6ea;z-index:1}
+    @media (pointer:coarse){#bubbles .bub{font-size:13px;padding:2px 10px 3px}}
+    body.busy #bubbles{display:none}`;
+  document.head.appendChild(bubCss); document.body.appendChild(bubLayer);
+  function speak(sprite) { sprite.layers.set(1); const el = document.createElement('div'); el.className = 'bub'; bubLayer.appendChild(el); speech.push({ s: sprite, el, text: '', on: false }); return sprite; }
+  const bp = new THREE.Vector3(), bs = new THREE.Vector3(), BUB_MAX = PHONE ? 4 : 6; // only the few nearest you talk at once: a market doesn't drown the screen
+  function placeBubbles() {
+    const want = [];
+    for (const b of speech) {
+      let on = !!b.s.parent; for (let q = b.s; on && q; q = q.parent) on = q.visible;
+      if (on) { b.s.getWorldPosition(bp); b.d = bp.distanceToSquared(W.player.g.position) - (b.s.userData.talk ? 1e4 : 0); b.s.getWorldScale(bs); bp.y -= bs.y * .45; bp.project(cam); on = b.d < 144 && Math.abs(bp.x) < 1.05 && Math.abs(bp.y) < 1.05; } // street calls from further off than ~12 stay quiet
+      if (on) { b.x = (bp.x * .5 + .5) * innerWidth; b.y = (-bp.y * .5 + .5) * innerHeight - 8; want.push(b); }
+    }
+    want.sort((a, b) => a.d - b.d); const shown = want.slice(0, BUB_MAX), keep = new Set(shown);
+    for (const b of speech) if (b.on && !keep.has(b)) { b.el.style.display = 'none'; b.on = false; }
+    for (const b of shown) {
+      const t = b.s.material.map?.userData.text ?? ''; if (t !== b.text) { b.el.textContent = b.text = t; }
+      if (!b.on) { b.el.style.display = 'block'; b.on = true; }
+    }
+    for (const b of shown) { b.w = b.el.offsetWidth; b.h = b.el.offsetHeight; b.x = THREE.MathUtils.clamp(b.x, b.w / 2 + 6, innerWidth - b.w / 2 - 6); } // never past the screen edge
+    shown.sort((a, b) => b.y - a.y); // the lowest on screen keeps its place; anyone overlapping it moves up
+    for (let i = 1; i < shown.length; i++) for (let j = 0; j < i; j++) {
+      const a = shown[i], o = shown[j];
+      if (Math.abs(a.x - o.x) < (a.w + o.w) / 2 + 4 && a.y > o.y - o.h - 4 && a.y - a.h < o.y + 4) a.y = o.y - o.h - 6;
+    }
+    for (const b of shown) b.el.style.transform = `translate(${Math.round(b.x - b.w / 2)}px,${Math.round(b.y - b.h)}px)`;
   }
 
   const solids = []; // AABBs the player can't walk into
@@ -525,7 +561,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
     look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
     if (PHONE && (++shadowTick & 1)) renderer.shadowMap.needsUpdate = true; // phones: shadows redrawn every other frame (the lookup follows the map, so nothing swims)
-    composer.render();
+    composer.render(); placeBubbles();
   }
   const ticks = [];
   function start() { // call once the zone has built its set: flowers + petals need the trees
@@ -621,7 +657,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
-    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
+    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

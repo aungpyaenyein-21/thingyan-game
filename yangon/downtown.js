@@ -2,8 +2,8 @@
 // Maha Bandula Park and its monument, pandals along the streets, a float circling Sule, crowds dancing in the hoses.
 // Era 2015–19: floats still allowed. The stage is a generic city mandat — no officials, no state symbols (STORY.md §၈).
 // Favour #9: the water crew will give you a brass sprinkler for the kids' mandat, once you've been soaked at all three stages.
-import { createWorld, PAL } from '../world.js?v=8';
-import { shwedagon, MM } from './set.js?v=12';
+import { createWorld, PAL } from '../world.js?v=9';
+import { shwedagon, MM } from './set.js?v=13';
 import { createHud, play } from './hud.js?v=3';
 import { makePlayer } from './wardrobe.js?v=3';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=4';

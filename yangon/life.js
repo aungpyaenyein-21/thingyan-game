@@ -2,8 +2,8 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=8';
-import { ROAD } from './set.js?v=12';
+import { PAL } from '../world.js?v=9';
+import { ROAD } from './set.js?v=13';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -18,8 +18,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   // ---------- speech bubbles (street calls), one sprite per speaker, textures shared ----------
   const TEX = new Map(), tex = t => TEX.get(t) ?? (TEX.set(t, bubbleTex(t)), TEX.get(t));
   function say(c, text, dur = 2.4, y = 2.3) {
-    if (!c.say) { c.say = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(text), depthWrite: false })); c.say.scale.set(2.6, .82, 1); c.g.add(c.say); }
-    const t = tex(text); c.say.material.map = t; c.say.scale.y = t.userData.tall ? 1.24 : .82; c.say.position.y = (y + (t.userData.tall ? .2 : 0)) / c.g.scale.x; c.say.visible = true; c.sayT = dur;
+    if (!c.say) { c.say = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(text), depthWrite: false }))); c.say.scale.set(2.6, .82, 1); c.g.add(c.say); }
+    const t = tex(text); c.say.material.map = t; c.say.userData.talk = false; c.say.scale.y = t.userData.tall ? 1.24 : .82; c.say.position.y = (y + (t.userData.tall ? .2 : 0)) / c.g.scale.x; c.say.visible = true; c.sayT = dur;
   }
 
   // ---------- a tiny script runtime: scripts are async functions that walk paths and wait ----------
@@ -78,7 +78,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     }
     let w; do w = (rnd() * k.ppl.length) | 0; while (w === k.who && k.ppl.length > 1);
     const pp = W.player.g.position, line = k.lines && Math.hypot(pp.x - k.ppl[0].g.position.x, pp.z - k.ppl[0].g.position.z) < 9 ? k.lines[k.li++ % k.lines.length] : null;
-    if (line) { w = line[0]; say(k.ppl[w], line[1], 3.4, 2.1); }
+    if (line) { w = line[0]; say(k.ppl[w], line[1], 3.4, 2.1); k.ppl[w].say.userData.talk = true; } // a real conversation beats the street calls for a place on screen
     k.who = w; k.ppl.forEach((c, i) => { c.anim.chat = i === w ? 'speak' : 'listen'; }); if (rnd() < .3) k.ppl[w].anim.emote('dots', 1.2);
     k.t = line ? 3.6 + rnd() * 1.2 : 2.4 + rnd() * 3.5;
   }
@@ -155,7 +155,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const wx of [-1.5, 1.4]) for (const wz of [-.72, .72]) { const w = mesh(new THREE.CylinderGeometry(.3, .3, .2, 12), '#2b2730', wx, .3, wz, o); w.rotation.x = Math.PI / 2; }
     bus.rotation.y = Math.PI; bus.position.set(BOUNDS.x1 + 6, .045, BUS.lane); // front (+x) faces west
   }
-  const conductor = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('ဆူးလေ~ ဆူးလေ~'), depthWrite: false })); conductor.scale.set(2.8, .88, 1); conductor.position.set(1.7, 2.7, .9); conductor.visible = false; bus.add(conductor);
+  const conductor = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: tex('ဆူးလေ~ ဆူးလေ~'), depthWrite: false }))); conductor.scale.set(2.8, .88, 1); conductor.position.set(1.7, 2.7, .9); conductor.visible = false; bus.add(conductor);
   // waiting on the bench: walk up, sit down; when the bus stops, stand up and get on
   const BENCH_Y = .36, DOOR = () => V(bus.position.x - 1.7, 6.5);
   async function waiter(c, seatX) {
