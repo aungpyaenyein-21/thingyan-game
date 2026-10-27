@@ -5,8 +5,8 @@
 import { createWorld, PAL } from '../world.js?v=9';
 import { shwedagon, MM } from './set.js?v=13';
 import { createHud, play } from './hud.js?v=3';
-import { makePlayer } from './wardrobe.js?v=3';
-import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=4';
+import { makePlayer } from './wardrobe.js?v=4';
+import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=5';
 import { createSound } from '../sound.js?v=3';
 
 const S = load(); S.at = 'downtown';
@@ -243,13 +243,13 @@ const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); 
 function talkBoss() {
   const K = 'ရေပက်အဖွဲ့ ကိုကြီး', q = S.q.nozzle;
   if (S.step === 'quests' && q === 'ask') return talk([
-    [ME, 'အစ်ကို… ရပ်ကွက်က ကလေးတွေ မဏ္ဍပ်လေး ဆောက်နေလို့ပါ။ ရေပန်းခေါင်း အပို တစ်ခု ရနိုင်မလား။'],
+    [ME, 'အစ်ကိုကြီး… ရပ်ကွက်က ကလေးတွေအတွက် မဏ္ဍပ်လေး ဆောက်နေလို့ပါ။ ရေပန်းခေါင်း အပို တစ်ခုလောက် ရနိုင်မလားဗျ။'],
     [K, 'ကလေးမဏ္ဍပ်အတွက်လား! ပေးမယ်… ဒါပေမဲ့ မြို့လယ် ရောက်ပြီး ရေမစိုဘဲ ပြန်သွားလို့ မရဘူးကွ!'],
-    [K, 'မဏ္ဍပ် သုံးခုလုံးရှေ့မှာ ရေပက်ခံခဲ့ — ဒီမဏ္ဍပ်ကြီး၊ အနောက်ဘက်က ရပ်ကွက်ပေါင်းစုံ မဏ္ဍပ်၊ တောင်ဘက်က ရွှေပိတောက် မဏ္ဍပ်။ စိုရွှဲပြီးမှ ပြန်လာ!'],
+    [K, 'မဏ္ဍပ် သုံးခုလုံးရှေ့ သွားပြီး ရေပက်ခံလိုက်ဦး — ဒီမဏ္ဍပ်ကြီး၊ အနောက်ဘက်က ရပ်ကွက်ပေါင်းစုံ မဏ္ဍပ်၊ တောင်ဘက်က ရွှေပိတောက် မဏ္ဍပ်။ စိုရွှဲပြီးမှ ပြန်လာ!'],
   ], () => { S.q.nozzle = 'soak'; S.soaked = []; hud2(); hud.toast('မဏ္ဍပ် ၃ ခုမှာ ရေပက်ခံမယ်'); }, boss);
   if (q === 'back') return talk([
     [K, 'ဟား ဟား! စိုရွှဲနေပြီပဲ! ဒါမှ သင်္ကြန်ပေါ့။'],
-    [K, 'ရော့ — ရေပန်းခေါင်း၊ ကြေးဝါ အစစ်။ ခေါင်မိုးပေါ် တပ်လိုက်ရင် ကလေးတွေ ပေါ်ကို မိုးရွာသလို ကျမယ်။'],
+    [K, 'ရော့ — ရေပန်းခေါင်း၊ ကြေးဝါ အစစ်။ ခေါင်မိုးပေါ် တပ်လိုက်ရင် ကလေးတွေပေါ် မိုးရွာသလို ကျလာမယ်။'],
   ], () => { const all = finish(S, 'nozzle'); hud2(); hud.toast(`+ ${ITEMS.nozzle}  (${MM(S.parts.length)}/${MM(NEED)})`); boss.anim.play('wave'); if (all) setTimeout(() => talk([['', 'ပစ္စည်း ကိုးမျိုးလုံး စုံပြီ။ ရပ်ကွက်ကို ပြန်ပြီး ကလေးတွေနဲ့ မဏ္ဍပ်လေး ဆောက်ကြစို့!']]), 900); }, boss);
   if (q === 'soak') return talk([[K, `ကျန်သေးတယ်… ${MM(3 - S.soaked.length)} မဏ္ဍပ်။ ရေပိုက်အောက် တည့်တည့် ဝင်ရပ်!`]], null, boss);
   talk([[K, party() ? 'ညဘက် မဏ္ဍပ်မီးတွေ လှတယ်မလား… ရေကတော့ မနက်ဖြန် ဆက်ပက်မယ်!' : 'ရေပက်ခံမလား! လာ လာ!']], null, boss);
@@ -265,8 +265,8 @@ const SPOTS = [
   { at: () => boss.g.position, r: 1.8, label: () => 'ရေပက်အဖွဲ့ ကိုကြီးနဲ့ စကားပြော', goal: () => S.step === 'quests' && ['ask', 'back'].includes(S.q.nozzle), run: talkBoss },
   { at: () => STOP, r: 2.0, label: () => 'ဘတ်စ်ကား စီး', goal: () => S.q.nozzle === 'done' || S.step === 'arrive' || party(), run: openBus },
   { at: () => SULE, r: 2.2, label: () => 'ဆူးလေဘုရား ဖူး', goal: () => false, run: () => { W.player.anim.play('kadaw'); hud.toast('သာဓု သာဓု သာဓု'); } },
-  { at: () => v.set(STAGE.x, 0, -2.2), r: 7, label: () => nearStage() ? 'ယိမ်းအဖွဲ့နဲ့ အတူ က' : null, goal: () => false, run: () => { W.player.anim.setLoop('dance'); hud.toast('၁ ကို နှိပ်ရင် ရပ်'); } },
-  { at: () => iceCream.g.position, r: 1.6, label: () => 'ရေခဲမုန့် ဝယ်', goal: () => false, run: () => talk([['ရေခဲမုန့်သည်', 'ရေခဲမုန့်~ နို့ရေခဲ~ ရေစိုပြီး ပူနေရင် တစ်ခွက် စားလိုက်!'], [ME, 'တစ်ခွက် ပေး… ငယ်ငယ်က အရသာ အတိုင်းပဲ။']], () => W.player.anim.play('jump'), iceCream) },
+  { at: () => v.set(STAGE.x, 0, -2.2), r: 7, label: () => nearStage() ? 'ယိမ်းအဖွဲ့နဲ့ အတူ က' : null, goal: () => false, run: () => { W.player.anim.setLoop('dance'); hud.toast('လမ်းလျှောက်လိုက်ရင် ရပ်မယ်'); } },
+  { at: () => iceCream.g.position, r: 1.6, label: () => 'ရေခဲမုန့် ဝယ်', goal: () => false, run: () => talk([['ရေခဲမုန့်သည်', 'ရေခဲမုန့်~ နို့ရေခဲ~ နေပူထဲ အေးအေးလေး တစ်ခွက်!'], [ME, 'တစ်ခွက် ပေးပါ… အင်း၊ ငယ်ငယ်က အရသာ အတိုင်းပဲ။']], () => W.player.anim.play('jump'), iceCream) },
 ];
 const goals = () => {
   if (S.step === 'arrive' || S.q.nozzle === 'done') return [STOP];
@@ -285,6 +285,6 @@ hud2(); W.start();
 if (new URLSearchParams(location.search).has('debug')) window.zone = { W, S: () => S, SPOTS, boss, ZONES, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.introDown) setTimeout(() => talk([
   ['', 'ဆူးလေ… ငယ်ငယ်က အဖေ့ ပခုံးပေါ် ထိုင်ပြီး လာကြည့်ခဲ့တဲ့ မဏ္ဍပ်တန်း။'],
-  ['', 'ဗုံသံ၊ ရေပက်သံ၊ အော်ဟစ်သံ… မြို့တော်ခန်းမရှေ့က မဏ္ဍပ်ကြီး အခုထိ ကြီးတုန်း။'],
+  ['', 'ဗုံသံ၊ ရေပက်သံ၊ အော်ဟစ်သံ… မြို့တော်ခန်းမရှေ့က မဏ္ဍပ်ကြီးက အရင်လိုပဲ ခမ်းနားတုန်း။'],
 ], () => { S.introDown = true; save(); }), 1600);
 setTimeout(() => $('title').classList.add('gone'), 1400);

@@ -289,8 +289,8 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
 
   // ---------- the trishaw stand: the riders wait for a fare, perched on their trishaws and the bench, talking last night's match ----------
   const TALK = [[0, 'မနေ့ညက မန်ယူပွဲ ကြည့်လိုက်လား'], [1, 'ကြည့်တာပေါ့ကွ၊ ည ၂ နာရီထိ'], [0, 'ဒီဂီယာ မရှိရင် ပြီးပြီ'], [1, 'ရက်ရှ်ဖို့ဒ် ဂိုးက လှလိုက်တာ!'],
-    [2, 'ငါကတော့ အိပ်ပျော်သွားတယ်… ဘယ်လောက်နဲ့ ပြီးလဲ'], [0, '၂ ဂိုး ၁ ဂိုး၊ နိုင်တယ်ကွ!'], [1, 'ဒီနှစ် ချန်ပီယံ ဖြစ်မယ်'], [2, 'မင်း နှစ်တိုင်း အဲ့လိုပဲ ပြောတာပဲ'],
-    [0, 'ပေါ့ဘာ ပြန်ကစားလာရင် ကြည့်'], [2, 'အေးပါ… ခရီးသည် လာပြီလား ကြည့်ဦး']];
+    [2, 'ငါကတော့ အိပ်ပျော်သွားတယ်… ဘယ်လောက်နဲ့ ပြီးလဲ'], [0, 'နှစ်ဂိုး တစ်ဂိုးနဲ့ နိုင်တယ်ကွ!'], [1, 'ဒီနှစ် ချန်ပီယံ ဖြစ်မယ်'], [2, 'မင်း နှစ်တိုင်း အဲ့လိုပဲ ပြောတာပဲ'],
+    [0, 'ပေါ့ဂ်ဘာ ပြန်ကစားလာရင် ကြည့်'], [2, 'အေးပါ… ခရီးသည် လာပြီလား ကြည့်ဦး']];
   const RIDER = () => ({ age: 'adult', topStyle: pick(['tank', 'tee', 'shirt']), shirt: pick(['#fff6ea', '#4fb3d9', '#e0574f', '#c8a070']), bottom: 'longyi', hat: pick(['bucket', 'none']) });
   const [T1, T2] = L.STAND_TRIKES, at = (t, lx, lz) => [t.x + lx * Math.cos(t.ry) + lz * Math.sin(t.ry), t.z - lx * Math.sin(t.ry) + lz * Math.cos(t.ry)];
   const standers = [npc(RIDER()), npc(RIDER()), npc(RIDER())];
