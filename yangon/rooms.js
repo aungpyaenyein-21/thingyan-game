@@ -24,7 +24,7 @@ export function buildRooms(W) {
 
   // ---------- the big tea shop (လက်ဖက်ရည်ဆိုင်ကြီး): rows of wooden tables and chairs, ceiling fans, a thermos of green tea and a red
   // tissue box on every table, a little bin by the legs, the long counter with the kettle and the snack case, the name banner
-  // across the back wall, the picture menu, the TV with football on. Who sits where, and the boys waiting tables, are main.js's.
+  // across the back wall, the picture menu, the TV with football on. Who sits where, and the waiters, are main.js's.
   {
     const cx = 130, cz = 0, W2 = 14, D2 = 10, r = R.tea = room(cx, cz, W2, D2, '#f6efe0', '#7fae9a', floorTex('#b9b2a8', '#aaa298', 12), { view: 14.5 });
     const z0 = cz - D2 / 2, x0 = cx - W2 / 2;
@@ -78,7 +78,7 @@ export function buildRooms(W) {
       solid(tx, tz, .9, .65); r.tables.push({ x: tx, z: tz, top: .67, seats });
     }
     r.counter = new THREE.Vector3(cx - 3.6, 0, z0 + 1.6); r.boss = { x: cx - 3.6, z: z0 + .2 };
-    r.aisle = { xs: [cx - 2.3, cx + .3, cx + 2.9], zs: [z0 + 1.8, cz - .8, cz + 1.6] }; // walkways between the tables, for the boys and the paper seller
+    r.aisle = { xs: [cx - 2.3, cx + .3, cx + 2.9], zs: [z0 + 1.8, cz - .8, cz + 1.6] }; // walkways between the tables, for the waiters and the paper seller
   }
 
   // ---------- clothes shop / tailor (အထည်ဆိုင်): longyi bolts stacked on the shelves, shirts on rails, a sewing machine, a tall mirror ----------
