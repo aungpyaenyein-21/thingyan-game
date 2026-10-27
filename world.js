@@ -10,8 +10,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=27';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=28';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=5';
 
 export { THREE };
 export const PAL = {
@@ -38,14 +38,19 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   let B = bounds ?? { x0: -half, x1: half, z0: -half, z1: half };
   const P = new URLSearchParams(location.search);
   let VIEW = +(P.get('v') || view); // ortho view height (units); wheel zooms 7..28
-  const Q = P.get('q') || (matchMedia('(pointer:coarse)').matches ? 'low' : 'high'); // ?q=low|high|off
+  const PHONE = matchMedia('(pointer:coarse)').matches;
+  const Q = P.get('q') || (PHONE ? 'low' : 'high'); // ?q=low|high|off; low = phone: half-size bloom, same look
+  // ရုပ်ထွက် button: auto (adapts to the phone), high (always the full look), lite (saves battery). Remembered per device.
+  let GFX = P.get('q') ? 'fixed' : (() => { try { return localStorage.getItem('thingyan.gfx') || 'auto'; } catch { return 'auto'; } })();
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const pick = a => a[(rnd() * a.length) | 0];
 
   // ---------- renderer / camera / light ----------
   const renderer = new THREE.WebGLRenderer({ antialias: Q === 'off', powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, Q === 'low' ? 1.5 : 2));
+  const PR = Math.min(devicePixelRatio, 2);
+  renderer.setPixelRatio(PR);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  let shadowTick = 0; if (PHONE) renderer.shadowMap.autoUpdate = false;
   document.body.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
@@ -304,10 +309,37 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (m) { act(m); e.preventDefault(); }
   });
   addEventListener('keyup', e => keys[e.code] = false);
-  let touch = null;
-  renderer.domElement.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId }; });
-  addEventListener('pointermove', e => { if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; } });
-  const endTouch = e => { if (touch && e.pointerId === touch.id) touch = null; };
+  // touch: a thumb on the left half is the joystick — it appears under the thumb; a little push walks, all the way out runs.
+  // Two fingers anywhere else pinch-zoom (a second finger landing before the stick has moved turns it into a pinch too).
+  const STICK = 52; let touch = null; const fingers = new Map(); let pinch = 0;
+  const stick = document.createElement('div'), knob = document.createElement('i'); stick.id = 'stick'; stick.appendChild(knob);
+  Object.assign(stick.style, { position: 'fixed', zIndex: 3, width: '128px', height: '128px', marginLeft: '-64px', marginBottom: '-64px', borderRadius: '50%', pointerEvents: 'none',
+    background: 'rgba(255,246,234,.22)', border: '3px solid rgba(255,246,234,.6)', boxSizing: 'border-box', display: PHONE ? 'block' : 'none', transition: 'opacity .2s' });
+  Object.assign(knob.style, { position: 'absolute', left: '50%', top: '50%', width: '56px', height: '56px', margin: '-28px', borderRadius: '50%', background: 'rgba(255,246,234,.95)', boxShadow: '0 3px 0 rgba(90,53,80,.25)' });
+  document.body.appendChild(stick);
+  const home = () => { stick.style.left = 'calc(84px + env(safe-area-inset-left, 0px))'; stick.style.bottom = 'calc(84px + env(safe-area-inset-bottom, 0px))'; stick.style.opacity = .55; knob.style.transform = ''; knob.style.background = 'rgba(255,246,234,.95)'; };
+  const drawStick = () => {
+    const dx = touch.x - touch.x0, dy = touch.y - touch.y0, l = Math.hypot(dx, dy), k = l > STICK ? STICK / l : 1;
+    knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; knob.style.background = l > STICK * .8 ? '#f2a65a' : 'rgba(255,246,234,.95)'; // orange = running
+  };
+  home();
+  const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  renderer.domElement.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return;
+    if (W.frozen) { action(); return; } // talking / a cutscene: a tap anywhere moves it on
+    if (!touch && fingers.size === 0 && e.clientX < innerWidth * .5) {
+      touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId };
+      Object.assign(stick.style, { left: e.clientX + 'px', bottom: innerHeight - e.clientY + 'px', opacity: 1, display: 'block' }); drawStick(); return;
+    }
+    if (touch && Math.hypot(touch.x - touch.x0, touch.y - touch.y0) < 12) { fingers.set(touch.id, { x: touch.x, y: touch.y }); touch = null; home(); } // two fingers: a pinch after all
+    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (fingers.size === 2) pinch = spread();
+  });
+  addEventListener('pointermove', e => {
+    if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; drawStick(); return; }
+    const f = fingers.get(e.pointerId); if (f) { f.x = e.clientX; f.y = e.clientY; }
+    if (fingers.size === 2 && pinch) { const d = spread(); if (d > 10) { zoom(pinch / d); pinch = d; } }
+  });
+  const endTouch = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
   addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch);
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
@@ -317,6 +349,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, cam));
   const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25) : null; if (bloom) composer.addPass(bloom);
+  if (bloom && Q === 'low') { const set = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => set(Math.round(w / 2), Math.round(h / 2)); }
   const look = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: new THREE.Vector2(.5, .52) }, blur: { value: Q === 'off' ? 0 : 5.0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
@@ -324,9 +357,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       void main(){
         float d = length((vUv - focus) * vec2(res.x / res.y, 1.));
         float r = smoothstep(.15, .6, d) * blur;                // sharp round you, softening the further away it is
-        vec4 col = vec4(0.);
-        for (int i = 0; i < 16; i++) { float fi = float(i); float a = fi * 2.39996; vec2 o = vec2(cos(a), sin(a)) * sqrt((fi + .5) / 16.) * r / res; col += texture2D(tDiffuse, vUv + o); }
-        vec3 c = col.rgb / 16.;
+        vec3 c;
+        if (r < .3) c = texture2D(tDiffuse, vUv).rgb;
+        else {
+          vec4 col = vec4(0.);
+          for (int i = 0; i < 16; i++) { float fi = float(i); float a = fi * 2.39996; vec2 o = vec2(cos(a), sin(a)) * sqrt((fi + .5) / 16.) * r / res; col += texture2D(tDiffuse, vUv + o); }
+          c = col.rgb / 16.;
+        }
         float l = dot(c, vec3(.2126, .7152, .0722));
         c = mix(vec3(l), c, 1.07);                                // a touch more colour
         c += vec3(.018, .004, .03) * (1. - smoothstep(0., .5, l)); // lilac lift in the darks (lo-fi)
@@ -357,20 +394,43 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const clock = new THREE.Clock(); let T = 0;
   const ndc = new THREE.Vector3();
   const DTMAX = +(P.get('dt') || 1 / 30); // longest step per frame (?dt= lets a very slow test browser keep time)
-  // adaptive quality (unless ?q= says otherwise): if frames stay slow, step down — sharper pixels first, then bloom + blur,
-  // then smaller shadows, then no shadows. Never steps back up within a visit.
-  const AQ = { on: !P.get('q'), lvl: 0, t: -4, sum: 0, n: 0 };
+  // adaptive quality: when frames stay slow (under ~33 fps), step down; when there's room again (over ~52 fps), step back up.
+  // Sharpness goes first in small steps (on a phone screen 2x vs 1.5x is hard to see), then the soft distance, then shadow
+  // detail, and only at the very end the glow and the shadows — they are most of the look. ?q= or the ရုပ်ထွက် button pins it.
+  const LEVELS = [ // [pixel ratio cap, distance blur, shadow map, bloom, shadows]
+    [2, 1, 2048, 1, 1], [1.75, 1, 2048, 1, 1], [1.5, 1, 2048, 1, 1], [1.25, 1, 2048, 1, 1],
+    [1.25, 0, 2048, 1, 1], [1, 0, 1024, 1, 1], [1, 0, 1024, 0, 1], [1, 0, 1024, 0, 0]];
+  const AQ = { lvl: -1, t: -5, sum: 0, n: 0, ups: 0 };
+  function setLevel(l) {
+    l = THREE.MathUtils.clamp(l, 0, LEVELS.length - 1); if (l === AQ.lvl) return;
+    const [pr, blur, map, glow, shade] = LEVELS[l];
+    if (Math.min(PR, pr) !== renderer.getPixelRatio()) { renderer.setPixelRatio(Math.min(PR, pr)); if (AQ.lvl >= 0) resize(); }
+    look.uniforms.blur.value = Q === 'off' ? 0 : blur * 5.0;
+    if (bloom) bloom.enabled = !!glow;
+    if (sun.shadow.mapSize.x !== map) { sun.shadow.mapSize.set(map, map); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true; }
+    sun.castShadow = !!shade;
+    AQ.lvl = l;
+  }
+  function setGfx(m) { // 'auto' | 'high' | 'lite'
+    GFX = m; try { localStorage.setItem('thingyan.gfx', m); } catch {}
+    AQ.t = -2; AQ.sum = AQ.n = AQ.ups = 0;
+    setLevel(m === 'high' ? 0 : m === 'lite' ? 5 : PHONE ? 1 : 0); gfxLabel();
+  }
+  const gfxBtn = document.getElementById('gfx'), GFX_NAME = { auto: 'အလိုအလျောက်', high: 'အကောင်းဆုံး', lite: 'ဘက်ထရီချွေ' };
+  const gfxLabel = () => { if (gfxBtn) gfxBtn.textContent = '🎨 ' + GFX_NAME[GFX]; };
+  if (gfxBtn) {
+    if (GFX === 'fixed') gfxBtn.hidden = true;
+    gfxBtn.addEventListener('pointerdown', e => e.stopPropagation());
+    gfxBtn.addEventListener('click', e => { e.stopPropagation(); setGfx({ auto: 'high', high: 'lite', lite: 'auto' }[GFX]); });
+  }
+  setLevel(GFX === 'lite' ? 5 : PHONE && GFX !== 'high' ? 1 : 0); gfxLabel();
   function adapt(raw) {
-    if (!AQ.on || document.hidden || raw > .5) return;
+    if (GFX !== 'auto' || document.hidden || raw > .5) return; // a long hitch is loading, not the scene
     AQ.t += raw; if (AQ.t < 0) return; AQ.sum += raw; AQ.n++;
     if (AQ.t < 3) return;
     const avg = AQ.sum / AQ.n; AQ.t = AQ.sum = AQ.n = 0;
-    if (avg < 1 / 40 || AQ.lvl >= 4) return;
-    AQ.lvl++;
-    if (AQ.lvl === 1) { renderer.setPixelRatio(Math.min(renderer.getPixelRatio(), 1.25)); resize(); }
-    if (AQ.lvl === 2) { if (bloom) bloom.enabled = false; look.uniforms.blur.value = 0; }
-    if (AQ.lvl === 3) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.setPixelRatio(1); resize(); }
-    if (AQ.lvl === 4) sun.castShadow = false;
+    if (avg > 1 / 33) { setLevel(AQ.lvl + 1); AQ.t = -1; }
+    else if (avg < 1 / 52 && AQ.lvl > 0 && AQ.ups < 3) { AQ.ups++; setLevel(AQ.lvl - 1); AQ.t = -3; } // a few tries back up, then settle
   }
   function frame() {
     const raw = clock.getDelta(), dt = Math.min(raw, DTMAX); T += dt; adapt(raw);
@@ -380,7 +440,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
     let iy = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
     let farDrag = false;
-    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 12) { ix = dx / l; iy = dy / l; farDrag = l > 90; } }
+    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 10) { ix = dx / l; iy = dy / l; farDrag = l > STICK * .8; } }
     if (W.frozen) ix = iy = 0;
     const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
     const moving = mv.lengthSq() > .01;
@@ -464,6 +524,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     look.uniforms.time.value = T % 100;
     cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
     look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
+    if (PHONE && (++shadowTick & 1)) renderer.shadowMap.needsUpdate = true; // phones: shadows redrawn every other frame (the lookup follows the map, so nothing swims)
     composer.render();
   }
   const ticks = [];
@@ -478,7 +539,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       scene.add(petals);
     }
     addEventListener('resize', resize); resize();
-    addEventListener('wheel', e => { VIEW = THREE.MathUtils.clamp(VIEW * (1 + Math.sign(e.deltaY) * .1), 7, 28); fitCam(); }, { passive: true }); // zoom only changes the projection
+    addEventListener('wheel', e => zoom(1 + Math.sign(e.deltaY) * .1), { passive: true });
     camTarget.copy(W.player.g.position); camTarget.y = 0;
     renderer.setAnimationLoop(frame);
   }
@@ -512,7 +573,14 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   function bake() {
     scene.updateMatrixWorld(true);
     const kept = o => { for (let p = o; p; p = p.parent) if (p.userData.keep) return true; return false; };
-    const groups = new Map();
+    const groups = new Map(), ctr = new THREE.Vector3();
+    // plain flat colours (most of the town) merge across colours as vertex colours, in 8-unit squares so the ones off screen
+    // are still skipped; a see-through building stays its own set so it can fade. Anything that changes later (glowing
+    // windows, fading roofs, textures) merges by material as before.
+    const owner = new Map(); occluders.forEach((o, i) => o.mats.forEach(c => owner.set(c, i)));
+    const win = M(PAL.window), vcMats = {};
+    const plain = mt => mt.isMeshLambertMaterial && !mt.map && !mt.emissiveMap && !mt.vertexColors && !mt.emissive.getHex() && mt !== win && mt.userData.base !== win
+      && (!mt.transparent || owner.has(mt));
     for (const m of statics) {
       if (!m.parent || kept(m) || Array.isArray(m.material) || !m.visible) continue;
       let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
@@ -520,8 +588,19 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       if (!g.attributes.normal) g.computeVertexNormals();
       if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
       g.clearGroups(); g.applyMatrix4(m.matrixWorld);
-      const key = m.material.uuid + (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
-      if (!groups.has(key)) groups.set(key, { mat: m.material, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
+      const mt = m.material, flags = (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
+      let key = mt.uuid + flags;
+      if (plain(mt)) {
+        const o = owner.get(mt); m.getWorldPosition(ctr);
+        key = `vc${mt.flatShading ? 'f' : ''}${mt.side}${flags}|` + (o ?? `${Math.floor(ctr.x / 8)},${Math.floor(ctr.z / 8)}`);
+        const fam = `${mt.flatShading}${mt.side}` + (o ?? '');
+        const vm = vcMats[fam] ??= new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: mt.flatShading, side: mt.side, transparent: o !== undefined });
+        if (o !== undefined && !occluders[o].mats.includes(vm)) { vm.userData.base = {}; occluders[o].mats.push(vm); }
+        const n = g.attributes.position.count, col = new Float32Array(n * 3); for (let i = 0; i < n; i++) mt.color.toArray(col, i * 3);
+        g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+        groups.set(key, groups.get(key) ?? { mat: vm, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
+      }
+      if (!groups.has(key)) groups.set(key, { mat: mt, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
       groups.get(key).geos.push(g); m.parent.remove(m);
     }
     for (const { mat, cast, recv, geos } of groups.values()) {
@@ -537,11 +616,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     W.ground = ground; W.bounds = B;
     W.player.g.position.y = ground(W.player.g.position.x, W.player.g.position.z);
   }
+  function zoom(k) { VIEW = THREE.MathUtils.clamp(VIEW * k, 7, 28); fitCam(); } // only changes the projection
   const snapCam = () => { camTarget.copy(W.player.g.position).setY(0); if (camBounds) { camTarget.x = THREE.MathUtils.clamp(camTarget.x, camBounds.x0, camBounds.x1); camTarget.z = THREE.MathUtils.clamp(camTarget.z, camBounds.z0, camBounds.z1); } };
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
-    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
+    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }
