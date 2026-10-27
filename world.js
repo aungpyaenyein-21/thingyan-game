@@ -10,8 +10,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=27';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=4';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=28';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=5';
 
 export { THREE };
 export const PAL = {
@@ -50,6 +50,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const PR = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(PR);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  let shadowTick = 0; if (PHONE) renderer.shadowMap.autoUpdate = false;
   document.body.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
@@ -388,7 +389,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (Math.min(PR, pr) !== renderer.getPixelRatio()) { renderer.setPixelRatio(Math.min(PR, pr)); if (AQ.lvl >= 0) resize(); }
     look.uniforms.blur.value = Q === 'off' ? 0 : blur * 5.0;
     if (bloom) bloom.enabled = !!glow;
-    if (sun.shadow.mapSize.x !== map) { sun.shadow.mapSize.set(map, map); sun.shadow.map?.dispose(); sun.shadow.map = null; }
+    if (sun.shadow.mapSize.x !== map) { sun.shadow.mapSize.set(map, map); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true; }
     sun.castShadow = !!shade;
     AQ.lvl = l;
   }
@@ -505,6 +506,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     look.uniforms.time.value = T % 100;
     cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
     look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
+    if (PHONE && (++shadowTick & 1)) renderer.shadowMap.needsUpdate = true; // phones: shadows redrawn every other frame (the lookup follows the map, so nothing swims)
     composer.render();
   }
   const ticks = [];
@@ -553,7 +555,14 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   function bake() {
     scene.updateMatrixWorld(true);
     const kept = o => { for (let p = o; p; p = p.parent) if (p.userData.keep) return true; return false; };
-    const groups = new Map();
+    const groups = new Map(), ctr = new THREE.Vector3();
+    // plain flat colours (most of the town) merge across colours as vertex colours, in 8-unit squares so the ones off screen
+    // are still skipped; a see-through building stays its own set so it can fade. Anything that changes later (glowing
+    // windows, fading roofs, textures) merges by material as before.
+    const owner = new Map(); occluders.forEach((o, i) => o.mats.forEach(c => owner.set(c, i)));
+    const win = M(PAL.window), vcMats = {};
+    const plain = mt => mt.isMeshLambertMaterial && !mt.map && !mt.emissiveMap && !mt.vertexColors && !mt.emissive.getHex() && mt !== win && mt.userData.base !== win
+      && (!mt.transparent || owner.has(mt));
     for (const m of statics) {
       if (!m.parent || kept(m) || Array.isArray(m.material) || !m.visible) continue;
       let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
@@ -561,8 +570,19 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       if (!g.attributes.normal) g.computeVertexNormals();
       if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
       g.clearGroups(); g.applyMatrix4(m.matrixWorld);
-      const key = m.material.uuid + (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
-      if (!groups.has(key)) groups.set(key, { mat: m.material, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
+      const mt = m.material, flags = (m.castShadow ? 'c' : '') + (m.receiveShadow ? 'r' : '');
+      let key = mt.uuid + flags;
+      if (plain(mt)) {
+        const o = owner.get(mt); m.getWorldPosition(ctr);
+        key = `vc${mt.flatShading ? 'f' : ''}${mt.side}${flags}|` + (o ?? `${Math.floor(ctr.x / 8)},${Math.floor(ctr.z / 8)}`);
+        const fam = `${mt.flatShading}${mt.side}` + (o ?? '');
+        const vm = vcMats[fam] ??= new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: mt.flatShading, side: mt.side, transparent: o !== undefined });
+        if (o !== undefined && !occluders[o].mats.includes(vm)) { vm.userData.base = {}; occluders[o].mats.push(vm); }
+        const n = g.attributes.position.count, col = new Float32Array(n * 3); for (let i = 0; i < n; i++) mt.color.toArray(col, i * 3);
+        g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+        groups.set(key, groups.get(key) ?? { mat: vm, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
+      }
+      if (!groups.has(key)) groups.set(key, { mat: mt, cast: m.castShadow, recv: m.receiveShadow, geos: [] });
       groups.get(key).geos.push(g); m.parent.remove(m);
     }
     for (const { mat, cast, recv, geos } of groups.values()) {

@@ -2,15 +2,15 @@
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=8';
-import { CAT_COATS } from '../critters.js?v=4';
+import { CAT_COATS } from '../critters.js?v=5';
 import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=12';
 import { createHud, play } from './hud.js?v=2';
-import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=2';
+import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=3';
 import { buildRooms } from './rooms.js?v=4';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=8';
 import { createSound } from '../sound.js?v=3';
-import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=3';
+import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=4';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16 });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;

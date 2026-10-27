@@ -1,7 +1,7 @@
 // chibi.js — cute 2.2-head character with a code-driven rig + procedural animation.
 // Used by character-lab.html now, by the diorama later. No model files.
 import * as THREE from 'three';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ---------- proportions (units ≈ 0.75 m) ----------
 const UP = .2, LO = .19, ANKLE = .075;         // thigh, shin, ankle→sole (longer legs than v1)
@@ -35,7 +35,7 @@ const hairCache = {};
 const tailGeo = (r, len) => new THREE.LatheGeometry([[.02, 0], [r * .8, -len * .12], [r, -len * .36], [r * .82, -len * .66], [r * .45, -len * .88], [.004, -len]].map(([x, y]) => new THREE.Vector2(x, y)), 20);
 function hairGeo(style, kid) {
   const key = style + kid; if (hairCache[key]) return hairCache[key];
-  const st = HAIR_STYLES[style], g = st.cover || style === 'spiky' ? new THREE.SphereGeometry(HEAD_R, 120, 80) : new THREE.SphereGeometry(HEAD_R, 72, 48); // spikes need the finer mesh g.deleteAttribute('uv'); g.deleteAttribute('normal');
+  const st = HAIR_STYLES[style], g = st.cover || style === 'spiky' ? new THREE.SphereGeometry(HEAD_R, 80, 52) : new THREE.SphereGeometry(HEAD_R, 56, 38); // spikes need the finer mesh g.deleteAttribute('uv'); g.deleteAttribute('normal');
   const geo = mergeVertices(g), p = geo.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i).normalize();
@@ -320,7 +320,8 @@ export function makeChibi(opts = {}) {
   // hair: one smooth shell (see HAIR_STYLES) + bun / ponytail / pigtails on top
   const hm = cloth(o.hairColor), bucket = o.hat === 'bucket';
   hm.userData.spec = .1; hm.specular.setScalar(.1); hm.shininess = 30; // a little sheen even when dry
-  const shell = part(hairGeo(o.hair, o.age === 'kid'), hm, skull); shell.userData.flat = .04; vol.push(shell); // wet hair sits a touch flatter
+  const hv = pivot(skull, 0, 0); hv.userData.flat = .04; vol.push(hv); // wet hair sits a touch flatter (its own bone, so it can merge)
+  part(hairGeo(o.hair, o.age === 'kid'), hm, hv);
   let tail = null;
   if (!bucket) {
     if (o.hair === 'bun') { part(new THREE.SphereGeometry(.13, 16, 12), hm, skull, 0, .3, -.12); part(new THREE.TorusGeometry(.1, .03, 8, 16), o.accent, skull, 0, .23, -.1).rotation.x = Math.PI / 2 - .3; }
@@ -393,8 +394,54 @@ export function makeChibi(opts = {}) {
   root.scale.setScalar(scale);
   const hunch = o.age === 'elder' ? .3 : 0, gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
+  skin(body, new Set([face, torso, skirtMesh, gun, cane].filter(Boolean)), new Set([torso]), wetMats);
+
   return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
+}
+
+// ---------- one draw instead of ~60: every plain-coloured part becomes a vertex of one skinned mesh per material kind ----------
+// The rig's pivots (hips, knees, shoulders, skull…) are the bones, so the animator moves them exactly as before. Parts keep
+// their colour as a vertex colour. Left alone: anything textured or see-through (face, printed top, longyi), meshes the
+// animator changes on their own (hair that flattens when wet, the swinging skirt), and toggled tools (gun, cane).
+const skinMats = {};
+function skin(body, keep, hullOnly, wetMats) { // hullOnly: kept meshes whose outline can still merge (it never changes shape)
+  body.updateWorldMatrix(true, true);
+  const toBody = new THREE.Matrix4().copy(body.matrixWorld).invert(), m4 = new THREE.Matrix4();
+  const bones = [], boneIx = new Map(), sets = {}, gone = [];
+  const add = (key, mesh, bone, color, proto) => {
+    const g = mesh.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+    if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
+    g.applyMatrix4(m4.multiplyMatrices(toBody, mesh.matrixWorld));
+    const n = g.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) { si[i * 4] = bone; sw[i * 4] = 1; }
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+    if (color) { const c = new Float32Array(n * 3); for (let i = 0; i < n; i++) color.toArray(c, i * 3); g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); }
+    (sets[key] ??= { proto, geos: [] }).geos.push(g);
+  };
+  const boneOf = m => { if (!boneIx.has(m.parent)) { boneIx.set(m.parent, bones.length); bones.push(m.parent); } return boneIx.get(m.parent); };
+  const hull = (m, b) => { for (const ol of [...m.children]) if (ol.isMesh && ol.material === outline) { add('outline', ol, b, null, outline); if (hullOnly.has(m)) ol.removeFromParent(); } };
+  body.traverse(m => {
+    if (!m.isMesh || m.parent.isMesh) return; // outline hulls ride with their part
+    if (hullOnly.has(m)) { hull(m, boneOf(m)); return; }
+    if (keep.has(m)) return;
+    for (let q = m.parent; q !== body; q = q.parent) if (keep.has(q)) return;
+    const mt = m.material; if (mt.map || mt.transparent || mt.emissive?.getHex() || !(mt.isMeshLambertMaterial || mt.isMeshPhongMaterial)) return;
+    const b = boneOf(m);
+    add(mt.isMeshPhongMaterial ? `phong${mt.side}|${mt.specular.r}|${mt.shininess}|${mt.userData.spec || 0}` : 'lambert' + mt.side, m, b, mt.color, mt);
+    hull(m, b);
+    gone.push(m);
+  });
+  for (const m of gone) m.removeFromParent();
+  const skel = new THREE.Skeleton(bones);
+  for (const [key, { proto: pr, geos }] of Object.entries(sets)) {
+    const mt = key === 'outline' ? outline : pr.isMeshLambertMaterial ? skinMats[key] ??= new THREE.MeshLambertMaterial({ vertexColors: true, side: pr.side })
+      : new THREE.MeshPhongMaterial({ vertexColors: true, side: pr.side, specular: pr.specular, shininess: pr.shininess }); // per person: it darkens when they're soaked
+    if (mt.isMeshPhongMaterial) { mt.userData.base = mt.color.clone(); mt.userData.spec = pr.userData.spec; wetMats.push(mt); }
+    const sm = new THREE.SkinnedMesh(mergeGeometries(geos), mt); body.add(sm); sm.updateMatrixWorld(true); sm.bind(skel, sm.matrixWorld);
+    sm.computeBoundingSphere(); sm.boundingSphere.radius += .5; // limbs swing past the pose it was bound in
+  }
 }
 
 const dripGeo = new THREE.SphereGeometry(.022, 6, 4), dripMat = new THREE.MeshBasicMaterial({ color: '#bfeaff' });
