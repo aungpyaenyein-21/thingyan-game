@@ -309,19 +309,37 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (m) { act(m); e.preventDefault(); }
   });
   addEventListener('keyup', e => keys[e.code] = false);
-  let touch = null; const fingers = new Map(); let pinch = 0; // two fingers = pinch zoom, and no walking until they lift
+  // touch: a thumb on the left half is the joystick — it appears under the thumb; a little push walks, all the way out runs.
+  // Two fingers anywhere else pinch-zoom (a second finger landing before the stick has moved turns it into a pinch too).
+  const STICK = 52; let touch = null; const fingers = new Map(); let pinch = 0;
+  const stick = document.createElement('div'), knob = document.createElement('i'); stick.id = 'stick'; stick.appendChild(knob);
+  Object.assign(stick.style, { position: 'fixed', zIndex: 3, width: '128px', height: '128px', marginLeft: '-64px', marginBottom: '-64px', borderRadius: '50%', pointerEvents: 'none',
+    background: 'rgba(255,246,234,.22)', border: '3px solid rgba(255,246,234,.6)', boxSizing: 'border-box', display: PHONE ? 'block' : 'none', transition: 'opacity .2s' });
+  Object.assign(knob.style, { position: 'absolute', left: '50%', top: '50%', width: '56px', height: '56px', margin: '-28px', borderRadius: '50%', background: 'rgba(255,246,234,.95)', boxShadow: '0 3px 0 rgba(90,53,80,.25)' });
+  document.body.appendChild(stick);
+  const home = () => { stick.style.left = 'calc(84px + env(safe-area-inset-left, 0px))'; stick.style.bottom = 'calc(84px + env(safe-area-inset-bottom, 0px))'; stick.style.opacity = .55; knob.style.transform = ''; knob.style.background = 'rgba(255,246,234,.95)'; };
+  const drawStick = () => {
+    const dx = touch.x - touch.x0, dy = touch.y - touch.y0, l = Math.hypot(dx, dy), k = l > STICK ? STICK / l : 1;
+    knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; knob.style.background = l > STICK * .8 ? '#f2a65a' : 'rgba(255,246,234,.95)'; // orange = running
+  };
+  home();
   const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
   renderer.domElement.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse') return;
-    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (fingers.size === 2) { touch = null; pinch = spread(); } else if (fingers.size === 1) touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId };
+    if (W.frozen) { action(); return; } // talking / a cutscene: a tap anywhere moves it on
+    if (!touch && fingers.size === 0 && e.clientX < innerWidth * .5) {
+      touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId };
+      Object.assign(stick.style, { left: e.clientX + 'px', bottom: innerHeight - e.clientY + 'px', opacity: 1, display: 'block' }); drawStick(); return;
+    }
+    if (touch && Math.hypot(touch.x - touch.x0, touch.y - touch.y0) < 12) { fingers.set(touch.id, { x: touch.x, y: touch.y }); touch = null; home(); } // two fingers: a pinch after all
+    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (fingers.size === 2) pinch = spread();
   });
   addEventListener('pointermove', e => {
+    if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; drawStick(); return; }
     const f = fingers.get(e.pointerId); if (f) { f.x = e.clientX; f.y = e.clientY; }
     if (fingers.size === 2 && pinch) { const d = spread(); if (d > 10) { zoom(pinch / d); pinch = d; } }
-    else if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; }
   });
-  const endTouch = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) touch = null; };
+  const endTouch = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
   addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch);
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
@@ -422,7 +440,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
     let iy = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
     let farDrag = false;
-    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 12) { ix = dx / l; iy = dy / l; farDrag = l > 90; } }
+    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 10) { ix = dx / l; iy = dy / l; farDrag = l > STICK * .8; } }
     if (W.frozen) ix = iy = 0;
     const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
     const moving = mv.lengthSq() > .01;

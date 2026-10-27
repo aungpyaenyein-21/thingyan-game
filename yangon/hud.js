@@ -4,7 +4,15 @@ const $ = id => document.getElementById(id);
 
 export function createHud(W) {
   let talking = null, menuOpen = null, mini = null, scene = false;
-  const sync = () => { W.frozen = !!(talking || menuOpen || mini || scene); };
+  const sync = () => { W.frozen = !!(talking || menuOpen || mini || scene); document.body.classList.toggle('busy', W.frozen); }; // busy: phones tuck the HUD away
+
+  // phones: tap the little map to open it big (with your bag); ⚙ holds sound / graphics / install / credits
+  const stop = e => e.stopPropagation();
+  $('where').addEventListener('pointerdown', e => { stop(e); $('where').classList.toggle('big'); });
+  $('opt')?.addEventListener('pointerdown', e => { stop(e); document.body.classList.toggle('opts'); });
+  $('opts')?.addEventListener('pointerdown', stop);
+  addEventListener('pointerdown', () => { document.body.classList.remove('opts'); $('where').classList.remove('big'); }); // a tap anywhere else closes them
+  if ($('jump')) $('jump').innerHTML = '<b>⏫</b>ခုန်';
 
   // ---------- dialogue ----------
   const waiting = []; // a conversation that starts while another is open waits its turn instead of cutting in
@@ -103,7 +111,7 @@ export function createHud(W) {
     if (areaT > 0 && (areaT -= dt) <= 0) $('area').classList.remove('on');
   });
 
-  const tool = t => { $('tool').innerHTML = t === 'gun' ? '<b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : '<b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun'); };
+  const tool = t => { $('tool').innerHTML = t === 'gun' ? '<i>🔫</i><b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : '<i>🪣</i><b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun'); };
   tool(W.player?.ch.tool ?? 'bucket');
   return { talk, say, next, toast, area, menu, closeMenu, timing, fade, cinematic, action, initMap, tool,
     map: (p, goals, T, dt) => { if ((mapT -= dt) <= 0 && mapBase) { mapT = .1; drawMap(p, goals, T); } },
@@ -124,7 +132,7 @@ export function play(W, hud, { spots, goals, areaAt, mapAt }) { // mapAt: where 
       for (const s of spots) { const l = s.label(); if (!l) continue; const d = s.at().distanceTo(pp) - s.r; if (d >= 0) continue; const score = d - (s.goal() ? 10 : 0); if (score < best) { best = score; here = s; label = l; } }
     }
     const busy = hud.busy(), ui = `${label}|${busy}`;
-    if (ui !== lastUI) { lastUI = ui; PROMPT.hidden = !label; if (label) PTEXT.textContent = label; SPLASH.classList.toggle('act', !!label || busy); SPLASH.textContent = label || busy ? 'လုပ်' : 'ရေပက်'; }
+    if (ui !== lastUI) { lastUI = ui; PROMPT.hidden = !label; if (label) PTEXT.textContent = label; SPLASH.classList.toggle('act', !!label || busy); SPLASH.innerHTML = label || busy ? '<b>👋</b>လုပ်' : '<b>💦</b>ရေပက်'; }
     const g = goals();
     markers.forEach((m, i) => { const p = g[i]; m.visible = !!p && !busy; if (p) { m.position.set(p.x, (p.y || 0) + 2.2 + Math.sin(T * 3 + i) * .12, p.z); m.rotation.y = T * 1.5; } });
     hud.map(mapAt?.() ?? W.player.g.position, g, T, dt);

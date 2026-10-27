@@ -4,7 +4,7 @@
 import { createWorld, PAL, SKINS } from '../world.js?v=8';
 import { CAT_COATS } from '../critters.js?v=5';
 import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=12';
-import { createHud, play } from './hud.js?v=2';
+import { createHud, play } from './hud.js?v=3';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=3';
 import { buildRooms } from './rooms.js?v=4';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';

@@ -88,7 +88,8 @@
   #inst,#upd{position:fixed;z-index:5;max-width:calc(100vw - 200px);text-align:left;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(62px + env(safe-area-inset-bottom,0px));padding:6px 12px;border:0;border-radius:14px;background:#fff6ea;color:#5a3550;font:inherit;font-size:13px;box-shadow:0 3px 0 #d9c9b8;cursor:pointer}
   #upd{bottom:calc(106px + env(safe-area-inset-bottom,0px));background:#f2c14e;box-shadow:0 3px 0 #c99a2e}
   @media (pointer:coarse){#inst{bottom:calc(18px + env(safe-area-inset-bottom,0px))}#upd{bottom:calc(62px + env(safe-area-inset-bottom,0px))}}
-  :is(#dlg,#menu,#mini,#end):not([hidden])~:is(#inst,#upd){display:none}
+  :is(#dlg,#menu,#mini,#end):not([hidden])~:is(#upd,#opts>#inst){display:none}
+  #opt{display:none} #opts{display:contents}
   #gfx{position:fixed;z-index:3;right:calc(164px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));padding:5px 9px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:11px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer;white-space:nowrap}
   @media (pointer:coarse){#gfx{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
   @media (pointer:coarse){#cred{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
@@ -106,6 +107,37 @@
     #where{font-size:11px}
     #hint{display:none!important}
   }
+  /* phones: the game first. A joystick (world.js #stick) bottom-left, round action buttons bottom-right, a one-line goal and a
+     small map up top (tap to open), the rest behind ⚙. While someone is talking or a menu is open, all of it steps aside. */
+  #tool i,#splash b,#jump b{display:none}
+  @media (pointer:coarse){
+    #goal{left:max(10px,env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));width:auto;max-width:calc(100% - 200px);padding:5px 12px;font-size:12px;line-height:1.55;border-radius:12px}
+    #goal>b{display:none}
+    #goal:not(.open) #gtext .ok,#goal:not(.open) #gtext .todo{display:none}
+    #goal:not(.open) #gtext .more{display:block;font-size:11px}
+    #goal.open{max-width:calc(100% - 20px);z-index:6}
+    #where{right:calc(60px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));padding:4px 6px 6px;font-size:10px;line-height:1.4;border-radius:12px;cursor:pointer}
+    #map,#where #map{width:96px;height:79px;margin-top:3px}
+    #where:not(.big) :is(#bag,#stage){display:none}
+    #where.big{z-index:6} #where.big #map{width:200px;height:164px}
+    #opt{display:block;position:fixed;z-index:4;right:max(10px,env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));width:42px;height:42px;padding:0;border:0;border-radius:50%;background:var(--paper);color:var(--ink);font-size:22px;line-height:42px;box-shadow:0 3px 0 rgba(90,53,80,.18)}
+    #opts{display:none}
+    body.opts #opts{display:flex;flex-direction:column;gap:8px;position:fixed;z-index:6;right:max(10px,env(safe-area-inset-right,0px));top:calc(60px + env(safe-area-inset-top,0px));width:190px;padding:10px;border-radius:14px;background:var(--paper);box-shadow:0 3px 0 rgba(90,53,80,.18)}
+    body.opts #opts>button{position:static;width:100%;max-width:none;min-width:0;padding:9px 12px;font-size:14px;text-align:left;border-radius:10px}
+    #splash{right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:86px;height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:12px;line-height:1.25}
+    #splash b,#jump b,#tool i{display:block;font-weight:normal;font-style:normal;font-size:28px;line-height:1.1}
+    #jump{right:calc(116px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:60px;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1.2}
+    #jump b,#tool i{font-size:20px}
+    #tool,#tool.gun{right:calc(30px + env(safe-area-inset-right,0px));bottom:calc(122px + env(safe-area-inset-bottom,0px));width:60px;height:60px;min-width:0;padding:0;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;line-height:1.2}
+    #tool b{font-weight:normal}
+    #prompt{left:auto;right:calc(100px + env(safe-area-inset-right,0px));bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:none;max-width:calc(100vw - 150px);white-space:normal;padding:6px 12px;font-size:14px;line-height:1.5;border-radius:12px 12px 2px 12px}
+    #prompt .key{display:none}
+    #dlg{left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));width:auto;max-width:720px;margin:0 auto;transform:none;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:10px 16px 6px;font-size:15px;line-height:1.75}
+    #dlg .kb{display:none}
+    #toast{top:calc(64px + env(safe-area-inset-top,0px));font-size:14px}
+    #upd{left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;max-width:calc(100vw - 40px)}
+    body.busy :is(#splash,#jump,#tool,#stick,#prompt,#goal,#where,#opt,#opts){display:none!important}
+  }
   @media (prefers-reduced-motion:reduce){#area,#title{transition:none}}
 </style>
 </head>
@@ -118,7 +150,7 @@
 </div>
 <div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · <b>R</b> ရေပုံး⇄ရေသေနတ် · Space ခုန် · wheel zoom</div>
 <div id="prompt" class="panel" hidden><span class="key">E</span><span id="ptext"></span></div>
-<div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small>E ▸ ဆက်</small></div>
+<div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small><span class="kb">E </span>▸ ဆက်</small></div>
 <div id="toast" class="panel" hidden></div>
 <div id="area" class="panel"></div>
 <div id="title" class="panel">သင်္ကြန်ပွဲ · ရန်ကုန်<small>အကြိုနေ့ · ရပ်ကွက်ထဲ ပြန်ရောက်ပြီ</small></div>
@@ -127,13 +159,16 @@
 <div id="fade"></div>
 <div id="end" class="panel" hidden><h2>ရက် ၁ · ရန်ကုန် ပြီးဆုံး</h2><p>“<span id="ename"></span>” ✓ · ပစ္စည်း <span id="epart"></span></p><p>ငယ်သူငယ်ချင်း ဖိုးသာနဲ့အတူ ညကားနဲ့ မန္တလေးကို ထွက်ခဲ့ပြီ… သူငယ်ချင်းတွေ စောင့်နေကြတယ်</p><p style="opacity:.65">ရက် ၂ · မန္တလေး — မကြာခင်</p>
   <button id="estay" type="button">ရပ်ကွက်ထဲ ဆက်နေမယ်</button><button id="eagain" type="button" class="alt">အစက ပြန်ကစားမယ်</button></div>
-<button id="splash" type="button" aria-label="ရေပက် / လုပ်">ရေပက်</button>
-<button id="jump" type="button" aria-label="ခုန်">ခုန်</button>
+<button id="splash" type="button" aria-label="ရေပက် / လုပ်"><b>💦</b>ရေပက်</button>
+<button id="jump" type="button" aria-label="ခုန်"><b>⏫</b>ခုန်</button>
 <button id="tool" type="button" aria-label="ရေပုံး / ရေသေနတ် ပြောင်း"></button>
+<button id="opt" type="button" aria-label="ဆက်တင်">⚙️</button>
+<div id="opts">
 <button id="snd" type="button" aria-label="အသံ ဖွင့် / ပိတ်"></button>
 <button id="cred" type="button" aria-label="အသံ credit">credit</button>
 <button id="gfx" type="button" aria-label="ရုပ်ထွက် ပြောင်း"></button>
 <button id="inst" type="button" hidden>📲 ဖုန်းထဲ ထည့်မယ်</button>
+</div>
 <button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module" src="./yangon/boot.js?v=11"></script>

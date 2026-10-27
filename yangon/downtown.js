@@ -4,7 +4,7 @@
 // Favour #9: the water crew will give you a brass sprinkler for the kids' mandat, once you've been soaked at all three stages.
 import { createWorld, PAL } from '../world.js?v=8';
 import { shwedagon, MM } from './set.js?v=12';
-import { createHud, play } from './hud.js?v=2';
+import { createHud, play } from './hud.js?v=3';
 import { makePlayer } from './wardrobe.js?v=3';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=4';
 import { createSound } from '../sound.js?v=3';
