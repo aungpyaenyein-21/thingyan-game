@@ -174,9 +174,24 @@ Google ရဲ့ `myanmar-tools` နဲ့ Zawgyi လား စစ် → Unicod
 | မြန်မာ font မပါတဲ့ ဖုန်း | Noto Sans Myanmar ကို Google Fonts ကနေ load |
 | ဈေးပေါ် Android (RAM 2GB) | texture တွေ atlas တစ်ခုထဲစု၊ ဝေးတဲ့သူ နာမည်ဖျောက်၊ room ၅၀ ယောက် ကန့်သတ် |
 | အင်တာနက် ပြတ်တောက် | ၂၀ စက္ကန့်အတွင်း **အလိုလို ပြန်ချိတ်**၊ ပြတ်နေရင် offline single-player ဆက်ကစား |
-| App store | ပထမ **PWA** (Home screen ထည့်လို့ရ)။ လိုအပ်မှ Capacitor နဲ့ Android app |
+| App store | **PWA ဆောက်ပြီး** (အောက်မှာ ကြည့်)။ မန္တလေး ပြီးမှ Capacitor နဲ့ Android app → Play Store |
 
 စမ်းသပ်ပစ်မှတ်: Android ဈေးပေါ်ဖုန်းမှာ **30fps အထက်**၊ ပထမ load **3MB အောက်**။
+
+### PWA (`yangon.html`)
+
+| ဖိုင် | အလုပ် |
+|---|---|
+| `manifest.webmanifest` | app နာမည် "သင်္ကြန်"၊ icon၊ `start_url` = `yangon.html`၊ fullscreen |
+| `icons/` | `icon.svg` (ရေစက် + ပိတောက်ခက်) → 512 / 192 / 180 (iPhone) PNG |
+| `sw.js` | service worker — ဂိမ်းဖိုင်အားလုံး (js၊ အသံ၊ three.js CDN) ကို ပထမအခေါက် ဒေါင်းပြီး cache ထဲထား၊ နောက်ပိုင်း **offline** ဖွင့်လို့ရ |
+| `pwa.js` | sw.js register၊ "📲 ဖုန်းထဲ ထည့်မယ်" ခလုတ် (Android = install prompt၊ iPhone = Share → Add to Home Screen လမ်းညွှန်)၊ ဗားရှင်းအသစ်ရရင် "✨ ပြန်ဖွင့်မယ်" ခလုတ် |
+
+- **ဂိမ်းဖိုင် ပြင်ပြီး push တိုင်း `sw.js` ထဲက `VERSION` ကို တိုးပါ** (`y1` → `y2` …)။ မတိုးရင် ဖုန်းထဲက app က ဖိုင်ဟောင်းပဲ ဆက်သုံးနေမယ်။
+- ဖိုင်အသစ် ထပ်ထည့်ရင် (`yangon/*.js`၊ `audio/*.mp3`) `sw.js` ရဲ့ `CORE` စာရင်းထဲ ထည့်ပါ။ မထည့်ရင် အွန်လိုင်းမှာ အလုပ်လုပ်ပေမဲ့ offline မှာ ပျက်မယ်။
+- ကစားနေတုန်း ဖိုင်မလဲဘူး — ခလုတ်နှိပ်မှ reload (save က localStorage မှာမို့ မပျောက်)။
+- localhost မှာ service worker ပိတ်ထားတယ် (စမ်းသပ်တဲ့အခါ ဖိုင်ဟောင်း မထွက်အောင်)။ စမ်းချင်ရင် `yangon.html?sw`။
+- Service worker က HTTPS ပေါ်မှာပဲ အလုပ်လုပ်တယ် → GitHub Pages (`https://aungpyaenyein-21.github.io/thingyan-game/yangon.html`)။ claude.ai artifact ထဲမှာတော့ PWA မဖြစ်ဘူး (ဂိမ်းက ပုံမှန်အတိုင်း ကစားလို့ရ)။
 
 ---
 

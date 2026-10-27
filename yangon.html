@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>သင်္ကြန်ပွဲ · ရန်ကုန်</title>
+<meta name="theme-color" content="#f9b8a0">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="သင်္ကြန်">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{--ink:#5a3550;--paper:rgba(255,246,232,.92);--gold:#f2c14e;--line:#e9cfa8;--accent:#c8553d}
   [hidden]{display:none!important}
@@ -77,6 +85,10 @@
   #snd{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));min-width:84px;padding:5px 10px;border:0;border-radius:14px;background:#b39bd1;color:#fff;font:inherit;font-size:12px;box-shadow:0 3px 0 #8a74a8;cursor:pointer} #snd.off{background:#8f8794;box-shadow:0 3px 0 #6b6470}
   @media (pointer:coarse){#snd{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
   #cred{position:fixed;z-index:3;right:calc(108px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));padding:5px 9px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:11px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer}
+  #inst,#upd{position:fixed;z-index:5;max-width:calc(100vw - 200px);text-align:left;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(62px + env(safe-area-inset-bottom,0px));padding:6px 12px;border:0;border-radius:14px;background:#fff6ea;color:#5a3550;font:inherit;font-size:13px;box-shadow:0 3px 0 #d9c9b8;cursor:pointer}
+  #upd{bottom:calc(106px + env(safe-area-inset-bottom,0px));background:#f2c14e;box-shadow:0 3px 0 #c99a2e}
+  @media (pointer:coarse){#inst{bottom:calc(18px + env(safe-area-inset-bottom,0px))}#upd{bottom:calc(62px + env(safe-area-inset-bottom,0px))}}
+  :is(#dlg,#menu,#mini,#end):not([hidden])~:is(#inst,#upd){display:none}
   @media (pointer:coarse){#cred{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
   #credits{position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100vw - 32px));max-height:80vh;overflow:auto;padding:16px 18px;font-size:13px;line-height:1.7}
   #credits ul{padding-left:18px;margin:8px 0} #credits a{color:#7a4a9a;word-break:break-word} #credits p{margin:4px 0;color:#7a6f86}
@@ -118,7 +130,10 @@
 <button id="tool" type="button" aria-label="ရေပုံး / ရေသေနတ် ပြောင်း"></button>
 <button id="snd" type="button" aria-label="အသံ ဖွင့် / ပိတ်"></button>
 <button id="cred" type="button" aria-label="အသံ credit">credit</button>
+<button id="inst" type="button" hidden>📲 ဖုန်းထဲ ထည့်မယ်</button>
+<button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module" src="./yangon/boot.js?v=10"></script>
+<script type="module" src="./pwa.js?v=1"></script>
 </body>
 </html>
