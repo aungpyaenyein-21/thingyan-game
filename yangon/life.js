@@ -116,10 +116,10 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   L.SWING.add(swinger.g); swinger.g.position.set(0, -.98 - .24, 0); swinger.g.rotation.y = 0; swinger.anim.setLoop('sit'); dayOnly.push(swinger, waiting);
   W.tick((dt, T) => { L.SWING.rotation.x = swinger.g.visible ? Math.sin(T * 2.3) * .5 : 0; if (swinger.g.visible && rnd() < dt * .15) waiting.anim.play(pick(['jump', 'wave', 'laugh'])); });
 
-  // ---------- behind the tea shop: the kitchen boys washing up, the cook at his stoves (smoke going up); the porters
+  // ---------- behind the tea shop: the kitchen hands washing up, the cook at his stoves (smoke going up); the porters
   // carrying the pickup's baskets on their heads round the back lane into the market ----------
   const cook = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'none', x: L.COOK.x, z: L.COOK.z, ry: L.COOK.ry });
-  const washers = L.WASH.map(st => { const c = npc({ age: 'kid', hair: 'buzz', topStyle: 'tee', shirt: pick(['#e0574f', '#4fb3d9', '#f2c14e']), bottom: 'longyi', hat: 'none', x: st.x, z: st.z, ry: st.ry }); c.anim.setLoop('squat'); return c; });
+  const washers = L.WASH.map(st => { const c = npc({ age: 'adult', hair: pick(['short', 'buzz']), build: 'slim', topStyle: 'tee', shirt: pick(['#e0574f', '#4fb3d9', '#f2c14e']), bottom: 'longyi', hat: 'none', x: st.x, z: st.z, ry: st.ry }); c.anim.setLoop('squat'); return c; });
   knot(washers, true); dayOnly.push(cook, ...washers);
   const puffM = new THREE.MeshBasicMaterial({ color: '#d9d2c4', transparent: true, opacity: .45, depthWrite: false });
   const puffs = L.STOVES.flatMap(p0 => [0, 1, 2].map(k => { const m = W.keep(mesh(new THREE.SphereGeometry(.14, 8, 6), puffM, p0.x, p0.y, p0.z, { cast: false })); m.userData = { p0, t: k / 3 }; return m; }));
