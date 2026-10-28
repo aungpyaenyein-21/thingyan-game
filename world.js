@@ -469,6 +469,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     else if (avg < 1 / 52 && AQ.lvl > 0 && AQ.ups < 3) { AQ.ups++; setLevel(AQ.lvl - 1); AQ.t = -3; } // a few tries back up, then settle
   }
   function frame() {
+    if (W.paused) { clock.getDelta(); return; } // a full-screen view (the tea brewing) covers the town: don't draw it underneath
     const raw = clock.getDelta(), dt = Math.min(raw, DTMAX); T += dt; adapt(raw);
     const player = W.player, pa = player.anim;
 
@@ -658,6 +659,6 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, paused: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

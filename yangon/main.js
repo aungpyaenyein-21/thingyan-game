@@ -1,14 +1,15 @@
 // yangon/main.js — story day 1, Yangon (STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
-import { createWorld, PAL, SKINS } from '../world.js?v=9';
+import { createWorld, PAL, SKINS } from '../world.js?v=10';
 import { CAT_COATS } from '../critters.js?v=5';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=13';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=14';
 import { createHud, play } from './hud.js?v=3';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=4';
-import { buildRooms } from './rooms.js?v=6';
+import { buildRooms } from './rooms.js?v=7';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=11';
+import { startLife } from './life.js?v=12';
+import { brew } from './brew.js?v=1';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=5';
 
@@ -23,6 +24,7 @@ const v = new THREE.Vector3();
 // ---------- save (shared with downtown: save.js) ----------
 const S = loadSave(); S.at = 'ward';
 if (S.q.padauk === 'climb') S.q.padauk = 'school'; // older saves: the padauk errand now goes by the school
+if (S.q.tea === 'serve') S.q.tea = 'brew'; // older saves: serving three tables became brewing behind the counter
 const save = () => store(S);
 
 // ---------- the stage parts: one per favour; ghosts until found ----------
@@ -127,9 +129,7 @@ cyl(.03, .03, 2.1, '#8f8794', CORNER.x + .55, .02, CORNER.z + .2, 5, { parent: c
 // ③ the big tea shop by the market is packed inside; the barber and the tailor work in their shops on ②
 const TR = ROOMS.tea, seat = (o, st) => { const c = npc({ ...o, x: st.x, z: st.z, ry: st.ry }, .05 + (st.lift || 0)); c.anim.setLoop('sit'); return c; };
 const teaBoss = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'none', x: TR.boss.x, z: TR.boss.z }, .05);
-const ORDERS = [['ပေါ့ဆိမ့်', 'pawsein'], ['ချိုဆိမ့်', 'chosein'], ['ကျဆိမ့်', 'kyasein']]; // tea-shop shorthand: light, sweet, strong
-const SERVE = [0, 1, 3]; // which tables are waiting on the boy who went home
-const customers = SERVE.map((t, i) => seat({ age: i === 1 ? 'elder' : 'adult' }, TR.tables[t].seats[i % 2]));
+[0, 1, 3].forEach((t, i) => seat({ age: i === 1 ? 'elder' : 'adult' }, TR.tables[t].seats[i % 2]).anim.setLoop(i === 1 ? 'idle' : 'eat'));
 const friend = seat({ age: 'adult', hair: 'spiky', hairColor: '#4a2e22', topStyle: 'jacket', shirt: '#2e3a59', bottom: 'pants', hat: 'none', name: 'ဖိုးသာ' }, TR.tables[2].seats[1]);
 const oldMen = TR.tables[5].seats.map(st => seat({ age: 'elder', topStyle: 'taikpon', bottom: 'longyi' }, st)); // two old men at their usual table, putting the world to rights
 seat({ age: 'adult' }, TR.tables[1].seats[0]).anim.setLoop('eat'); // palata and tea, alone with the TV
@@ -167,42 +167,43 @@ const journal = (c, y = .56, z = .3) => { const g = new THREE.Group(); c.g.add(g
   }
 }
 journal(oldMen[0]); // one reads the football out loud to the other
-// the waiters (စားပွဲထိုး), grown men: to a table and back with a tray, calling the orders to the counter; one minds the door
-// and asks what you'll have; an old man goes round the tables selling the papers
+// the waiter (စားပွဲထိုး) — just the one today: he greets you at the door and asks what you'll have, and in between takes
+// trays to the tables and calls the orders to the counter; an old man goes round the tables quietly selling the papers
 const ROOM_FLOOR = () => .05, AI = TR.aisle;
 const trayOf = c => { const g = new THREE.Group(); c.g.add(g); g.position.set(0, 1.08, .32); cyl(.2, .2, .03, '#9aa3ad', 0, 0, 0, 12, { parent: g }); for (const dx of [-.07, .08]) cyl(.05, .04, .1, '#c8945a', dx, .03, 0, 8, { parent: g }); return g; };
 const BOY = { age: 'adult', hair: 'short', build: 'slim', topStyle: 'shirt', shirt: '#fff6ea', bottom: 'longyi', hat: 'none' };
-const boys = [0, 1].map(i => { const c = npc({ ...BOY, x: TR.counter.x + i * .8, z: TR.counter.z, ry: Math.PI }, .05); c.floor = ROOM_FLOOR; c.tray = trayOf(c); c.tray.visible = false; return c; });
-async function waitTables(c, i) {
-  for (;;) {
-    await life.wait(1.5 + rnd() * 3);
-    const t = pick(TR.tables.filter(t => t !== MY_TABLE)), ax = AI.xs.reduce((a, x) => Math.abs(x - t.x) < Math.abs(a - t.x) ? x : a);
-    c.tray.visible = true; await life.walk(c, [[ax, AI.zs[0]], [ax, t.z]], 'carry');
-    c.g.rotation.y = Math.sign(t.x - ax) * Math.PI / 2; c.tray.visible = false; c.anim.play('wave'); if (rnd() < .5) life.say(c, pick(['ရပါပြီ~', 'ပူပူလေး~', 'သောက်ပါဦး အစ်ကို~']), 1.6, 1.6);
-    await life.wait(1.4);
-    await life.walk(c, [[ax, AI.zs[0]], [TR.counter.x + i * .8, TR.counter.z]]);
-    c.g.rotation.y = Math.PI; life.say(c, pick(['ပေါ့ဆိမ့် နှစ်ခွက်!', 'ပလာတာ တစ်ချပ်!', 'ကျဆိမ့် တစ်ခွက်!', 'ရေနွေးကြမ်း ထပ်!']), 1.6, 1.6); // calls the order to the counter
-  }
-}
-boys.forEach((c, i) => setTimeout(() => waitTables(c, i), i * 1800));
 const cook = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#fff6ea', bottom: 'longyi', hat: 'none', x: TR.boss.x - 1.6, z: TR.boss.z, ry: 0 }, .05); // the palata man at his griddle
 box(.9, .08, .5, '#3b3040', TR.boss.x - 1.6, 1.05, TR.boss.z + .55); cyl(.22, .22, .02, '#e8b85a', TR.boss.x - 1.6, 1.13, TR.boss.z + .55, 12);
 const DOOR_POST = new THREE.Vector3(TR.door.x + 1.4, 0, TR.door.z - .9);
-const doorBoy = npc({ ...BOY, shirt: '#e9e1d2', x: DOOR_POST.x, z: DOOR_POST.z, ry: -Math.PI / 2 }, .05); doorBoy.floor = ROOM_FLOOR;
+const doorBoy = npc({ ...BOY, x: DOOR_POST.x, z: DOOR_POST.z, ry: -Math.PI / 2 }, .05); doorBoy.floor = ROOM_FLOOR; doorBoy.tray = trayOf(doorBoy); doorBoy.tray.visible = false;
+let rounds = 0; // bumped whenever he's called away, so the old round of tables just stops
+async function waitTables(gen) {
+  const live = () => gen === rounds && !doorBoy.asking;
+  for (;;) {
+    await life.wait(2 + rnd() * 3); if (!live()) return;
+    const t = pick(TR.tables.filter(t => t !== MY_TABLE)), ax = AI.xs.reduce((a, x) => Math.abs(x - t.x) < Math.abs(a - t.x) ? x : a);
+    doorBoy.tray.visible = true; await life.walk(doorBoy, [[ax, AI.zs[0]], [ax, t.z]], 'carry'); if (!live()) return;
+    doorBoy.g.rotation.y = Math.sign(t.x - ax) * Math.PI / 2; doorBoy.tray.visible = false; doorBoy.anim.play('wave');
+    await life.wait(1.4); if (!live()) return;
+    await life.walk(doorBoy, [[ax, AI.zs[0]], [TR.counter.x, TR.counter.z]]); if (!live()) return;
+    doorBoy.g.rotation.y = Math.PI; if (rnd() < .4) life.say(doorBoy, pick(['ပေါ့ဆိမ့် နှစ်ခွက်!', 'ပလာတာ တစ်ချပ်!', 'ကျဆိမ့် တစ်ခွက်!', 'ရေနွေးကြမ်း ထပ်!']), 1.6, 1.6); // calls the order to the counter
+  }
+}
+waitTables(rounds);
 const paperMan = npc({ age: 'elder', hair: 'short', topStyle: 'shirt', shirt: '#dfe8f0', bottom: 'longyi', hat: 'bucket', x: AI.xs[2], z: AI.zs[2] }, .05); paperMan.floor = ROOM_FLOOR;
 journal(paperMan, .95, .32); // he holds one open so you can see what's in it this week
 (async () => {
   const P = [[AI.xs[2], AI.zs[2]], [AI.xs[0], AI.zs[2]], [AI.xs[0], AI.zs[1]], [AI.xs[2], AI.zs[1]]];
-  for (let k = 1; ; k++) { await life.walk(paperMan, [P[k % 4]], 'carry'); if (rnd() < .7) life.say(paperMan, pick(['သတင်းစာ~ ဂျာနယ်~', 'ဘောလုံးဂျာနယ်~ ဒီနေ့ထွက်~', 'ရုပ်ရှင်ဂျာနယ်~ ယူမလား~']), 2, 1.9); await life.wait(1 + rnd() * 2); }
+  for (let k = 1; ; k++) { await life.walk(paperMan, [P[k % 4]], 'carry'); await life.wait(1 + rnd() * 2); }
 })();
 // in at the door: the boy comes over and asks what you'll have (press E by him to order); he goes back to the door after a while
 async function greet() {
   const p = W.player.g.position;
-  await life.walk(doorBoy, [[p.x + 1.0, p.z - .6]]); face(doorBoy); doorBoy.asking = true;
+  rounds++; doorBoy.asking = true; doorBoy.tray.visible = false; await life.walk(doorBoy, [[p.x + 1.0, p.z - .6]]); face(doorBoy);
   life.say(doorBoy, 'ထိုင်ပါ အစ်ကို! ဘာသောက်မလဲ ခင်ဗျ', 4, 1.6);
   await life.wait(9); if (doorBoy.asking) boyBack();
 }
-const boyBack = () => { doorBoy.asking = false; life.walk(doorBoy, [DOOR_POST]).then(() => { doorBoy.g.rotation.y = -Math.PI / 2; }); };
+const boyBack = () => { doorBoy.asking = false; const gen = ++rounds; life.walk(doorBoy, [DOOR_POST]).then(() => { doorBoy.g.rotation.y = -Math.PI / 2; if (gen === rounds) waitTables(gen); }); };
 function askBoy() {
   const B = 'စားပွဲထိုး'; face(doorBoy);
   talk([[B, 'ထိုင်ပါ အစ်ကို! ဘာသောက်မလဲ ခင်ဗျ။'], [B, 'လက်ဖက်ရည်၊ ကော်ဖီ၊ ပလာတာ၊ ပေါက်စီ… အကုန်ရတယ်။ ဟိုဘက်မှာ စားပွဲလွတ် ရှိတယ်နော်။']], () => {
@@ -283,7 +284,7 @@ const QGOALS = {
   cloth: { ask: 'အန်တီစိန်ကို မေး — ကြိုးဆွဲပုံးနဲ့ ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံ ယူ', buy: 'လမ်းကြားထဲက ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်', return: 'ဟင်းသီးဟင်းရွက်ကို ပုံးထဲ ထည့်ပေး', lifting: 'အန်တီစိန် ပုံးဆွဲတင်နေတယ်…', cloth: 'ပုံးထဲက ပိတ်စ ယူ' },
   padauk: { ask: 'အဘွားကို ပိတောက်ပန်းအကြောင်း မေး', school: 'ဈေးနောက်က မူလတန်းကျောင်းထဲ ပိတောက်ပင်ဆီ သွား', dad: 'ထူးထူးနောက် လိုက် — သူ့အဖေဆီက လှေကား ငှား', carry: 'လှေကားနဲ့ ကျောင်းက ပိတောက်ပင် တက်ပြီး ခူး', shrine: 'ပထမခက်ကို ဘုရားကပ်ဖို့ အဘွားကို ပေး' },
   cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ကို မေး', search: 'ညောင်သံ လိုက်ရှာ — ရွှေဝါ ဘယ်မှာလဲ', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဟင်းသီးဟင်းရွက်သည်ဆီ', lure: 'ငါးခြောက်နဲ့ ရွှေဝါကို ချော့', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ်' },
-  tea: { ask: 'လက်ဖက်ရည်ဆိုင် ဆရာကို မေး', serve: 'စားပွဲ ၃ ဝိုင်းကို လက်ဖက်ရည် ချပေး', back: 'ဆရာဆီ ပြန်သွား' },
+  tea: { ask: 'လက်ဖက်ရည်ဆိုင် ဆရာကို မေး', brew: 'ကောင်တာနောက်မှာ လက်ဖက်ရည် ဝင်ဖျော် (၈ ခွက်)', back: 'ဆရာဆီ ပြန်သွား' },
   sign: { ask: 'ကွမ်းယာဆိုင် အဘကို မေး' },
   fronds: { ask: 'ဈေးထဲက အုန်းလက်ဆိုင် ကိုအောင်ကို မေး', mohinga: 'မုန့်ဟင်းခါးဆိုင်မှာ တစ်ပွဲ ဝယ်', bring: 'မုန့်ဟင်းခါးကို ကိုအောင်ဆီ ပို့' },
   lights: { ask: 'ဈေးထဲက မီးကြိုးဆိုင် ကိုဇော်ကို မေး', cord: 'လမ်းမက ဖုန်းဆိုင်မှာ ကြိုးခွေ ယူ', bring: 'ကြိုးခွေကို ကိုဇော်ဆီ ပို့' },
@@ -306,7 +307,6 @@ function hud2() {
   if (S.q.cloth === 'return') bag.push('ချဉ်ပေါင်ရွက်', 'ခရမ်းချဉ်သီး');
   if (S.q.padauk === 'carry') bag.push('ဝါးလှေကား'); if (S.q.padauk === 'shrine') bag.push('ပိတောက်ခက် ×၃');
   if (S.q.cat === 'lure') bag.push('ငါးခြောက်');
-  if (S.q.tea === 'serve') bag.push(`လက်ဖက်ရည် ×${MM(3 - S.served.length)}`);
   if (S.q.fronds === 'bring') bag.push('မုန့်ဟင်းခါး တစ်ပွဲ');
   if (S.q.lights === 'bring') bag.push('ကြိုးခွေ');
   if (S.q.drum === 'carry' && S.carrying) bag.push('ရေပုံး');
@@ -447,23 +447,28 @@ function callCat() {
   talk([[ME, 'ရွှေဝါ… ဆင်းလာလေ…'], ['', 'ရွှေဝါက ကားခေါင်မိုးပေါ်ကနေ စိုက်ကြည့်ပြီး မဆင်းဘူး။ ရေစိုမှာ ကြောက်နေပုံပဲ။'], [ME, 'ငါးခြောက်လေး ရှိရင် ဆင်းလာမလား မသိဘူး…']],
     () => { if (S.q.cat === 'search') { S.q.cat = 'fish'; hud2(); } });
 }
-// ② tea shop: the boy who waits tables went home for Thingyan; serve three tables in tea-shop shorthand
+// ③ tea shop: the tea master went home to the village for Thingyan — stand in behind the counter and brew the rush (brew.js)
+const BOSS = 'လက်ဖက်ရည်ဆိုင် ဆရာ';
+let brewing = null;
 function talkTea() {
-  const T = 'လက်ဖက်ရည်ဆိုင် ဆရာ', q = S.q.tea;
+  const T = BOSS, q = S.q.tea;
   if (S.step === 'quests' && q === 'ask') return talk([
     [ME, 'ဆရာ… ကလေးတွေ မဏ္ဍပ်အတွက် ရေပိုက် အပို ရှိလား။'],
-    [T, 'အေး ရှိတယ် ညီလေး — ဆိုင်ဆေးတဲ့ ရေပိုက် အပိုတစ်ခွေ။ ဒါပေမဲ့ ခဏ ကူပါဦး — စားပွဲထိုး တစ်ယောက် သင်္ကြန် ရွာပြန်သွားလို့ ကျန်တဲ့သူတွေ လက်မလည်ကြဘူး။'],
-    [T, `ဟိုစားပွဲ သုံးဝိုင်းက မှာထားတာ — ${ORDERS.map(o => o[0]).join('၊ ')}။ ချပေးလိုက်ပါ။`],
-  ], () => { S.q.tea = 'serve'; S.served = []; hud2(); hud.toast('လက်ဖက်ရည် ၃ ခွက် ချပေးမယ်'); }, teaBoss);
-  if (q === 'back') return talk([[T, 'ကောင်းတယ် ကောင်းတယ်! စားပွဲထိုး လုပ်ဖူးသလိုပဲ။'], [T, 'ရော့ ရေပိုက်ခွေ။ ကလေးတွေကို ရေဝအောင် ပက်ခိုင်း!']], () => gotPart('tea'), teaBoss);
-  if (q === 'serve') return talk([[T, `ကျန်တဲ့ စားပွဲတွေ ချပေးလိုက်ဦး — ${MM(3 - S.served.length)} ဝိုင်း။`]], null, teaBoss);
+    [T, 'အေး ရှိတယ် ညီလေး — ဆိုင်ဆေးတဲ့ ရေပိုက် အပိုတစ်ခွေ။ ဒါပေမဲ့ ဒုက္ခရောက်နေတယ်ကွာ… အဖျော်ဆရာ သင်္ကြန် ရွာခဏ ပြန်သွားလို့ လက်ဖက်ရည် ဖျော်မယ့်သူ မရှိဘူး။'],
+    [T, 'ညီလေး ခဏ ဝင်ဖျော်ပေးပါလား။ စားပွဲထိုးက အော်ပြီး မှာလိမ့်မယ် — ပုံမှန်၊ ချိုဆိမ့်၊ ပေါ့ဆိမ့်၊ ကျဆိမ့်။ မှာတဲ့အတိုင်း အချိုးကျကျ ဖျော်ပေး။'],
+    [ME, 'ငယ်ငယ်က ဆရာ ဖျော်တာ ထိုင်ကြည့်ခဲ့ဖူးတယ်… ကြိုးစားကြည့်မယ်!'],
+  ], () => { S.q.tea = 'brew'; hud2(); }, teaBoss);
+  if (q === 'brew') return startBrew();
+  if (q === 'back') return talk([[T, 'ကောင်းတယ် ကောင်းတယ်! အဖျော်ဆရာ လုပ်ဖူးသလိုပဲ။'], [T, 'ရော့ ရေပိုက်ခွေ။ ကလေးတွေကို ရေဝအောင် ပက်ခိုင်း!']], () => gotPart('tea'), teaBoss);
   talk([[T, 'ထိုင်ပါ ထိုင်ပါ… ပလာတာ ပူပူလေး ရမယ်။']], null, teaBoss);
 }
-function serve(i) {
-  S.served.push(i); const c = customers[i]; c.anim.play('wave'); setTimeout(() => c.anim.setLoop('eat'), 1500); cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2);
-  hud.toast(`${ORDERS[i][0]} ချပြီ  (${MM(S.served.length)}/၃)`);
-  if (S.served.length >= 3) S.q.tea = 'back';
-  hud2();
+function startBrew() {
+  hud.cinematic(true); W.paused = true;
+  brewing = brew({ sound,
+    onWin: () => { brewing = null; W.paused = false; hud.cinematic(false); teaBoss.anim.play('wave');
+      talk([[BOSS, 'ကောင်းတယ် ကောင်းတယ်! အဖျော်ဆရာ ပြန်လာရင် အလုပ်ပြုတ်တော့မယ် ထင်တယ်။ ဟား ဟား'], [BOSS, 'ရော့ ရေပိုက်ခွေ။ ကလေးတွေကို ရေဝအောင် ပက်ခိုင်း!']], () => gotPart('tea'), teaBoss); },
+    onQuit: () => { brewing = null; W.paused = false; hud.cinematic(false); talk([[BOSS, 'ရပါတယ်၊ နားပြီးမှ ပြန်ဖျော်။ လက်ဖက်ရည်က အချိုးကျမှ အရသာရှိတာ။']], null, teaBoss); },
+  });
 }
 // ② betel stall: the old man remembers Thingyans past, then letters the mandat's sign — you choose its name
 function talkBetel() {
@@ -545,7 +550,7 @@ async function enter(name) {
   backTo = W.player.g.position.clone(); inside = name; W.setRoom(r); W.renderer.clippingPlanes = []; // the island-edge clip would cut the room away
   W.player.g.position.set(r.spawn.x, .05, r.spawn.z); W.player.g.rotation.y = Math.PI; W.snapCam();
   await hud.fade(false, 350); hud.cinematic(false); hud.area(ROOM_NAME[name]);
-  if (name === 'tea' && S.q.tea !== 'serve') greet();
+  if (name === 'tea') greet();
 }
 async function goOut() {
   hud.cinematic(true); await hud.fade(true, 350); stand();
@@ -664,8 +669,7 @@ const SPOTS = [
   { at: () => L.BARBER, r: 1.3, label: () => closed() ? SHUT : 'ဆံပင်ညှပ်ဆိုင်ထဲ ဝင် ✂', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('barber') },
   { at: () => L.CLOTHES, r: 1.3, label: () => closed() ? SHUT : 'အထည်ဆိုင်ထဲ ဝင် 👕', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('clothes') },
   ...Object.values(ROOMS).map(r => ({ at: () => r.door, r: .9, label: () => 'အပြင် ထွက်', goal: () => false, run: goOut })),
-  { at: () => TR.counter, r: 1.4, label: () => 'ဆရာနဲ့ စကားပြော', goal: () => Q() && ['ask', 'back'].includes(S.q.tea), run: talkTea },
-  ...SERVE.map((t, i) => ({ at: () => customers[i].g.position, r: 1.1, label: () => S.q.tea === 'serve' && !S.served.includes(i) ? `${ORDERS[i][0]} ချပေး` : null, goal: () => true, run: () => serve(i) })),
+  { at: () => TR.counter, r: 1.4, label: () => S.q.tea === 'brew' ? 'ကောင်တာနောက် ဝင်ဖျော်မယ် ☕' : 'ဆရာနဲ့ စကားပြော', goal: () => Q() && ['ask', 'brew', 'back'].includes(S.q.tea), run: talkTea },
   { at: () => friend.g.position, r: 1.6, label: () => 'ဖိုးသာနဲ့ စကားပြော', goal: () => !S.metFriend && !party(), run: talkFriend },
   { at: () => doorBoy.g.position, r: 1.4, label: () => inside === 'tea' && !seated ? 'စားပွဲထိုးကို မှာမယ် ☕' : null, goal: () => false, run: askBoy },
   { at: () => MY_SEAT, r: 1.1, label: () => seated ? null : 'ထိုင်ပြီး မှာစား ☕', goal: () => false, run: () => order(MY_TABLE, MY_TABLE.seats[0]) },
@@ -691,12 +695,11 @@ fill(atBottom[S.q.cloth] ?? null); BK.y = BK.to = S.q.cloth in atBottom ? BBOT.y
 if (S.q.cat === 'done') catHome(); else if (S.q.cat === 'follow') { shweWa.held = 'follow'; shweWa.g.position.copy(W.player.g.position); } else shweWa.held = 'roof';
 if (S.q.drum === 'carry') S.carrying = false;
 setBanner(S.signName);
-for (const i of S.served) { cup(TR.tables[SERVE[i]], teaColor(ORDERS[i][1]), i % 2 ? .2 : -.2); customers[i].anim.setLoop('eat'); }
 if (party()) { partyPose(); W.setTime(1.7); }
 
 // ---------- goal markers (in the world and on the minimap) ----------
 function goalsAt() {
-  if (inside) return inside === 'tea' && Q() && S.q.tea !== 'done' ? (S.q.tea === 'serve' ? SERVE.map((t, i) => !S.served.includes(i) && customers[i].g.position).filter(Boolean) : [TR.counter]) : !S.metFriend && inside === 'tea' ? [friend.g.position] : [];
+  if (inside) return inside === 'tea' && Q() && S.q.tea !== 'done' ? [TR.counter] : !S.metFriend && inside === 'tea' ? [friend.g.position] : [];
   if (S.step === 'arrive') return [KIDS_AT];
   if (S.step === 'build') return [L.STAGE];
   if (S.step === 'evening') return [L.STOP];
@@ -718,7 +721,7 @@ hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BO
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, got: q => gotPart(q), S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, brew: () => brewing, got: q => gotPart(q), S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ လက်ဖက်ရည်နံ့ သင်းနေတုန်း…'],
