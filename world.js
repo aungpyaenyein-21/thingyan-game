@@ -553,6 +553,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
     // camera follow (soft, clamped so the island edge stays in view)
     v3.copy(player.g.position); v3.y = 0;
+    if (W.camFocus) v3.lerp(W.camFocus, .5).setY(0); // something to watch (a cat deciding whether to trust you): frame you both
     if (camBounds) { v3.x = THREE.MathUtils.clamp(v3.x, camBounds.x0, camBounds.x1); v3.z = THREE.MathUtils.clamp(v3.z, camBounds.z0, camBounds.z1); }
     else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
     camTarget.lerp(v3, Math.min(1, dt * 3));
@@ -599,9 +600,10 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     occluders.push({ box, mats: [...own.values()], a: 1 }); return r;
   }
   function fadeOccluders(dt) {
-    const p = W.player.g.position;
+    const p = W.player.g.position, w = W.watch; // watch: something else you need to see (a cat up on a roof)
     for (const o of occluders) {
       let hit = false; for (const y of [.25, 1.1]) { RAY.origin.set(p.x, p.y + y, p.z); RAY.direction.copy(ISOdir); if (RAY.intersectsBox(o.box)) { hit = true; break; } }
+      if (!hit && w) { RAY.origin.set(w.x, w.y + .3, w.z); RAY.direction.copy(ISOdir); hit = RAY.intersectsBox(o.box); }
       const want = hit ? .2 : 1; if (o.a === want) continue;
       o.a += (want - o.a) * Math.min(1, dt * 7); if (Math.abs(o.a - want) < .01) o.a = want;
       for (const c of o.mats) { c.opacity = o.a; c.depthWrite = o.a > .95; }
@@ -659,6 +661,6 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
 
   const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, paused: false, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }
