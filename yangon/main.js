@@ -238,9 +238,11 @@ const shweWa = W.addPet('cat', 'house', L.CAR.x + 1.0, L.CAR.z, { coat: CAT_COAT
 const meow = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ညောင်~'), depthWrite: false }))); meow.scale.set(1.3, .42, 1); meow.position.y = .7; meow.visible = false; shweWa.g.add(meow);
 const TRUST = Array.from({ length: 6 }, (_, n) => bubbleTex('🐟 ' + '❤️'.repeat(n) + '🤍'.repeat(5 - n)));
 const trustTag = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: TRUST[0], depthWrite: false }))); trustTag.scale.set(1.6, .5, 1); trustTag.position.y = .85; trustTag.visible = false; shweWa.g.add(trustTag);
+const LURE_R = 3.5, ring = W.keep(new THREE.Mesh(new THREE.RingGeometry(LURE_R - .08, LURE_R + .08, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#f2c14e', transparent: true, opacity: .8, depthWrite: false })));
+ring.visible = false; scene.add(ring);
 const CAT = { meowT: 2, hop: null, at: 0, steps: null, scared: 0, fish: null, trust: 0, stage: 0, eatT: 0, warnT: 0, told: false };
 // wet paw prints: little dark ovals that dry (shrink away) over a minute and a half
-const PAWS = new THREE.InstancedMesh(new THREE.CircleGeometry(.075, 10).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#3d4f63', transparent: true, opacity: .75, depthWrite: false }), 140);
+const PAWS = new THREE.InstancedMesh(new THREE.CircleGeometry(.095, 10).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#2c3a4c', transparent: true, opacity: .85, depthWrite: false }), 140);
 PAWS.count = 0; PAWS.frustumCulled = false; scene.add(W.keep(PAWS));
 const paws = [], PAW_LIFE = 90, pm = new THREE.Matrix4();
 function paw(x, z, side) { paws.push({ x, z, side, born: W.time() }); if (paws.length > 140) paws.shift(); }
@@ -259,7 +261,8 @@ function catMove(next) {
   const from = PERCH[CAT.at], to = PERCH[next], path = [[from.base.x, from.base.z], ...(RUNS[CAT.at] || []), [to.base.x, to.base.z]];
   CAT.steps = [{ hop: from.at.clone(), to: from.base.clone() }, ...path.slice(1).map(([x, z]) => ({ run: new THREE.Vector3(x, 0, z) })), { hop: to.base.clone(), to: to.at.clone(), next }];
   pawLine(path); shweWa.held = 'move'; shweWa.anim.emote('bang'); shweWa.anim.play('hop');
-  if (!CAT.told) { CAT.told = true; hud.toast('ရွှေဝါ ထပ်ပြေးသွားပြီ! ရေစိုခြေရာ လိုက်'); }
+  if (!CAT.told) { CAT.told = true; talk([[ME, 'ဟာ… ပြေးသွားပြန်ပြီ!'], ['', 'ရွှေဝါ ခုန်ဆင်းပြေးသွားတယ်။ မြေပေါ်မှာ ရေစိုခြေရာ 🐾 လေးတွေ ကျန်ခဲ့တယ် — အဲဒါအတိုင်း လိုက်ရှာ။ နောက်တစ်နေရာမှာ ထပ်နားလိမ့်မယ်။']]); }
+  else hud.toast(next === 2 ? 'ရွှေဝါ ထပ်ပြေးသွားပြီ… မောနေပြီ၊ ဝေးဝေး မရောက်တော့ဘူး 🐾' : 'ရွှေဝါ ထပ်ပြေးသွားပြီ! ခြေရာ 🐾 လိုက်');
 }
 shweWa.hit = () => { shweWa.anim.soak(); shweWa.anim.emote('bang'); if (S.q.cat === 'search' && shweWa.held === 'perch' && CAT.at < 2) catMove(CAT.at + 1); };
 // her meow from off screen: a little bubble at the screen's edge pointing her way (on screen her own bubble shows)
@@ -303,19 +306,20 @@ W.tick((dt, T) => {
   if (CAT.hop) { const h = CAT.hop; h.t += dt / (h.dur || .7); const k = Math.min(1, h.t); cp.lerpVectors(h.from, h.to, k); cp.y += Math.sin(k * Math.PI) * .5; if (k >= 1) { CAT.hop = null; c.held = h.then || 'follow'; h.done?.(); } }
   else if (c.held === 'move') { // along her steps: hops are arcs, runs are a trot on the ground
     const st = CAT.steps[0];
-    if (st.hop) { CAT.hop = { from: st.hop, to: st.to, t: 0, dur: .55, then: 'move' }; c.g.rotation.y = Math.atan2(st.to.x - st.hop.x, st.to.z - st.hop.z); CAT.steps.shift(); if (st.next !== undefined) { CAT.hop.then = 'perch'; CAT.hop.done = () => { CAT.at = st.next; CAT.steps = null; }; } }
+    if (st.hop) { CAT.hop = { from: st.hop, to: st.to, t: 0, dur: .55, then: 'move' }; c.g.rotation.y = Math.atan2(st.to.x - st.hop.x, st.to.z - st.hop.z); CAT.steps.shift(); if (st.next !== undefined) { CAT.hop.then = 'perch'; CAT.hop.done = () => { CAT.at = st.next; CAT.steps = null; hud2(); }; } }
     else { const d = Math.hypot(st.run.x - cp.x, st.run.z - cp.z); if (c.anim.loop !== 'run') c.anim.setLoop('run');
       if (d < .1) CAT.steps.shift(); else { c.g.rotation.y = Math.atan2(st.run.x - cp.x, st.run.z - cp.z); const s = Math.min(d, c.anim.speed * dt); cp.x += (st.run.x - cp.x) / d * s; cp.z += (st.run.z - cp.z) / d * s; cp.y = ground(cp.x, cp.z); } }
   }
   else if (c.held === 'perch') {
     const P = PERCH[CAT.at]; cp.copy(CAT.stage === 1 ? P.mid : P.at); if (c.anim.loop !== 'sit') c.anim.setLoop('sit'); c.g.rotation.y = P.ry;
     if (q === 'search' && CAT.at < 2 && pd < (running ? 3.4 : 2.1)) catMove(CAT.at + 1); // too close: off again
+    else if (q === 'search' && CAT.at === 2 && !CAT.seen && pd < 6 && !W.frozen) { CAT.seen = true; talk([[ME, 'အဲဒီမှာ! ရေအိုးစင် ခေါင်မိုးပေါ်မှာ…'], [ME, 'မောနေပုံပဲ၊ ဒီတစ်ခါ မပြေးတော့ဘူး ထင်တယ်။ ဖြည်းဖြည်း လမ်းလျှောက်ပြီး နားကပ်၊ ခေါ်ကြည့်မယ်။']]); }
     else if (CAT.at === 2 && !CAT.fish && running && pd < 3 && !CAT.scared) { CAT.scared = 3; c.anim.emote('bang'); hud.toast('ရွှေဝါ လန့်သွားပြီ… ဖြည်းဖြည်း သွား'); }
     if (q === 'lure' && CAT.fish) { // the lure: keep your distance, keep still
       const fd = Math.hypot(p.x - CAT.fish.position.x, p.z - CAT.fish.position.z);
-      if (fd < 3.5) { CAT.trust -= dt * .4; if ((CAT.warnT -= dt) < 0) { CAT.warnT = 2.5; c.anim.emote('bang', 1); hud.toast('နီးလွန်းတယ်… နောက်ဆုတ်ပြီး ငြိမ်ငြိမ်နေ'); } }
-      else if (!still) { CAT.trust -= dt * .15; if ((CAT.warnT -= dt) < 0) { CAT.warnT = 2.5; c.anim.emote('dots', 1); } }
-      else CAT.trust += dt / 6;
+      if (fd < LURE_R) { CAT.trust -= dt * .4; ring.material.color.set('#e0574f'); if ((CAT.warnT -= dt) < 0) { CAT.warnT = 2.5; c.anim.emote('bang', 1); hud.toast('နီးလွန်းတယ်… စက်ဝိုင်း အပြင်ဘက်ထိ ဆုတ်'); } }
+      else if (!still) { CAT.trust -= dt * .15; ring.material.color.set('#f2c14e'); if ((CAT.warnT -= dt) < 0) { CAT.warnT = 2.5; c.anim.emote('dots', 1); hud.toast('လှုပ်နေရင် မယုံဘူး… ငြိမ်ငြိမ်လေး ရပ်စောင့်'); } }
+      else { CAT.trust += dt / 6; ring.material.color.set('#5fe08a'); }
       CAT.trust = THREE.MathUtils.clamp(CAT.trust, 0, 1); trustTag.material.map = TRUST[Math.round(CAT.trust * 5)];
       if (CAT.stage === 0 && CAT.trust >= .5) { CAT.stage = 1; CAT.hop = { from: P.at.clone(), to: P.mid.clone(), t: 0, dur: .5, then: 'perch' }; c.held = 'hop'; }
       else if (CAT.stage === 1 && CAT.trust >= 1) { CAT.stage = 2; const f = CAT.fish.position; CAT.hop = { from: P.mid.clone(), to: new THREE.Vector3(f.x + .25, 0, f.z - .2), t: 0, dur: .5, then: 'eat' }; c.held = 'hop'; }
@@ -323,7 +327,7 @@ W.tick((dt, T) => {
   }
   else if (c.held === 'eat') { // a nibble, then she's yours
     if (c.anim.loop !== 'sit') { c.anim.setLoop('sit'); face(c, { g: CAT.fish }); CAT.eatT = 2.2; c.anim.emote('heart', 2); }
-    if ((CAT.eatT -= dt) < 0) { scene.remove(CAT.fish); CAT.fish = null; trustTag.visible = false; c.held = 'follow'; S.q.cat = 'follow'; hud2(); hud.toast('ရွှေဝါ လိုက်လာပြီ'); }
+    if ((CAT.eatT -= dt) < 0) { scene.remove(CAT.fish); CAT.fish = null; trustTag.visible = false; c.held = 'follow'; S.q.cat = 'follow'; hud2(); talk([['', 'ရွှေဝါ ငါးခြောက် စားပြီး နောက်က လိုက်လာပြီ! 🐱 ဦးဘတင်ဆီ ပြန်ခေါ်သွား။']]); }
   }
   else if (c.held === 'follow') {
     const want = v.set(-Math.sin(player.g.rotation.y), 0, -Math.cos(player.g.rotation.y)).multiplyScalar(.8).add(p), d = Math.hypot(want.x - cp.x, want.z - cp.z);
@@ -333,6 +337,7 @@ W.tick((dt, T) => {
     cp.y = ground(cp.x, cp.z);
   }
   trustTag.visible = q === 'lure' && !!CAT.fish && c.held !== 'eat';
+  ring.visible = trustTag.visible; if (CAT.fish) ring.position.set(CAT.fish.position.x, ground(CAT.fish.position.x, CAT.fish.position.z) + .03, CAT.fish.position.z);
   W.camFocus = q === 'lure' && CAT.fish && !inside ? c.g.position : null;
   W.watch = ['search', 'fish', 'lure'].includes(q) && !inside && (c.held === 'perch' || c.held === 'hop' || c.held === 'eat') && Math.hypot(cp.x - p.x, cp.z - p.z) < 12 ? cp : null; // buildings in front of her go see-through
   if ((CAT.pawT = (CAT.pawT ?? 0) - dt) < 0) { CAT.pawT = .5; drawPaws(); }
@@ -361,7 +366,9 @@ const $ = id => document.getElementById(id);
 const QGOALS = {
   cloth: { ask: 'အန်တီစိန်ကို မေး — ကြိုးဆွဲပုံးနဲ့ ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံ ယူ', buy: 'အန်တီစိန် အော်မှာတာ ဝယ် — ဟင်းသီးဟင်းရွက်သည်', return: 'ဟင်းသီးဟင်းရွက်ကို ပုံးထဲ ထည့်ပေး', lifting: 'ကြိုးဆွဲပုံးကို အပေါ်ထိ လမ်းကြောင်းပေး', cloth: 'ပုံးထဲက ပိတ်စ ယူ' },
   padauk: { ask: 'အဘွားကို ပိတောက်ပန်းအကြောင်း မေး', school: 'ဈေးနောက်က မူလတန်းကျောင်းထဲ ပိတောက်ပင်ဆီ သွား', dad: 'ထူးထူးနောက် လိုက် — သူ့အဖေဆီက လှေကား ငှား', carry: 'လှေကားနဲ့ ကျောင်းက ပိတောက်ပင် တက်ပြီး ခူး', shrine: 'ပထမခက်ကို ဘုရားကပ်ဖို့ အဘွားကို ပေး' },
-  cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ကို မေး', search: 'ရေစိုခြေရာ လိုက်ပြီး ရွှေဝါကို ရှာ — ပြေးရင် လန့်တယ်', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဟင်းသီးဟင်းရွက်သည်ဆီ', lure: 'ငါးခြောက်ချပြီး အဝေးကနေ ငြိမ်ငြိမ်စောင့်', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ်' },
+  cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ကို မေး', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဟင်းသီးဟင်းရွက်သည်ဆီ', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ် 🐱',
+    get search() { return CAT.at === 2 ? 'ရွှေဝါ ရေအိုးစင်ပေါ်မှာ — လမ်းလျှောက်ပြီး နားကပ်၊ ခေါ်ကြည့်' : `ရေစိုခြေရာ 🐾 အတိုင်း လိုက်ရှာ (${MM(CAT.at + 1)}/၃) — ပြေးရင် လန့်တယ်`; },
+    get lure() { return CAT.fish ? 'စက်ဝိုင်း အပြင်ဘက်မှာ မလှုပ်ဘဲ စောင့် — ❤️ ပြည့်ရင် ဆင်းလာမယ်' : 'ရေအိုးစင်နားမှာ ငါးခြောက် ချထား 🐟'; } },
   tea: { ask: 'လက်ဖက်ရည်ဆိုင် ဆရာကို မေး', brew: 'ကောင်တာနောက်မှာ လက်ဖက်ရည် ဝင်ဖျော် (၈ ခွက်)', back: 'ဆရာဆီ ပြန်သွား' },
   sign: { ask: 'ကွမ်းယာဆိုင် အဘကို မေး' },
   fronds: { ask: 'ဈေးထဲက အုန်းလက်ဆိုင် ကိုအောင်ကို မေး', mohinga: 'မုန့်ဟင်းခါးဆိုင်မှာ တစ်ပွဲ ဝယ်', bring: 'မုန့်ဟင်းခါးကို ကိုအောင်ဆီ ပို့' },
@@ -542,6 +549,7 @@ function talkUncle() {
     [ME, 'ဦးဘတင်… ကလေးတွေ မဏ္ဍပ်အတွက် အသံချဲ့စက် ငှားလို့ရမလား။'],
     [U, 'ရတာပေါ့ ငါ့တူရယ်… ဒါပေမဲ့ ဦးလေးရဲ့ ရွှေဝါ ပျောက်နေတယ်။ မနက်က ကလေးတွေ ရေပက်တာကို လန့်ပြီး ထွက်ပြေးသွားတာ။'],
     [U, 'ညောင်သံကတော့ ကြားနေရတယ်… ဝေးဝေး မရောက်ပါဘူး။ ရှာပေးပါလား။'],
+    [U, 'ရေစိုနေတော့ ခြေရာလေးတွေ 🐾 ကျန်ခဲ့မှာပဲ။ ဒါပေမဲ့ ပြေးမလိုက်နဲ့နော်… နီးလာရင် လန့်ပြီး နောက်တစ်နေရာ ထပ်ပြေးတတ်တယ်။'],
   ], () => { S.q.cat = 'search'; hud2(); }, uncle);
   if (q === 'follow' && near(shweWa, 3)) return talk([[U, 'ရွှေဝါ!! ဘယ်တွေ သွားနေတာလဲ သမီးရယ်…'], [U, 'ကျေးဇူးပဲ ငါ့တူရေ။ ရော့ — ဘုရားပွဲသုံး အသံချဲ့စက်။ သင်္ကြန်သီချင်း ကက်ဆက်လည်း ပါတယ်။ အကျယ်ကြီး မဖွင့်နဲ့နော်… ဦးလေးအိပ်ချင်တယ်။']],
     () => { catHome(); shweWa.anim.emote('heart'); gotPart('cat'); }, uncle);
@@ -552,10 +560,10 @@ function talkUncle() {
 function callCat() {
   if (S.q.cat === 'lure') { // the dried fish goes down by the stand; now back off and keep still
     const b = PERCH[2].base; CAT.fish = W.keep(mesh(new THREE.ConeGeometry(.07, .28, 6), '#c9a46b', b.x - .35, .07, b.z + .3)); CAT.fish.rotation.z = Math.PI / 2; CAT.trust = 0; CAT.stage = 0; hud2();
-    return talk([['', 'ငါးခြောက်ခေါင်း ချထားလိုက်ပြီ။ အဝေးကို ဆုတ်ပြီး မလှုပ်ဘဲ စောင့်ကြည့်…']]);
+    return talk([['', 'ငါးခြောက်ခေါင်း ချထားလိုက်ပြီ။'], ['', 'မြေပေါ်က စက်ဝိုင်း အပြင်ဘက်ထိ ဆုတ်ပြီး မလှုပ်ဘဲ ရပ်စောင့်။ စက်ဝိုင်း အစိမ်းရောင် ဖြစ်ရင် မှန်တယ် — ရွှေဝါ ခေါင်းပေါ်က ❤️ ပြည့်ရင် ဆင်းလာလိမ့်မယ်။']]);
   }
   shweWa.anim.emote('bang'); shweWa.anim.play('hop');
-  talk([[ME, 'ရွှေဝါ… ဆင်းလာလေ…'], ['', 'ရွှေဝါက ရေအိုးစင် ခေါင်မိုးပေါ်ကနေ စိုက်ကြည့်ပြီး မဆင်းဘူး။ မောနေပေမဲ့ ကြောက်နေတုန်းပဲ။'], [ME, 'ငါးခြောက်လေး ရှိရင် ဆင်းလာမလား မသိဘူး…']],
+  talk([[ME, 'ရွှေဝါ… ဆင်းလာလေ…'], ['', 'ရွှေဝါက ရေအိုးစင် ခေါင်မိုးပေါ်ကနေ စိုက်ကြည့်ပြီး မဆင်းဘူး။ မောနေပေမဲ့ ကြောက်နေတုန်းပဲ။'], [ME, 'ငါးခြောက်လေး ရှိရင် ဆင်းလာမလား မသိဘူး… ဟင်းသီးဟင်းရွက်သည် အဒေါ်ဆီမှာ ရှိမလား၊ သွားမေးကြည့်မယ်။']],
     () => { if (S.q.cat === 'search') { S.q.cat = 'fish'; hud2(); } });
 }
 // ③ tea shop: the tea master went home to the village for Thingyan — stand in behind the counter and brew the rush (brew.js)
@@ -785,7 +793,7 @@ const SPOTS = [
   { at: () => htoo.g.position, r: 1.6, label: () => 'ထူးထူးနဲ့ စကားပြော', goal: () => S.q.padauk === 'school', run: askHtoo },
   { at: () => dad.g.position, r: 1.7, label: () => 'ဦးမြင့်နဲ့ စကားပြော', goal: () => S.q.padauk === 'dad', run: talkDad },
   { at: () => UNCLE, r: 1.6, label: () => S.q.cat === 'follow' && near(shweWa, 3) ? 'ရွှေဝါကို ပြန်ပေး' : 'ဦးဘတင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'follow'].includes(S.q.cat), run: talkUncle },
-  { at: () => PERCH[2].base, r: 1.8, label: () => shweWa.held !== 'perch' || CAT.at !== 2 || CAT.scared ? null : S.q.cat === 'search' ? 'ရွှေဝါကို ခေါ်' : S.q.cat === 'lure' && !CAT.fish ? 'ငါးခြောက် ချထား 🐟' : null, goal: () => true, run: callCat },
+  { at: () => PERCH[2].base, r: 2.4, label: () => shweWa.held !== 'perch' || CAT.at !== 2 || CAT.scared ? null : S.q.cat === 'search' ? 'ရွှေဝါကို ခေါ်' : S.q.cat === 'lure' && !CAT.fish ? 'ငါးခြောက် ချထား 🐟' : null, goal: () => true, run: callCat },
   { at: () => L.TEA, r: 1.4, label: () => closed() ? SHUT : 'လက်ဖက်ရည်ဆိုင်ထဲ ဝင်', goal: () => Q() && S.q.tea !== 'done', run: () => closed() ? hud.toast(SHUT) : enter('tea') },
   { at: () => L.BARBER, r: 1.3, label: () => closed() ? SHUT : 'ဆံပင်ညှပ်ဆိုင်ထဲ ဝင် ✂', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('barber') },
   { at: () => L.CLOTHES, r: 1.3, label: () => closed() ? SHUT : 'အထည်ဆိုင်ထဲ ဝင် 👕', goal: () => false, run: () => closed() ? hud.toast(SHUT) : enter('clothes') },
