@@ -10,6 +10,8 @@ import { buildRooms } from './rooms.js?v=8';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=14';
 import { brew } from './brew.js?v=1';
+import { pulley } from './pulley.js?v=1';
+import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=5';
 
@@ -88,6 +90,7 @@ W.tick((dt, T) => {
   rope.position.set(BTOP.x + sw * .5, BK.y + .42 + len / 2, BTOP.z); rope.scale.y = Math.max(.01, len); rope.rotation.z = -sw * .3 / Math.max(len, .5);
 });
 const BUCKET_SPOT = new THREE.Vector3(BTOP.x, 0, BTOP.z + .55);
+let hauling = null; // the pulley overlay while it's up
 
 const CLIP = W.renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), BOUNDS.x1 + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), -BOUNDS.x0 + .001)]; // bus slides in/out of the island sides
 
@@ -356,13 +359,13 @@ W.tick((dt, T) => {
 // ---------- HUD: goals, bag ----------
 const $ = id => document.getElementById(id);
 const QGOALS = {
-  cloth: { ask: 'အန်တီစိန်ကို မေး — ကြိုးဆွဲပုံးနဲ့ ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံ ယူ', buy: 'လမ်းကြားထဲက ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်', return: 'ဟင်းသီးဟင်းရွက်ကို ပုံးထဲ ထည့်ပေး', lifting: 'အန်တီစိန် ပုံးဆွဲတင်နေတယ်…', cloth: 'ပုံးထဲက ပိတ်စ ယူ' },
+  cloth: { ask: 'အန်တီစိန်ကို မေး — ကြိုးဆွဲပုံးနဲ့ ဝရန်တာ', money: 'ပုံးထဲက ပိုက်ဆံ ယူ', buy: 'အန်တီစိန် အော်မှာတာ ဝယ် — ဟင်းသီးဟင်းရွက်သည်', return: 'ဟင်းသီးဟင်းရွက်ကို ပုံးထဲ ထည့်ပေး', lifting: 'ကြိုးဆွဲပုံးကို အပေါ်ထိ လမ်းကြောင်းပေး', cloth: 'ပုံးထဲက ပိတ်စ ယူ' },
   padauk: { ask: 'အဘွားကို ပိတောက်ပန်းအကြောင်း မေး', school: 'ဈေးနောက်က မူလတန်းကျောင်းထဲ ပိတောက်ပင်ဆီ သွား', dad: 'ထူးထူးနောက် လိုက် — သူ့အဖေဆီက လှေကား ငှား', carry: 'လှေကားနဲ့ ကျောင်းက ပိတောက်ပင် တက်ပြီး ခူး', shrine: 'ပထမခက်ကို ဘုရားကပ်ဖို့ အဘွားကို ပေး' },
   cat: { ask: 'ဘေးလမ်းက ဦးဘတင်ကို မေး', search: 'ရေစိုခြေရာ လိုက်ပြီး ရွှေဝါကို ရှာ — ပြေးရင် လန့်တယ်', fish: 'ကြောင်ချော့ဖို့ ငါးခြောက် — ဟင်းသီးဟင်းရွက်သည်ဆီ', lure: 'ငါးခြောက်ချပြီး အဝေးကနေ ငြိမ်ငြိမ်စောင့်', follow: 'ရွှေဝါကို ဦးဘတင်ဆီ ပြန်ခေါ်' },
   tea: { ask: 'လက်ဖက်ရည်ဆိုင် ဆရာကို မေး', brew: 'ကောင်တာနောက်မှာ လက်ဖက်ရည် ဝင်ဖျော် (၈ ခွက်)', back: 'ဆရာဆီ ပြန်သွား' },
   sign: { ask: 'ကွမ်းယာဆိုင် အဘကို မေး' },
   fronds: { ask: 'ဈေးထဲက အုန်းလက်ဆိုင် ကိုအောင်ကို မေး', mohinga: 'မုန့်ဟင်းခါးဆိုင်မှာ တစ်ပွဲ ဝယ်', bring: 'မုန့်ဟင်းခါးကို ကိုအောင်ဆီ ပို့' },
-  lights: { ask: 'ဈေးထဲက မီးကြိုးဆိုင် ကိုဇော်ကို မေး', cord: 'လမ်းမက ဖုန်းဆိုင်မှာ ကြိုးခွေ ယူ', bring: 'ကြိုးခွေကို ကိုဇော်ဆီ ပို့' },
+  lights: { ask: 'ဈေးထဲက မီးကြိုးဆိုင် ကိုဇော်ကို မေး', fix: 'ကိုဇော့် မီးကြိုးမှာ ပျက်နေတဲ့ မီးသီး ရှာ' },
   drum: { ask: 'ဘုန်းကြီးကျောင်းက ကိုရင်လေးတွေကို မေး', carry: 'ရေတွင်းကနေ ကန်ထဲ ရေ ၃ ပုံး သယ်', abbot: 'ဆရာတော်ဆီ သွား' },
   nozzle: { soak: '⑤ မြို့လယ် မဏ္ဍပ် ၃ ခုမှာ ရေပက်ခံ', back: '⑤ ရေပက်အဖွဲ့ ကိုကြီးဆီ ပြန်သွား' },
 };
@@ -379,11 +382,10 @@ function hud2() {
   const bag = [];
   if (S.gifts) bag.push(`လက်ဆောင်ထုပ် ×${MM(S.gifts)}`);
   if (S.q.cloth === 'buy') bag.push('ပိုက်ဆံ ၁၀၀၀ ကျပ်');
-  if (S.q.cloth === 'return') bag.push('ချဉ်ပေါင်ရွက်', 'ခရမ်းချဉ်သီး');
+  if (S.q.cloth === 'return') bag.push(...vegNames());
   if (S.q.padauk === 'carry') bag.push('ဝါးလှေကား'); if (S.q.padauk === 'shrine') bag.push('ပိတောက်ခက် ×၃');
   if (S.q.cat === 'lure' && !CAT.fish) bag.push('ငါးခြောက်');
   if (S.q.fronds === 'bring') bag.push('မုန့်ဟင်းခါး တစ်ပွဲ');
-  if (S.q.lights === 'bring') bag.push('ကြိုးခွေ');
   if (S.q.drum === 'carry' && S.carrying) bag.push('ရေပုံး');
   $('bag').innerHTML = bag.map(b => `<span>${b}</span>`).join('');
   if (!party()) W.setTime(phase() === 'late' ? .07 : 0);
@@ -426,27 +428,61 @@ function talkKids() {
   const todo = ERRANDS.filter(k => S.q[k] !== 'done'), names = ['ဖိုးကျော်', 'ချိုချို', 'မေသူ'];
   talk([['မေသူ', `${MM(S.parts.length)} မျိုး ရပြီ! နောက်ထပ် ${MM(todo.length)} မျိုး ရှာရဦးမယ်။`], ...todo.slice(0, 3).map((k, i) => [names[i], LEAD[k]])]);
 }
+// Auntie shouts her list down four floors; the street eats words. Pairs that sound alike sit side by side on the cart.
+const VEG = [['ချဉ်ပေါင်ရွက်', 'ကန်စွန်းရွက်'], ['ခရမ်းချဉ်သီး', 'ခရမ်းသီး'], ['ကြက်ဥ', 'ဘဲဥ']];
+const vegNames = () => (S.veg || [0, 0, 0]).map((k, i) => VEG[i][k]);
+const SHOUT = [ // first shout: a horn over every word — but each one leaves a clue
+  ['အန်တီစိန်', '“ချဉ်… 🚗ပီ ပီ!… ရွက် တစ်စည်း!”'],
+  ['အန်တီစိန်', '“ခရမ်း… 🚗ပီ ပီ!… သီး လေးလုံး! အနီရဲရဲလေးတွေနော်!”'],
+  ['အန်တီစိန်', '“ပြီးတော့… 🛺ကလင် ကလင်!… ဥ ဆယ်လုံး!”'],
+  [ME, 'ဘာဥလဲ အန်တီ!?'],
+  ['အန်တီစိန်', 'အန်တီ ဘဲဥနံ့ မကြိုက်တာ သားလေး မမှတ်မိတော့ဘူးလား! ဟိ'],
+];
+function startPulley() {
+  hud.cinematic(true); W.paused = true; auntie.anim.play('wave');
+  hauling = pulley({ sound, onDone: eggs => { hauling = null; W.paused = false; hud.cinematic(false); S.eggs = eggs;
+    BK.y = BK.to = BTOP.y; fill(null);
+    const A = 'အန်တီစိန်', line = eggs >= 10 ? 'တစ်လုံးမှ မကွဲဘူး! သားလေး လက်ကောင်းလိုက်တာ။'
+      : eggs >= 6 ? 'နည်းနည်း ကွဲသွားတယ်… ရပါတယ်၊ ကွဲတာတွေ ညနေ ကြက်ဥကြော် ကြော်လိုက်မယ်။'
+      : eggs ? 'အမလေး… ကြက်ဥ တစ်ဝက်လောက် ကွဲကုန်ပြီ။ ရပါတယ်၊ ကြက်ဥ ခေါက်ဆွဲကြော် ဖြစ်သွားတာပေါ့။'
+      : 'ကြက်ဥ အကုန် ကွဲပြီး ပုံးထဲမှာ ကြက်ဥဟင်းရည် ဖြစ်နေပြီ! ဟား ဟား… ကိစ္စမရှိပါဘူး သားလေး။';
+    talk([[A, line], [A, 'ရော့… အန်တီ့ ထဘီ ပိတ်စ အဟောင်းတွေ။ ကလေးတွေ မဏ္ဍပ်အတွက်ဆို အန်တီ ဝမ်းသာတယ်။']],
+      () => { fill('cloth'); sendBucket(true, () => { S.q.cloth = 'cloth'; hud2(); }); });
+  } });
+}
 function useBucket() {
   const A = 'အန်တီစိန်', q = S.q.cloth;
   if (S.step !== 'quests' || q === 'done') return talk([[A, S.step === 'arrive' ? 'ဟဲ့ သားလေး ပြန်ရောက်ပြီလား! ကလေးတွေ ကွက်လပ်မှာ စောင့်နေကြတယ်။' : 'ကလေးတွေ ပျော်နေတာ မြင်ရတော့ အန်တီလည်း ပျော်တယ်။ ရေတော့ အပေါ်ထပ်ကို မပက်နဲ့နော်!']]);
   if (q === 'ask') return talk([
     [ME, 'အန်တီစိန်ရေ!'], [A, 'ဟဲ့… သားလေး မဟုတ်လား! ပြန်ရောက်ပြီကိုး။ ဝလာလိုက်တာ။'],
     [A, 'ပိတ်စလား… ရှိတယ် ရှိတယ်။ ဒါပေမဲ့ အန်တီ ဒူးနာနေလို့ အောက်မဆင်းနိုင်ဘူး။'],
-    [A, 'ဟင်းသီးဟင်းရွက်သည် ဖြတ်သွားရင် ချဉ်ပေါင်ရွက် တစ်စည်းနဲ့ ခရမ်းချဉ်သီး ဝယ်ပေးပါဦးလား။ ပိုက်ဆံ ပုံးထဲ ထည့်ချပေးမယ်။'],
+    [A, 'ဟင်းသီးဟင်းရွက်သည်ဆီက ဝယ်ပေးပါဦး။ ပိုက်ဆံ ပုံးထဲ ထည့်ချပေးမယ်။ မှာမယ်နော် —'], ...SHOUT,
   ], () => { fill('money'); sendBucket(true, () => { S.q.cloth = 'money'; hud2(); }); });
   if (q === 'money') { fill(null); S.q.cloth = 'buy'; hud2(); return hud.toast('+ ပိုက်ဆံ ၁၀၀၀ ကျပ်'); }
+  if (q === 'buy') return talk([[ME, 'အန်တီ! ဘာတွေ မှာလိုက်တာလဲ… ထပ်ပြောပါဦး!'], [A, 'ဟဲ့… နားထောင်ဦး —'],
+    [A, '“ချဉ်ပေါင်ရွက် တစ်စည်း… ခရမ်းချဉ်သီး လေးလုံး… 🚌ဘွမ်!… ဥ ဆယ်လုံး!”'], [A, 'ဘဲဥ မဟုတ်ဘူးနော်!']]);
   if (q === 'return') {
+    const bad = (S.veg || []).findIndex(k => k); // old saves bought the right things before there was a choice
+    if (bad >= 0) { const [want, got] = VEG[bad]; S.veg = null; S.q.cloth = 'buy'; hud2();
+      return talk([[A, `ဟဲ့… အဲဒါ ${got} ကြီး မဟုတ်လား! အန်တီ ${want} ပြောတာ။`], [A, 'ဟင်းသီးဟင်းရွက်သည်ကို လဲခိုင်းလိုက်။ အဲဒီ ဒေါ်ဒေါ်က သဘောကောင်းပါတယ်။']]); }
     fill('veg'); S.q.cloth = 'lifting'; hud2();
-    return sendBucket(false, () => talk([[A, 'ကျေးဇူးပဲ သားလေး။ ခရမ်းချဉ်သီးတွေ လတ်လိုက်တာ။'], [A, 'ရော့… အန်တီ့ ထဘီ ပိတ်စ အဟောင်းတွေ။ ကလေးတွေ မဏ္ဍပ်အတွက်ဆို အန်တီ ဝမ်းသာတယ်။']],
-      () => { fill('cloth'); sendBucket(true, () => { S.q.cloth = 'cloth'; hud2(); }); }));
+    return talk([[A, 'ရပြီ ရပြီ! ဆွဲတင်တော့မယ်။ သားလေး အောက်က ကြိုးစကို ကိုင်ပြီး ပုံးကို လမ်းကြောင်းပေးနော်။ ဝါယာကြိုးတွေ များတယ်!']], startPulley);
   }
   if (q === 'cloth') { fill(null); auntie.anim.play('wave'); sendBucket(false); return gotPart('cloth'); }
   talk([[A, 'ဟင်းသီးဟင်းရွက်သည်က လမ်းကြားထဲ လှည့်နေတယ်။ အော်သံ ကြားရမှာပါ။']]);
 }
+// the cart: one of each look-alike pair; you only find out you were wrong when she sees it from the balcony
+function vegCart(pick = [-1, -1, -1]) {
+  const V = 'ဟင်းသီးဟင်းရွက်သည်', ready = pick.every(k => k >= 0), items = [];
+  VEG.forEach((pair, i) => { items.push({ head: ['အရွက်', 'အသီး', 'ဥ'][i] });
+    pair.forEach((n, k) => items.push({ label: (pick[i] === k ? '✓ ' : '') + n, cls: pick[i] === k ? 'on' : '', on: () => { const p = pick.slice(); p[i] = k; vegCart(p); return true; } })); });
+  items.push({ label: ready ? '🧺 ဒါတွေ ယူမယ်' : '🧺 တစ်မျိုးစီ ရွေးပါ', disabled: !ready, on: () => { S.veg = pick; S.q.cloth = 'return'; hud2(); hud.toast('+ ' + vegNames().join('၊ '));
+    talk([[V, 'ရော့… ခရမ်းချဉ်သီး တစ်လုံး ပိုထည့်ပေးမယ်။ သင်္ကြန်ပဲဟာ!']], null, vendor); } });
+  hud.menu({ title: '🥬 အန်တီစိန် မှာတာ', close: 'ခဏ စဉ်းစားဦးမယ်', items });
+}
 function talkVendor() {
   const V = 'ဟင်းသီးဟင်းရွက်သည်';
-  if (S.q.cloth === 'buy') return talk([[V, 'ချဉ်ပေါင်ရွက်~ ပဲပင်ပေါက်~ ဘာယူမလဲ မောင်လေး။'], [ME, 'ချဉ်ပေါင်ရွက် တစ်စည်းနဲ့ ခရမ်းချဉ်သီး ပေးပါ။ အန်တီစိန် မှာလိုက်တာပါ။'], [V, 'အော် အန်တီစိန်အတွက်လား။ ခရမ်းချဉ်သီး တစ်လုံး ပိုထည့်ပေးမယ်။ သင်္ကြန်ပဲဟာ!']],
-    () => { S.q.cloth = 'return'; hud2(); hud.toast('+ ချဉ်ပေါင်ရွက်၊ ခရမ်းချဉ်သီး'); }, vendor);
+  if (S.q.cloth === 'buy') return talk([[V, 'ချဉ်ပေါင်ရွက်~ ပဲပင်ပေါက်~ ဘာယူမလဲ မောင်လေး။'], [ME, 'အန်တီစိန် မှာလိုက်တာပါ…'], [V, 'အော် အန်တီစိန်အတွက်လား။ ရွေးလေ ရွေးလေ။']], () => vegCart(), vendor);
   if (S.q.cat === 'fish') return talk([[ME, 'အဒေါ် ငါးခြောက် ရှိလား… ကြောင်တစ်ကောင် ချော့ဖို့ပါ။'], [V, 'ဦးဘတင်ရဲ့ ရွှေဝါလား! ရော့… ငါးခြောက်ခေါင်း၊ ပိုက်ဆံ မယူပါဘူး။'], [V, 'ချထားပြီး ဝေးဝေးမှာ ငြိမ်ငြိမ်နေနော်။ ကြောင်က လူကြည့်နေရင် မဆင်းဘူး။']],
     () => { S.q.cat = 'lure'; hud2(); hud.toast('+ ငါးခြောက်'); }, vendor);
   talk([[V, 'ချဉ်ပေါင်ရွက်~ ပဲပင်ပေါက်~ ခရမ်းချဉ်သီး~ သင်္ကြန်ကျရင် ဈေးပိတ်မှာ၊ အခုပဲ ဝယ်ထားကြ!']], null, vendor);
@@ -574,21 +610,31 @@ function talkMohinga() {
     () => { S.q.fronds = 'bring'; hud2(); hud.toast('+ မုန့်ဟင်းခါး တစ်ပွဲ'); }, mohingaLady);
   talk([[D, 'မုန့်ဟင်းခါး ပူပူလေး~ ငါးဖယ်ကြော်လည်း ရှိတယ်။']], null, mohingaLady);
 }
-// ③ lights: Ko Zaw has the bulbs but lent out his extension reel to the phone shop
+// ③ lights: Ko Zaw's string won't light — one dead bulb somewhere in twelve, and the shop's too busy for him to look
+let fixing = null;
 function talkLights() {
   const Z = 'မီးကြိုးဆိုင် ကိုဇော်', q = S.q.lights;
   if (S.step === 'quests' && q === 'ask') return talk([
     [ME, 'ကိုဇော်… ကလေးမဏ္ဍပ်အတွက် မီးကြိုး တစ်ချောင်း ရမလား။'],
-    [Z, 'ရတယ်! ဒါပေမဲ့ ချိတ်ဖို့ ကြိုးခွေကို လမ်းမက ဖုန်းဆိုင် မမကို ငှားထားမိတယ်။ သွားယူပေးပါလား၊ ကျွန်တော် ဆိုင်စောင့်နေရလို့။'],
-  ], () => { S.q.lights = 'cord'; hud2(); }, lightsMan);
-  if (q === 'bring') return talk([[Z, 'ရပြီ ရပြီ! ရော့ — မီးကြိုး၊ အရောင် သုံးမျိုး လင်းတယ်။'], [ME, 'ကျေးဇူး… ဒါလေး ယူထားပါ။ လက်ဆောင်ပါ။'], [Z, 'ဟာ… မလိုပါဘူးဗျာ… ဒါပေမဲ့ ကျေးဇူးပဲ!']],
-    () => { if (S.gifts) S.gifts--; gotPart('lights'); }, lightsMan);
+    [Z, 'ရတယ်! ဒါပေမဲ့ ကျန်တဲ့ တစ်ကြိုးက မလင်းဘူးဗျ။ မီးသီး တစ်လုံးလုံး ပျက်နေတာ… ဘယ်အလုံးလဲ မသိဘူး။'],
+    [Z, 'သင်္ကြန်မို့ ဆိုင်က လူများနေလို့ ကျွန်တော် မစစ်နိုင်သေးဘူး။ ရော့ — မီးစစ်ညှပ်။ ရှာကြည့်ပါလား!'],
+  ], () => { S.q.lights = 'fix'; hud2(); startBulbs(); }, lightsMan);
+  if (q === 'fix') return startBulbs();
   talk([[Z, 'မီးကြိုး~ ဓာတ်မီး~ ဖုန်းအားသွင်းကြိုး~']], null, lightsMan);
+}
+function startBulbs() {
+  const Z = 'မီးကြိုးဆိုင် ကိုဇော်';
+  hud.cinematic(true); W.paused = true;
+  fixing = bulbs({ sound,
+    onWin: ({ tests }) => { fixing = null; W.paused = false; hud.cinematic(false); lightsMan.anim.play('wave');
+      talk([[Z, tests <= 4 ? `ဟာ… ${MM(tests)} ခါတည်းနဲ့ ရှာတွေ့တာလား! ကျွန်တော့်ဆိုင်မှာ အလုပ်လာလုပ်ပါလား။ ဟား ဟား` : 'လင်းပြီ လင်းပြီ! ရော့ — ကလေးမဏ္ဍပ်အတွက် ယူသွား။'],
+        [ME, 'ကျေးဇူး… ဒါလေး ယူထားပါ။ လက်ဆောင်ပါ။'], [Z, 'ဟာ… မလိုပါဘူးဗျာ… ဒါပေမဲ့ ကျေးဇူးပဲ!']],
+        () => { if (S.gifts) S.gifts--; gotPart('lights'); }, lightsMan); },
+    onQuit: () => { fixing = null; W.paused = false; hud.cinematic(false); talk([[Z, 'ရတယ် ရတယ်၊ ကြိုးကို ဒီမှာ ချိတ်ထားမယ်။ အားတဲ့အချိန် ပြန်လာစမ်း။']], null, lightsMan); },
+  });
 }
 function talkPhone() {
   const G = 'ဖုန်းဆိုင် မမ';
-  if (S.q.lights === 'cord') return talk([[ME, 'မမ… ကိုဇော်က သူ့ကြိုးခွေ လာယူခိုင်းလို့ပါ။'], [G, 'အော် ဟုတ်သားပဲ! ရော့။ ပြီးတော့ — SIM ကတ်အသစ် ဝယ်ဦးမလား၊ အင်တာနက် မြန်တယ်နော်။ ဟိ။']],
-    () => { S.q.lights = 'bring'; hud2(); hud.toast('+ ကြိုးခွေ'); }, phoneGirl);
   talk([[G, 'SIM ကတ်~ ဖုန်းဘေလ်~ သင်္ကြန် ဓာတ်ပုံရိုက်ဖို့ ဖုန်းအသစ် မလိုဘူးလား။']], null, phoneGirl);
 }
 // ④ monastery: the novices are refilling the fish pond for Thingyan; carry three buckets from the well
@@ -732,7 +778,7 @@ const SPOTS = [
   { at: () => STAGE_FRONT, r: 2.0, label: () => S.step === 'build' ? 'မဏ္ဍပ်လေး ဆောက်' : party() ? 'ကလေးတွေနဲ့ စကားပြော' : null, goal: () => S.step === 'build', run: () => S.step === 'build' ? build() : talkKids() },
   { at: () => L.SIGN, r: 1.5, label: () => S.step === 'arrive' ? null : 'မဏ္ဍပ်လေး ပစ္စည်းစာရင်း', goal: () => false,
     run: () => talk([['', ERRANDS.map(k => (S.parts.includes(k) ? '✓ ' : '· ') + ITEMS[k]).join('   ')], ['', `${MM(NEED)} မျိုးလုံး စုံရင် ဆောက်လို့ရပြီ။`]]) },
-  { at: () => BUCKET_SPOT, r: 1.5, label: () => bucketBusy() ? null : ({ ask: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[Q() && S.q.cloth] ?? 'အန်တီစိန်နဲ့ စကားပြော'), goal: () => Q() && ['ask', 'money', 'return', 'cloth'].includes(S.q.cloth), run: useBucket },
+  { at: () => BUCKET_SPOT, r: 1.5, label: () => bucketBusy() ? null : ({ ask: 'အန်တီစိန်ကို လှမ်းခေါ်', money: 'ပိုက်ဆံ ယူ', buy: 'အန်တီစိန်ကို ထပ်မေး 📢', return: 'ဟင်းသီးဟင်းရွက် ပုံးထဲ ထည့်', cloth: 'ပိတ်စ ယူ' }[Q() && S.q.cloth] ?? 'အန်တီစိန်နဲ့ စကားပြော'), goal: () => Q() && ['ask', 'money', 'return', 'cloth'].includes(S.q.cloth), run: useBucket },
   { at: () => vendor.g.position, r: 1.6, label: () => closed() ? null : 'ဟင်းသီးဟင်းရွက်သည်နဲ့ စကားပြော', goal: () => S.q.cloth === 'buy' || S.q.cat === 'fish', run: talkVendor },
   { at: () => grandma.g.position, r: 1.7, label: () => S.q.padauk === 'shrine' ? 'ပိတောက်ခက် ပေး' : 'အဘွားနဲ့ စကားပြော', goal: () => Q() && ['ask', 'shrine'].includes(S.q.padauk), run: talkGrandma },
   { at: () => TREE, r: 1.9, label: () => ({ school: 'ပိတောက်ပင်ကို ကြည့်', carry: 'လှေကားထောင်ပြီး တက် 🪜' }[S.q.padauk] ?? null), goal: () => S.q.padauk === 'carry', run: () => S.q.padauk === 'carry' ? climb() : askHtoo() },
@@ -751,10 +797,10 @@ const SPOTS = [
   { at: () => CHAIR, r: 1.3, label: () => seated ? null : 'ခုံပေါ် ထိုင်ပြီး ညှပ် ✂', goal: () => false, run: sitBarber },
   { at: () => ROOMS.clothes.mirror, r: 1.4, label: () => 'မှန်ရှေ့မှာ ဝတ်ကြည့် 👕', goal: () => false, run: tryOn },
   { at: () => L.BETEL, r: 1.5, label: () => closed() ? null : 'ကွမ်းယာဆိုင် အဘနဲ့ စကားပြော', goal: () => Q() && S.q.sign === 'ask', run: talkBetel },
-  { at: () => phoneGirl.g.position, r: 1.6, label: () => closed() ? null : 'ဖုန်းဆိုင် မမနဲ့ စကားပြော', goal: () => S.q.lights === 'cord', run: talkPhone },
+  { at: () => phoneGirl.g.position, r: 1.6, label: () => closed() ? null : 'ဖုန်းဆိုင် မမနဲ့ စကားပြော', goal: () => false, run: talkPhone },
   { at: () => L.FRONDS, r: 2.0, label: () => closed() ? null : 'အုန်းလက်ဆိုင် ကိုအောင်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.fronds), run: talkFronds },
   { at: () => L.MOHINGA, r: 1.8, label: () => closed() ? null : 'မုန့်ဟင်းခါးဆိုင်', goal: () => S.q.fronds === 'mohinga', run: talkMohinga },
-  { at: () => L.LIGHTS, r: 1.8, label: () => closed() ? null : 'မီးကြိုးဆိုင် ကိုဇော်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'bring'].includes(S.q.lights), run: talkLights },
+  { at: () => L.LIGHTS, r: 1.8, label: () => closed() ? null : Q() && S.q.lights === 'fix' ? 'မီးကြိုး ပြင်မယ် 💡' : 'မီးကြိုးဆိုင် ကိုဇော်နဲ့ စကားပြော', goal: () => Q() && ['ask', 'fix'].includes(S.q.lights), run: talkLights },
   { at: () => novices[0].g.position, r: 1.6, label: () => 'ကိုရင်လေးနဲ့ စကားပြော', goal: () => Q() && S.q.drum === 'ask', run: talkNovice },
   { at: () => L.WELL, r: 1.4, label: () => S.q.drum === 'carry' && !S.carrying ? 'ရေတွင်းက ရေခပ်' : null, goal: () => true, run: useWell },
   { at: () => L.POND, r: 1.6, label: () => S.q.drum === 'carry' && S.carrying ? 'ကန်ထဲ ရေလောင်း' : null, goal: () => true, run: usePond },
@@ -766,6 +812,7 @@ const SPOTS = [
 // bucket + cat + mandat as the save left them
 const atBottom = { money: 'money', buy: null, return: null, cloth: 'cloth' };
 if (S.q.cloth === 'lifting') S.q.cloth = 'return';
+if (['cord', 'bring'].includes(S.q.lights)) S.q.lights = 'fix'; // before the bulb puzzle there was a cord to fetch
 fill(atBottom[S.q.cloth] ?? null); BK.y = BK.to = S.q.cloth in atBottom ? BBOT.y : BTOP.y;
 if (S.q.cat === 'done') catHome(); else if (S.q.cat === 'follow') { shweWa.held = 'follow'; shweWa.g.position.copy(W.player.g.position); }
 else { shweWa.held = 'perch'; CAT.at = ['fish', 'lure'].includes(S.q.cat) ? 2 : 0; if (CAT.at === 0) pawLine(TRAIL0); } // older saves mid-errand: found her already → the last perch
@@ -788,7 +835,7 @@ function goalsAt() {
   if (q.tea !== 'done') add(L.TEA); // the tea shop's door
   add({ ask: L.BETEL }[q.sign]);
   add({ ask: L.FRONDS, mohinga: L.MOHINGA, bring: L.FRONDS }[q.fronds]);
-  add({ ask: L.LIGHTS, cord: phoneGirl.g.position, bring: L.LIGHTS }[q.lights]);
+  add({ ask: L.LIGHTS, fix: L.LIGHTS }[q.lights]);
   add({ ask: novices[0].g.position, carry: S.carrying ? L.POND : L.WELL, abbot: L.MONASTERY }[q.drum]);
   if (q.nozzle !== 'done') add(L.STOP); // ⑤ is a bus ride away
   return out;
@@ -797,7 +844,7 @@ hud.initMap(AREAS.map(a => ({ ...a, label: a.short })), [{ x0: BOUNDS.x0, x1: BO
 const here = play(W, hud, { spots: SPOTS, goals: goalsAt, areaAt, mapAt: () => inside && backTo }).here;
 
 hud2(); W.start();
-if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, brew: () => brewing, cat: () => ({ at: CAT.at, held: shweWa.held, trust: CAT.trust, stage: CAT.stage, fish: !!CAT.fish }), perch: i => PERCH[i].base, got: q => gotPart(q), S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
+if (new URLSearchParams(location.search).has('debug')) window.zone = { W, life, sound, brew: () => brewing, pulley: () => hauling, bulbs: () => fixing, cat: () => ({ at: CAT.at, held: shweWa.held, trust: CAT.trust, stage: CAT.stage, fish: !!CAT.fish }), perch: i => PERCH[i].base, got: q => gotPart(q), S: () => S, SPOTS, vendor, shweWa, L, hud, here, talking: () => hud.talking(), mini: () => hud.mini() };
 if (!S.intro) {
   const intro = () => hud.busy() ? setTimeout(intro, 500) : talk([
     ['', 'ကြာကြာ ခွဲနေခဲ့ပြီးမှ ပြန်ရောက်တဲ့ ရပ်ကွက်။ ဓာတ်ကြိုးတွေ ရှုပ်နေတုန်း၊ လက်ဖက်ရည်နံ့ သင်းနေတုန်း…'],

@@ -2,4 +2,4 @@
 import { load } from './save.js?v=5';
 
 const S = load();
-import(S.at === 'downtown' ? './downtown.js?v=14' : './main.js?v=20');
+import(S.at === 'downtown' ? './downtown.js?v=14' : './main.js?v=21');
