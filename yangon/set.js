@@ -3,7 +3,7 @@
 //   ③ the ward market: vendors on mats along two lanes, sheds   ④ the ward monastery            + compounds, a chinlone lot, a condo going up
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and errands live in story.js.
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=10';
+import { PAL } from '../world.js?v=11';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 37 };
@@ -159,7 +159,7 @@ export function buildSet(W) {
     return { g, balconies, bal: (u, f) => balconies.find(b => b.u === u && b.f === f) };
   }
   L.flatsA = flats(-3.6, -6.6, 4, 0, '#efdcc0', 32);            // along the back lane
-  flats(-7.3, .1, 4, Math.PI / 2, '#cfe3d2', 18);               // along the side lane
+  L.flatsB = flats(-7.3, .1, 4, Math.PI / 2, '#cfe3d2', 18);    // along the side lane (Shwe Wa hides on a balcony rail)
 
 
   // ---------- ① home: two-storey timber house (ပျဉ်ထောင်အိမ်), zinc roof, porch ----------
@@ -598,7 +598,7 @@ export function buildSet(W) {
 
   // ---------- street furniture: padauk trees, poles + tangled cables, Thingyan bunting across the street ----------
   // the ward's padauk trees haven't flowered yet this year (only the one in the school yard has)
-  padauk(2.2, -4.4, .8, false); padauk(7.7, 2.6, .95, false); padauk(-1.3, 5.1, .8, false);
+  padauk(2.2, -4.4, .8, false); padauk(9.8, -2.4, .95, false); // behind the water-pot stand, so it never hides Shwe Wa on its roof padauk(-1.3, 5.1, .8, false);
   for (const [x, z, s] of [[-6.5, 12.65, .8], [5.6, 12.65, .75], [17.5, 12.65, .8], [29.5, 12.65, .8], [12.4, .6, .8], [-9.4, 14.6, .8], [21.9, 25.7, .8]]) padauk(x, z, s, false);
   // street lamps: an arm off the pole, a bulb (L.lamp.bulb) and a soft pool of light on the road (L.lamp.glow); main.js turns them up at night
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64);
