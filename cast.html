@@ -34,7 +34,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CAST, makeCast } from './cast.js?v=1';
+import { CAST, makeCast } from './cast.js?v=8';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -50,10 +50,19 @@ const floor = new THREE.Mesh(new THREE.CircleGeometry(7, 48), new THREE.MeshLamb
 // the lineup: kids in front (① left, ④ right), grown-ups behind
 const front = ['hero', 'ngazwe', 'maythu', 'phoekyaw', 'chocho', 'thura', 'kid4'], back = ['sayagyi', 'utinmaung', 'mom1', 'mom4', 'mom0', 'bwabwa'];
 const all = [];
-const place = (ids, z) => ids.forEach((id, i) => { const c = makeCast(id, () => {}); c.ch.root.position.set((i - (ids.length - 1) / 2) * .95, 0, z); scene.add(c.ch.root); c.tag = Object.assign(document.createElement('div'), { className: 'tag', textContent: c.def.name }); document.body.appendChild(c.tag); all.push(c); });
+const place = (ids, z) => ids.forEach((id, i) => { const c = makeCast(id, (t, o) => emit(t, o, c)); c.ch.root.position.set((i - (ids.length - 1) / 2) * .95, 0, z); scene.add(c.ch.root); c.tag = Object.assign(document.createElement('div'), { className: 'tag', textContent: c.def.name }); document.body.appendChild(c.tag); all.push(c); });
 place(front, .9); place(back, -.7);
 
 let sel = null, turn = false;
+// thrown things: a water balloon flies out of the hand in an arc and bursts on the ground into a wet patch
+const flying = [], W = new THREE.Vector3(), F = new THREE.Vector3();
+function emit(type, obj, c) {
+  if (type !== 'lob') return;
+  obj.getWorldPosition(W); F.set(0, 0, 1).applyQuaternion(c.ch.root.quaternion);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(.07 * c.ch.scale, 12, 10), new THREE.MeshLambertMaterial({ color: '#4fb3d9' })); m.position.copy(W); m.castShadow = true; scene.add(m);
+  flying.push({ m, v: F.clone().multiplyScalar(3.2).add(new THREE.Vector3(0, 2.6, 0)), life: 3 });
+}
+function burst(at) { const d = new THREE.Mesh(new THREE.CircleGeometry(.3, 20), new THREE.MeshBasicMaterial({ color: '#7fcbe8', transparent: true, opacity: .7, depthWrite: false })); d.rotation.x = -Math.PI / 2; d.position.set(at.x, .006, at.z); scene.add(d); flying.push({ m: d, splat: true, life: 2.5 }); }
 const castBar = document.getElementById('cast');
 const btn = (parent, label, on, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = on; document.getElementById(parent).appendChild(b); return b; };
 const castBtns = [btn('cast', 'အားလုံး', () => select(null))].concat(all.map(c => btn('cast', c.def.name, () => select(c), 's' + c.def.side)));
@@ -79,7 +88,7 @@ function select(c) {
 const goal = { target: new THREE.Vector3(), pos: new THREE.Vector3() };
 cam.position.set(0, 4.2, 10.5); ctl.target.set(0, .7, 0); select(null); cam.position.copy(goal.pos); ctl.target.copy(goal.target);
 const qs = new URLSearchParams(location.search); if (qs.get('c')) select(all.find(c => c.def.id === qs.get('c')) || null); if (qs.get('a')) targets().forEach(c => c.anim.setLoop(qs.get('a')));
-window.cast = { all, get sel() { return sel; }, select: id => select(all.find(c => c.def.id === id) || null), act: k => sel?.act(k) };
+window.cast = { all, flying, get sel() { return sel; }, select: id => select(all.find(c => c.def.id === id) || null), act: k => sel?.act(k) };
 
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); cam.aspect = w / h; cam.fov = w <= 700 ? 44 : 28; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
@@ -87,6 +96,10 @@ const clock = new THREE.Clock(), V = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30);
   for (const c of all) { c.anim.update(dt); if (turn && (!sel || sel === c)) c.ch.root.rotation.y += dt * .6; }
+  for (let i = flying.length - 1; i >= 0; i--) { const f = flying[i]; f.life -= dt;
+    if (f.splat) { f.m.material.opacity = .7 * Math.min(1, f.life / 1.2); f.m.scale.setScalar(1 + .2 * (2.5 - f.life)); }
+    else { f.v.y -= 9 * dt; f.m.position.addScaledVector(f.v, dt); if (f.m.position.y < .04) { burst(f.m.position); f.life = 0; } }
+    if (f.life <= 0) { scene.remove(f.m); flying.splice(i, 1); } }
   cam.position.lerp(goal.pos, 1 - Math.exp(-dt * 4)); ctl.target.lerp(goal.target, 1 - Math.exp(-dt * 4));
   ctl.update(); renderer.render(scene, cam);
   for (const c of all) { // name tags above the heads (hidden while one character is in close-up)
