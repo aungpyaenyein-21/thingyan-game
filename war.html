@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>ရပ်ကွက်စစ် · 試作</title>
+<meta name="theme-color" content="#9fd3e8">
+<link rel="icon" href="./icons/icon-192.png">
+<style>
+  :root{--ink:#3b2a3a;--paper:rgba(255,250,240,.94);--a:#2f8fd6;--b:#e0574f;--gold:#f2c14e}
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%;overflow:hidden;touch-action:none;background:#9fd3e8;
+    font-family:"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+  canvas{display:block} body>canvas{position:fixed;inset:0}
+  #score{position:fixed;z-index:3;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;white-space:nowrap;
+    padding:6px 12px;border-radius:999px;background:var(--paper);font-size:14px;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+  #score i{display:inline-block;width:10px;height:10px;margin:0 1.5px;border-radius:50%;border:2px solid currentColor;box-sizing:border-box}
+  #score i.on{background:currentColor} #score .a{color:var(--a)} #score .b{color:var(--b)}
+  #me{position:fixed;z-index:3;left:calc(12px + env(safe-area-inset-left,0px));top:calc(54px + env(safe-area-inset-top,0px));width:150px;padding:8px 10px;border-radius:14px;background:var(--paper);font-size:12px;line-height:1.5;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+  .bar{height:10px;border-radius:6px;background:rgba(0,0,0,.12);overflow:hidden;margin:2px 0 6px}
+  .bar>b{display:block;height:100%;width:100%;border-radius:6px;transition:width .15s}
+  #water>b{background:#4fb4ff} #grit>b{background:#f2a65a}
+  #msg{position:fixed;z-index:3;left:50%;top:calc(52px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:80vw;padding:6px 14px;border-radius:14px;background:var(--paper);font-size:15px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.15);transition:opacity .3s}
+  #msg.off{opacity:0}
+  @media (max-width:600px){#msg{top:calc(146px + env(safe-area-inset-top,0px))}}
+  #sting{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,80,60,0) 35%,rgba(220,40,30,.55) 100%);opacity:0}
+  #pads{position:fixed;z-index:3;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;align-items:flex-end;gap:12px}
+  #pads button{-webkit-tap-highlight-color:transparent;font:inherit;border:0;border-radius:50%;color:var(--ink);background:var(--paper);box-shadow:0 4px 0 rgba(0,0,0,.2);touch-action:none}
+  #fire{position:relative;width:104px;height:104px;font-size:20px}
+  #fire svg{position:absolute;inset:-6px;width:116px;height:116px;pointer-events:none}
+  #fire.on{background:#bfe6ff}
+  #wipe{width:66px;height:66px;font-size:14px}
+  #wipe.on{background:#ffe1b0}
+  .kb{display:block;font-size:10px;opacity:.55} @media (pointer:coarse){.kb{display:none}}
+  .card{position:fixed;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,30,50,.55);padding:16px}
+  .card>div{max-width:440px;width:100%;padding:18px 20px;border-radius:18px;background:var(--paper);box-shadow:0 6px 0 rgba(0,0,0,.2);line-height:1.7}
+  .card h1{margin:0 0 6px;font-size:22px} .card h2{margin:0 0 6px;font-size:28px;text-align:center}
+  .card ul{margin:6px 0 12px;padding-left:20px;font-size:14px}
+  .card .row{display:flex;gap:10px;flex-wrap:wrap}
+  .card button{flex:1;min-width:150px;font:inherit;font-size:15px;padding:10px 12px;border:0;border-radius:14px;background:var(--gold);color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.18);cursor:pointer}
+  .card button.ghost{background:#eee}
+  .card p{margin:4px 0;text-align:center}
+  #big{position:fixed;z-index:4;left:50%;top:38%;transform:translate(-50%,-50%);font-size:64px;font-weight:bold;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:none}
+</style>
+</head>
+<body>
+<div id="score"><span class="a">① <span id="sa"></span></span><b>⚔</b><span class="b"><span id="sb"></span> ④</span></div>
+<div id="me">ရေ (ဆီပုံး)<div class="bar" id="water"><b></b></div>ခံနိုင်ရည်<div class="bar" id="grit"><b></b></div><span id="note"></span></div>
+<div id="msg" class="off"></div>
+<div id="sting"></div>
+<div id="big" hidden></div>
+<div id="pads">
+  <button id="wipe" type="button">သုတ်<span class="kb">F</span></button>
+  <button id="fire" type="button"><svg viewBox="0 0 116 116"><circle cx="58" cy="58" r="53" fill="none" stroke="#2f8fd6" stroke-width="6" stroke-linecap="round" stroke-dasharray="333" stroke-dashoffset="333" id="ring" transform="rotate(-90 58 58)"/></svg>ပက်<span class="kb">Space</span></button>
+</div>
+<div class="card" id="start"><div>
+  <h1>ရပ်ကွက်စစ် · 試作</h1>
+  <ul>
+    <li><b>ပက်</b> ကို ဖိထား = စတီးပြွတ် ဆွဲ (ကြာကြာ ဆွဲလေ ဝေးဝေး ပြင်းပြင်း) · လွှတ် = ပက်</li>
+    <li>မျက်နှာ ထိရင် ပိုစပ်တယ် · <b>သုတ်</b> = မျက်နှာသုတ် (ခံနိုင်ရည် ပြန်တက်၊ ဒါပေမဲ့ ခဏ မပက်နိုင်)</li>
+    <li>ခံနိုင်ရည် ကုန်ရင် ထွက်ပြေးရ · ရေကုန်ပြီး မဖြည့်နိုင်ရင် ထိုင်ရ</li>
+    <li>ပိုက်ခေါင်း/ရေစည်နား ရပ်ရင် ရေဖြည့် · <b>ထိုင်နေတဲ့သူကို မပက်ရ</b></li>
+    <li>တစ်ဖက်လုံး ထွက်သွားရင် နိုင်</li>
+  </ul>
+  <div class="row"><button id="home" type="button">အိမ်ကွင်း — ခံတိုက် (၅ vs ၆)</button><button id="away" type="button">အဝေးကွင်း — ဝင်တိုက် (၆ vs ၅)</button></div>
+</div></div>
+<div class="card" id="end" hidden><div>
+  <h2 id="etitle"></h2><p id="etext"></p>
+  <div class="row"><button id="again" type="button">ပြန်ကစား</button><button id="menu" class="ghost" type="button">mode ပြောင်း</button></div>
+</div></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module" src="./yangon/war.js?v=1"></script>
+</body>
+</html>
