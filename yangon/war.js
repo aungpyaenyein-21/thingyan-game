@@ -7,23 +7,34 @@ import { createWorld } from '../world.js?v=11';
 import { createSound } from '../sound.js?v=3';
 
 const P = new URLSearchParams(location.search);
-const MODE = P.get('mode'), AUTO = P.has('auto');
-const B = { x0: -18, x1: 18, z0: -12, z1: 12 };
-const W = createWorld({ bounds: B, ground: () => .01, camBounds: { x0: -16.5, x1: 16.5, z0: -10.5, z1: 10.5 }, view: 15 });
+const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked
+const B = ALLEY ? { x0: -18, x1: 18, z0: -12, z1: 12 } : { x0: -14, x1: 14, z0: -9, z1: 9 };
+const W = createWorld({ bounds: B, ground: () => .01, camBounds: ALLEY ? { x0: -16.5, x1: 16.5, z0: -10.5, z1: 10.5 } : { x0: -8, x1: 8, z0: -4.5, z1: 4.5 }, view: ALLEY ? 15 : innerWidth < innerHeight ? 11.5 : 15 }); // the lot is small: a phone held upright gets closer in
 const { THREE, scene, box, mesh, rnd, pick } = W;
 const sound = createSound(W);
 const $ = id => document.getElementById(id);
 const GRAV = -11, CAN = 3.5;
 const STATS = { shots: 0, hits: 0, face: 0 }; // gravity as the town's water uses it; litres in a jerry can
 
-// ---------- the set: two wards of house blocks either side of a creek, two bridges ----------
+// ---------- the set ----------
+// lot: an open patch of ground between the two wards — knee-high brick walls and drums to dodge behind, nothing to hide a kid
+// alley: two wards of house blocks either side of a creek, two bridges
+const HOUSE = ['#efe3c8', '#e8c9a8', '#d8e2c8', '#e6d2e0', '#cfdbe6'], HOUSES = [], LOW = [];
+const BRIDGES = ALLEY ? [{ z0: -1.6, z1: 1.6 }, { z0: 7, z1: 8.2 }] : [];
+if (!ALLEY) {
+  mesh(new THREE.PlaneGeometry(B.x1 - B.x0, B.z1 - B.z0).rotateX(-Math.PI / 2), '#d6c7ad', 0, 0, 0, { cast: false });
+  mesh(new THREE.PlaneGeometry(.12, B.z1 - B.z0 - 1).rotateX(-Math.PI / 2), '#efe6d6', 0, .012, 0, { cast: false }); // a chalk line down the middle
+  for (const s of [-1, 1]) box(B.x1 - B.x0, 1.1, .3, '#c9b79a', 0, 0, s * (B.z1 + .2)); // the compound walls along the sides
+  for (const [x, z, w, d] of [[-6, -4.5, 3, .4], [-6, 4, .4, 2.6], [6, 4.5, 3, .4], [6, -4, .4, 2.6], [-2.6, 0, .4, 2.2], [2.6, 0, .4, 2.2], [-10, 6.5, 2.2, .4], [10, -6.5, 2.2, .4]]) {
+    box(w, .6, d, '#b5654a', x, 0, z); W.solid(x, z, w, d); LOW.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2, h: .6 }); // knee-high brick: dodge behind it, but a face shot goes over
+  }
+  for (const [x, z] of [[-3.5, -6.5], [3.5, 6.5], [0, -2.8], [0, 2.8]]) { mesh(new THREE.CylinderGeometry(.42, .38, .9, 12), '#6f8fb0', x, .45, z); W.solid(x, z, .8, .8); LOW.push({ x0: x - .4, x1: x + .4, z0: z - .4, z1: z + .4, h: .9 }); }
+} else {
 for (const s of [-1, 1]) mesh(new THREE.PlaneGeometry(B.x1 - 1.3, B.z1 - B.z0).rotateX(-Math.PI / 2), '#d9cfbf', s * (B.x1 + 1.3) / 2, 0, 0, { cast: false }); // the two banks
 mesh(new THREE.PlaneGeometry(2.6, B.z1 - B.z0).rotateX(-Math.PI / 2), '#5fa3c4', 0, -.04, 0, { cast: false }); // the creek
-const BRIDGES = [{ z0: -1.6, z1: 1.6 }, { z0: 7, z1: 8.2 }];
 for (const b of BRIDGES) box(3.2, .08, b.z1 - b.z0, b.z1 - b.z0 > 2 ? '#a99b88' : '#8a6a4a', 0, 0, (b.z0 + b.z1) / 2);
 let zc = B.z0; // the creek's banks are walls, except at the bridges
 for (const b of [...BRIDGES, { z0: B.z1, z1: B.z1 }]) { if (b.z0 > zc) W.solid(0, (zc + b.z0) / 2, 2.6, b.z0 - zc); zc = b.z1; }
-const HOUSE = ['#efe3c8', '#e8c9a8', '#d8e2c8', '#e6d2e0', '#cfdbe6'], HOUSES = [];
 for (const s of [-1, 1]) for (const [x, z, w, d] of [[12.5, -8.5, 5, 5], [5, -8.5, 4, 5], [12.5, 0, 5, 5], [5, 0, 4, 5], [12.5, 8.5, 5, 5], [5, 8.5, 4, 5]]) {
   const h = 2 + rnd(), X = s * x, c = pick(HOUSE);
   W.occluder(() => { // see-through when it stands between the camera and you
@@ -32,14 +43,16 @@ for (const s of [-1, 1]) for (const [x, z, w, d] of [[12.5, -8.5, 5, 5], [5, -8.
   });
   W.solid(X, z, w, d); HOUSES.push({ x0: X - w / 2, x1: X + w / 2, z0: z - d / 2, z1: z + d / 2, h });
 }
+}
 
 // ---------- modes: whose ward we fight in ----------
 // home: ① (us) defends the west side, taps by our houses; ④ comes over with six. away: we go over to ④ with six.
 const HOME = MODE === 'away' ? 'B' : 'A', SIDE = { A: -1, B: 1 };
 const REFILL = [];
 { const s = SIDE[HOME], a = HOME === 'A' ? 'B' : 'A';
-  for (const [x, z] of [[8.6, -4.6], [15.6, 4.4], [8.6, 4.6], [2.4, -5]]) REFILL.push({ x: s * x, z, rate: 1.7, kind: 'tap' }); // the home side's taps
-  REFILL.push({ x: SIDE[a] * 3.2, z: -3.2, rate: .55, kind: 'drum' }); } // one slow drum on the far bank for the visitors
+  const taps = ALLEY ? [[8.6, -4.6], [15.6, 4.4], [8.6, 4.6], [2.4, -5]] : [[12, -5], [12, 5], [8, 0], [5, -7.6]];
+  for (const [x, z] of taps) REFILL.push({ x: s * x, z, rate: 1.7, kind: 'tap' }); // the home side's taps, by the houses
+  REFILL.push(ALLEY ? { x: SIDE[a] * 3.2, z: -3.2, rate: .55, kind: 'drum' } : { x: SIDE[a] * 5, z: 1, rate: .55, kind: 'drum' }); } // one slow drum for the visitors
 for (const r of REFILL) {
   if (r.kind === 'tap') { box(.18, .9, .18, '#7a7f88', r.x, 0, r.z); box(.36, .08, .12, '#9aa2ac', r.x, .82, r.z + .08); }
   else { mesh(new THREE.CylinderGeometry(.42, .38, .9, 12), '#3f6fa8', r.x, .45, r.z); }
@@ -63,7 +76,7 @@ function gear(ch) { // the pump in the right hand, the jerry can on the back, th
 }
 function makeKid(team, i, me) {
   const s = SIDE[team], home = team === HOME;
-  const n = SIZE[team], x = s * (16.4 + (i % 2) * .6), z = -8.5 + i * 17 / (n - 1); // both gangs start at the back of their own ward
+  const n = SIZE[team], back = ALLEY ? 16.4 : 11.5, span = ALLEY ? 17 : 12, x = s * (back + (i % 2) * .6), z = -span / 2 + i * span / (n - 1); // both gangs start at the back of their own side
   const goggles = team === 'B' && i === 1;
   const c = W.bean({ age: 'kid', tools: ['none'], tool: 'none', topStyle: pick(['tee', 'stripe', 'tank']), shirt: TEAM[team].top, hat: goggles ? 'goggles' : TEAM[team].hat, x, z, ry: -s * Math.PI / 2 });
   gear(c.ch); c.dry = true;
@@ -80,34 +93,40 @@ for (let i = 0; i < SIZE.B; i++) makeKid('B', i, false);
 W.setPlayer(me.c);
 
 // ---------- water: logical jets (they hit anyone, on screen or not) drawn as our own drops ----------
-const NJ = 420, jetMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.075, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NJ);
+const NJ = 700, jetMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.1, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NJ);
 jetMesh.frustumCulled = false; jetMesh.count = 0; scene.add(W.keep(jetMesh));
 const drops = [], tm = new THREE.Matrix4(), tq = new THREE.Quaternion(), ts = new THREE.Vector3(), tv = new THREE.Vector3();
 const pos = k => k.c.g.position, H = k => 1.45 * k.c.g.scale.x;
-const sideOf = x => (x < -1.3 ? -1 : x > 1.3 ? 1 : 0);
-function blocked(x, y, z) { for (const h of HOUSES) if (x > h.x0 && x < h.x1 && z > h.z0 && z < h.z1 && y < h.h + .25) return true; return false; }
+const sideOf = x => !ALLEY ? Math.sign(x) : (x < -1.3 ? -1 : x > 1.3 ? 1 : 0);
+function blocked(x, y, z) { for (const h of HOUSES) if (x > h.x0 && x < h.x1 && z > h.z0 && z < h.z1 && y < h.h + .25) return true; for (const h of LOW) if (x > h.x0 && x < h.x1 && z > h.z0 && z < h.z1 && y < h.h) return true; return false; }
 function clear(a, b) { // line of sight between two kids, chest high
   const n = Math.ceil(a.distanceTo(b) / .5); for (let i = 1; i < n; i++) { const t = i / n; if (blocked(a.x + (b.x - a.x) * t, 1, a.z + (b.z - a.z) * t)) return false; } return true;
 }
-function fire(k, charge, target) {
+const nozzle = k => { const o = pos(k).clone(), f = new THREE.Vector3(Math.sin(k.c.g.rotation.y), 0, Math.cos(k.c.g.rotation.y)); o.addScaledVector(f, .45); o.y += .95 * k.c.g.scale.x; return [o, f]; };
+// where a shot goes: at a kid (their face or their body), or along a direction for as far as the pull carries it
+function plan(k, charge, target, dirIn) {
+  const [o, f] = nozzle(k); let dir = (dirIn || f).clone().setY(0).normalize(), d = 2.5 + 6 * charge, ty = .35;
+  if (target) { const tp = pos(target); dir.set(tp.x - o.x, 0, tp.z - o.z); d = Math.max(.5, dir.length()); dir.normalize(); ty = tp.y + H(target) * (k.faceAim || k.me ? .82 : .5); }
+  const vh = 5 + 8 * charge, t = d / vh, vy = Math.min(3.6, (ty - o.y) / t - .5 * GRAV * t);
+  return { o, dir, vh, vy, d };
+}
+function fire(k, charge, target, dirIn) {
   const cost = .15 + .3 * charge; if (k.water < cost) return false;
   k.water -= cost; k.c.anim.play('squirt'); sound.fx('squirt', pos(k)); STATS.shots++;
-  const o = pos(k).clone(), f = new THREE.Vector3(Math.sin(k.c.g.rotation.y), 0, Math.cos(k.c.g.rotation.y));
-  o.addScaledVector(f, .45); o.y += .95 * k.c.g.scale.x;
-  let dir = f.clone(), d = 6, ty = o.y;
-  if (target) { const tp = pos(target); dir.set(tp.x - o.x, 0, tp.z - o.z); d = Math.max(.5, dir.length()); dir.normalize(); ty = tp.y + H(target) * (k.faceAim || k.me ? .82 : .5); k.c.g.rotation.y = Math.atan2(dir.x, dir.z); }
-  const sharp = k.me && !AUTO, vh = 5 + 8 * charge, err = (sharp ? .03 : .09) * (1 + d / 6);
-  for (let j = 0; j < 7; j++) {
-    const a = Math.atan2(dir.x, dir.z) + (rnd() - .5) * 2 * err, sp = vh * (.9 + rnd() * .14), t = d / sp;
-    const vy = Math.min(3.6, (ty - o.y) / t - .5 * GRAV * t) + (rnd() - .5) * .6 * (sharp ? .3 : 1);
-    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy, Math.cos(a) * sp), wait: j * .022, life: 1.4, own: k, dmg: .009 + .01 * charge });
+  const { o, dir, vh, vy, d } = plan(k, charge, target, dirIn); k.c.g.rotation.y = Math.atan2(dir.x, dir.z);
+  const sharp = k.me && !AUTO, err = (sharp ? .03 : .09) * (1 + d / 6);
+  for (let j = 0; j < 10; j++) {
+    const a = Math.atan2(dir.x, dir.z) + (rnd() - .5) * 2 * err, sp = vh * (.9 + rnd() * .14);
+    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy + (rnd() - .5) * .6 * (sharp ? .3 : 1), Math.cos(a) * sp), wait: j * .018, life: 1.4, own: k, dmg: .0065 + .007 * charge, push: dir, s: .8 + charge * .5 });
   }
+  for (let j = 0; j < 5; j++) W.spawn(o.clone(), new THREE.Vector3(dir.x * 2 + (rnd() - .5) * 1.4, 1 + rnd(), dir.z * 2 + (rnd() - .5) * 1.4), { spray: true, s: .5, life: .35 }); // the burst at the nozzle
+  if (k.me) shake = Math.max(shake, 2 + charge * 3); else if (pos(k).distanceTo(pos(me)) < 7) shake = Math.max(shake, .8);
   return true;
 }
 function stepDrops(dt) { // in small steps, so a fast jet can't skip past a kid in one slow frame
   const n = Math.min(12, Math.ceil(dt * 60)); for (let i = 0; i < n; i++) moveDrops(dt / n);
-  let m = 0; for (const d of drops) { if (d.wait > 0 || m >= NJ - 2) continue;
-    for (let t = 0; t < 2; t++) jetMesh.setMatrixAt(m++, tm.compose(tv.copy(d.p).addScaledVector(d.v, -.018 * t), tq, ts.setScalar(1 - t * .25))); }
+  let m = 0; for (const d of drops) { if (d.wait > 0 || m >= NJ - 3) continue;
+    for (let t = 0; t < 3; t++) jetMesh.setMatrixAt(m++, tm.compose(tv.copy(d.p).addScaledVector(d.v, -.016 * t), tq, ts.setScalar(d.s * (1 - t * .22)))); }
   jetMesh.count = m; jetMesh.instanceMatrix.needsUpdate = true;
 }
 function moveDrops(dt) {
@@ -128,14 +147,24 @@ function moveDrops(dt) {
   }
   drops.length = n;
 }
-let hitSnd = 0;
+let hitSnd = 0, shake = 0, stop = 0;
+const pops = document.createElement('div'); pops.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden'; document.body.appendChild(pops);
+function pop(k, text, color = '#fff') { // a word that jumps off the kid you got
+  const v = pos(k).clone(); v.y += H(k) + .3; v.project(W.cam);
+  const e = document.createElement('b'); e.textContent = text;
+  e.style.cssText = `position:absolute;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px;transform:translate(-50%,-50%);font-size:22px;color:${color};text-shadow:0 2px 0 #3b2a3a,0 0 6px rgba(0,0,0,.4);transition:transform .6s ease-out,opacity .6s ease-in;white-space:nowrap`;
+  pops.appendChild(e); requestAnimationFrame(() => { e.style.transform = 'translate(-50%,-150%) scale(1.25)'; e.style.opacity = 0; }); setTimeout(() => e.remove(), 650);
+}
 function hit(k, d, face) {
   if (k.out) { if (d.own.me) foul(k); return; } // the unwritten rule: a kid sitting out is not a target
   const g = d.dmg * (face ? 2.5 : 1); STATS.hits++; if (face) STATS.face++;
   k.grit = Math.max(0, k.grit - g); k.hitT = 0; k.c.anim.soak(.25); if (k.wipeT > 0) k.wipeT = 0;
-  if (hitSnd <= 0) { sound.fx('hit', pos(k)); hitSnd = .12; }
-  if (k.me && face) sting = Math.min(1, sting + .25);
-  if (k.grit <= 0) knockOut(k, 'grit');
+  const p = pos(k); p.addScaledVector(d.push, .045); W.collide(p); // the jet shoves you back a little
+  for (let j = 0; j < 2; j++) W.spawn(d.p.clone(), new THREE.Vector3(-d.v.x * .15 + (rnd() - .5) * 2.4, 1.2 + rnd() * 1.6, -d.v.z * .15 + (rnd() - .5) * 2.4), { spray: true, s: .7, life: .5 });
+  if (hitSnd <= 0) { sound.fx(face ? 'splash' : 'hit', p); hitSnd = .12; }
+  if (k.me) { shake = Math.max(shake, face ? 7 : 4); if (face) sting = Math.min(1, sting + .25); }
+  if (d.own.me && (k.popT ?? 0) < W.time()) { k.popT = W.time() + .5; pop(k, face ? 'မျက်နှာ!' : 'ဖျန်း!', face ? '#ffe36b' : '#fff'); if (face) stop = .06; }
+  if (k.grit <= 0) { knockOut(k, 'grit'); if (d.own.me) { pop(k, 'ထွက်ပြေးပြီ!', '#ff8a7a'); stop = .18; } }
 }
 
 // ---------- out: no grit left → run for it; dry and nowhere to fill → sit down where you are ----------
@@ -157,6 +186,7 @@ function canRefill(k) { for (const r of REFILL) if (Math.hypot(r.x - pos(k).x, r
 // the alleys as a little graph: the back road, the middle alley and the creek road on each side, the cross alleys, two bridges
 const NODES = [], EDGES = [];
 for (const s of [-1, 1]) {
+  if (!ALLEY) break;
   const xs = [16.6, 8.5, 2.1].map(x => s * x), zs = [-10.6, -4.4, 0, 4.4, 7.6, 10.6];
   for (const x of xs) for (const z of zs) if (z !== 0 && z !== 7.6 || Math.abs(x) < 3) NODES.push({ x, z }); // z 0 and 7.6: only on the creek road (the bridges)
 }
@@ -164,7 +194,7 @@ const at = (x, z) => NODES.findIndex(n => Math.abs(n.x - x) < .01 && Math.abs(n.
 function walkable(ax, az, bx, bz) { // a straight line a kid could walk
   const n = Math.max(2, Math.ceil(Math.hypot(bx - ax, bz - az) / .3));
   for (let i = 1; i < n; i++) { const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t;
-    if (Math.abs(x) < 1.6 && !BRIDGES.some(b => z > b.z0 + .2 && z < b.z1 - .2)) return false;
+    if (ALLEY && Math.abs(x) < 1.6 && !BRIDGES.some(b => z > b.z0 + .2 && z < b.z1 - .2)) return false;
     for (const h of HOUSES) if (x > h.x0 - .32 && x < h.x1 + .32 && z > h.z0 - .32 && z < h.z1 + .32) return false; }
   return true;
 }
@@ -199,7 +229,7 @@ function walk(k, gx, gz, run, dt) {
 function brain(k, dt) {
   const c = k.c, p = pos(k);
   if (k.state === 'out') return;
-  if (k.state === 'flee') { walk(k, SIDE[k.team] * 17, p.z, true, dt); if (Math.abs(p.x - SIDE[k.team] * 17) < 1) sitOut(k, 'grit'); return; }
+  const edge = SIDE[k.team] * (B.x1 - 1); if (k.state === 'flee') { walk(k, edge, p.z, true, dt); if (Math.abs(p.x - edge) < 1) sitOut(k, 'grit'); return; }
   if (k.state === 'wipe') { if ((k.wipeT -= dt) <= 0) { k.grit = Math.min(1, k.grit + .3); k.state = 'fight'; } return; }
   const foes = enemies(k); if (!foes.length) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
   if ((k.think -= dt) <= 0) {
@@ -209,7 +239,7 @@ function brain(k, dt) {
     if (k.state === 'fight' && k.grit < .3 && near > 4) { k.state = 'wipe'; k.wipeT = 1.2; c.anim.setLoop('idle'); c.anim.emote('drop'); return; }
   }
   if (k.state === 'refill') {
-    let best = null, bd = 1e9; for (const r of REFILL) { const dd = Math.hypot(r.x - p.x, r.z - p.z) + (sideOf(r.x) !== sideOf(p.x) ? 6 : 0); if (dd < bd) { bd = dd; best = r; } }
+    let best = null, bd = 1e9; for (const r of REFILL) { const dd = Math.hypot(r.x - p.x, r.z - p.z) + (ALLEY && sideOf(r.x) !== sideOf(p.x) ? 6 : 0); if (dd < bd) { bd = dd; best = r; } }
     const at = canRefill(k);
     if (at) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); k.water = Math.min(CAN, k.water + at.rate * dt); k.dryT = 0; if (k.water > CAN - .5) k.state = 'fight'; }
     else { walk(k, best.x + .9 * Math.sign(p.x - best.x || 1), best.z, true, dt); k.dryT += dt; if (k.water < .12 && k.dryT > 14) knockOut(k, 'water'); }
@@ -233,29 +263,56 @@ function shootAt(k, dt) {
 }
 
 // ---------- you ----------
-let charge = 0, holding = false, sting = 0;
+// The pad: tap it = the pump goes at the nearest kid you can see; press and drag = aim yourself (the way the drag points),
+// the longer you hold the further it carries. A dotted arc shows where it'll land; a red ring marks who it'll hit.
+// PC: the mouse aims (hold the button to pull), Space / J fire at the nearest.
+let charge = 0, holding = false, sting = 0, aimDir = null, dragFrom = null, mouseAim = null;
 const ringEl = $('ring');
-function aim() { // the nearest enemy in front of you, else straight ahead
-  const p = pos(me), f = me.c.g.rotation.y; let best = null, bd = 9.5;
-  for (const o of enemies(me)) { const tp = pos(o), d = tp.distanceTo(p); let a = Math.atan2(tp.x - p.x, tp.z - p.z) - f; a = Math.atan2(Math.sin(a), Math.cos(a)); if (Math.abs(a) < 1 && d < bd && clear(p, tp)) { bd = d; best = o; } }
-  if (!best) for (const o of kids) if (o.out && o.team !== me.team) { const tp = pos(o), d = tp.distanceTo(p); let a = Math.atan2(tp.x - p.x, tp.z - p.z) - f; a = Math.atan2(Math.sin(a), Math.cos(a)); if (Math.abs(a) < .5 && d < 6) { best = o; break; } } // you can still choose to spray one sitting out…
+const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize(); // the screen's right and up, on the ground (the world's iso camera)
+function visibleFoes() { const p = pos(me); return enemies(me).filter(o => pos(o).distanceTo(p) < 10 && clear(p, pos(o))); }
+function autoTarget() { let best = null, bd = 1e9; for (const o of visibleFoes()) { const d = pos(o).distanceTo(pos(me)); if (d < bd) { bd = d; best = o; } } return best; }
+function rayTarget(dir) { // the kid nearest the line you're aiming along — sitting-out kids too: it's your call
+  const p = pos(me); let best = null, ba = .3;
+  for (const o of kids) { if (o === me || o.team === me.team || o.state === 'flee') continue; const tp = pos(o), d = tp.distanceTo(p); if (d > 10) continue;
+    let a = Math.atan2(tp.x - p.x, tp.z - p.z) - Math.atan2(dir.x, dir.z); a = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))); if (a < ba && clear(p, tp)) { ba = a; best = o; } }
   return best;
 }
+const aimNow = () => { const d = mouseAim ? mouseAim.clone().sub(pos(me)).setY(0) : aimDir; return d && d.lengthSq() > .01 ? d.normalize() : null; };
+const targetNow = () => { const d = aimNow(); return d ? rayTarget(d) : autoTarget(); };
 const press = on => {
   if (!playing || me.out || me.state === 'wipe') return;
   if (on) { holding = true; $('fire').classList.add('on'); }
-  else if (holding) { holding = false; $('fire').classList.remove('on'); if (!fire(me, Math.max(.15, charge), aim())) say('ရေကုန်ပြီ — ပိုက်ခေါင်း/ရေစည်ဆီ သွားဖြည့်', 2); charge = 0; }
+  else if (holding) { holding = false; $('fire').classList.remove('on'); const d = aimNow(), t = targetNow(); if (!fire(me, Math.max(.15, charge), t, t ? null : d)) say('ရေကုန်ပြီ — ပိုက်ခေါင်း/ရေစည်ဆီ သွားဖြည့်', 2); charge = 0; aimDir = null; dragFrom = null; }
 };
 const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
-$('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press(true); });
+$('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); dragFrom = [e.clientX, e.clientY, e.pointerId]; aimDir = null; try { $('fire').setPointerCapture(e.pointerId); } catch {} press(true); });
+$('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !== dragFrom[2]) return; const dx = e.clientX - dragFrom[0], dy = dragFrom[1] - e.clientY;
+  aimDir = Math.hypot(dx, dy) > 16 ? new THREE.Vector3().addScaledVector(RIGHT, dx).addScaledVector(UP, dy) : null; });
 $('fire').addEventListener('pointerup', e => { e.stopPropagation(); press(false); });
 $('fire').addEventListener('pointercancel', () => press(false));
 $('wipe').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); wipe(); });
-addEventListener('keydown', e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'KeyJ') { press(true); e.preventDefault(); } if (e.code === 'KeyF') wipe(); }, true);
+addEventListener('keydown', e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'KeyJ') { mouseAim = null; press(true); e.preventDefault(); } if (e.code === 'KeyF') wipe(); }, true);
 addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'KeyJ') press(false); });
-W.renderer.domElement.addEventListener('mousedown', e => { if (e.button === 0) press(true); });
+const ray = new THREE.Raycaster(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), mv2 = new THREE.Vector2();
+const cursorGround = e => { mv2.set(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1); ray.setFromCamera(mv2, W.cam); return ray.ray.intersectPlane(groundPlane, new THREE.Vector3()); };
+W.renderer.domElement.addEventListener('mousemove', e => { mouseAim = cursorGround(e); });
+W.renderer.domElement.addEventListener('mousedown', e => { if (e.button === 0) { mouseAim = cursorGround(e); press(true); } });
 addEventListener('mouseup', e => { if (e.button === 0) press(false); });
 W.onAction = () => true; // E doesn't splash a bucket here
+// what the aim shows: a dotted arc while you pull, a red ring under whoever's in your sights
+const NA = 18, arc = new THREE.InstancedMesh(new THREE.SphereGeometry(.05, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .85, depthWrite: false }), NA);
+arc.frustumCulled = false; arc.count = 0; scene.add(W.keep(arc));
+const mark = new THREE.Mesh(new THREE.RingGeometry(.42, .55, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff4a3a', transparent: true, opacity: .9, depthWrite: false }));
+mark.visible = false; scene.add(W.keep(mark));
+function showAim() {
+  const t = playing && !me.out && me.state !== 'wipe' ? targetNow() : null;
+  mark.visible = !!t; if (t) { mark.position.set(pos(t).x, .03, pos(t).z); mark.scale.setScalar(1 + Math.sin(W.time() * 8) * .06); mark.material.color.set(t.out ? '#9a9a9a' : '#ff4a3a'); }
+  if (!holding) { arc.count = 0; return; }
+  const d = aimNow(); if (t || d) me.c.g.rotation.y = t ? Math.atan2(pos(t).x - pos(me).x, pos(t).z - pos(me).z) : Math.atan2(d.x, d.z);
+  const { o, dir, vh, vy } = plan(me, Math.max(.15, charge), t, t ? null : d);
+  let n = 0; for (let i = 1; i <= NA; i++) { const tt = i * .045, y = o.y + vy * tt + .5 * GRAV * tt * tt; if (y < .05) break; arc.setMatrixAt(n++, tm.compose(tv.set(o.x + dir.x * vh * tt, y, o.z + dir.z * vh * tt), tq, ts.setScalar(1))); }
+  arc.count = n; arc.instanceMatrix.needsUpdate = true;
+}
 
 function mine(dt) {
   if (me.out) return;
@@ -289,12 +346,15 @@ function foul(k) { // you sprayed a kid sitting out: the whistle, and the game's
   end('ဝီ!! ပွဲပျက်', 'ထိုင်နေတဲ့သူကို မပက်ရဘူးလေ… ပြန်စရမယ်');
 }
 function end(title, text) { $('etitle').textContent = title; $('etext').textContent = text; $('end').hidden = false; playing = false; W.frozen = true; window.war.result = title; }
-const go = mode => { location.search = '?mode=' + mode + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
+const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
 $('home').onclick = () => go('home'); $('away').onclick = () => go('away');
-$('again').onclick = () => go(MODE || 'home'); $('menu').onclick = () => { location.search = AUTO ? '?auto' : ''; };
+$('alley').onclick = () => { location.search = '?map=' + (ALLEY ? 'lot' : 'alley') + (AUTO ? '&auto' : ''); };
+$('alley').textContent = ALLEY ? 'မြေပုံ: လမ်းကြား → ကွက်လပ်' : 'မြေပုံ: ကွက်လပ် → လမ်းကြား';
+$('again').onclick = () => go(MODE || 'home'); $('menu').onclick = () => { location.search = (ALLEY ? '?map=alley' : '?') + (AUTO ? '&auto' : ''); };
 function begin() {
   $('start').hidden = true; playing = true; W.frozen = false; score();
-  say(HOME === 'A' ? '④ ဂိုဏ်း ဝင်လာပြီ — ကိုယ့်ရပ်ကွက်ကို ခံတိုက်' : 'တံတားဖြတ်ပြီး ④ ထဲ ဝင်တိုက် — ရေဖြည့်စရာ ရှာရမယ်', 3.5);
+  say(HOME === 'A' ? '④ ဂိုဏ်း ဝင်လာပြီ — ခံတိုက်!' : '④ ဘက်ကို ဝင်တိုက် — ရေဖြည့်စရာ ရှာရမယ်', 3);
+  setTimeout(() => playing && say(matchMedia('(pointer:coarse)').matches ? 'ပက် ကို တို့ = အနီးဆုံးကို ချိန် · ဖိပြီး ဆွဲ = ကိုယ်တိုင် ချိန်' : 'mouse နဲ့ ချိန်၊ ဖိထား = ဆွဲ၊ လွှတ် = ပက် · Space = အနီးဆုံး', 4), 3200);
 }
 if (MODE) begin(); else { W.frozen = true; score(); }
 
@@ -307,7 +367,9 @@ W.tick(dt => {
     for (const k of kids) if (!k.me) brain(k, dt);
     score();
   }
-  stepDrops(dt);
+  stepDrops(dt); showAim();
+  shake = Math.max(0, shake - dt * 30); W.renderer.domElement.style.transform = shake > .2 ? `translate(${((rnd() - .5) * shake).toFixed(1)}px,${((rnd() - .5) * shake).toFixed(1)}px)` : '';
+  if (stop > 0) { const s = stop; stop = 0; W.paused = true; setTimeout(() => { W.paused = false; }, s * 1000); } // a beat of stillness when a shot really lands
   sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = sting.toFixed(2); W.renderer.domElement.style.filter = sting > .25 ? `blur(${(sting * 2.2).toFixed(1)}px)` : '';
   $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('grit').firstChild.style.width = (me.grit * 100) + '%';
   $('note').textContent = me.out ? 'ထွက်ပြီ' : canRefill(me) ? 'ရေဖြည့်နေတယ်…' : me.water < .2 ? `ရေကုန်ပြီ (${Math.max(0, 12 - me.dryT).toFixed(0)})` : '';
