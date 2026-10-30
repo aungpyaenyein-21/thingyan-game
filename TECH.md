@@ -1,5 +1,7 @@
 # သင်္ကြန်ပွဲ Online · နည်းပညာ Design (v1)
 
+> ⚠️ **၂၀၂၆-၁၀-၃၀: ဦးတည်ချက် ပြောင်းပြီ → [DIRECTION.md](DIRECTION.md)** ကို အရင်ဖတ်ပါ။ §၃ Portal · Map ၃ ခု၊ §၄ Account၊ §၅ Chat (public) တွေ အဟောင်း — ရပ်ကွက် ၄ ခု မြေပုံ တစ်ခုတည်း + group play (သူငယ်ချင်း ၂–၄ ယောက်၊ voice chat၊ အကောင့် မလို)။
+
 လိုအပ်ချက် ၆ ခု: **Realtime multiplayer လှုပ်ရှားမှု · Chat · Account မှတ်ပုံတင် · Avatar customize · Portal (ရန်ကုန်/မန္တလေး/တောင်ကြီး) · Smartphone**။
 ပစ်မှတ်: ၂၀၂၇ ဧပြီ သင်္ကြန် launch။ တစ်ခန်းမှာ ၅၀ ယောက်၊ စုစုပေါင်း တစ်ပြိုင်နက် ၅၀၀ ယောက်အထိ။
 
