@@ -1,8 +1,9 @@
 // yangon/war.js — 「ရပ်ကွက်စစ်」 prototype (SCENARIO.md §၅, DIRECTION.md §၈-ခ): two kid gangs, steel slide-pump squirters fed
-// by a jerry can on the back, fought silently through the alleys of two wards split by a creek. Nobody has HP — you have
-// grit: get it in the face and it goes faster; at none you run for it. Run dry and can't refill: you sit down. Spray a kid
-// who's sitting out and the game's off. Last kid standing wins it for the gang. Home side refills fast at its own taps;
-// the away side comes with an extra kid and has to fight for water.
+// by a jerry can on the back, fought silently on an open lot (or the alleys of two wards split by a creek). Nobody has HP —
+// you have grit: get it in the face and it goes faster. At none you're OUT: nobody may spray you, you may only walk back,
+// and you're in again once a drink at your own side's water-pot stand (ရေအိုးစင်) has filled your grit — slowly.
+// A gang that's all OUT at once has lost; at the bell, fewer OUTs wins. Home side has four taps and holds its ground; the
+// away side comes with an extra kid, one slow drum, and has to push in (and may use the home side's taps). One kid per tap.
 import { createWorld } from '../world.js?v=11';
 import { createSound } from '../sound.js?v=3';
 
@@ -53,11 +54,25 @@ const REFILL = [];
   const taps = ALLEY ? [[8.6, -4.6], [15.6, 4.4], [8.6, 4.6], [2.4, -5]] : [[12, -5], [12, 5], [8, 0], [5, -7.6]];
   for (const [x, z] of taps) REFILL.push({ x: s * x, z, rate: 1.7, kind: 'tap' }); // the home side's taps, by the houses
   REFILL.push(ALLEY ? { x: SIDE[a] * 3.2, z: -3.2, rate: .55, kind: 'drum' } : { x: SIDE[a] * 5, z: 1, rate: .55, kind: 'drum' }); } // one slow drum for the visitors
+const streamMat = new THREE.MeshBasicMaterial({ color: '#8fd3ff', transparent: true, opacity: .8 });
 for (const r of REFILL) {
   if (r.kind === 'tap') { box(.18, .9, .18, '#7a7f88', r.x, 0, r.z); box(.36, .08, .12, '#9aa2ac', r.x, .82, r.z + .08); }
   else { mesh(new THREE.CylinderGeometry(.42, .38, .9, 12), '#3f6fa8', r.x, .45, r.z); }
-  W.solid(r.x, r.z, .4, .4);
+  W.solid(r.x, r.z, .4, .4); r.user = null; // one kid at a time
+  r.stream = new THREE.Mesh(new THREE.CylinderGeometry(.035, .05, r.kind === 'tap' ? .78 : .5, 6), streamMat); // water running while someone fills
+  r.stream.position.set(r.x + (r.kind === 'tap' ? 0 : .3), r.kind === 'tap' ? .41 : .7, r.z + (r.kind === 'tap' ? .14 : 0)); r.stream.visible = false; scene.add(W.keep(r.stream));
 }
+// the water-pot stands (ရေအိုးစင်), one at the back of each side: a drink and a sit in the shade — grit comes back, slowly
+const REST = {}, REST_R = 1.6, REST_RATE = .07;
+for (const t of ['A', 'B']) {
+  const s = SIDE[t], x = s * (ALLEY ? 16.8 : 12.9), z = ALLEY ? -4.4 : 0; REST[t] = { x, z, gx: x - s * 1.1 };
+  box(.9, .55, .45, '#8a6a4a', x, 0, z); for (const dz of [-.2, .2]) mesh(new THREE.SphereGeometry(.18, 10, 8), '#a5583a', x, .72, z + dz);
+  for (const dx of [-.42, .42]) for (const dz of [-.26, .26]) box(.06, 1.45, .06, '#6b5040', x + dx, 0, z + dz);
+  box(1.15, .05, .75, '#9aa2ac', x, 1.45, z); W.solid(x, z, .9, .5);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(REST_R - .14, REST_R, 36).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#6fd06a', transparent: true, opacity: .45, depthWrite: false }));
+  ring.position.set(x, .025, z); scene.add(W.keep(ring)); REST[t].ring = ring;
+}
+const atRest = k => Math.hypot(pos(k).x - REST[k.team].x, pos(k).z - REST[k.team].z) < REST_R;
 
 // ---------- the kids ----------
 const TEAM = { A: { top: '#2f8fd6', hat: 'band' }, B: { top: '#e0574f', hat: 'none' } };
@@ -83,7 +98,7 @@ function makeKid(team, i, me) {
   const disc = new THREE.Mesh(new THREE.CircleGeometry(.42, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: team === 'A' ? '#2f8fd6' : '#e0574f', transparent: true, opacity: .55, depthWrite: false }));
   disc.position.y = .02; disc.scale.setScalar(1 / c.g.scale.x); if (!me) c.g.add(disc); // which gang, at a glance (you have your own ring) // our own water does the hitting (the town's only hits what's on screen)
   const emit = c.anim.emit; c.anim.emit = (t, o) => { if (t !== 'squirt' && t !== 'squirtStart') emit(t, o); }; // the pump shoots from game logic, not the pose
-  const k = { c, team, me, i, grit: 1, water: CAN, state: 'fight', out: false, cool: 1 + rnd() * 1.5, think: 0, target: null, hitT: 9, dryT: 0, wipeT: 0, stuck: 0, side: 1, sideT: 0, navT: 0, wp: [0, 0], goal: [0, 0], faceAim: rnd() < .45, name: goggles ? 'ရေကူးမျက်မှန်' : '' };
+  const k = { c, team, me, i, disc, lane: 0, outs: 0, lim: 0, tap: null, waiting: false, filling: false, grit: 1, water: CAN, state: 'fight', out: false, cool: 1 + rnd() * 1.5, think: 0, target: null, hitT: 9, dryT: 0, wipeT: 0, stuck: 0, side: 1, sideT: 0, navT: 0, wp: [0, 0], goal: [0, 0], faceAim: rnd() < .45, name: goggles ? 'ရေကူးမျက်မှန်' : '' };
   kids.push(k); return k;
 }
 const SIZE = { A: HOME === 'A' ? 5 : 6, B: HOME === 'B' ? 5 : 6 };
@@ -117,7 +132,7 @@ function fire(k, charge, target, dirIn) {
   const sharp = k.me && !AUTO, err = (sharp ? .03 : .09) * (1 + d / 6);
   for (let j = 0; j < 10; j++) {
     const a = Math.atan2(dir.x, dir.z) + (rnd() - .5) * 2 * err, sp = vh * (.9 + rnd() * .14);
-    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy + (rnd() - .5) * .6 * (sharp ? .3 : 1), Math.cos(a) * sp), wait: j * .018, life: 1.4, own: k, dmg: .0065 + .007 * charge, push: dir, s: .8 + charge * .5 });
+    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy + (rnd() - .5) * .6 * (sharp ? .3 : 1), Math.cos(a) * sp), wait: j * .018, life: 1.4, own: k, dmg: .0035 + .004 * charge, push: dir, s: .8 + charge * .5 });
   }
   for (let j = 0; j < 5; j++) W.spawn(o.clone(), new THREE.Vector3(dir.x * 2 + (rnd() - .5) * 1.4, 1 + rnd(), dir.z * 2 + (rnd() - .5) * 1.4), { spray: true, s: .5, life: .35 }); // the burst at the nozzle
   if (k.me) shake = Math.max(shake, 2 + charge * 3); else if (pos(k).distanceTo(pos(me)) < 7) shake = Math.max(shake, .8);
@@ -137,7 +152,7 @@ function moveDrops(dt) {
     d.life -= dt; d.p.addScaledVector(d.v, dt); d.p.y += .5 * GRAV * dt * dt; d.v.y += GRAV * dt;
     let dead = d.life <= 0 || d.p.y < .05 || blocked(d.p.x, d.p.y, d.p.z);
     if (!dead) for (const k of kids) {
-      if (k === d.own || k.team === d.own.team && !k.out) continue;
+      if (k === d.own || k.team === d.own.team || k.out) continue; // nobody can get a kid who's OUT
       const p = pos(k), r = .34 * k.c.g.scale.x;
       if (Math.abs(d.p.x - p.x) > r || Math.abs(d.p.z - p.z) > r || d.p.y > p.y + H(k) || d.p.y < p.y) continue;
       dead = true; hit(k, d, (d.p.y - p.y) / H(k) > .66); break;
@@ -155,34 +170,46 @@ function pop(k, text, color = '#fff') { // a word that jumps off the kid you got
   e.style.cssText = `position:absolute;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px;transform:translate(-50%,-50%);font-size:22px;color:${color};text-shadow:0 2px 0 #3b2a3a,0 0 6px rgba(0,0,0,.4);transition:transform .6s ease-out,opacity .6s ease-in;white-space:nowrap`;
   pops.appendChild(e); requestAnimationFrame(() => { e.style.transform = 'translate(-50%,-150%) scale(1.25)'; e.style.opacity = 0; }); setTimeout(() => e.remove(), 650);
 }
+let drown = 0; // that water-up-your-nose feeling, for you
 function hit(k, d, face) {
-  if (k.out) { if (d.own.me) foul(k); return; } // the unwritten rule: a kid sitting out is not a target
-  const g = d.dmg * (face ? 2.5 : 1); STATS.hits++; if (face) STATS.face++;
+  const g = d.dmg * (face ? 2.2 : 1); STATS.hits++; if (face) STATS.face++;
   k.grit = Math.max(0, k.grit - g); k.hitT = 0; k.c.anim.soak(.25); if (k.wipeT > 0) k.wipeT = 0;
   const p = pos(k); p.addScaledVector(d.push, .045); W.collide(p); // the jet shoves you back a little
   for (let j = 0; j < 2; j++) W.spawn(d.p.clone(), new THREE.Vector3(-d.v.x * .15 + (rnd() - .5) * 2.4, 1.2 + rnd() * 1.6, -d.v.z * .15 + (rnd() - .5) * 2.4), { spray: true, s: .7, life: .5 });
   if (hitSnd <= 0) { sound.fx(face ? 'splash' : 'hit', p); hitSnd = .12; }
-  if (k.me) { shake = Math.max(shake, face ? 7 : 4); if (face) sting = Math.min(1, sting + .25); }
+  if (k.me) { shake = Math.max(shake, face ? 7 : 4); drown = Math.min(1, drown + (face ? .07 : .03)); if (face) sting = Math.min(1, sting + .2); }
   if (d.own.me && (k.popT ?? 0) < W.time()) { k.popT = W.time() + .5; pop(k, face ? 'မျက်နှာ!' : 'ဖျန်း!', face ? '#ffe36b' : '#fff'); if (face) stop = .06; }
-  if (k.grit <= 0) { knockOut(k, 'grit'); if (d.own.me) { pop(k, 'ထွက်ပြေးပြီ!', '#ff8a7a'); stop = .18; } }
+  if (k.grit <= 0) { goOut(k); if (d.own.me) { pop(k, 'OUT!', '#ff8a7a'); stop = .18; } }
 }
 
-// ---------- out: no grit left → run for it; dry and nowhere to fill → sit down where you are ----------
-function knockOut(k, why) {
-  if (k.state === 'flee' || k.out) return;
-  if (why === 'grit' && !k.me) { k.state = 'flee'; k.c.anim.emote('drop'); return; }
-  sitOut(k, why);
-}
-function sitOut(k, why) {
-  k.out = true; k.state = 'out'; k.c.anim.setLoop('sit'); const disc = k.c.g.children.find(o => o.geometry?.type === 'CircleGeometry'); if (disc) disc.material = disc.material.clone(), disc.material.color.set('#9a9a9a');
-  if (k.me) { say(why === 'water' ? 'ရေကုန်သွားလို့ ထိုင်ရပြီ…' : 'မခံနိုင်တော့ဘူး… ထွက်လိုက်ရပြီ', 3); W.frozen = true; }
+// ---------- OUT: can't be sprayed, can only go back, in again once the water-pot stand has filled your grit ----------
+const grey = new THREE.MeshBasicMaterial({ color: '#9a9a9a', transparent: true, opacity: .55, depthWrite: false });
+function goOut(k) {
+  if (k.out) return;
+  k.out = true; k.state = 'out'; k.outs++; OUTS[k.team]++; k.lim = pos(k).x * SIDE[k.team]; k.c.anim.emote('drop');
+  if (k.tap?.user === k) k.tap.user = null; k.tap = null; if (k.disc) { k.disc.userData.m ??= k.disc.material; k.disc.material = grey; }
+  if (k.me) { holding = false; charge = 0; aimDir = null; say('OUT! — နောက်ကိုပဲ သွားလို့ရ · ရေအိုးစင် (အစိမ်းဝိုင်း) မှာ ခံနိုင်ရည် ပြန်ဖြည့်', 4); }
   score(); checkEnd();
+}
+function comeBack(k) {
+  k.out = false; k.state = 'fight'; k.grit = 1; if (k.disc) k.disc.material = k.disc.userData.m;
+  pop(k, 'ပြန်ဝင်ပြီ!', '#9ff09a'); if (k.me) say('ပြန်ဝင်ပြီ — ဆက်တိုက်!', 2); score();
 }
 
 // ---------- the kids' heads ----------
-const enemies = k => kids.filter(o => o.team !== k.team && !o.out && o.state !== 'flee');
+const enemies = k => kids.filter(o => o.team !== k.team && !o.out);
 const nearest = (k, list) => { let b = null, bd = 1e9; for (const o of list) { const d = pos(o).distanceTo(pos(k)); if (d < bd) { bd = d; b = o; } } return [b, bd]; };
-function canRefill(k) { for (const r of REFILL) if (Math.hypot(r.x - pos(k).x, r.z - pos(k).z) < 1.15) return r; return null; }
+function tapAt(k) { for (const r of REFILL) if (Math.hypot(r.x - pos(k).x, r.z - pos(k).z) < 1.15) return r; return null; }
+function fillAt(k, r, dt) { // one kid per tap: the rest wait their turn
+  if (r.user && r.user !== k) return false;
+  r.user = k; k.filling = true; k.water = Math.min(CAN, k.water + r.rate * dt); if (k.water >= CAN - .02) r.user = null; return true;
+}
+function pickRefill(k) { // the nearest free one, keeping clear of a spot the other gang is standing round
+  const p = pos(k); let best = null, bd = 1e9;
+  for (const r of REFILL) { let c = Math.hypot(r.x - p.x, r.z - p.z); if (r.user && r.user !== k) c += 6; if (ALLEY && sideOf(r.x) !== sideOf(p.x)) c += 6;
+    for (const o of enemies(k)) if (Math.hypot(pos(o).x - r.x, pos(o).z - r.z) < 4) c += 3; if (c < bd) { bd = c; best = r; } }
+  return best;
+}
 // the alleys as a little graph: the back road, the middle alley and the creek road on each side, the cross alleys, two bridges
 const NODES = [], EDGES = [];
 for (const s of [-1, 1]) {
@@ -226,39 +253,77 @@ function walk(k, gx, gz, run, dt) {
   const ox = p.x, oz = p.z, s = c.anim.speed * dt; p.x += Math.sin(a) * s; p.z += Math.cos(a) * s; W.collide(p);
   k.stuck = Math.hypot(p.x - ox, p.z - oz) < s * .35 ? k.stuck + dt : Math.max(0, k.stuck - dt); if (k.stuck > 1.6) { k.stuck = 0; k.side = -k.side; }
 }
+// how a gang plays it: the home side holds a line across its own half and only steps up to meet a kid who's come in;
+// the visitors push through, spread across the lot. Whoever's two up (or the home side, once the visitors are down to
+// two) goes on the attack; visitors two down fall back and hold. Every kid keeps their own lane, so nobody bunches.
+const STANCE = { A: '', B: '' }, OUTS = { A: 0, B: 0 }, LANE = ALLEY ? 0 : 6.5;
+const LANES_ALLEY = [-10.6, -4.4, 4.4, 10.6];
+let teamT = 0;
+const active = t => kids.filter(k => k.team === t && !k.out).length;
+function teams(dt) {
+  if ((teamT -= dt) > 0) return; teamT = .5;
+  for (const t of ['A', 'B']) {
+    const a = active(t), e = active(t === 'A' ? 'B' : 'A');
+    const st = t === HOME ? (a >= e + 2 || (a > e && e <= 2) ? 'attack' : 'defend') : (a + 2 <= e ? 'defend' : 'attack');
+    if (STANCE[t] && st !== STANCE[t] && playing) say(t === 'A' ? (st === 'attack' ? 'ငါတို့ ဘက် တိုက်စစ် ဖွင့်ပြီ!' : 'ငါတို့ ဘက် နောက်ဆုတ်ပြီး ခံတိုက်') : (st === 'attack' ? '④ တိုက်စစ် ဖွင့်လာပြီ!' : '④ နောက်ဆုတ်ပြီး ခံနေပြီ'), 2.2);
+    STANCE[t] = st;
+    const f = kids.filter(k => k.team === t && !k.out).sort((p, q) => pos(p).z - pos(q).z);
+    f.forEach((k, i) => { const z = -LANE + (i + .5) * 2 * LANE / f.length; k.lane = ALLEY ? LANES_ALLEY.reduce((b, l) => Math.abs(l - (i - (f.length - 1) / 2) * 5) < Math.abs(b - (i - (f.length - 1) / 2) * 5) ? l : b) : z; });
+  }
+}
+function engage(k, t) { // where to stand against one kid: close in, back off, or step sideways
+  const p = pos(k), tp = pos(t), d = tp.distanceTo(p);
+  if ((k.sideT -= .016) < 0) { k.sideT = 1 + rnd() * 1.5; k.side = rnd() < .5 ? -1 : 1; }
+  if (d > 5 || !clear(p, tp)) return [tp.x, tp.z, d > 8];
+  if (d < 2.8) return [p.x - (tp.x - p.x), p.z - (tp.z - p.z), false];
+  const a = Math.atan2(tp.x - p.x, tp.z - p.z) + k.side * Math.PI / 2; return [p.x + Math.sin(a) * 2, p.z + Math.cos(a) * 2, false];
+}
 function brain(k, dt) {
-  const c = k.c, p = pos(k);
-  if (k.state === 'out') return;
-  const edge = SIDE[k.team] * (B.x1 - 1); if (k.state === 'flee') { walk(k, edge, p.z, true, dt); if (Math.abs(p.x - edge) < 1) sitOut(k, 'grit'); return; }
-  if (k.state === 'wipe') { if ((k.wipeT -= dt) <= 0) { k.grit = Math.min(1, k.grit + .3); k.state = 'fight'; } return; }
+  const c = k.c, p = pos(k), s = SIDE[k.team], R = REST[k.team];
+  k.waiting = false;
+  if (k.out) { if (!atRest(k)) walk(k, R.gx, R.z + (k.i - 2.5) * .35, true, dt); else if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
+  if (k.state === 'wipe') { if ((k.wipeT -= dt) <= 0) { k.grit = Math.min(1, k.grit + .12); k.state = 'fight'; } return; }
   const foes = enemies(k); if (!foes.length) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
   if ((k.think -= dt) <= 0) {
-    k.think = .3 + rnd() * .2; k.target = nearest(k, foes)[0];
-    const [, near] = nearest(k, foes);
-    if (k.water < .8 && k.state !== 'refill') k.state = 'refill';
-    if (k.state === 'fight' && k.grit < .3 && near > 4) { k.state = 'wipe'; k.wipeT = 1.2; c.anim.setLoop('idle'); c.anim.emote('drop'); return; }
+    k.think = .3 + rnd() * .2; const [t, near] = nearest(k, foes); k.target = t;
+    if (k.water < .7 && k.state === 'fight') { k.state = 'refill'; k.tap = null; }
+    if (k.state === 'refill' && (!k.tap || k.tap.user && k.tap.user !== k && rnd() < .3)) k.tap = pickRefill(k);
+    if (k.state === 'fight' && k.grit < .15 && near > 4) k.state = 'rest';
+    if (k.state === 'fight' && k.grit < .4 && near > 5 && rnd() < .15) { k.state = 'wipe'; k.wipeT = 1.2; c.anim.setLoop('idle'); c.anim.emote('drop'); return; }
   }
-  if (k.state === 'refill') {
-    let best = null, bd = 1e9; for (const r of REFILL) { const dd = Math.hypot(r.x - p.x, r.z - p.z) + (ALLEY && sideOf(r.x) !== sideOf(p.x) ? 6 : 0); if (dd < bd) { bd = dd; best = r; } }
-    const at = canRefill(k);
-    if (at) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); k.water = Math.min(CAN, k.water + at.rate * dt); k.dryT = 0; if (k.water > CAN - .5) k.state = 'fight'; }
-    else { walk(k, best.x + .9 * Math.sign(p.x - best.x || 1), best.z, true, dt); k.dryT += dt; if (k.water < .12 && k.dryT > 14) knockOut(k, 'water'); }
-    if (k.water >= .4 && k.target && pos(k.target).distanceTo(p) < 3) shootAt(k, dt); // cornered at the tap: still shoot back
+  if (k.state === 'rest') { // a drink at the water-pot stand
+    if (!atRest(k)) walk(k, R.gx, R.z + (k.i - 2.5) * .35, true, dt); else if (c.anim.loop !== 'idle') c.anim.setLoop('idle');
+    if (k.grit >= .7) k.state = 'fight';
+    if (k.water >= .4 && k.target && pos(k.target).distanceTo(p) < 4) shootAt(k, dt);
     return;
   }
-  const t = k.target; if (!t) return;
-  const tp = pos(t), d = tp.distanceTo(p);
-  if ((k.sideT -= dt) < 0) { k.sideT = 1 + rnd() * 1.5; k.side = rnd() < .5 ? -1 : 1; }
-  if (d > 5.6 || !clear(p, tp)) walk(k, tp.x, tp.z, d > 8, dt);
-  else if (d < 2.8) walk(k, p.x - (tp.x - p.x), p.z - (tp.z - p.z), false, dt);
-  else { const a = Math.atan2(tp.x - p.x, tp.z - p.z) + k.side * Math.PI / 2; walk(k, p.x + Math.sin(a) * 2, p.z + Math.cos(a) * 2, false, dt); }
+  if (k.state === 'refill') {
+    const r = k.tap ?? (k.tap = pickRefill(k)), dd = Math.hypot(r.x - p.x, r.z - p.z);
+    if (dd < 1.15 && fillAt(k, r, dt)) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); if (k.water >= CAN - .05) { k.state = 'fight'; k.tap = null; } }
+    else if (r.user && r.user !== k && dd < 2.4) { k.waiting = true; if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); }
+    else walk(k, r.x + .9 * Math.sign(p.x - r.x || 1), r.z, true, dt);
+    if (k.water >= .4 && k.target && pos(k.target).distanceTo(p) < 3.5) shootAt(k, dt); // caught at the tap: still shoot back
+    return;
+  }
+  let gx, gz, run = false;
+  if (STANCE[k.team] === 'defend') {
+    const [intr, di] = nearest(k, foes.filter(o => pos(o).x * s > (ALLEY ? 2 : -1.5))); // someone's come over to our side
+    if (intr && di < 7) { [gx, gz, run] = engage(k, intr); k.target = intr; }
+    else { gx = s * (ALLEY ? 8.5 : 5.2); gz = k.lane; run = Math.abs(p.x - gx) > 4; }
+  } else {
+    const deep = -s * (ALLEY ? 8.5 : 7.5), t = k.target, d = t ? pos(t).distanceTo(p) : 99;
+    if (t && d < 5.5 && clear(p, pos(t))) { [gx, gz] = engage(k, t); gx -= s * 1.2; } // fight it out — but keep pressing on
+    else { gx = deep; gz = k.lane; run = Math.abs(p.x - deep) > 4; }
+  }
+  for (const q of kids) { if (q === k || q.team !== k.team || q.out) continue; // spread out
+    const dx = p.x - pos(q).x, dz = p.z - pos(q).z, l = Math.hypot(dx, dz); if (l < 1.8 && l > .01) { gx += dx / l * (1.8 - l) * 2; gz += dz / l * (1.8 - l) * 2; } }
+  if (Math.hypot(gx - p.x, gz - p.z) < .3) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); } else walk(k, gx, gz, run, dt);
   shootAt(k, dt);
 }
-function shootAt(k, dt) {
+function shootAt(k, dt) { // at whoever's nearest and in sight
   if ((k.cool -= dt) > 0 || k.c.anim.one) return;
-  const t = k.target; if (!t || t.out) return;
-  const d = pos(t).distanceTo(pos(k)); if (d > 7 || !clear(pos(k), pos(t))) return;
-  k.faceAim = rnd() < .45;
+  const p = pos(k); let t = null, bd = 7; for (const o of enemies(k)) { const d = pos(o).distanceTo(p); if (d < bd && clear(p, pos(o))) { bd = d; t = o; } }
+  if (!t) return; k.target = t; k.faceAim = rnd() < .45;
   if (fire(k, .35 + rnd() * .55, t)) k.cool = .9 + rnd() * .7;
 }
 
@@ -271,9 +336,9 @@ const ringEl = $('ring');
 const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize(); // the screen's right and up, on the ground (the world's iso camera)
 function visibleFoes() { const p = pos(me); return enemies(me).filter(o => pos(o).distanceTo(p) < 10 && clear(p, pos(o))); }
 function autoTarget() { let best = null, bd = 1e9; for (const o of visibleFoes()) { const d = pos(o).distanceTo(pos(me)); if (d < bd) { bd = d; best = o; } } return best; }
-function rayTarget(dir) { // the kid nearest the line you're aiming along — sitting-out kids too: it's your call
+function rayTarget(dir) { // the kid nearest the line you're aiming along (never one who's OUT)
   const p = pos(me); let best = null, ba = .3;
-  for (const o of kids) { if (o === me || o.team === me.team || o.state === 'flee') continue; const tp = pos(o), d = tp.distanceTo(p); if (d > 10) continue;
+  for (const o of kids) { if (o === me || o.team === me.team || o.out) continue; const tp = pos(o), d = tp.distanceTo(p); if (d > 10) continue;
     let a = Math.atan2(tp.x - p.x, tp.z - p.z) - Math.atan2(dir.x, dir.z); a = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))); if (a < ba && clear(p, tp)) { ba = a; best = o; } }
   return best;
 }
@@ -284,7 +349,7 @@ const press = on => {
   if (on) { holding = true; $('fire').classList.add('on'); }
   else if (holding) { holding = false; $('fire').classList.remove('on'); const d = aimNow(), t = targetNow(); if (!fire(me, Math.max(.15, charge), t, t ? null : d)) say('ရေကုန်ပြီ — ပိုက်ခေါင်း/ရေစည်ဆီ သွားဖြည့်', 2); charge = 0; aimDir = null; dragFrom = null; }
 };
-const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
+const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; drown = 0; me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
 $('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); dragFrom = [e.clientX, e.clientY, e.pointerId]; aimDir = null; try { $('fire').setPointerCapture(e.pointerId); } catch {} press(true); });
 $('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !== dragFrom[2]) return; const dx = e.clientX - dragFrom[0], dy = dragFrom[1] - e.clientY;
   aimDir = Math.hypot(dx, dy) > 16 ? new THREE.Vector3().addScaledVector(RIGHT, dx).addScaledVector(UP, dy) : null; });
@@ -306,7 +371,7 @@ const mark = new THREE.Mesh(new THREE.RingGeometry(.42, .55, 28).rotateX(-Math.P
 mark.visible = false; scene.add(W.keep(mark));
 function showAim() {
   const t = playing && !me.out && me.state !== 'wipe' ? targetNow() : null;
-  mark.visible = !!t; if (t) { mark.position.set(pos(t).x, .03, pos(t).z); mark.scale.setScalar(1 + Math.sin(W.time() * 8) * .06); mark.material.color.set(t.out ? '#9a9a9a' : '#ff4a3a'); }
+  mark.visible = !!t; if (t) { mark.position.set(pos(t).x, .03, pos(t).z); mark.scale.setScalar(1 + Math.sin(W.time() * 8) * .06); }
   if (!holding) { arc.count = 0; return; }
   const d = aimNow(); if (t || d) me.c.g.rotation.y = t ? Math.atan2(pos(t).x - pos(me).x, pos(t).z - pos(me).z) : Math.atan2(d.x, d.z);
   const { o, dir, vh, vy } = plan(me, Math.max(.15, charge), t, t ? null : d);
@@ -315,35 +380,36 @@ function showAim() {
 }
 
 function mine(dt) {
-  if (me.out) return;
-  if (me.state === 'wipe') { if ((me.wipeT -= dt) <= 0) { me.grit = Math.min(1, me.grit + .3); sting = Math.max(0, sting - .6); me.state = 'fight'; W.frozen = false; $('wipe').classList.remove('on'); } return; }
+  me.waiting = false;
+  if (me.out) { const x = pos(me).x * SIDE.A; if (x < me.lim) pos(me).x = me.lim * SIDE.A; else me.lim = x; return; } // OUT: backwards only
+  if (me.state === 'wipe') { if ((me.wipeT -= dt) <= 0) { me.grit = Math.min(1, me.grit + .12); sting = Math.max(0, sting - .6); me.state = 'fight'; W.frozen = false; $('wipe').classList.remove('on'); } return; }
   if (holding) charge = Math.min(1, charge + dt / .7);
-  const at = canRefill(me);
-  if (at) { me.water = Math.min(CAN, me.water + at.rate * dt); me.dryT = 0; }
-  else if (me.water < .2) { me.dryT += dt; if (me.dryT > 12) knockOut(me, 'water'); }
+  const r = tapAt(me); if (r && me.water < CAN && !fillAt(me, r, dt)) me.waiting = true;
 }
 
 // ---------- the match ----------
 let playing = false, ended = false, msgT = 0;
 function say(t, s = 2) { $('msg').textContent = t; $('msg').classList.remove('off'); msgT = s; }
-let scored = '';
+let scored = '', clock = 180;
 function score() {
-  const h = t => kids.filter(k => k.team === t).map(k => `<i class="${k.out || k.state === 'flee' ? '' : 'on'}"></i>`).join('');
+  const h = t => kids.filter(k => k.team === t).map(k => `<i class="${k.out ? '' : 'on'}"></i>`).join('');
   const a = h('A'), b = h('B'); if (a + b === scored) return; scored = a + b; $('sa').innerHTML = a; $('sb').innerHTML = b;
 }
-function checkEnd() {
-  if (ended) return;
-  const left = t => kids.filter(k => k.team === t && !k.out && k.state !== 'flee').length;
-  if (left('A') && left('B')) return;
-  ended = true; const won = left('A') > 0;
+function finish(won, title, text) {
+  if (ended) return; ended = true;
   setTimeout(() => {
     if (won) { $('big').textContent = 'ဟေး!'; $('big').hidden = false; for (const k of kids) if (k.team === 'A' && !k.out) { k.c.anim.play('jump'); k.c.anim.emote('heart'); } }
-    setTimeout(() => { $('big').hidden = true; end(won ? 'နိုင်ပြီ' : 'ရှုံးပြီ', won ? '④ ဂိုဏ်းရဲ့ နောက်ဆုံးလူ ထွက်ပြေးသွားပြီ' : '① ဘက်မှာ ဘယ်သူမှ မကျန်တော့ဘူး'); }, won ? 1800 : 600);
+    setTimeout(() => { $('big').hidden = true; end(title, text); }, won ? 1800 : 600);
   }, 700);
 }
-function foul(k) { // you sprayed a kid sitting out: the whistle, and the game's off
-  if (ended) return; ended = true; playing = false; sound.fx('handbell', pos(k)); k.c.anim.emote('bang');
-  end('ဝီ!! ပွဲပျက်', 'ထိုင်နေတဲ့သူကို မပက်ရဘူးလေ… ပြန်စရမယ်');
+function checkEnd() { // a gang that's all OUT at the same time has lost
+  if (ended) return;
+  const a = active('A'), b = active('B'); if (a && b) return;
+  finish(a > 0, a ? 'နိုင်ပြီ' : 'ရှုံးပြီ', a ? '④ ဂိုဏ်း တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ' : '① ဘက်က တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ');
+}
+function timeUp() { // the bell: fewer OUTs wins it
+  const d = OUTS.B - OUTS.A, t = `OUT — ① ${OUTS.A} ကြိမ် · ④ ${OUTS.B} ကြိမ်`;
+  finish(d > 0, d > 0 ? 'နိုင်ပြီ' : d < 0 ? 'ရှုံးပြီ' : 'သရေ', t);
 }
 function end(title, text) { $('etitle').textContent = title; $('etext').textContent = text; $('end').hidden = false; playing = false; W.frozen = true; window.war.result = title; }
 const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
@@ -353,29 +419,66 @@ $('alley').textContent = ALLEY ? 'မြေပုံ: လမ်းကြား �
 $('again').onclick = () => go(MODE || 'home'); $('menu').onclick = () => { location.search = (ALLEY ? '?map=alley' : '?') + (AUTO ? '&auto' : ''); };
 function begin() {
   $('start').hidden = true; playing = true; W.frozen = false; score();
-  say(HOME === 'A' ? '④ ဂိုဏ်း ဝင်လာပြီ — ခံတိုက်!' : '④ ဘက်ကို ဝင်တိုက် — ရေဖြည့်စရာ ရှာရမယ်', 3);
+  say(HOME === 'A' ? '④ ဂိုဏ်း ဝင်လာပြီ — ကိုယ့်ဘက်ကို ကာ!' : '④ ဘက်ကို ဖောက်ဝင်တိုက် — သူတို့ ပိုက်ခေါင်းလည်း သုံးလို့ရ', 3);
   setTimeout(() => playing && say(matchMedia('(pointer:coarse)').matches ? 'ပက် ကို တို့ = အနီးဆုံးကို ချိန် · ဖိပြီး ဆွဲ = ကိုယ်တိုင် ချိန်' : 'mouse နဲ့ ချိန်၊ ဖိထား = ဆွဲ၊ လွှတ် = ပက် · Space = အနီးဆုံး', 4), 3200);
 }
 if (MODE) begin(); else { W.frozen = true; score(); }
 
+// the tags over everyone's head: grit and water, and what they're up to
+const ICON = {
+  out: '<span class="out">OUT</span>',
+  rest: '<span class="rest">+</span>',
+  fill: '<svg class="fill" viewBox="0 0 20 22"><path d="M10 1C10 1 3 9.5 3 14a7 7 0 0 0 14 0C17 9.5 10 1 10 1z"/></svg>',
+  wait: '<svg class="wait" viewBox="0 0 20 22"><path d="M10 1C10 1 3 9.5 3 14a7 7 0 0 0 14 0C17 9.5 10 1 10 1z"/><text x="10" y="17" text-anchor="middle">…</text></svg>',
+  low: '<svg class="low" viewBox="0 0 20 22"><path d="M10 1C10 1 3 9.5 3 14a7 7 0 0 0 14 0C17 9.5 10 1 10 1z"/><text x="10" y="18" text-anchor="middle">!</text></svg>',
+};
+for (const k of kids) {
+  const e = document.createElement('div'); e.className = 'tag ' + k.team + (k.me ? ' me' : '');
+  e.innerHTML = '<div class="bars"><i class="g"><b></b></i><i class="w"><b></b></i></div><div class="ic"></div>'; $('tags').appendChild(e);
+  k.tag = { e, g: e.querySelector('.g b'), w: e.querySelector('.w b'), ic: e.querySelector('.ic'), s: null };
+}
+const tp = new THREE.Vector3();
+function tags() {
+  for (const k of kids) {
+    const T = k.tag; tp.copy(pos(k)); tp.y += H(k) + .2; tp.project(W.cam);
+    if (tp.z > 1 || Math.abs(tp.x) > 1.1 || Math.abs(tp.y) > 1.1) { T.e.style.display = 'none'; continue; }
+    T.e.style.display = ''; T.e.style.transform = `translate(${((tp.x * .5 + .5) * innerWidth).toFixed(0)}px,${((-tp.y * .5 + .5) * innerHeight).toFixed(0)}px) translate(-50%,-100%)`;
+    T.g.style.width = (k.grit * 100).toFixed(0) + '%'; T.w.style.width = (k.water / CAN * 100).toFixed(0) + '%';
+    const st = k.out ? 'out' : atRest(k) && k.grit < 1 ? 'rest' : k.filling ? 'fill' : k.waiting ? 'wait' : k.water < .6 ? 'low' : '';
+    if (st !== T.s) { T.s = st; T.ic.innerHTML = ICON[st] || ''; T.e.dataset.s = st; }
+  }
+}
+// ရေမွန်း: drops running down the screen, the picture swimming and blurring while water's up your nose
+const film = $('drown');
+for (let i = 0; i < 9; i++) { const d = document.createElement('i'); const w = 14 + rnd() * 22; d.style.cssText = `left:${(rnd() * 96).toFixed(1)}%;width:${w.toFixed(0)}px;height:${(w * 1.35).toFixed(0)}px;animation-duration:${(1.6 + rnd() * 1.8).toFixed(2)}s;animation-delay:-${(rnd() * 3).toFixed(2)}s`; film.appendChild(d); }
+
 W.tick(dt => {
   hitSnd -= dt;
   if (msgT > 0 && (msgT -= dt) <= 0) $('msg').classList.add('off');
+  for (const k of kids) k.filling = false;
   if (playing) {
-    for (const k of kids) { k.hitT += dt; if (!k.out && k.state !== 'flee' && k.hitT > 2) k.grit = Math.min(1, k.grit + .035 * dt); }
+    teams(dt);
+    for (const k of kids) { k.hitT += dt; if (atRest(k) && k.grit < 1) { k.grit = Math.min(1, k.grit + REST_RATE * dt); if (k.out && k.grit >= 1) comeBack(k); } }
     if (AUTO) brain(me, dt); else mine(dt);
     for (const k of kids) if (!k.me) brain(k, dt);
+    for (const r of REFILL) { if (r.user && (r.user.out || Math.hypot(pos(r.user).x - r.x, pos(r.user).z - r.z) > 1.3)) r.user = null; r.stream.visible = !!r.user && r.user.filling; }
     score();
+    if (!ended && (clock -= dt) <= 0) { clock = 0; timeUp(); }
+    $('clock').textContent = `${Math.floor(clock / 60)}:${String(Math.floor(clock % 60)).padStart(2, '0')}`;
   }
-  stepDrops(dt); showAim();
-  shake = Math.max(0, shake - dt * 30); W.renderer.domElement.style.transform = shake > .2 ? `translate(${((rnd() - .5) * shake).toFixed(1)}px,${((rnd() - .5) * shake).toFixed(1)}px)` : '';
+  stepDrops(dt); showAim(); tags();
+  REST.A.ring.material.opacity = me.out ? .55 + Math.sin(W.time() * 6) * .35 : .45;
+  shake = Math.max(0, shake - dt * 30); drown = Math.max(0, drown - dt * .3);
+  const sw = drown > .05 ? ` scale(${(1 + drown * .025 * (1 + Math.sin(W.time() * 4.5))).toFixed(4)})` : '';
+  W.renderer.domElement.style.transform = (shake > .2 ? `translate(${((rnd() - .5) * shake).toFixed(1)}px,${((rnd() - .5) * shake).toFixed(1)}px)` : '') + sw;
   if (stop > 0) { const s = stop; stop = 0; W.paused = true; setTimeout(() => { W.paused = false; }, s * 1000); } // a beat of stillness when a shot really lands
-  sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = sting.toFixed(2); W.renderer.domElement.style.filter = sting > .25 ? `blur(${(sting * 2.2).toFixed(1)}px)` : '';
+  sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = sting.toFixed(2); film.style.opacity = Math.min(1, drown * 1.6).toFixed(2);
+  const bl = Math.max(sting > .25 ? sting * 2.2 : 0, drown * 2.4);
+  W.renderer.domElement.style.filter = bl > .3 ? `blur(${bl.toFixed(1)}px)` + (drown > .1 ? ` saturate(${(1 - drown * .35).toFixed(2)}) hue-rotate(${(-drown * 12).toFixed(0)}deg)` : '') : '';
   $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('grit').firstChild.style.width = (me.grit * 100) + '%';
-  $('note').textContent = me.out ? 'ထွက်ပြီ' : canRefill(me) ? 'ရေဖြည့်နေတယ်…' : me.water < .2 ? `ရေကုန်ပြီ (${Math.max(0, 12 - me.dryT).toFixed(0)})` : '';
+  $('note').textContent = me.out ? 'OUT — ရေအိုးစင် ပြန်သွား' : atRest(me) && me.grit < 1 ? 'ခံနိုင်ရည် ဖြည့်နေတယ်…' : me.filling ? 'ရေဖြည့်နေတယ်…' : me.waiting ? 'ပိုက်ခေါင်း မအားသေး — စောင့်' : me.water < .6 ? 'ရေကုန်ခါနီး!' : '';
   ringEl.setAttribute('stroke-dashoffset', (333 * (1 - charge)).toFixed(0));
-  if (me.out) { let sx = 0, sz = 0, n = 0; for (const k of kids) if (!k.out && k.state !== 'flee') { sx += pos(k).x; sz += pos(k).z; n++; } W.camFocus = n ? new THREE.Vector3(sx / n, 0, sz / n) : null; }
 });
 
 W.start();
-window.war = { kids, me, state: () => ({ playing, ended, A: kids.filter(k => k.team === 'A' && !k.out && k.state !== 'flee').length, B: kids.filter(k => k.team === 'B' && !k.out && k.state !== 'flee').length, water: me.water, grit: me.grit }), result: null, fire, W, STATS };
+window.war = { kids, me, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit }), result: null, fire, W, STATS };

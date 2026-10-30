@@ -40,13 +40,36 @@
   .card button{flex:1;min-width:150px;font:inherit;font-size:15px;padding:10px 12px;border:0;border-radius:14px;background:var(--gold);color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.18);cursor:pointer}
   .card button.ghost{background:#eee}
   .card p{margin:4px 0;text-align:center}
+  #tags{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+  .tag{position:absolute;left:0;top:0;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;will-change:transform}
+  .tag .bars{width:30px;padding:2px 3px;border-radius:5px;background:rgba(40,30,50,.6)}
+  .tag.A .bars{box-shadow:0 0 0 1.5px #2f8fd6} .tag.B .bars{box-shadow:0 0 0 1.5px #e0574f}
+  .tag.me .bars{display:none} .tag[data-s=out] .bars{opacity:.35}
+  .tag .bars i{display:block;height:4px;margin:1px 0;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
+  .tag .bars b{display:block;height:100%;border-radius:2px} .tag .g b{background:#f2a65a} .tag .w b{background:#4fb4ff}
+  .tag .ic{line-height:0}
+  .tag .ic svg{width:20px;height:22px}
+  .tag .ic .out{display:inline-block;padding:2px 6px;border-radius:8px;background:#e04a3a;color:#fff;font:bold 11px/14px sans-serif;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .tag .ic .rest{display:inline-block;width:18px;height:18px;border-radius:50%;background:#5cc55a;color:#fff;font:bold 16px/18px sans-serif;text-align:center;animation:beat 1s ease-in-out infinite}
+  .tag .ic .fill path{fill:#4fb4ff;stroke:#fff;stroke-width:1.5} .tag .ic .fill{animation:bob .6s ease-in-out infinite alternate}
+  .tag .ic .wait path{fill:#cfd8e0;stroke:#fff;stroke-width:1.5} .tag .ic text{font:bold 11px sans-serif;fill:#3b2a3a}
+  .tag .ic .low path{fill:rgba(255,255,255,.6);stroke:#e04a3a;stroke-width:2} .tag .ic .low text{fill:#e04a3a} .tag .ic .low{animation:blink .8s steps(2) infinite}
+  @keyframes beat{50%{transform:scale(1.2)}} @keyframes bob{to{transform:translateY(-4px)}} @keyframes blink{50%{opacity:.25}}
+  #drown{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;overflow:hidden;
+    background:radial-gradient(ellipse at center,rgba(140,200,240,0) 25%,rgba(70,150,210,.45) 70%,rgba(30,90,160,.8) 100%)}
+  #drown i{position:absolute;top:0;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;
+    background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.9),rgba(180,225,255,.35) 35%,rgba(110,175,230,.15) 70%);box-shadow:0 0 0 1px rgba(255,255,255,.4),inset 0 -3px 6px rgba(40,100,160,.25);animation:run 2.4s linear infinite}
+  @keyframes run{from{transform:translateY(-12vh)}to{transform:translateY(112vh)}}
+  #clock{min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
   #big{position:fixed;z-index:4;left:50%;top:38%;transform:translate(-50%,-50%);font-size:64px;font-weight:bold;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:none}
 </style>
 </head>
 <body>
-<div id="score"><span class="a">① <span id="sa"></span></span><b>⚔</b><span class="b"><span id="sb"></span> ④</span></div>
+<div id="score"><span class="a">① <span id="sa"></span></span><b id="clock">3:00</b><span class="b"><span id="sb"></span> ④</span></div>
 <div id="me">ရေ (ဆီပုံး)<div class="bar" id="water"><b></b></div>ခံနိုင်ရည်<div class="bar" id="grit"><b></b></div><span id="note"></span></div>
 <div id="msg" class="off"></div>
+<div id="tags"></div>
+<div id="drown"></div>
 <div id="sting"></div>
 <div id="big" hidden></div>
 <div id="pads">
@@ -58,9 +81,9 @@
   <ul>
     <li><b>ပက်</b> ကို တို့ = အနီးဆုံး ရန်သူကို ချိန်ပက် (အနီဝိုင်းနဲ့ ပြ) · <b>ဖိပြီး ဆွဲ</b> = ကိုယ်တိုင် ချိန် · ကြာကြာ ဖိလေ ဝေးဝေး ပြင်းပြင်း</li>
     <li>မျက်နှာ ထိရင် ပိုစပ်တယ် · <b>သုတ်</b> = မျက်နှာသုတ် (ခံနိုင်ရည် ပြန်တက်၊ ဒါပေမဲ့ ခဏ မပက်နိုင်)</li>
-    <li>ခံနိုင်ရည် ကုန်ရင် ထွက်ပြေးရ · ရေကုန်ပြီး မဖြည့်နိုင်ရင် ထိုင်ရ</li>
-    <li>ပိုက်ခေါင်း/ရေစည်နား ရပ်ရင် ရေဖြည့် · <b>ထိုင်နေတဲ့သူကို မပက်ရ</b></li>
-    <li>တစ်ဖက်လုံး ထွက်သွားရင် နိုင်</li>
+    <li>ခံနိုင်ရည် ကုန်ရင် <b>OUT</b> — ရှေ့ မတက်ရ၊ ကိုယ့်ဘက် <b>ရေအိုးစင်</b> (အစိမ်းဝိုင်း) မှာ ခံနိုင်ရည် ဖြည်းဖြည်း ပြန်ဖြည့်ပြီးမှ ပြန်ဝင် · OUT ဖြစ်နေသူကို ပက်လို့ မရ</li>
+    <li>ပိုက်ခေါင်း/ရေစည်နား ရပ်ရင် ရေဖြည့် — တစ်ခါ တစ်ယောက်ပဲ · အဝေးကွင်းက အိမ်ကွင်း ပိုက်ခေါင်းကိုလည်း သုံးလို့ရ</li>
+    <li>တစ်ဖက်လုံး တစ်ပြိုင်နက် OUT ဖြစ်ရင် ရှုံး · ၃ မိနစ် ပြည့်ရင် OUT နည်းတဲ့ဘက် နိုင်</li>
   </ul>
   <div class="row" style="margin-bottom:10px"><button id="alley" class="ghost" type="button"></button></div>
   <div class="row"><button id="home" type="button">အိမ်ကွင်း — ခံတိုက် (၅ vs ၆)</button><button id="away" type="button">အဝေးကွင်း — ဝင်တိုက် (၆ vs ၅)</button></div>
@@ -70,6 +93,6 @@
   <div class="row"><button id="again" type="button">ပြန်ကစား</button><button id="menu" class="ghost" type="button">mode ပြောင်း</button></div>
 </div></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="./yangon/war.js?v=2"></script>
+<script type="module" src="./yangon/war.js?v=3"></script>
 </body>
 </html>
