@@ -1,6 +1,6 @@
 // yangon/wardrobe.js — the barber (ဆံပင်ညှပ်ဆိုင်) and the clothes shop (အထည်ဆိုင်), opened inside their shops (rooms.js).
 // Every option is shown as a picture of you wearing it; picking one restyles you at once (live preview), saved with the story.
-import { makeChibi, HAIRS, HAIRS_DYED, TOPS } from '../chibi.js?v=28';
+import { makeChibi, HAIRS, HAIRS_DYED, TOPS } from '../chibi.js?v=30';
 
 export const LOOK0 = { hair: 'short', hairColor: HAIRS[0], topStyle: 'tee', top: '#ffc83d', bottom: 'longyi', bottomColor: ['#3f7a5a', '#72b08b'], hat: 'goggles' };
 // what never changes about the hero; S.look (hair, clothes, hat) goes on top

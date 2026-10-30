@@ -1,6 +1,6 @@
 // critters.js — Yangon street dogs and cats (ခွေး / ကြောင်) in the same chibi style: code-built rig + procedural gait. No model files.
 import * as THREE from 'three';
-import { outline, emoteTex, shade } from './chibi.js?v=28';
+import { outline, emoteTex, shade } from './chibi.js?v=30';
 
 // coats: main fur, belly / muzzle, mark (patches), pattern ('plain' | 'patch' | 'tabby' | 'calico')
 export const DOG_COATS = [

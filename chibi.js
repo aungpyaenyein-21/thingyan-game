@@ -90,9 +90,9 @@ const FW = 384, FH = 256, faceCache = {};
 // o.eyes round|almond|bead|sleepy · o.brows arc|flat|thin|bold · o.lips smile|grin|small|cat · o.marks none|blush|freckles|mole
 function faceTex(o, eye, mouth) {
   const k = o.age === 'kid' ? 1.22 : 1, { iris, thanaka } = o;
-  const key = [iris, thanaka, o.eyes, o.brows, o.lips, o.marks, k, eye, mouth].join('|'); if (faceCache[key]) return faceCache[key];
+  const key = [iris, thanaka, o.eyes, o.brows, o.lips, o.marks, k, eye, mouth, o.redEye ? 'r' : ''].join('|'); if (faceCache[key]) return faceCache[key];
   const c = document.createElement('canvas'); c.width = FW; c.height = FH; const g = c.getContext('2d');
-  const ink = '#3a2430';
+  const ink = '#3a2430', WH = o.redEye ? '#ff9a9a' : '#fff'; // redEye: bloodshot whites (a face full of water all day)
   if (o.marks === 'freckles') { g.fillStyle = 'rgba(120,70,50,.6)'; for (const s of [-1, 1]) for (const [dx, dy] of [[38, 150], [54, 161], [68, 147], [47, 172]]) { g.beginPath(); g.arc(192 + s * dx, dy, 4, 0, 7); g.fill(); } }
   if (thanaka) { // ပါးပေါ်က သနပ်ခါး: round | leaf | square | dots (+ faint brush streaks)
     const T = thanaka === true ? 'round' : thanaka;
@@ -119,7 +119,7 @@ function faceTex(o, eye, mouth) {
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 4, 13, 17, 0, 0, 7); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 4, y - 3, 5, 0, 7); g.fill();
     } else if (eye === 'normal' && o.eyes === 'almond') { // narrower, outer corner lifted
-      g.save(); g.translate(x, y); g.rotate(-s * .14); g.beginPath(); g.ellipse(0, 0, 30, 21, 0, 0, 7); g.fillStyle = '#fff'; g.fill(); g.save(); g.clip();
+      g.save(); g.translate(x, y); g.rotate(-s * .14); g.beginPath(); g.ellipse(0, 0, 30, 21, 0, 0, 7); g.fillStyle = WH; g.fill(); g.save(); g.clip();
       g.fillStyle = iris; g.beginPath(); g.ellipse(0, 3, 17, 20, 0, 0, 7); g.fill();
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(0, 5, 9, 12, 0, 0, 7); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(-6, -4, 5, 0, 7); g.fill(); g.restore();
@@ -127,7 +127,7 @@ function faceTex(o, eye, mouth) {
     } else if (eye === 'normal') { // round (sleepy = the same eye, half-lidded)
       const sl = o.eyes === 'sleepy';
       g.save(); if (sl) { g.translate(0, y * .35 + 8); g.scale(1, .65); }
-      g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, 7); g.fill();
+      g.fillStyle = WH; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, 7); g.fill();
       g.fillStyle = iris; g.beginPath(); g.ellipse(x, y + 5, 21, 27, 0, 0, 7); g.fill();
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 8, 11, 15, 0, 0, 7); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 8, y - 6, 7, 0, 7); g.fill(); g.beginPath(); g.arc(x + 9, y + 15, 3.5, 0, 7); g.fill();
@@ -198,7 +198,7 @@ function canvasTex(c) { const t = new THREE.CanvasTexture(c); t.colorSpace = THR
 //       bottom ('longyi'|'htamein'|'pants'|'shorts'|'skirt'|'overalls'), bottomColor [a,b],
 //       shoes ('sneaker'|'slipper'), shoeColor, hat ('none'|'band'|'goggles'|'bucket'), accent, garland, prop ('none'|'gun'),
 //       flower, thanaka (false|'round'|'leaf'|'square'|'dots'), age ('adult'|'kid'|'elder'), build ('round'|'slim'|'broad'), outline,
-//       face: eyes/brows/lips/marks (see faceTex), head ('wide'|'round'|'tall'|'soft'); topStyle also 'yinphone' (ရင်ဖုံး) | 'taikpon' (တိုက်ပုံ)
+//       face: eyes/brows/lips/marks (see faceTex), head ('wide'|'round'|'tall'|'soft'), size (root scale, overrides age), hunch, glasses, cane, redEye, shoes also 'none'; topStyle also 'yinphone' (ရင်ဖုံး) | 'taikpon' (တိုက်ပုံ)
 export function makeChibi(opts = {}) {
   const o = { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], iris: IRIS[0], top: '#fff6ea', topStyle: 'tee', print: 'သင်္ကြန်', bottom: 'longyi', bottomColor: ['#3f7a5a', '#72b08b'],
     shoes: 'sneaker', shoeColor: '#c8553d', hat: 'none', accent: '#e0574f', garland: false, prop: 'none', flower: false, thanaka: 'round', age: 'adult', build: 'round', outline: false,
@@ -238,7 +238,8 @@ export function makeChibi(opts = {}) {
     part(new THREE.CapsuleGeometry(pants ? .07 : .058, lo - .05, 4, 12), legLow, knee, 0, -lo / 2);
     if (pants) part(new THREE.CylinderGeometry(.07, .08, .05, 14, 1, true), pantsMat, knee, 0, -lo + .035); // hem flares over the shoe
     const foot = pivot(knee, 0, -lo);
-    if (o.shoes === 'slipper') { // ညှပ်ဖိနပ်: flat sole, bare foot, thong strap
+    if (o.shoes === 'none') part(new THREE.SphereGeometry(.07, 14, 10), o.skin, foot, 0, -.04, .03).scale.set(1, .55, 1.4); // ဖိနပ်မပါ
+    else if (o.shoes === 'slipper') { // ညှပ်ဖိနပ်: flat sole, bare foot, thong strap
       part(new THREE.SphereGeometry(.085, 16, 10), o.shoeColor, foot, 0, -.062, .035).scale.set(1, .22, 1.45);
       part(new THREE.SphereGeometry(.07, 14, 10), o.skin, foot, 0, -.035, .03).scale.set(1, .55, 1.35);
       part(new THREE.TorusGeometry(.05, .011, 6, 12, Math.PI), o.accent, foot, 0, -.045, .06);
@@ -312,7 +313,7 @@ export function makeChibi(opts = {}) {
   const nose = part(new THREE.SphereGeometry(.026, 10, 8), shade(o.skin, .18), skull, 0, -.035, HEAD_R * .99, false); nose.scale.set(1.15, .85, .9);
   for (const s of [-1, 1]) part(new THREE.SphereGeometry(.05, 10, 8), o.skin, skull, s * HEAD_R * .98, -.02, 0).scale.set(.5, 1, .8); // ears
 
-  if (o.age === 'elder') { // မျက်မှန်
+  if (o.glasses ?? o.age === 'elder') { // မျက်မှန်
     for (const s of [-1, 1]) part(new THREE.TorusGeometry(.058, .008, 6, 20), '#4a3428', skull, s * .092, .005, HEAD_R + .012, false).rotation.y = s * .32;
     part(new THREE.CylinderGeometry(.006, .006, .06, 6), '#4a3428', skull, 0, .02, HEAD_R + .02, false).rotation.z = Math.PI / 2;
   }
@@ -374,7 +375,7 @@ export function makeChibi(opts = {}) {
   }
 
   let cane = null;
-  if (o.age === 'elder') { // တောင်ဝှေး, kept upright by the animator
+  if (o.cane ?? o.age === 'elder') { // တောင်ဝှေး, kept upright by the animator
     cane = pivot(arms[1].hand, 0, -.02, .02);
     part(new THREE.CylinderGeometry(.015, .015, .5, 8), '#7a4a2e', cane, 0, -.25, 0); part(new THREE.SphereGeometry(.03, 8, 6), '#7a4a2e', cane);
   }
@@ -390,9 +391,9 @@ export function makeChibi(opts = {}) {
   const drips = Array.from({ length: 5 }, () => { const m = new THREE.Mesh(dripGeo, dripMat); m.visible = false; root.add(m); return { m, v: 0, life: 0 }; });
 
   // age: kids are small with a bigger head, elders a little shorter and hunched
-  const scale = o.age === 'kid' ? .72 : o.age === 'elder' ? .9 : 1;
+  const scale = o.size ?? (o.age === 'kid' ? .72 : o.age === 'elder' ? .9 : 1); // size: cast sizes (.60 small kid, .82 big kid …)
   root.scale.setScalar(scale);
-  const hunch = o.age === 'elder' ? .3 : 0, gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
+  const hunch = o.hunch ?? (o.age === 'elder' ? .3 : 0), gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
   skin(body, new Set([face, torso, skirtMesh, gun, cane].filter(Boolean)), new Set([torso]), wetMats);
 
@@ -743,7 +744,7 @@ export class ChibiAnimator {
     aL.sh.rotation.set(p.armLx, 0, p.armLz); aR.sh.rotation.set(p.armRx, 0, p.armRz);
     aL.elbow.rotation.x = p.elbowL; aR.elbow.rotation.x = p.elbowR; aL.hand.rotation.z = p.handLz; aR.hand.rotation.z = p.handRz;
     // face
-    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : c.opts.age === 'elder' ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes
+    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : (c.opts.smileEyes ?? c.opts.age === 'elder') ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes (smileEyes: false for a stern one)
     const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, eye, p.mouth); }
     // the bucket hangs from the left hand; while throwing it moves out in front between both hands (never through the body), then tips
     const B = c.bucket; B.visible = c.tool === 'bucket' || throwing;
