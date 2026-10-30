@@ -2,7 +2,8 @@
 // by a jerry can on the back, fought silently on an open lot (or the alleys of two wards split by a creek). Nobody has HP —
 // you have grit: get it in the face and it goes faster. At none you're OUT: nobody may spray you, you may only walk back,
 // and you're in again once a drink at your own side's water-pot stand (ရေအိုးစင်) has filled your grit — slowly.
-// A gang that's all OUT at once has lost; at the bell, fewer OUTs wins. Home side has four taps and holds its ground; the
+// Three rounds of three minutes: a gang that's all OUT at once has lost the round; at the bell, fewer OUTs takes it.
+// Most rounds wins the match. Home side has four taps and holds its ground; the
 // away side comes with an extra kid, one slow drum, and has to push in (and may use the home side's taps). One kid per tap.
 import { createWorld } from '../world.js?v=11';
 import { createSound } from '../sound.js?v=3';
@@ -99,7 +100,7 @@ function makeKid(team, i, me) {
   disc.position.y = .02; disc.scale.setScalar(1 / c.g.scale.x); if (!me) c.g.add(disc); // which gang, at a glance (you have your own ring) // our own water does the hitting (the town's only hits what's on screen)
   const emit = c.anim.emit; c.anim.emit = (t, o) => { if (t !== 'squirt' && t !== 'squirtStart') emit(t, o); }; // the pump shoots from game logic, not the pose
   const k = { c, team, me, i, disc, lane: 0, outs: 0, lim: 0, tap: null, waiting: false, filling: false, grit: 1, water: CAN, state: 'fight', out: false, cool: 1 + rnd() * 1.5, think: 0, target: null, hitT: 9, dryT: 0, wipeT: 0, stuck: 0, side: 1, sideT: 0, navT: 0, wp: [0, 0], goal: [0, 0], faceAim: rnd() < .45, name: goggles ? 'ရေကူးမျက်မှန်' : '' };
-  kids.push(k); return k;
+  k.start = [x, z, -s * Math.PI / 2]; kids.push(k); return k;
 }
 const SIZE = { A: HOME === 'A' ? 5 : 6, B: HOME === 'B' ? 5 : 6 };
 const me = makeKid('A', 0, true);
@@ -390,39 +391,64 @@ function mine(dt) {
 // ---------- the match ----------
 let playing = false, ended = false, msgT = 0;
 function say(t, s = 2) { $('msg').textContent = t; $('msg').classList.remove('off'); msgT = s; }
-let scored = '', clock = 180;
+const ROUND = +(P.get('clock') || 180), MY = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
+let scored = '', clock = ROUND, round = 1, hinted = false;
+const wins = { A: 0, B: 0 }, rounds = [];
 function score() {
   const h = t => kids.filter(k => k.team === t).map(k => `<i class="${k.out ? '' : 'on'}"></i>`).join('');
   const a = h('A'), b = h('B'); if (a + b === scored) return; scored = a + b; $('sa').innerHTML = a; $('sb').innerHTML = b;
 }
-function finish(won, title, text) {
-  if (ended) return; ended = true;
+const roundLabel = () => { $('rnd').textContent = `ပွဲ ${MY(round)}/၃ · ${MY(wins.A)}–${MY(wins.B)}`; };
+function roundOver(winner, why) { // winner: 'A', 'B' or null (a draw)
+  if (ended) return; ended = true; if (winner) wins[winner]++; rounds.push(winner); roundLabel();
   setTimeout(() => {
-    if (won) { $('big').textContent = 'ဟေး!'; $('big').hidden = false; for (const k of kids) if (k.team === 'A' && !k.out) { k.c.anim.play('jump'); k.c.anim.emote('heart'); } }
-    setTimeout(() => { $('big').hidden = true; end(title, text); }, won ? 1800 : 600);
+    if (winner === 'A') { $('big').textContent = 'ဟေး!'; $('big').hidden = false; for (const k of kids) if (k.team === 'A' && !k.out) { k.c.anim.play('jump'); k.c.anim.emote('heart'); } }
+    setTimeout(() => {
+      $('big').hidden = true;
+      const tally = `ပွဲစဉ် — ① ${MY(wins.A)} : ${MY(wins.B)} ④`;
+      if (round < 3) {
+        end(`ပွဲ ${MY(round)} — ${winner === 'A' ? '① နိုင်' : winner === 'B' ? '④ နိုင်' : 'သရေ'}`, `${why}\n${tally}`, `ပွဲ ${MY(round + 1)} စမယ်`);
+        if (AUTO) setTimeout(nextRound, 1500);
+      } else {
+        const d = wins.A - wins.B; window.war.final = true;
+        end(d > 0 ? 'နိုင်ပြီ' : d < 0 ? 'ရှုံးပြီ' : 'သရေ', `${why}\n၃ ပွဲ ပြီးပြီ — ① ${MY(wins.A)} : ${MY(wins.B)} ④`, 'ပြန်ကစား');
+      }
+    }, winner === 'A' ? 1800 : 600);
   }, 700);
 }
-function checkEnd() { // a gang that's all OUT at the same time has lost
+function checkEnd() { // a gang that's all OUT at the same time has lost the round
   if (ended) return;
   const a = active('A'), b = active('B'); if (a && b) return;
-  finish(a > 0, a ? 'နိုင်ပြီ' : 'ရှုံးပြီ', a ? '④ ဂိုဏ်း တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ' : '① ဘက်က တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ');
+  roundOver(a ? 'A' : 'B', a ? '④ ဂိုဏ်း တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ' : '① ဘက်က တစ်ယောက်မကျန် OUT ဖြစ်သွားပြီ');
 }
-function timeUp() { // the bell: fewer OUTs wins it
-  const d = OUTS.B - OUTS.A, t = `OUT — ① ${OUTS.A} ကြိမ် · ④ ${OUTS.B} ကြိမ်`;
-  finish(d > 0, d > 0 ? 'နိုင်ပြီ' : d < 0 ? 'ရှုံးပြီ' : 'သရေ', t);
+function timeUp() { // the bell: fewer OUTs takes the round
+  const d = OUTS.B - OUTS.A; roundOver(d > 0 ? 'A' : d < 0 ? 'B' : null, `အချိန်ပြည့် — OUT ① ${MY(OUTS.A)} ကြိမ် · ④ ${MY(OUTS.B)} ကြိမ်`);
 }
-function end(title, text) { $('etitle').textContent = title; $('etext').textContent = text; $('end').hidden = false; playing = false; W.frozen = true; window.war.result = title; }
+function end(title, text, btn) { $('etitle').textContent = title; $('etext').innerText = text; $('again').textContent = btn; $('end').hidden = false; playing = false; W.frozen = true; window.war.result = title; window.war.round = round; }
+function nextRound() { // everyone back to the start line, full cans, full grit
+  if (round >= 3 || $('end').hidden) return;
+  round++; clock = ROUND; ended = false; hinted = false; drops.length = 0; OUTS.A = OUTS.B = 0; STANCE.A = STANCE.B = ''; teamT = 0;
+  for (const r of REFILL) r.user = null;
+  for (const k of kids) {
+    Object.assign(k, { grit: 1, water: CAN, out: false, state: 'fight', tap: null, waiting: false, wipeT: 0, stuck: 0, navT: 0, cool: 1 + rnd() * 1.5, target: null });
+    if (k.disc?.userData.m) k.disc.material = k.disc.userData.m;
+    k.c.g.position.set(k.start[0], 0, k.start[1]); k.c.g.rotation.y = k.start[2]; k.c.anim.setLoop('idle');
+  }
+  holding = false; charge = 0; drown = 0; sting = 0; $('wipe').classList.remove('on');
+  W.snapCam(); $('end').hidden = true; playing = true; W.frozen = false; window.war.result = null; scored = ''; score(); roundLabel();
+  say(`ပွဲ ${MY(round)} — စ!`, 2);
+}
 const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
 $('home').onclick = () => go('home'); $('away').onclick = () => go('away');
 $('alley').onclick = () => { location.search = '?map=' + (ALLEY ? 'lot' : 'alley') + (AUTO ? '&auto' : ''); };
 $('alley').textContent = ALLEY ? 'မြေပုံ: လမ်းကြား → ကွက်လပ်' : 'မြေပုံ: ကွက်လပ် → လမ်းကြား';
-$('again').onclick = () => go(MODE || 'home'); $('menu').onclick = () => { location.search = (ALLEY ? '?map=alley' : '?') + (AUTO ? '&auto' : ''); };
+$('again').onclick = () => { if (round < 3 && !window.war.final) nextRound(); else go(MODE || 'home'); }; $('menu').onclick = () => { location.search = (ALLEY ? '?map=alley' : '?') + (AUTO ? '&auto' : ''); };
 function begin() {
-  $('start').hidden = true; playing = true; W.frozen = false; score();
+  $('start').hidden = true; playing = true; W.frozen = false; score(); roundLabel();
   say(HOME === 'A' ? '④ ဂိုဏ်း ဝင်လာပြီ — ကိုယ့်ဘက်ကို ကာ!' : '④ ဘက်ကို ဖောက်ဝင်တိုက် — သူတို့ ပိုက်ခေါင်းလည်း သုံးလို့ရ', 3);
   setTimeout(() => playing && say(matchMedia('(pointer:coarse)').matches ? 'ပက် ကို တို့ = အနီးဆုံးကို ချိန် · ဖိပြီး ဆွဲ = ကိုယ်တိုင် ချိန်' : 'mouse နဲ့ ချိန်၊ ဖိထား = ဆွဲ၊ လွှတ် = ပက် · Space = အနီးဆုံး', 4), 3200);
 }
-if (MODE) begin(); else { W.frozen = true; score(); }
+if (MODE) begin(); else { W.frozen = true; score(); roundLabel(); }
 
 // the tags over everyone's head: grit and water, and what they're up to
 const ICON = {
@@ -478,6 +504,8 @@ W.tick(dt => {
   $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('grit').firstChild.style.width = (me.grit * 100) + '%';
   $('note').textContent = me.out ? 'OUT — ရေအိုးစင် ပြန်သွား' : atRest(me) && me.grit < 1 ? 'ခံနိုင်ရည် ဖြည့်နေတယ်…' : me.filling ? 'ရေဖြည့်နေတယ်…' : me.waiting ? 'ပိုက်ခေါင်း မအားသေး — စောင့်' : me.water < .6 ? 'ရေကုန်ခါနီး!' : '';
   ringEl.setAttribute('stroke-dashoffset', (333 * (1 - charge)).toFixed(0));
+  $('wipe').classList.toggle('hint', drown > .4 && !me.out && me.state !== 'wipe'); // the wipe pad pulses while water's up your nose
+  if (drown > .5 && !hinted && playing && !AUTO) { hinted = true; say('ရေမွန်းနေပြီ — 「သုတ်」 နဲ့ မျက်နှာ သုတ်', 2.5); }
 });
 
 W.start();
