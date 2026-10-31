@@ -18,7 +18,7 @@
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T3b → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T3b → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -47,6 +47,9 @@
 - `yangon/set.js` code-built အဆောက်အအုံ: ဆိုင်းဘုတ်/ပြတင်း/အစွန်းအထင်း ရှေ့မျက်နှာစာ တစ်ဖက်တည်း → ၄ ဘက်လုံး (ဘေး/နောက် = ပြတင်း + ပိုက်/ရေတိုင်ကီ/လျှော်ထားတဲ့ အဝတ် — ရှေ့ထက် ရိုးရိုး)
 - **hero အဆောက်အအုံ ၃ ခု glTF** (`art/building.py` ပုံစံ ထပ်ရေး): မုန့်ဟင်းခါးဆိုင် + ဟင်းရွက်ဆိုင် (ဆိုင်ချင်းကပ်)၊ `{နာမည်}` အိမ်၊ မဏ္ဍပ် (ရက် ၁ ပုံ) — ကျန်တာ code-built ပဲ
 - ကင်မရာ လှည့်ရင် ဘာမှ "အပေါက်" မမြင်ရ — ၄ ထောင့် screenshot
+
+### ၄-ခ။ ထပ်ထည့် (2026-10-31)
+- `fonts/NotoSansMyanmar-*.woff2` self-host + `@font-face` (yangon.html, war.html, cast.html, camlab.html) + `sw.js` cache · lil-gui panel `?tune` — ကင်မရာ lag / elevation curve / zoom ကန့်သတ် / fade opacity ချိန်ပြီး `console` ကနေ JSON copy
 
 ### ၅။ မလုပ်ရ
 - navmesh/NPC လမ်းရှာ (life.js collide ဆက်သုံး — T3) · Rapier · ဇာတ်လမ်း · `chibi.js` `cast.js` `war.js`
@@ -166,6 +169,9 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 
 ### G. carry ချိတ်
 `hit(k)` ထဲ `carry.hit(k)` ၁ ကြောင်း — ကိုင်ထားတဲ့ item ယိမ်း/ကျ (T4) · OUT ဖြစ်ရင် item ကျ
+
+### H. ကိရိယာ
+- lil-gui `?tune`: hit-stop ms · ကင်မရာ ယိမ်း · လက်နက် ၃ မျိုး ဂဏန်း (အကွာ၊ ရေကုန်၊ grit) · particle အရေအတွက် — ဖန်တီးသူ ချိန်ပြီး JSON → `rules.js`/`fx/*.json` · `PositionalAudio` — ပြွတ်/ပူဖောင်း/ပုံး/ဘဲလ် အသံကို ဇာတ်ကောင်ပေါ် ချိတ် (sound.js ရှိပြီးသား buffer သုံး)
 
 ### ✅ ပြီးတယ် ဆိုတာ
 - C ၅ ချက်လုံး ရှိ (screenshot/video) · A ၃ မျိုး ကိုင်ကြည့်ရင် ကွဲ · B ကုန်/ဖြည့် loop
