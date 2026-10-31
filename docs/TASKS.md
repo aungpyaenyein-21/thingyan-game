@@ -35,6 +35,7 @@
 - shadow — PCFShadowMap (Soft မဟုတ်)၊ shadow camera ကစားသူ ပတ်လည် ၁၂ m ပဲ၊ ဖုန်း pixel ratio ≤ 1.5 (`PHONE` flag ရှိပြီး)
 
 ### ၁-ခ။ Auto-zoom + ကြိုကြည့် (Go-Go Town! ပုံစံ — 2026-10-31 ထပ်ထည့်)
+**ဒီဇိုင်း အပြည့်အစုံ → [CAMERA.md](CAMERA.md)** (context ၇ ခု၊ ဦးစားပေး၊ lerp နှုန်း၊ look-ahead၊ scene API၊ ဖုန်း၊ `?tune` ဂဏန်း၊ စမ်းသပ်ချက် ၈ ခု) — ကွဲလွဲရင် CAMERA.md ကို ယူ။ အောက်က ဇယားက အကျဉ်း။
 ကင်မရာက follow ပဲ မဟုတ်၊ **အခြေအနေ အလိုက် ကိုယ်တိုင် zoom** — ကစားသူ ကိုင်ရတာ လှည့်တာ + zoom offset ပဲ။
 
 | အခြေအနေ | dist (base 11) | ဘာကြောင့် |
