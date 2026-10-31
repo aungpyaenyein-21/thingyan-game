@@ -164,6 +164,8 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 | အသံ | `pssh` ဆက် | `splat` | `whoosh`+`splash` |
 war.js မှာ ပြွတ်/ပူဖောင်း ရှိပြီး → ပုံး ထည့်၊ ၃ ခု ကွာခြားမှု ဒီဇယားအတိုင်း ချိန် · လက်နက် ပြောင်း R (ရှိ)
 
+**Creator (2026-11-01): the three weapons must feel clearly different in damage** — widen the gaps (pump ≈ −.08/stroke-hit, balloon −.35, bucket −.7 + shove + full soak), per-weapon hit feedback (bar chips vs chunks, hit-stop 60 ms for the bucket), costs that make the choice matter. In `?tune`.
+
 ### B. ရေ = ကျည်
 ကျောပိုးပုံး HUD (ရှိ) · **ကုန်ခါနီး ၂၀% အောက်** ပြွတ်က stream အားနည်း + စက်စက် ကျ (particle နည်း) · ရေအိုးစင် (ရှိ) / ရေစည် / ပိုက်ခေါင်း မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့် animation (၁.၅ s၊ ဖြည့်နေတုန်း ပက်ခံရရင် ပျက်) · ဖိုးကျော် `supply` role (war.js — ရေကုန်ခါနီးသူဆီ ဆီပုံး သယ်ပေး၊ T4 bike rack နဲ့)
 
