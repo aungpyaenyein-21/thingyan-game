@@ -3,13 +3,14 @@
 > **အခန်းကဏ္ဍ** — ဒီဇိုင်း/အတည်ပြု/review = Fable (ဒီစာ ရေးသူ)။ **ဆောက်တာ = အခြား model session**။ Task တစ်ခု ပြီးရင် အခြေအနေ ပြောင်းပြီး Fable က review လုပ်။
 > ဒီဇိုင်းစာ: [DIRECTION.md](../DIRECTION.md) · [SCENARIO.md](../SCENARIO.md) (v6 ငွေဖလား — ပုံသေ) · [CHARACTERS.md](../CHARACTERS.md)
 > အခြေအနေ: ⏳ မစသေး · 🔨 ဆောက်နေ · 👀 review စောင့် · ✅ ပြီး
+> **ပင်မ မူ (ဖန်တီးသူ 2026-10-31): ဒီဂိမ်းရဲ့ အဓိကက ရေပက်တာ။** Mission တိုင်း၊ scene တိုင်း ရေပက်တာ ပါရမယ် — ရေ မပါတဲ့ mission မထည့်ရ (SCENARIO M1 ပုံးဆွဲ၊ M2 ကြောင်ချော့ ကို ရေပါအောင် ပြင်ရန် 💭)။ Library/feature ရွေးရင် 「ရေပက်ခံစားမှု ပိုကောင်းလား」 ကို အရင် မေး။
 > **Branch စည်းကမ်း** — `main` ကို တိုက်ရိုက် မရေး။ Task တစ်ခု = branch တစ်ခု `claude/<task>` (T1 = `claude/camlab`)၊ worktree သီးသန့်။ ပြီးရင် PR ဖွင့် → Fable review → ပြင်စရာ ရှိရင် အဲဒီ branch မှာပဲ ပြင် → OK မှ `main` ထဲ merge (squash)။ Push: `gh auth switch --user aungpyaenyein-21` → push → `gh auth switch --user Aung-Pyae-Nyein`။ Pages က `main` ကနေ ထွက်လို့ merge မှ live ဖြစ်မယ်။
 
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 🔨 | အခြား model · branch `claude/camlab` |
 | T2 | ဂိမ်းအစစ် ကင်မရာ ပြောင်း (`world.js` perspective + လှည့် + ဖျော့ + sky dome၊ ① အဆောက်အအုံ ၄ ဘက်) | ⏳ (T1 review ပြီးမှ spec) | — |
-| T3 | ရက် ၄ vertical slice — တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock — ၁၀ ယောက် အတူ ပြေး၊ ambush၊ hide-behind; three-pathfinding က လမ်း၊ Yuka က လျှောက်ပုံ) | ⏳ | — |
+| T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
 | T4 | ကောက်-သယ်-ချ system (ခေါင်းပေါ်/လက်ထဲ/စက်ဘီးနောက်၊ ရေခဲ timer) · **`CCDIKSolver`** (three addons — လက်ကို ပစ္စည်းဆီ IK၊ ဖလား ကမ်း၊ `pour`) — T3 နဲ့ ပြိုင်လုပ်လို့ရ | ⏳ | — |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
@@ -17,6 +18,23 @@
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
 အစဉ်: T1 → T2 → (T3 ∥ T4) → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+
+## T3 ရေပက် core loop
+
+**ရည်ရွယ်ချက်** — ရက် ၄ ဇာတ်လမ်း scene မဆောက်ခင် **ပက်ရတာ လက်ထဲ ကောင်းမကောင်း** ချိန်။ `war.js` ပေါ် ထပ်ဆောက်။ T2 ကင်မရာ ပြီးမှ (လှည့်ရင်း ချိန်ပစ်)။
+
+**Library** — **three.quarks** (particle + browser VFX editor → JSON; ပြွတ် ရေလုံး + ribbon trail၊ ပူဖောင်း ပေါက် ရေစက်၊ ပုံး ရေကူး) · `DecalGeometry` (three addons — နံရံ/ကြမ်း/ဇာတ်ကောင်ပေါ် ရေစို အကွက်) · ground **wet-map** (RenderTarget ပေါ် စက်ဝိုင်း ဆွဲ၊ ကြာရင် ခြောက် — ~၄၀ ကြောင်း၊ library မလို) · `Water2` (ချောင်း၊ ရေစည်) · Vibration API (Android ၃၀ms)။ **မသုံး**: postprocessing (ဖုန်း လေး — T3 ပြီးမှ ပြန်စဉ်းစား)၊ fluid sim၊ three-nebula။
+
+**ခံစားမှု checklist (၅ ချက်လုံး ရှိမှ ✅)**
+1. **ထိတဲ့ခဏ** — hit-stop ~၄၀ms · ကင်မရာ ခဏ ယိမ်း · ခံရသူ squash · `drop` emote · `splat` အသံ
+2. **လက်နက် ၃ မျိုး လက်ထဲ မတူ** — ပြွတ် = ဖြောင့်/မြန်/ရေ ကုန်မြန် · ပူဖောင်း = ကွေး၊ ထောင့်ချိုး ကျော်၊ ကျတဲ့နေရာ ဝိုင်းစို · ပုံး = နီး၊ ကျယ်၊ တစ်ခါတည်း ကုန်
+3. **ရေ ကုန်/ဖြည့်** — ကျောပိုးပုံး HUD ကျ · ကုန်ခါနီး ပြွတ်က စက်စက် ကျ (particle နည်း) · ရေစည်မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့်
+4. **ရွှဲတာ မြင်ရ** — ဆံပင် ပြား/အင်္ကျီ ရင့် (ရှိပြီ) + ကြမ်းပြင် wet-map + ပစ်မှတ်ပေါ် decal
+5. **ချိန်ပစ်** — ကင်မရာ လှည့်ရင်း reticle၊ ထောင့်ချိုး ကျော် ပူဖောင်း arc ပြ
+
+**စစ်ဆေးပုံ** — ဖုန်း (375px) မှာ ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် 30fps အောက် မကျ · ကစားသူ ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 — ဒါ ဖန်တီးသူ ကိုယ်တိုင် ဆုံးဖြတ်။
+
+---
 
 ## Task တစ်ခုရဲ့ သွားပုံ (task တိုင်း တူ)
 
