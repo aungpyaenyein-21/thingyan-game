@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { BatchedRenderer, ParticleSystem, RenderMode, QuarksLoader, QuarksUtil } from 'three.quarks';
 import { ConstantValue, IntervalValue, ConstantColor, Vector4, SphereEmitter, ConeEmitter, ApplyForce, SizeOverLife, ColorOverLife, Gradient, PiecewiseBezier, Bezier, Vector3 as QV3 } from 'quarks.core';
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
-const PAL = { water: '#3fd3e0', wet: '#2aa7b8', splash: '#cff6fa' }; // docs/PALETTE.md — import from palette.js once T2 (#30) is on main
+import { PAL } from './palette.js'; // docs/PALETTE.md: water / wet / splash
 
 export const BUDGET = { stream: 400, burst: 30, sheet: 120, drip: 20, total: 2000 };
 const POOL = { stream: 6, burst: 10, sheet: 3, drip: 4 }; // instances per effect (several can play at once in different places)

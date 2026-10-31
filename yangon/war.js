@@ -7,14 +7,15 @@
 // away side comes with an extra kid, one slow drum, and has to push in (and may use the home side's taps). One kid per tap.
 import { createWorld } from '../world.js?v=14';
 import { createSound } from '../sound.js?v=3';
-import { createFx } from '../fx.js?v=1';
+import { createFx } from '../fx.js?v=2';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
 import { createAI } from './ai.js?v=1';
 
 const P = new URLSearchParams(location.search);
 const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked
 const B = ALLEY ? { x0: -18, x1: 18, z0: -12, z1: 12 } : { x0: -14, x1: 14, z0: -9, z1: 9 };
-const W = createWorld({ bounds: B, ground: () => .01, camBounds: ALLEY ? { x0: -16.5, x1: 16.5, z0: -10.5, z1: 10.5 } : { x0: -8, x1: 8, z0: -4.5, z1: 4.5 }, view: ALLEY ? 15 : innerWidth < innerHeight ? 11.5 : 15 }); // the lot is small: a phone held upright gets closer in
+const W = createWorld({ bounds: B, ground: () => .01, camBounds: ALLEY ? { x0: -16.5, x1: 16.5, z0: -10.5, z1: 10.5 } : { x0: -8, x1: 8, z0: -4.5, z1: 4.5 }, view: ALLEY ? 15 : innerWidth < innerHeight ? 11.5 : 15, camera: 'orbit' }); // T2's orbit camera (turn 45°: Z / C, the ⟲⟳ pads, a sideways drag)
+W.orbit?.context('war', true); // CAMERA.md: a fight pulls the view out a little
 const { THREE, scene, box, mesh, rnd, pick } = W;
 const sound = createSound(W);
 const $ = id => document.getElementById(id);
@@ -264,7 +265,7 @@ function pop(k, text, color = '#fff') { // a word that jumps off the kid you got
 }
 let drown = 0; // that water-up-your-nose feeling, for you
 let shakeT = 0, shakeA = 0, buzzT = 0;
-const kick = (a, t = TUNE.shakeT) => { if (a >= shakeA * Math.max(0, shakeT) / TUNE.shakeT) { shakeA = a; shakeT = t; } }; // the screen jolts for .15 s
+const kick = (a, t = TUNE.shakeT) => { if (a < shakeA * Math.max(0, shakeT) / TUNE.shakeT) return; shakeA = a; shakeT = t; W.orbit?.shake(a * .015 * TUNE.shake / 6, t); }; // the view jolts for .15 s (orbit: the camera itself)
 const buzz = () => { if (W.time() > buzzT) { buzzT = W.time() + .25; try { navigator.vibrate?.(TUNE.vibrate); } catch {} } }; // Android: a 30 ms buzz
 // one hit, whatever it came from: grit off, a squash, the drop emote, the burst, the sound, the beat of stillness
 function soak(k, o) {
@@ -400,7 +401,7 @@ const ai = createAI({ kids, me, auto: AUTO, B, alley: ALLEY, homeTeam: HOME, CAN
 // A red ring marks who it'll hit. PC: the mouse aims, Space / J = the pad, R = switch, 1 2 3 = pick.
 let charge = 0, holding = false, sting = 0, aimDir = null, dragFrom = null, mouseAim = null;
 const ringEl = $('ring');
-const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize(); // the screen's right and up, on the ground (the world's iso camera)
+const RIGHT = new THREE.Vector3(), UP = new THREE.Vector3(); // the screen's right and up, on the ground — from the camera's angle right now (it turns)
 function visibleFoes() { const p = pos(me), lob = me.weapon === 'balloon'; return enemies(me).filter(o => pos(o).distanceTo(p) < (lob ? WEAPONS.balloon.range : 10) && (lob || clear(p, pos(o)))); }
 function autoTarget() { let best = null, bd = 1e9; for (const o of visibleFoes()) { const d = pos(o).distanceTo(pos(me)); if (d < bd) { bd = d; best = o; } } return best; }
 function rayTarget(dir) { // the kid nearest the line you're aiming along (never one who's OUT)
@@ -436,6 +437,7 @@ setWeapon('pump');
 const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; drown = 0; me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
 $('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); dragFrom = [e.clientX, e.clientY, e.pointerId]; aimDir = null; try { $('fire').setPointerCapture(e.pointerId); } catch {} press(true); });
 $('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !== dragFrom[2]) return; const dx = e.clientX - dragFrom[0], dy = dragFrom[1] - e.clientY;
+  if (W.orbit) { W.orbit.right(RIGHT); W.orbit.forward(UP); } else { RIGHT.set(1, 0, -1).normalize(); UP.set(-1, 0, -1).normalize(); }
   aimDir = Math.hypot(dx, dy) > 16 ? new THREE.Vector3().addScaledVector(RIGHT, dx).addScaledVector(UP, dy) : null; });
 $('fire').addEventListener('pointerup', e => { e.stopPropagation(); press(false); });
 $('fire').addEventListener('pointercancel', () => press(false));
@@ -592,7 +594,7 @@ W.tick(dt => {
   }
   stepDrops(dt); stepBalloons(dt); showAim(); tags(); feel(dt); fx.update(dt);
   REST.A.ring.material.opacity = me.out ? .55 + Math.sin(W.time() * 6) * .35 : .45;
-  const shake = shakeT > 0 ? shakeA * shakeT / TUNE.shakeT * TUNE.shake / 6 : 0; shakeT -= dt; drown = Math.max(0, drown - dt * .3);
+  const shake = !W.orbit && shakeT > 0 ? shakeA * shakeT / TUNE.shakeT * TUNE.shake / 6 : 0; shakeT -= dt; // iso: shake the canvas; orbit shakes the camera (kick) drown = Math.max(0, drown - dt * .3);
   const sw = drown > .05 ? ` scale(${(1 + drown * .025 * (1 + Math.sin(W.time() * 4.5))).toFixed(4)})` : '';
   W.renderer.domElement.style.transform = (shake > .2 ? `translate(${((rnd() - .5) * shake).toFixed(1)}px,${((rnd() - .5) * shake).toFixed(1)}px)` : '') + sw;
   if (stop > 0) { const s = stop; stop = 0; W.paused = true; setTimeout(() => { W.paused = false; }, s * 1000); } // a beat of stillness when a shot really lands

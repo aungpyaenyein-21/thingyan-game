@@ -37,6 +37,8 @@
   #weps button.on{opacity:1;background:#bfe6ff;box-shadow:0 0 0 3px #2f8fd6,0 3px 0 rgba(0,0,0,.2)}
   #weps svg{display:block;width:22px;height:22px;margin:0 auto 1px}
   #water.low>b{background:#e04a3a;animation:blink .8s steps(2) infinite}
+  #turn{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(200px + env(safe-area-inset-bottom,0px));display:flex;gap:8px}
+  #turn button{width:44px;height:44px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);font:inherit;font-size:22px;line-height:1;box-shadow:0 3px 0 rgba(0,0,0,.2);touch-action:manipulation}
   #rule{position:fixed;z-index:3;left:50%;bottom:calc(200px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:86vw;padding:5px 12px;border-radius:12px;background:#fff1e6;color:#a3321f;font-size:14px;box-shadow:0 3px 0 rgba(0,0,0,.15);white-space:nowrap}
   .kb{display:block;font-size:10px;opacity:.55} @media (pointer:coarse){.kb{display:none}}
   .card{position:fixed;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,30,50,.55);padding:16px}
@@ -81,6 +83,7 @@
 <div id="sting"></div>
 <div id="big" hidden></div>
 <div id="rule" hidden></div>
+<div id="turn"><button id="rotl" type="button" aria-label="ဘယ်ဘက် လှည့်" hidden>⟲</button><button id="rotr" type="button" aria-label="ညာဘက် လှည့်" hidden>⟳</button></div>
 <div id="weps">
   <button type="button" data-w="pump"><svg viewBox="0 0 24 24"><path d="M3 13h13M16 11v4M18 13h3" stroke="#3b2a3a" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="22" cy="13" r="1.4" fill="#3fd3e0"/></svg>ပြွတ်<span class="kb">1</span></button>
   <button type="button" data-w="balloon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="10" rx="6.5" ry="7.5" fill="#ff7aa8"/><path d="M12 17.5l-1.5 2h3z" fill="#ff7aa8"/><ellipse cx="9.5" cy="7.5" rx="1.6" ry="2.2" fill="#fff" opacity=".6"/></svg>ပူဖောင်း<span class="kb">2</span></button>
@@ -111,6 +114,6 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
   "three.quarks":"https://cdn.jsdelivr.net/npm/three.quarks@0.16.0/dist/three.quarks.esm.js","quarks.core":"https://cdn.jsdelivr.net/npm/quarks.core@0.16.0/dist/quarks.core.esm.js",
   "yuka":"https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.module.js"}}</script>
-<script type="module" src="./yangon/war.js?v=7"></script>
+<script type="module" src="./yangon/war.js?v=8"></script>
 </body>
 </html>
