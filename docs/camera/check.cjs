@@ -29,10 +29,12 @@ const OUT = path.join(__dirname, '/'), ONLY = process.argv.slice(2);
   await shot('hero-stalls', { at: [9.4, 17.2], az: .35, dist: 7 });
   // a phone held upright (375 × 740, touch): the HUD, the turn buttons, the joystick
   if (!ONLY.length || ONLY.includes('phone')) {
-    const q = await b.newPage({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
+    const b2 = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); // its own browser: as a second page it starves
+    const q = await b2.newPage({ viewport: { width: 375, height: 740 }, hasTouch: true, isMobile: true });
     q.on('pageerror', e => errs.push(e.message)); q.on('console', m => m.type() === 'error' && errs.push(m.text()));
     await q.goto('http://localhost:8790/yangon.html?new&debug&q=low&dt=0.1'); await q.waitForFunction(() => window.zone, null, { timeout: 240000 }); // a phone page builds slower (no shared cache)
-    await q.waitForTimeout(6000); await q.screenshot({ path: OUT + 'phone.jpg', type: 'jpeg', quality: 72, timeout: 180000 }); console.log('shot phone');
+    await q.waitForTimeout(3000); for (let i = 0; i < 4; i++) { await q.tap('#dlg').catch(() => {}); await q.waitForTimeout(500); } await q.waitForTimeout(3000); // past the intro
+    await q.screenshot({ path: OUT + 'phone.jpg', type: 'jpeg', quality: 72, timeout: 180000 }); console.log('shot phone'); await b2.close();
   }
   console.log('errors', errs);
   await b.close();
