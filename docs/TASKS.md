@@ -8,6 +8,26 @@
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 🔨 | အခြား model · branch `claude/camlab` |
+| T2 | ဂိမ်းအစစ် ကင်မရာ ပြောင်း (`world.js` perspective + လှည့် + ဖျော့ + sky dome၊ ① အဆောက်အအုံ ၄ ဘက်) | ⏳ (T1 review ပြီးမှ spec) | — |
+| T3 | ရက် ၄ vertical slice — တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ | — |
+| T4 | ကောက်-သယ်-ချ system (ခေါင်းပေါ်/လက်ထဲ/စက်ဘီးနောက်၊ ရေခဲ timer) — T3 နဲ့ ပြိုင်လုပ်လို့ရ | ⏳ | — |
+| T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
+| T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
+| T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး | ⏳ | — |
+
+အစဉ်: T1 → T2 → (T3 ∥ T4) → T5 → T6 → T7။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+
+## Review လုပ်ပုံ (Fable — task တိုင်း တူ)
+
+PR: base `main` ← head `claude/<task>`။ PR ဖွင့်ပြီးရင် 「review」 လို့ ပြောရုံ။
+
+1. **Code ဖတ်** — `gh pr diff` နဲ့ diff တစ်ခုလုံး။ TASKS.md ရဲ့ spec အပိုင်းတိုင်း ရှိ/မရှိ၊ 「မလုပ်ရ」 စာရင်း မထိဘူး ဆိုတာ
+2. **ကိုယ်တိုင် run** — branch ကို worktree ထဲ checkout (`git worktree add ../<task> claude/<task>`)၊ preview ဖွင့်ပြီး in-app Browser pane မှာ စမ်း။ Console error၊ FPS၊ 375px layout
+3. **ဒီဇိုင်းနဲ့ တိုက်** — SCENARIO v6 / CHARACTERS / DIRECTION နဲ့ ကိုက်မကိုက်၊ နောက် task တွေ ဒီအပေါ် ဆောက်လို့ ရမရ
+4. **Review ရေး** — `gh pr review` နဲ့ PR ပေါ် comment (line အလိုက်)။ TASKS.md ထဲ အခြေအနေ 👀 → ✅ ဒါမှမဟုတ် ပြင်ရန် စာရင်း
+5. ပြင်စရာ ရှိရင် အခြား model က **အဲဒီ branch မှာပဲ** ပြင် → Fable ထပ်စစ် → OK မှ **ဖန်တီးသူ** merge (squash) → Pages live
+
+Fable က code မရေး၊ merge မလုပ် — review comment နဲ့ TASKS.md အခြေအနေ၊ နောက် task ရဲ့ spec ပဲ။
 
 ---
 
