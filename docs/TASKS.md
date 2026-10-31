@@ -9,7 +9,7 @@
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 🔨 | အခြား model · branch `claude/camlab` |
-| T2 | ဂိမ်းအစစ် ကင်မရာ ပြောင်း (`world.js` perspective + လှည့် + ဖျော့ + sky dome၊ ① အဆောက်အအုံ ၄ ဘက်) + **အရောင် [PALETTE.md](PALETTE.md) အတိုင်း ပြန်ဆေး** (`palette.js` token ဖိုင်) | ⏳ (T1 review ပြီးမှ spec) | — |
+| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | ⏳ spec ✅ (#28 merge ပြီးမှ စ) | အခြား model · branch `claude/camera` |
 | T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK — T1/T2 မစောင့်ဘဲ စလို့ရ | ⏳ spec ✅ | အခြား model · branch `claude/carry` |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
@@ -17,7 +17,46 @@
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
-အစဉ်: T1 → T2 → (T3 ∥ T4) → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 → T2 ∥ T4 (ဖိုင် မထပ်: T2 = world/yangon/art, T4 = chibi/cast/carry/bike) → T3 → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+
+## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
+
+**ရည်ရွယ်ချက်** — T1 camlab မှာ အလုပ်လုပ်ပြီးသား ကင်မရာကို **ဂိမ်းအစစ်** (ရက် ၁ ရန်ကုန် ရပ်ကွက် — `yangon.html`, `world.js`, `yangon/*`) ထဲ ရွှေ့။ တစ်ခါတည်း [PALETTE.md](PALETTE.md) အရောင် ပြောင်း၊ အဆောက်အအုံ ၄ ဘက် ဖြစ်အောင်။ ဇာတ်လမ်း/mission/ကစားနည်း **မပြောင်း** — ကြည့်ပုံပဲ ပြောင်း။
+
+**ကြိုတင်** — PR #28 (camlab) `main` ထဲ ရောက်ပြီးမှ စ။ `docs/plans/T2.md` အရင်။ Branch `claude/camera`။
+
+**ဖိုင် ပိုင်ဆိုင်မှု (T4 နဲ့ ပြိုင်လုပ်နေလို့)** — T2 = `world.js` · `yangon/*` · `yangon.html` · 🆕 `palette.js` · 🆕 `sky.js` · `art/*` (glTF) · `camlab.js` (ပြန်သုံးဖို့ ခွဲထုတ်ရင်)။ **T2 က `chibi.js` / `cast.js` / `carry.js` မထိ** (T4 ပိုင်)။ `war.js` မထိ (T3)။
+
+### ၁။ ကင်မရာ (camlab.js ကနေ ယူ)
+- `world.js:56` OrthographicCamera + ISO ပုံသေ → PerspectiveCamera၊ camlab ရဲ့ `placeCamera` (lag၊ ၄၅° snap၊ zoom 5–24၊ elevation curve)။ ကင်မရာ code ကို `camera.js` module အဖြစ် ခွဲပြီး camlab.html ကလည်း ဒါ import — copy ၂ ခု မထားရ
+- ထိန်းချုပ်မှု — `world.js:489` ကစားသူ ရွေ့တာ ကင်မရာ ဦးတည်ချက်အလိုက်။ ခလုတ် ဘယ်/ညာ လှည့် + Q/E + ဘေးတိုက် drag + pinch (HUD ထဲ ထည့် — `yangon/hud.js`)
+- **ဖျော့** — camlab ရဲ့ raycast ၂ ကြောင်း ပုံစံ၊ ဒါပေမဲ့ T1 review #1: `needsUpdate` မသုံး — material တိုင်း `transparent:true` variant ကြို clone၊ fade ချိန် swap
+- shadow — PCFShadowMap (Soft မဟုတ်)၊ shadow camera ကစားသူ ပတ်လည် ၁၂ m ပဲ၊ ဖုန်း pixel ratio ≤ 1.5 (`PHONE` flag ရှိပြီး)
+
+### ၂။ ကောင်းကင် (`sky.js`)
+- `world.js` ရဲ့ canvas gradient + screen ပုံသေ နေ → **sky dome shader** (camlab ပုံစံ) · ဒါပေမဲ့ `setTime` (dusk 0→1→night 2) ကို **ဆက်ထောက်ပံ့** — SKY/NIGHT stop ၄ ခု ကို dome shader uniform အဖြစ် ထည့်၊ နေ ကမ္ဘာ ပုံသေ ဦးတည်ချက် + dusk အလိုက် နိမ့်/နီ · ကြယ် (night) ပါ
+- `paintSky` hook (ရှိပြီး — ပိတောက်ပွင့် စတာ) ဆက်အလုပ်လုပ်ရ — မရရင် ဘာ ပျက်လဲ plan ထဲ ပြော
+
+### ၃။ အရောင် (`palette.js`)
+- `export const PAL = {...}` PALETTE.md token အကုန် — hex ကို ဖိုင်တိုင်း ပြန်မရေး
+- ပြောင်းရမှာ: `world.js` floor → `sand`၊ hemisphere ground → `shade`၊ `yangon/set.js` `downtown.js` အဆောက်အအုံ → cream/mint/pink/ochre/teal ၅ ရောင်ထဲကပဲ၊ ရေ (ချောင်း၊ ရေစည်၊ ပူဖောင်း) → `water`၊ ① ဂိုဏ်းသား အင်္ကျီ `#2f8fd6` → `gang1` (world.js/life.js ထဲ ရှိတာပဲ — chibi.js မထိ)
+- ရက် ၃ "ဖျော့ဆုံး" / ရက် ၄ padauk များ — **မလုပ်သေး** (T5/T6)
+
+### ၄။ အဆောက်အအုံ ၄ ဘက်
+- `yangon/set.js` code-built အဆောက်အအုံ: ဆိုင်းဘုတ်/ပြတင်း/အစွန်းအထင်း ရှေ့မျက်နှာစာ တစ်ဖက်တည်း → ၄ ဘက်လုံး (ဘေး/နောက် = ပြတင်း + ပိုက်/ရေတိုင်ကီ/လျှော်ထားတဲ့ အဝတ် — ရှေ့ထက် ရိုးရိုး)
+- **hero အဆောက်အအုံ ၃ ခု glTF** (`art/building.py` ပုံစံ ထပ်ရေး): မုန့်ဟင်းခါးဆိုင် + ဟင်းရွက်ဆိုင် (ဆိုင်ချင်းကပ်)၊ `{နာမည်}` အိမ်၊ မဏ္ဍပ် (ရက် ၁ ပုံ) — ကျန်တာ code-built ပဲ
+- ကင်မရာ လှည့်ရင် ဘာမှ "အပေါက်" မမြင်ရ — ၄ ထောင့် screenshot
+
+### ၅။ မလုပ်ရ
+- navmesh/NPC လမ်းရှာ (life.js collide ဆက်သုံး — T3) · Rapier · ဇာတ်လမ်း · `chibi.js` `cast.js` `war.js`
+
+### ✅ ပြီးတယ် ဆိုတာ
+- `yangon.html` ရက် ၁ ရပ်ကွက် — ကင်မရာ လှည့်/zoom/ဖျော့ · ၄ ထောင့် screenshot · ကောင်းကင် afternoon/dusk/night ၃ ပုံ (`setTime`)
+- ရှိပြီးသား ရက် ၁ mission (ပုံးဆွဲ၊ ကြောင်ချော့၊ မီးသီး၊ ဆိုင်းဘုတ်) **ကင်မရာ အသစ်နဲ့ ဆက်ကစားလို့ရ** — တစ်ခုချင်း စမ်းပြီး မှတ်
+- PALETTE: ရေ = `#3fd3e0` တစ်ခုတည်း အေး — screenshot မှာ ရေက ပေါ်လွင်
+- laptop 60fps (Browser pane) · ဖုန်း ≥ 30fps (ဖန်တီးသူ Pages မှာ စစ်) · console error 0
+- camlab.html က `camera.js` / `sky.js` / `palette.js` ကို import ပြောင်းပြီး ဆက်အလုပ်လုပ် (copy မကျန်)
+- `docs/plans/T2.md` + PR
 
 ## T4 ကောက်-သယ်-ချ system
 
