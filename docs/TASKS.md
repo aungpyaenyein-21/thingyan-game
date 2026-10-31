@@ -11,7 +11,7 @@
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | ⏳ spec ✅ · plan 👀 [plans/T2.md](plans/T2.md) | အခြား model · branch `claude/camera` |
 | T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
-| T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | 🔨 plan ✅ (PR #29) | အခြား model · branch `claude/carry` |
+| T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
@@ -108,6 +108,11 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 
 ### မလုပ်ရ
 `world.js` · ဂိမ်း flow · Rapier ထည့်တာ (T1 က ထည့်မယ် — hook ပဲ ထား) · ပြောမှ commit
+
+### ✅ ရလဒ် (Fable review 2026-10-31 · PR #29 merge)
+- `carry.js` (ITEMS data ၆ ခု၊ procedural mesh၊ PALETTE) · `bike.js` (rack + `seatOn`) · `carry-lab.html` · chibi.js socket ၅ ခု + `anim.load` + `anim.reach` IK (swing+twist quaternion) + one-shot `pick`/`bigthrow` · `chibi.js?v=31`
+- စစ်ပြီး: pose ၃ မျိုး ကွဲ · drop/place(rack)/give(မေသူ)/throw(burst) · head item ၃ ချက် ကျ · ရေခဲ ၉၀ s · စက်ဘီး စီး · cast.html ၁၃ ယောက် regression error 0 · 60 fps · 375px
+- T3 ထဲ ယူသွားတာ: war.js `hit()` → `carry.hit(k)` ၁ ကြောင်း · life.js → bike.js ပြောင်းသုံး · `hold` HUD item ကျရင် text ရှင်း · `item.shade` 💭
 
 ---
 

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>သယ်ပိုး စမ်းကွင်း</title>
+<!-- T4 carry-lab — ကောက်-သယ်-ချ system (carry.js) · socket/IK (chibi.js) · ဖိုးကျော့် စက်ဘီး (bike.js) စမ်းကွင်း
+     window.carry = debug hook (lab ပဲ — ဂိမ်းထဲ မပါ) · ?joy = joystick အမြဲ ပြ -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@500;700&display=swap">
+<style>
+  :root{--ink:#5a3550;--card:rgba(255,246,232,.92);--on:#f2a65a;--line:#e9c9a8;--water:#3fd3e0}
+  html,body{margin:0;height:100%;overflow:hidden;touch-action:none;color:var(--ink);
+    background:linear-gradient(#ffd9a8 0%,#f9b8a0 45%,#d9a3c0 80%,#b39bd1 100%);font-family:"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif;-webkit-user-select:none;user-select:none}
+  canvas{position:fixed;inset:0;display:block} [hidden]{display:none!important} #acts:empty{display:none}
+  #hud{position:fixed;left:10px;top:10px;right:10px;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .card{background:var(--card);border-radius:12px;padding:5px 11px;font-size:14px;max-width:100%;box-sizing:border-box}
+  #hold{font-size:13px} #fps{font-size:11px;font-family:ui-monospace,monospace;opacity:.85;border-radius:8px;padding:2px 8px}
+  #ice{display:flex;align-items:center;gap:8px;font-size:13px} #ice i{display:block;width:120px;height:10px;border-radius:5px;background:#e9c9a8;overflow:hidden} #ice b{display:block;height:100%;background:var(--water);width:100%}
+  #ui{position:fixed;right:10px;bottom:10px;z-index:2;display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:230px}
+  .row{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+  #acts{background:var(--card);border-radius:14px;padding:6px;min-height:34px;min-width:60px}
+  button{font:inherit;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+  button.on{background:var(--on);border-color:var(--on);color:#fff} button.act{border-color:#2f8fd6;font-weight:600}
+  #joy{position:fixed;left:18px;bottom:22px;width:116px;height:116px;border-radius:50%;background:rgba(255,246,232,.55);border:2px solid rgba(90,53,80,.25);z-index:2;touch-action:none}
+  #knob{position:absolute;left:33px;top:33px;width:50px;height:50px;border-radius:50%;background:rgba(242,166,90,.9);pointer-events:none}
+  #help{font-size:11px;opacity:.85;border-radius:8px;padding:3px 8px}
+  @media (max-width:600px){ button{font-size:12.5px;padding:5px 8px} .card{font-size:12.5px} #help{display:none} #ui{max-width:200px} }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="card" id="msg">ပစ္စည်း နားကပ်ပြီး 「ကောက်」</div>
+  <div class="card" id="hold" hidden></div>
+  <div class="card" id="ice" hidden>ရေခဲ <i><b></b></i><span></span></div>
+  <div class="card" id="fps">–</div>
+  <div class="card" id="help">WASD / မြား = လမ်းလျှောက် (Shift ပြေး) · Space = ခုန် · E = ကောက်/ချ · F = ပစ်</div>
+</div>
+<div id="joy" hidden><div id="knob"></div></div>
+<div id="ui">
+  <div class="row" id="acts"></div>
+  <div class="row"><button id="b4">④ ပစ်</button><button id="hop">ခုန်</button><button id="newice">ရေခဲ အသစ်</button></div>
+  <div class="row"><button id="zin">＋</button><button id="zout">－</button></div>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { makeCast } from './cast.js?v=10';
+import { createCarry } from './carry.js?v=1';
+import { makeBike, seatOn } from './bike.js?v=1';
+
+const $ = id => document.getElementById(id);
+const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
+const say = t => { $('msg').textContent = t; };
+const PAL = { sand: '#e8cfa6', dust: '#d9b98f', water: '#3fd3e0', splash: '#cff6fa', cream: '#f4e6c8', brick: '#c8553d', tarp: ['#e0574f', '#2f6fb0', '#ffc83d'] };
+const HALF = 10;
+
+// ---------------------------------------------------------------- scene
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(40, 1, .1, 100);
+scene.add(new THREE.HemisphereLight('#ffe9cf', '#b39bd1', 1.55));
+const sun = new THREE.DirectionalLight('#ffc78a', 2.2); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 40 }); sun.shadow.bias = -.0006; scene.add(sun, sun.target);
+const lam = c => new THREE.MeshLambertMaterial({ color: c });
+const box = (w, h, d, c, x, y, z, parent = scene) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lam(c)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2, HALF * 2), lam(PAL.sand)); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+for (const s of [-1, 1]) { box(HALF * 2, .5, .25, PAL.dust, 0, .25, s * HALF); box(.25, .5, HALF * 2, PAL.dust, s * HALF, .25, 0); } // a low wall round the yard
+
+// the mandapa shelf (မဏ္ဍပ် စင်): a table under a striped tarp, three slots to 「တင်」 things on
+const SHELF = { x: -4, z: -3.5 };
+const shelf = new THREE.Group(); shelf.position.set(SHELF.x, 0, SHELF.z); scene.add(shelf);
+box(2.6, .08, .7, '#a8754a', 0, .62, 0, shelf); for (const [x, z] of [[-1.2, -.28], [1.2, -.28], [-1.2, .28], [1.2, .28]]) box(.07, .62, .07, '#8a5a3a', x, .31, z, shelf);
+for (const [x, z] of [[-1.5, -.9], [1.5, -.9], [-1.5, .9], [1.5, .9]]) box(.08, 2.3, .08, '#8a5a3a', x, 1.15, z, shelf);
+for (let i = 0; i < 6; i++) box(.5, .04, 2, PAL.tarp[i % 3], -1.25 + i * .5, 2.32, 0, shelf);
+const slots = [-.8, 0, .8].map((x, i) => { const s = new THREE.Object3D(); s.position.set(x, .66, .05); shelf.add(s); return s; });
+
+// ---------------------------------------------------------------- people
+const emits = new Map();
+const person = (id, x, z, ry = 0) => { const p = makeCast(id, (t, o) => emits.get(p)?.(t, o)); p.ch.root.position.set(x, 0, z); p.ch.root.rotation.y = ry; p.ch.root.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(p.ch.root); return p; };
+const hero = person('hero', 0, 3.2, Math.PI), maythu = person('maythu', -1.6, -4.6, 0), pk = person('phoekyaw', 5.4, -1.3, -Math.PI / 2);
+const fours = [person('kid4', 7.2, 3.5, -Math.PI / 2), person('kid4', 6.6, 5.6, -Math.PI / 2)];
+for (const k of fours) if (k.ch.pump) k.ch.pump.visible = false; // they throw balloons here
+const people = [hero, maythu, pk, ...fours];
+
+// ---------------------------------------------------------------- carry system
+const splats = [];
+function splat(p, r = .28) { const d = new THREE.Mesh(new THREE.CircleGeometry(r, 18), new THREE.MeshBasicMaterial({ color: PAL.water, transparent: true, opacity: .55, depthWrite: false })); d.rotation.x = -Math.PI / 2; d.position.set(p.x, .012, p.z); scene.add(d); splats.push({ m: d, life: 2.5 }); }
+const cw = createCarry(scene, { onMessage: say, onBurst: p => splat(p) });
+const me = cw.carrier(hero), mt = cw.carrier(maythu, { npc: true }), pkc = cw.carrier(pk, { npc: true });
+const spawn = () => [['purse', -3, 1.2], ['bowl', -1.6, .2], ['basket', -.2, 1.2], ['bucket', 1.4, .2], ['ice', 2.8, 1.2], ['balloon', .6, -1.2]].map(([k, x, z]) => cw.item(k, x, z));
+spawn();
+slots.forEach((s, i) => cw.target(s, `မဏ္ဍပ် စင် ${MM(i + 1)}`));
+
+// ---------------------------------------------------------------- the bike (ဖိုးကျော့်) with its rack
+const bike = makeBike({ color: '#6b7a3a' }); bike.g.position.set(4.2, 0, -2.2); scene.add(bike.g); bike.g.traverse(m => { if (m.isMesh) m.castShadow = true; });
+const rack = cw.target(bike.rack, 'စက်ဘီး နောက်');
+const ride = { on: false, speed: 0, head: 0 };
+const bikeFwd = () => new THREE.Vector3(Math.cos(bike.g.rotation.y), 0, -Math.sin(bike.g.rotation.y));
+function mount() { seatOn(bike, hero, 'saddle'); ride.on = true; me.riding = true; say('စီးနေပြီ — joystick နဲ့ ကွေ့၊ ချိုး ကျယ်တယ်'); }
+function dismount() {
+  const p = bike.g.localToWorld(new THREE.Vector3(0, 0, .7)); scene.attach(hero.ch.root); hero.ch.root.position.set(p.x, 0, p.z); hero.ch.root.rotation.set(0, bike.g.rotation.y - Math.PI / 2, 0);
+  hero.anim.setLoop('idle'); ride.on = false; ride.speed = 0; me.riding = false; say('ဆင်းပြီ');
+}
+function pkOn() { seatOn(bike, pk, 'rack'); rack.rider = pk; pkc.riding = true; say('ဖိုးကျော် နောက်က ထိုင်ပြီ — 「ရတယ် ရတယ်」'); pk.anim.emote('heart', 1.2); }
+function pkOff() { const p = bike.g.localToWorld(new THREE.Vector3(-.4, 0, -.7)); scene.attach(pk.ch.root); pk.ch.root.position.set(p.x, 0, p.z); pk.ch.root.rotation.set(0, 0, 0); pk.anim.setLoop('idle'); rack.rider = null; pkc.riding = false; }
+const near = (a, b, d) => a.distanceTo(b) < d;
+function rackHit(v) { // ridden over by a balloon: the thing on the rack wobbles, falls after 3
+  const it = rack.item; if (!it) return;
+  it.hits++; it.wob = 1; if (it.hits >= cw.FALL.rack) { rack.item = null; it.at = null; cw.fall(it, null, v); }
+}
+
+// ---------------------------------------------------------------- ④ kids lobbing balloons (hit state test)
+let throwers = false, throwT = 1;
+const shots = [], sGeo = new THREE.SphereGeometry(.07, 10, 8), sMat = lam(PAL.water);
+function lobFrom(k) {
+  k.ch.root.rotation.y = Math.atan2(hero.ch.root.getWorldPosition(new THREE.Vector3()).x - k.ch.root.position.x, hero.ch.root.getWorldPosition(new THREE.Vector3()).z - k.ch.root.position.z);
+  k.anim.play('lob');
+  emits.set(k, (t, hand) => {
+    if (t !== 'lob') return; emits.delete(k);
+    const p = hand.getWorldPosition(new THREE.Vector3()), tgt = hero.ch.root.getWorldPosition(new THREE.Vector3());
+    if (ride.on) tgt.addScaledVector(bikeFwd(), ride.speed * .8);
+    tgt.x += (Math.random() - .5) * .5; tgt.z += (Math.random() - .5) * .5; tgt.y = .6;
+    const T = .85, v = new THREE.Vector3((tgt.x - p.x) / T, (tgt.y - p.y) / T + 4.9 * T, (tgt.z - p.z) / T);
+    const m = new THREE.Mesh(sGeo, sMat); m.position.copy(p); m.castShadow = true; scene.add(m); shots.push({ m, v });
+  });
+}
+function stepShots(dt) {
+  const hp = hero.ch.root.getWorldPosition(new THREE.Vector3()); hp.y += .5 * hero.ch.scale + (ride.on ? .45 : 0);
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i]; s.v.y -= 9.8 * dt; s.m.position.addScaledVector(s.v, dt);
+    const hit = s.m.position.distanceTo(hp) < .38;
+    if (hit) { if (ride.on) { hero.anim.soak(.35); rackHit(s.v); } else me.hit(s.v); hero.anim.emote('drop', .9); }
+    if (hit || s.m.position.y < .02) { splat(s.m.position); scene.remove(s.m); shots.splice(i, 1); }
+  }
+}
+
+// ---------------------------------------------------------------- input
+const keys = new Set();
+addEventListener('keydown', e => { keys.add(e.code); if (e.code === 'Space') jump(); if (e.code === 'KeyE') { const a = actions(); const k = a.find(x => x === 'pick' || x === 'drop'); if (k) ACT[k][1](); } if (e.code === 'KeyF') me.throw(); });
+addEventListener('keyup', e => keys.delete(e.code));
+const joy = { x: 0, y: 0, id: null };
+{
+  const base = $('joy'), knob = $('knob');
+  const set = e => { const r = base.getBoundingClientRect(), R = r.width / 2; let dx = e.clientX - r.left - R, dy = e.clientY - r.top - R; const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; } joy.x = dx / R; joy.y = -dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; };
+  base.addEventListener('pointerdown', e => { joy.id = e.pointerId; base.setPointerCapture(e.pointerId); set(e); });
+  base.addEventListener('pointermove', e => { if (e.pointerId === joy.id) set(e); });
+  const end = e => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; knob.style.transform = ''; };
+  base.addEventListener('pointerup', end); base.addEventListener('pointercancel', end);
+}
+if (matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('joy')) $('joy').hidden = false;
+const input = () => {
+  let ix = joy.x, iy = joy.y;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1; if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1;
+  if (keys.has('KeyD') || keys.has('ArrowRight')) ix += 1; if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
+  return { ix, iy, mag: Math.min(1, Math.hypot(ix, iy)) };
+};
+
+// ---------------------------------------------------------------- moving
+const jumpS = { y: 0, vy: 0 };
+function jump() { if (ride.on || me.busy || jumpS.y > 0) return; if (!me.canJump) { say('လေးလို့ ခုန် မရ'); return; } jumpS.vy = 3.2; hero.anim.play('jump'); }
+const turnTo = (r, a, dt, k = 12) => { let d = a - r.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); r.rotation.y += d * (1 - Math.exp(-dt * k)); };
+const CAM = { az: 0, el: .78, dist: innerWidth < 600 ? 8.5 : 7.5, target: new THREE.Vector3(0, .5, 3) };
+function moveHero(dt) {
+  const { ix, iy, mag } = input();
+  const dir = new THREE.Vector3(ix, 0, -iy); // camera looks along −z (az 0)
+  if (ride.on) { // wide turns, ×1.8 a run
+    const top = 2.7 * 1.8;
+    ride.speed += ((mag > .2 ? top * mag : 0) - ride.speed) * (1 - Math.exp(-dt * (mag > .2 ? 1.5 : 2.5)));
+    if (mag > .2 && ride.speed > .3) { const want = Math.atan2(-dir.z, dir.x); let d = want - bike.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); bike.g.rotation.y += Math.sign(d) * Math.min(Math.abs(d), 1.5 * dt); }
+    bike.g.position.addScaledVector(bikeFwd(), ride.speed * dt); clampIn(bike.g.position, 9.3); bike.roll(ride.speed * dt);
+    const want = ride.speed > .2 ? 'cycle' : 'coast'; if (hero.anim.loop !== want) hero.anim.setLoop(want);
+    if (rack.item) rack.item.wob = Math.max(rack.item.wob, Math.min(.35, ride.speed * .06)); // a load on the rack rocks as you ride
+    return;
+  }
+  const r = hero.ch.root, a = hero.anim;
+  if (mag > .12 && !me.busy) {
+    const loop = mag > .65 || keys.has('ShiftLeft') ? 'run' : 'walk'; if (a.loop !== loop && !a.one) a.setLoop(loop);
+    dir.normalize(); turnTo(r, Math.atan2(dir.x, dir.z), dt);
+    r.position.addScaledVector(dir, a.speed * dt); clampIn(r.position, 9.4); pushOut(r.position);
+  } else if (a.loop !== 'idle' && !a.one) a.setLoop('idle');
+  if (jumpS.y > 0 || jumpS.vy > 0) { jumpS.vy -= 9.8 * dt; jumpS.y = Math.max(0, jumpS.y + jumpS.vy * dt); if (jumpS.y === 0) jumpS.vy = 0; }
+  r.position.y = jumpS.y;
+}
+const clampIn = (p, m) => { p.x = THREE.MathUtils.clamp(p.x, -m, m); p.z = THREE.MathUtils.clamp(p.z, -m, m); };
+function pushOut(p) { // the shelf is solid
+  const dx = p.x - SHELF.x, dz = p.z - SHELF.z, hx = 1.45, hz = .55;
+  if (Math.abs(dx) < hx && Math.abs(dz) < hz) { if (hx - Math.abs(dx) < hz - Math.abs(dz)) p.x = SHELF.x + Math.sign(dx) * hx; else p.z = SHELF.z + Math.sign(dz) * hz; }
+}
+
+// ---------------------------------------------------------------- actions → buttons
+const hpos = () => hero.ch.root.getWorldPosition(new THREE.Vector3());
+const ACT = {
+  pick: ['ကောက်', () => me.pick()], drop: ['ချ', () => me.drop()], place: ['တင်', () => me.place()], give: ['ပေး', () => me.give()], throw: ['ပစ်', () => me.throw()],
+  ask: ['တောင်း', () => mt.give(me)],
+  ride: ['စီး', mount], off: ['ဆင်း', dismount], bell: ['ဘဲလ်', () => { hero.anim.emote('note', 1); say('ကလင် ကလင်!'); }],
+  pkon: ['ဖိုးကျော် နောက်ထိုင်', pkOn], pkoff: ['ဖိုးကျော် ဆင်း', pkOff],
+};
+function actions() {
+  const a = me.actions(), p = hpos(), bp = bike.g.position;
+  if (!me.item && !me.busy && mt.item && !mt.busy && near(p, maythu.ch.root.position, 1.2)) a.push('ask');
+  if (ride.on) { a.push('off', 'bell'); if (!rack.item && !rack.rider && near(pk.ch.root.position, bp, 2.5)) a.push('pkon'); }
+  else if (!me.busy && (!me.item || me.item.def.size === 'hand') && near(p, bp, 1.4)) a.push('ride');
+  if (rack.rider) a.push('pkoff');
+  return a;
+}
+let shown = '';
+function refreshButtons() {
+  const a = actions(), key = a.join();
+  if (key === shown) return; shown = key;
+  const box = $('acts'); box.innerHTML = '';
+  for (const k of a) { const b = document.createElement('button'); b.className = 'act'; b.textContent = ACT[k][0]; b.onclick = () => { ACT[k][1](); shown = ''; }; box.appendChild(b); }
+}
+$('b4').onclick = function () { throwers = !throwers; this.classList.toggle('on', throwers); say(throwers ? '④ ကလေးတွေ ပူဖောင်း ပစ်နေပြီ — ခေါင်းပေါ်က ၃ ချက်၊ ရင်ဘတ်က ၅ ချက် ထိရင် ကျ' : '④ ရပ်'); };
+$('hop').onclick = jump;
+$('newice').onclick = () => { if (!cw.items.some(i => i.kind === 'ice')) { const p = hpos(); cw.item('ice', THREE.MathUtils.clamp(p.x + 1, -9, 9), THREE.MathUtils.clamp(p.z, -9, 9)); say('ရေခဲတုံး အသစ် — ၉၀ စက္ကန့်'); } };
+$('zin').onclick = () => { CAM.dist = Math.max(4, CAM.dist * .85); }; $('zout').onclick = () => { CAM.dist = Math.min(16, CAM.dist / .85); };
+
+// ---------------------------------------------------------------- highlight ring + HUD
+const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .38, 28), new THREE.MeshBasicMaterial({ color: '#fff6e8', transparent: true, opacity: .9, depthWrite: false }));
+ring.rotation.x = -Math.PI / 2; scene.add(ring);
+function hud(T) {
+  const it = !me.busy && !ride.on && !me.item ? me.near(1) : null, tg = me.item && !me.busy ? me.freeTarget(1.2) : null;
+  ring.visible = !!(it || tg);
+  if (it) ring.position.set(it.g.position.x, .015, it.g.position.z); else if (tg) { tg.socket.getWorldPosition(ring.position); ring.position.y += .01; }
+  ring.scale.setScalar(1 + .08 * Math.sin(T * 6));
+  const held = me.item; $('hold').hidden = !held;
+  if (held) { const n = cw.FALL[held.def.size]; $('hold').textContent = `ကိုင်ထား: ${held.def.name}` + (isFinite(n) ? ` · ထိ ${MM(held.hits)}/${MM(n)}` : ' · မကျ'); }
+  const ice = cw.items.find(i => i.kind === 'ice'); $('ice').hidden = !ice;
+  if (ice) { $('ice').querySelector('b').style.width = (ice.life / ice.def.melt * 100).toFixed(1) + '%'; $('ice').querySelector('span').textContent = MM(Math.ceil(ice.life)) + ' စက္ကန့်'; }
+}
+
+// ---------------------------------------------------------------- loop
+function resize() { renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.fov = innerWidth < 600 ? 50 : 40; cam.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+let T = 0;
+function simulate(dt) {
+  T += dt;
+  moveHero(dt);
+  if (throwers && (throwT -= dt) <= 0) { throwT = 1.6 + Math.random(); const k = fours[Math.random() * 2 | 0]; if (!k.anim.one) lobFrom(k); }
+  stepShots(dt); cw.update(dt);
+  for (const p of people) p.anim.update(dt);
+  for (let i = splats.length - 1; i >= 0; i--) { const s = splats[i]; s.life -= dt; s.m.material.opacity = .55 * Math.min(1, s.life); if (s.life <= 0) { scene.remove(s.m); splats.splice(i, 1); } }
+  const hp = hpos(); CAM.target.lerp(hp.setY(.5), 1 - Math.exp(-dt * 4));
+  hud(T);
+}
+function placeCam() {
+  cam.position.set(CAM.target.x + Math.sin(CAM.az) * Math.cos(CAM.el) * CAM.dist, CAM.target.y + Math.sin(CAM.el) * CAM.dist, CAM.target.z + Math.cos(CAM.az) * Math.cos(CAM.el) * CAM.dist); cam.lookAt(CAM.target);
+  sun.position.copy(CAM.target).add(new THREE.Vector3(-4, 9, 5)); sun.target.position.copy(CAM.target);
+}
+let paused = false;
+const clock = new THREE.Clock(); let fN = 0, fT0 = performance.now(), cpu = 0;
+renderer.setAnimationLoop(() => {
+  const t0 = performance.now(), dt = Math.min(clock.getDelta(), 1 / 20); if (!paused) simulate(dt); placeCam(); refreshButtons(); renderer.render(scene, cam); cpu += (performance.now() - t0 - cpu) * .05;
+  fN++; const now = performance.now(); if (now - fT0 >= 500) { $('fps').textContent = `${Math.round(fN * 1000 / (now - fT0))} fps · ${renderer.info.render.calls} draw · ${cpu.toFixed(1)} ms`; fN = 0; fT0 = now; }
+});
+
+// debug hook — lab only, not for the game
+window.carry = {
+  player: me, hero, maythu: mt, pk: pkc, bike, rack, cw, get items() { return cw.items; }, rideState: ride, CAM,
+  goTo(x, z, ry = Math.PI) { if (ride.on) dismount(); hero.ch.root.position.set(x, 0, z); hero.ch.root.rotation.y = ry; CAM.target.set(x, .5, z); },
+  pick(kind) { const it = cw.items.find(i => i.kind === kind && i.state === 'ground'); if (!it) return false; const p = it.g.position; this.goTo(p.x, p.z + .7, Math.PI); return me.pick(it); },
+  drop: () => me.drop(), place: () => me.place(), give: () => me.give(), throw: () => me.throw(), hit: () => me.hit(new THREE.Vector3(0, 0, -1)),
+  ride: mount, off: dismount, pkOn, pkOff, rackHit: () => rackHit(new THREE.Vector3()), throwers: on => { throwers = on; },
+  pause(on) { paused = on; }, actions, advance(sec, step = 1 / 30) { for (let t = 0; t < sec; t += step) simulate(step); },
+};
+</script>
+</body>
+</html>
