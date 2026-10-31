@@ -411,7 +411,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q === 'off' ? 0 : 4 });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, cam));
-  const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25) : null; if (bloom) composer.addPass(bloom);
+  // orbit sees bulbs, lamps and white walls up close: a higher threshold and a tighter radius, or they bloom into blobs (T2 review)
+  const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), ORBIT ? .35 : .5, ORBIT ? .2 : .45, ORBIT ? 1.6 : 1.25) : null; if (bloom) composer.addPass(bloom);
   if (bloom && Q === 'low') { const set = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => set(Math.round(w / 2), Math.round(h / 2)); }
   const look = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: new THREE.Vector2(.5, .52) }, blur: { value: Q === 'off' ? 0 : 5.0 }, sat: { value: ORBIT ? .9 : 1.07 } },
@@ -465,12 +466,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     [2, 1, 2048, 1, 1], [1.75, 1, 2048, 1, 1], [1.5, 1, 2048, 1, 1], [1.25, 1, 2048, 1, 1],
     [1.25, 0, 2048, 1, 1], [1, 0, 1024, 1, 1], [1, 0, 1024, 0, 1], [1, 0, 1024, 0, 0]];
   const AQ = { lvl: -1, t: -5, sum: 0, n: 0, ups: 0 };
+  let blurBase = 0;
   const PHONE0 = ORBIT ? 2 : 1; // a phone starts here: orbit sees to the horizon, so pixel ratio ≤ 1.5 from the start
   function setLevel(l) {
     l = THREE.MathUtils.clamp(l, 0, LEVELS.length - 1); if (l === AQ.lvl) return;
     const [pr, blur, map, glow, shade] = LEVELS[l];
     if (Math.min(PR, pr) !== renderer.getPixelRatio()) { renderer.setPixelRatio(Math.min(PR, pr)); if (AQ.lvl >= 0) resize(); }
-    look.uniforms.blur.value = Q === 'off' ? 0 : blur * (ORBIT ? 3.2 : 5.0); // orbit sees to the horizon: a lighter blur, or the sky goes to mush
+    blurBase = Q === 'off' ? 0 : blur * (ORBIT ? 3.2 : 5.0); look.uniforms.blur.value = blurBase; // orbit sees to the horizon: a lighter blur, or the sky goes to mush
     if (bloom) bloom.enabled = !!glow;
     if (sun.shadow.mapSize.x !== map) { sun.shadow.mapSize.set(map, map); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true; }
     sun.castShadow = !!shade;
@@ -595,6 +597,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
     if (sky) sky.follow(cam.position);
     look.uniforms.time.value = T % 100;
+    if (ORBIT) { const el = Math.asin(THREE.MathUtils.clamp((cam.position.y - orbit.state.target.y) / Math.max(.01, cam.position.distanceTo(orbit.state.target)), -1, 1));
+      look.uniforms.blur.value = blurBase * THREE.MathUtils.smoothstep(el, .3, .5); } // a low camera looks along the ground: the screen-space blur would smear the near things and the horizon together, so it fades out (T2 review)
     cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
     look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
     if (PHONE && (++shadowTick & 1)) renderer.shadowMap.needsUpdate = true; // phones: shadows redrawn every other frame (the lookup follows the map, so nothing swims)

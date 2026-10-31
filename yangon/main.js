@@ -1,7 +1,7 @@
 // yangon/main.js — story day 1, Yangon (docs/archive/STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
-import { createWorld, PAL, SKINS } from '../world.js?v=13';
+import { createWorld, PAL, SKINS } from '../world.js?v=14';
 import { CAT_COATS } from '../critters.js?v=6';
 import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=18';
 import { createHud, play } from './hud.js?v=4';
@@ -34,7 +34,7 @@ if (S.q.tea === 'serve') S.q.tea = 'brew'; // older saves: serving three tables 
 const save = () => store(S);
 
 // ---------- the stage parts: one per favour; ghosts until found ----------
-const GHOST = new THREE.MeshBasicMaterial({ color: '#fff6ea', transparent: true, opacity: .3, depthWrite: false });
+const GHOST = new THREE.MeshLambertMaterial({ color: '#fff6ea', transparent: true, opacity: .26, depthWrite: false }); // lit, not basic: an unlit white ghost glows like a lamp at night (T2 review)
 const parts = {}, SX = L.STAGE.x, SZ = L.STAGE.z;
 const P = (k, m) => { W.keep(m); m.userData.real = m.material; (parts[k] ??= []).push(m); return m; };
 const FROND = frondGeo(THREE), frondM = M('#7fae5a', { side: THREE.DoubleSide });
@@ -64,6 +64,11 @@ let banner;
   P('tea', mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[SX + 2.1, .85, SZ - .6], [SX + 1.9, 1.0, SZ], [SX + 1.5, .6, SZ + .4], [SX + 1.2, .55, SZ + .95]].map(p => new THREE.Vector3(...p))), 16, .05, 6), '#4fb3d9'));
 }
 let stageSolid = false;
+if (W.orbit) { // the not-yet-built parts are pale see-through ghosts: up close in front of the low orbit camera they read as a white haze, so they fade out near the lens (T2 review)
+  const wp = new THREE.Vector3(), box3 = new THREE.Box3();
+  W.tick(() => { for (const k in parts) for (const m of parts[k]) { if (m.material !== GHOST) { m.visible = true; continue; }
+    box3.setFromObject(m); m.visible = box3.distanceToPoint(W.cam.position) > 3.2; } });
+}
 function showParts() {
   for (const k in parts) for (const m of parts[k]) { const have = S.parts.includes(k); m.material = have ? m.userData.real : GHOST; m.castShadow = have; }
   if (S.parts.includes('fronds') && !stageSolid) { stageSolid = true; W.solid(SX, SZ, 3.2, 2.0); }
@@ -352,7 +357,7 @@ W.tick((dt, T) => {
   const inMarket = !inside && p.x < 11.8 && p.z > 13.0; roofA += ((inMarket ? .15 : 1) - roofA) * Math.min(1, dt * 4);
   for (const m of L.roofFade) { m.opacity = roofA; m.depthWrite = roofA > .95; }
   const lit = THREE.MathUtils.clamp((W.dusk() - .7) / .3, 0, 1) * (.5 + .5 * W.night());
-  if (Math.abs(lit - lampK) > .005) { lampK = lit; L.lamp.bulb.color.setRGB(.85 + 2.0 * lit, .82 + 1.5 * lit, .77 + .6 * lit); L.lamp.glow.opacity = .5 * lit; }
+  if (Math.abs(lit - lampK) > .005) { lampK = lit; const bk = W.orbit ? .55 : 1; /* orbit gets close to a bulb: less over-bright */ L.lamp.bulb.color.setRGB(.85 + 2.0 * lit * bk, .82 + 1.5 * lit * bk, .77 + .6 * lit * bk); L.lamp.glow.opacity = .5 * lit; }
   const shut = closed(); if (shut !== wasClosed) { wasClosed = shut; for (const n of [vendor, frondMan, mohingaLady, lightsMan, betelMan, phoneGirl]) n.g.visible = !shut; call.visible = false; for (const sh of L.shutters) sh.visible = shut; }
   { // what you hear: the street, the market, people near you, water, the kyaung — or the inside of a shop
     let crowd = 0; for (const ch of W.chars) if (ch.on && ch !== player && ch.g.parent === scene && Math.abs(ch.g.position.x - p.x) + Math.abs(ch.g.position.z - p.z) < 7) crowd++;
