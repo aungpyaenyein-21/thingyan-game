@@ -206,7 +206,7 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 - Yuka NPC ၅v၅ ၃ ပွဲ ကိုယ်တိုင် ဆော့ — NPC က ဒရမ်မှာ မငြိ၊ OUT ဆို ပြန်
 - `fx/*.json` ၄ ခု + editor ဖွင့်ပုံ README
 - console error 0 · `docs/plans/T3.md` + PR
-- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ်
+- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ် → **✅ 2026-11-01 creator played the Browser pane build: 「いいと思う」** (camera T2 and the T3 splash feel both accepted; T3 merge waits only on the rebase + blur cap)
 
 ### မလုပ်ရ
 `world.js` `chibi.js` `cast.js` · ဇာတ်လမ်း scene (T3b) · ပြောမှ commit
