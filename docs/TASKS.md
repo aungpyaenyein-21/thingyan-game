@@ -9,15 +9,16 @@
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
-| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | 👀 plan ✅ · code (PR #30) [plans/T2.md](plans/T2.md) | အခြား model · branch `claude/camera` |
-| T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
+| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | 🔨 plan ✅ · code (PR #30 — CAMERA.md §1-b / §4-b ထပ်ထည့်နေ) [plans/T2.md](plans/T2.md) | အခြား model · branch `claude/camera` |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | ⏳ spec ✅ — A–D အခု စလို့ရ၊ orbit က T2 ပြီးမှ | အခြား model · branch `claude/water` |
+| T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
-| T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
+| T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
-အစဉ်: T1 → T2 ∥ T4 (ဖိုင် မထပ်: T2 = world/yangon/art, T4 = chibi/cast/carry/bike) → T3 → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T3b → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -33,6 +34,26 @@
 - **ဖျော့** — camlab ရဲ့ raycast ၂ ကြောင်း ပုံစံ၊ ဒါပေမဲ့ T1 review #1: `needsUpdate` မသုံး — material တိုင်း `transparent:true` variant ကြို clone၊ fade ချိန် swap
 - shadow — PCFShadowMap (Soft မဟုတ်)၊ shadow camera ကစားသူ ပတ်လည် ၁၂ m ပဲ၊ ဖုန်း pixel ratio ≤ 1.5 (`PHONE` flag ရှိပြီး)
 
+### ၁-ခ။ Auto-zoom + ကြိုကြည့် (Go-Go Town! ပုံစံ — 2026-10-31 ထပ်ထည့်)
+**ဒီဇိုင်း အပြည့်အစုံ → [CAMERA.md](CAMERA.md)** (context ၇ ခု၊ ဦးစားပေး၊ lerp နှုန်း၊ look-ahead၊ scene API၊ ဖုန်း၊ `?tune` ဂဏန်း၊ စမ်းသပ်ချက် ၈ ခု) — ကွဲလွဲရင် CAMERA.md ကို ယူ။ အောက်က ဇယားက အကျဉ်း။
+ကင်မရာက follow ပဲ မဟုတ်၊ **အခြေအနေ အလိုက် ကိုယ်တိုင် zoom** — ကစားသူ ကိုင်ရတာ လှည့်တာ + zoom offset ပဲ။
+
+| အခြေအနေ | dist (base 11) | ဘာကြောင့် |
+|---|---|---|
+| ရပ် / လမ်းလျှောက် | 11 | ပုံမှန် |
+| ပြေး | +3 (→ 14) | ရှေ့ မြင်ရ |
+| စက်ဘီး (T4 `ride`) | +5၊ elevation ပိုမြင့် | မြန်လို့ |
+| ဆိုင်ထဲ / အိမ်ထဲ (rooms) | −5 (→ 6)၊ az lock | အခန်း သေး |
+| NPC နဲ့ စကားပြော (hud.say ဖွင့်ချိန်) | −4၊ target = ၂ ယောက် အလယ် | မျက်နှာ မြင်ရ |
+| ရေပက်စစ် (war zone ထဲ) | +2 | ပစ်မှတ် မြင်ရ |
+| ဇာတ်လမ်း scene | script သတ်မှတ် (`camera.js` `lock(az)` + `focus(obj, dist)`) | ၁-၇၊ ၄-၄ |
+
+- **ကစားသူ zoom = offset** (×.6 … ×1.6) — auto ပေါ် ထပ်ပေါင်း၊ ပြောင်းလည်း မပျောက် (ဆိုင်ထဲက ထွက်လာလည်း ကစားသူ ရွေးထားတာ ပြန်ရ)
+- **ကြိုကြည့် (look-ahead)** — target ကို ရွေ့တဲ့ဘက် ၁.၂ m (ပြေးရင် ၂ m) ရွှေ့၊ lerp ၂ s — ကစားသူ screen အလယ် အောက်နည်းနည်း
+- **အကုန် lerp** — dist `1−e^(−dt·2)`၊ target `1−e^(−dt·3.2)` (ရှိ) — ခုန်မသွားရ၊ ခေါင်းမမူး
+- lil-gui `?tune` ထဲ ဒီ ဂဏန်း ၇ ခုလုံး
+- auto-rotate (ကစားသူ့ နောက်က လိုက်လှည့်) **မထည့်** — ပုံသေ ပိတ်၊ option ပဲ
+
 ### ၂။ ကောင်းကင် (`sky.js`)
 - `world.js` ရဲ့ canvas gradient + screen ပုံသေ နေ → **sky dome shader** (camlab ပုံစံ) · ဒါပေမဲ့ `setTime` (dusk 0→1→night 2) ကို **ဆက်ထောက်ပံ့** — SKY/NIGHT stop ၄ ခု ကို dome shader uniform အဖြစ် ထည့်၊ နေ ကမ္ဘာ ပုံသေ ဦးတည်ချက် + dusk အလိုက် နိမ့်/နီ · ကြယ် (night) ပါ
 - `paintSky` hook (ရှိပြီး — ပိတောက်ပွင့် စတာ) ဆက်အလုပ်လုပ်ရ — မရရင် ဘာ ပျက်လဲ plan ထဲ ပြော
@@ -46,6 +67,9 @@
 - `yangon/set.js` code-built အဆောက်အအုံ: ဆိုင်းဘုတ်/ပြတင်း/အစွန်းအထင်း ရှေ့မျက်နှာစာ တစ်ဖက်တည်း → ၄ ဘက်လုံး (ဘေး/နောက် = ပြတင်း + ပိုက်/ရေတိုင်ကီ/လျှော်ထားတဲ့ အဝတ် — ရှေ့ထက် ရိုးရိုး)
 - **hero အဆောက်အအုံ ၃ ခု glTF** (`art/building.py` ပုံစံ ထပ်ရေး): မုန့်ဟင်းခါးဆိုင် + ဟင်းရွက်ဆိုင် (ဆိုင်ချင်းကပ်)၊ `{နာမည်}` အိမ်၊ မဏ္ဍပ် (ရက် ၁ ပုံ) — ကျန်တာ code-built ပဲ
 - ကင်မရာ လှည့်ရင် ဘာမှ "အပေါက်" မမြင်ရ — ၄ ထောင့် screenshot
+
+### ၄-ခ။ ထပ်ထည့် (2026-10-31)
+- `fonts/NotoSansMyanmar-*.woff2` self-host + `@font-face` (yangon.html, war.html, cast.html, camlab.html) + `sw.js` cache · lil-gui panel `?tune` — ကင်မရာ lag / elevation curve / zoom ကန့်သတ် / fade opacity ချိန်ပြီး `console` ကနေ JSON copy
 
 ### ၅။ မလုပ်ရ
 - navmesh/NPC လမ်းရှာ (life.js collide ဆက်သုံး — T3) · Rapier · ဇာတ်လမ်း · `chibi.js` `cast.js` `war.js`
@@ -118,18 +142,125 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 
 ## T3 ရေပက် core loop
 
-**ရည်ရွယ်ချက်** — ရက် ၄ ဇာတ်လမ်း scene မဆောက်ခင် **ပက်ရတာ လက်ထဲ ကောင်းမကောင်း** ချိန်။ `war.js` ပေါ် ထပ်ဆောက်။ T2 ကင်မရာ ပြီးမှ (လှည့်ရင်း ချိန်ပစ်)။
+**ရည်ရွယ်ချက်** — ဂိမ်းရဲ့ ပင်မ = ရေပက်တာ။ `yangon/war.js` (grit / OUT / ရေအိုးစင် / ၃ ပွဲ / faceAim ရှိပြီး) ပေါ်မှာ **ပက်ရတာ လက်ထဲ ကောင်းအောင်** ချိန်၊ ပြီးမှ ဇာတ်လမ်း scene (T3b)။ ဖန်တီးသူ ကိုယ်တိုင် ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 ဆိုတာ ဖြေနိုင်ရမယ်။
 
-**Library** — **three.quarks** (particle + browser VFX editor → JSON; ပြွတ် ရေလုံး + ribbon trail၊ ပူဖောင်း ပေါက် ရေစက်၊ ပုံး ရေကူး) · `DecalGeometry` (three addons — နံရံ/ကြမ်း/ဇာတ်ကောင်ပေါ် ရေစို အကွက်) · ground **wet-map** (RenderTarget ပေါ် စက်ဝိုင်း ဆွဲ၊ ကြာရင် ခြောက် — ~၄၀ ကြောင်း၊ library မလို) · `Water2` (ချောင်း၊ ရေစည်) · Vibration API (Android ၃၀ms)။ **မသုံး**: postprocessing (ဖုန်း လေး — T3 ပြီးမှ ပြန်စဉ်းစား)၊ fluid sim၊ three-nebula။
+**ကြိုတင်** — T2 (#30) merge ပြီးမှ `war.html` ကို `camera:'orbit'` ပြောင်း (လှည့်ရင်း ချိန်ပစ်)။ **T2 မပြီးခင် စလို့ရတာ**: A/B/C/D (iso ကင်မရာနဲ့ စမ်း) — ဒါပေမဲ့ `world.js`/`life.js` မထိ။ `docs/plans/T3.md` အရင်။ Branch `claude/water`။
 
-**ခံစားမှု checklist (၅ ချက်လုံး ရှိမှ ✅)**
-1. **ထိတဲ့ခဏ** — hit-stop ~၄၀ms · ကင်မရာ ခဏ ယိမ်း · ခံရသူ squash · `drop` emote · `splat` အသံ
-2. **လက်နက် ၃ မျိုး လက်ထဲ မတူ** — ပြွတ် = ဖြောင့်/မြန်/ရေ ကုန်မြန် · ပူဖောင်း = ကွေး၊ ထောင့်ချိုး ကျော်၊ ကျတဲ့နေရာ ဝိုင်းစို · ပုံး = နီး၊ ကျယ်၊ တစ်ခါတည်း ကုန်
-3. **ရေ ကုန်/ဖြည့်** — ကျောပိုးပုံး HUD ကျ · ကုန်ခါနီး ပြွတ်က စက်စက် ကျ (particle နည်း) · ရေစည်မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့်
-4. **ရွှဲတာ မြင်ရ** — ဆံပင် ပြား/အင်္ကျီ ရင့် (ရှိပြီ) + ကြမ်းပြင် wet-map + ပစ်မှတ်ပေါ် decal
-5. **ချိန်ပစ်** — ကင်မရာ လှည့်ရင်း reticle၊ ထောင့်ချိုး ကျော် ပူဖောင်း arc ပြ
+**ဖိုင်** — T3 ပိုင် = `yangon/war.js` · `war.html` · 🆕 `fx.js` (particle/decal/wet-map) · 🆕 `rules.js` (စည်းကမ်း — T3b/T5 ပြန်သုံး) · `carry.js` (hit ချိတ် ၁ ကြောင်း)။ T2 merge ပြီးမှ: `yangon/life.js` → `bike.js` ပြောင်းသုံး (T4 ကျန်)။ `chibi.js` မထိ (lob/bigthrow ရှိပြီး)။
 
-**စစ်ဆေးပုံ** — ဖုန်း (375px) မှာ ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် 30fps အောက် မကျ · ကစားသူ ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 — ဒါ ဖန်တီးသူ ကိုယ်တိုင် ဆုံးဖြတ်။
+### A. လက်နက် ၃ မျိုး — လက်ထဲ မတူရ
+| | ပြွတ် (စတီး) | ပူဖောင်း | ပုံး |
+|---|---|---|---|
+| ပစ်ပုံ | ဖိထား → ဖြောင့် stream၊ အကွာ ၆ m | ချိန် → `lob` ကွေး (arc ပြ)၊ ထောင့်ချိုး ကျော်၊ ကျရာ ဝိုင်း .၈ m စို | နီး ၁.၅ m၊ ကျယ် ၉၀°၊ တစ်ခါတည်း ကုန် |
+| ရေ ကုန် | ၁ စက္ကန့် = ၁၀% | ၁ လုံး = ၁၅% | ၁ ခါ = ၁၀၀% |
+| ထိရင် | grit −.15/s | −.35 | −.6 + knockback |
+| အသံ | `pssh` ဆက် | `splat` | `whoosh`+`splash` |
+war.js မှာ ပြွတ်/ပူဖောင်း ရှိပြီး → ပုံး ထည့်၊ ၃ ခု ကွာခြားမှု ဒီဇယားအတိုင်း ချိန် · လက်နက် ပြောင်း R (ရှိ)
+
+### B. ရေ = ကျည်
+ကျောပိုးပုံး HUD (ရှိ) · **ကုန်ခါနီး ၂၀% အောက်** ပြွတ်က stream အားနည်း + စက်စက် ကျ (particle နည်း) · ရေအိုးစင် (ရှိ) / ရေစည် / ပိုက်ခေါင်း မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့် animation (၁.၅ s၊ ဖြည့်နေတုန်း ပက်ခံရရင် ပျက်) · ဖိုးကျော် `supply` role (war.js — ရေကုန်ခါနီးသူဆီ ဆီပုံး သယ်ပေး၊ T4 bike rack နဲ့)
+
+### C. ထိတဲ့ခဏ (game feel)
+1. hit-stop **၄၀ ms** (world `dt` ကို ၀ ၂–၃ frame) · ကင်မရာ ယိမ်း .၁၅ s (orbit target offset)
+2. ခံရသူ squash (`sy .85` ၁ frame → ပြန်) + `drop` emote + ဆံပင် ပြား/အင်္ကျီ ရင့် (ရှိ) + မျက်နှာ `wet` (CHARACTERS §၁၄)
+3. ပစ်သူ — ပြွတ် recoil .၀၅ m၊ ပူဖောင်း ပစ်ရင် `lob` + ခြေလှမ်း
+4. OUT ဖြစ်ရင် — `shake` + ခေါင်းပေါ် 「OUT」 (ရှိ) + အသံ
+5. ဖုန်း Vibration API ၃၀ ms (Android)
+
+### D. ရွှဲတာ မြင်ရ (`fx.js`)
+- **three.quarks** (CDN) — ပြွတ် stream = ribbon + droplet · ပူဖောင်း ပေါက် = burst ၃၀ · ပုံး = sheet + droplet · ကုန်ခါနီး drip။ Browser VFX editor နဲ့ ချိန်ပြီး JSON `fx/*.json` သိမ်း (ဖန်တီးသူ ကိုယ်တိုင် ချိန်လို့ရအောင်)
+- `DecalGeometry` — နံရံ/ဒရမ်/ကလေးပေါ် ရေစို အကွက် (`wet #2aa7b8`၊ ၆ s ကြာ ပျောက်)၊ decal ≤ ၆၀ ခု pool
+- **wet-map** — ကြမ်းပြင် RenderTarget 512² ပေါ် စက်ဝိုင်း ဆွဲ၊ ၂၀ s ကြာ ခြောက် · ဘယ်ဘက် ပက်ပြီးပြီလဲ မြင်ရ (library မလို)
+- `Water2` — ရေအိုးစင်/ရေစည် ရေမျက်နှာပြင်
+- ဖုန်း: particle ≤ ၂,၀၀၀၊ LEVELS low မှာ decal/wet-map ပိတ်
+
+### E. မရေးထားတဲ့ စည်းကမ်း (`rules.js` — v5 ကနေ ယူ)
+1. တိုက်ရင် **အသံ မထွက်** — နိုင်မှ 「ဟေး!」 (bubble မပြ၊ emote ပဲ)
+2. grit ကုန်ရင် **OUT** → ရှေ့ မတက်ရ၊ ရေအိုးစင် ပြန် (ရှိ)
+3. **OUT ကို မပက်ရ** (ရှိ) — ပက်မိရင် ပက်သူ grit −.3 + 「ဟဲ့!」 (ဒဏ်)
+4. **မဏ္ဍပ်ထဲ မသွင်းရ** — မဏ္ဍပ် zone ထဲ ရောက်ရင် ပက်ခလုတ် ပိတ်
+5. ထိုင်နေသူ/လူကြီး/ဘုန်းကြီး မပက်ရ (DIRECTION — ရှိ)
+HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင်း ပြ · ဒီ module ကို T5/T6 ရပ်ကွက်ထဲ ရေပက်တာမှာလည်း သုံး
+
+### F. NPC — **Yuka** steering
+- `SeekBehavior`/`ArriveBehavior` + `ObstacleAvoidance` (ဒရမ်/နံရံ) + `Alignment/Cohesion/Separation` (flock — ၁၀ ယောက် အတူ ပြေး T3b) · state machine: `advance / hold / flank / retreat(OUT) / refill / supply`
+- သူရ = `ambush` (ထောင့်မှာ စောင့်၊ faceAim) · ငဇွဲ = `advance` ပုံသေ · မေသူ = နောက်တန်း lob · ချိုချို = `hide-behind`
+- war.js ရဲ့ `STANCE`/`think` ကို Yuka ဖြင့် အစားထိုး (၅၁၂ ကြောင်းထဲ AI အပိုင်း ပြန်ရေး) — လမ်းရှာက grid A* ကိုယ်ပိုင် (T1 review #3)
+
+### G. carry ချိတ်
+`hit(k)` ထဲ `carry.hit(k)` ၁ ကြောင်း — ကိုင်ထားတဲ့ item ယိမ်း/ကျ (T4) · OUT ဖြစ်ရင် item ကျ
+
+### H. ကိရိယာ
+- lil-gui `?tune`: hit-stop ms · ကင်မရာ ယိမ်း · လက်နက် ၃ မျိုး ဂဏန်း (အကွာ၊ ရေကုန်၊ grit) · particle အရေအတွက် — ဖန်တီးသူ ချိန်ပြီး JSON → `rules.js`/`fx/*.json` · `PositionalAudio` — ပြွတ်/ပူဖောင်း/ပုံး/ဘဲလ် အသံကို ဇာတ်ကောင်ပေါ် ချိတ် (sound.js ရှိပြီးသား buffer သုံး)
+
+### ✅ ပြီးတယ် ဆိုတာ
+- C ၅ ချက်လုံး ရှိ (screenshot/video) · A ၃ မျိုး ကိုင်ကြည့်ရင် ကွဲ · B ကုန်/ဖြည့် loop
+- ဖုန်း (375, LEVELS low) ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် **≥ 30 fps** · laptop 60
+- Yuka NPC ၅v၅ ၃ ပွဲ ကိုယ်တိုင် ဆော့ — NPC က ဒရမ်မှာ မငြိ၊ OUT ဆို ပြန်
+- `fx/*.json` ၄ ခု + editor ဖွင့်ပုံ README
+- console error 0 · `docs/plans/T3.md` + PR
+- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ်
+
+### မလုပ်ရ
+`world.js` `chibi.js` `cast.js` · ဇာတ်လမ်း scene (T3b) · ပြောမှ commit
+
+---
+
+## T3b ရက် ၄ vertical slice (T2 + T3 ပြီးမှ)
+
+တံတားထိပ် ၅v၅ (T3 ပွဲ ၃ ပွဲ) → ၄-၄ ဖလား ချောင်းထဲ (**script**: ပွဲ ၂ အလယ်မှာ kinematic ဖလား + ချောင်းဘက် တွန်းအား — T1 review #4) → ၄-၅ ၁၀ ယောက် အတူ ဆယ် (co-op mini: ကြိုး+ပူဖောင်း ပစ် `bigthrow`၊ ④ ပြွတ် ၅ ချောင်း ရေထိုး၊ ချိုချို 「ရေက ဒီဘက်」၊ Yuka flock) → ၄-၆ ၅ နာရီ timer ပြေး (ဖိုးကျော် စက်ဘီး rack ပေါ် `{နာမည်}`+ဖလား၊ ဖိုးဝ၊ ဈေး အမေ ၂ ယောက်) → ၄-၇ ဘွားဘွား ရယ် (CHARACTERS §၁၄ `joy`၊ ဆရာကြီး 「ကောင်းတယ်」) → ၄-၈ `pour` + လူကြီးတွေကိုပါ ရေပက်။ Spec အသေးစိတ် T3 review ပြီးမှ။
+
+---
+
+## T5 ရက် ၁ + ရက်စဉ် system
+
+**ရည်ရွယ်ချက်** — SCENARIO v6 §၃ ရက် ၁ (၁-၁ → ၁-၈) ကို **အစကနေ အဆုံး ကစားလို့ရ**အောင် — ပြီးတော့ ရက် ၂–၄ ပြန်သုံးမယ့် **ရက်စဉ် system** (မနက် အမေ → mission → ၅ နာရီ မဏ္ဍပ် → ည 「ဘာလုပ်ခဲ့လဲ」)။ ကစားသူ ပထမဆုံး ထိတဲ့ ၁၅ မိနစ်။
+
+**ကြိုတင်** — T2 (#30) merge ပြီးမှ (yangon/* ကို T2 ပိုင်နေလို့)။ T3 ရဲ့ `rules.js` ရှိရင် သုံး၊ မရှိသေးရင် ရေပက် ခလုတ် ပိတ်/ဖွင့် ရိုးရိုးနဲ့ (T3 merge ရင် ပြောင်း)။ `docs/plans/T5.md` အရင်။ Branch `claude/day1`။
+
+**ဖိုင်** — T5 ပိုင် = `yangon/main.js` (favour ၉ ခု flow **ဖြုတ်** → ရက် ၁ flow) · `yangon/save.js` (ERRANDS/ITEMS ဖြုတ် → `S.day S.step S.parts S.night[]`၊ KEY bump — v4 save ဖျက်) · `yangon/hud.js` (ရည်မှန်းချက် စာကြောင်း + ည ရွေးစရာ ၂ ခု) · 🆕 `yangon/day.js` · 🆕 `yangon/mandat.js` · 🆕 `yangon/story.js` · `yangon/set.js` (ကွက်လပ် မဏ္ဍပ်နေရာ၊ ④ ခြံစည်းရိုး)။ **မထိ**: `world.js` `camera.js` (T2) · `war.js` `fx.js` (T3) · `chibi.js` `carry.js` (T4 ✅ — သုံးရုံ)။ `downtown.js` ⑤ = v6 ဇာတ်မှာ မပါ — code ထား၊ ရက် ၁ မှာ မရောက်ရ (ဘတ်စ်ကား ဖြုတ်)။
+
+### ၁။ `day.js` — ရက်စဉ် system (ရက် ၁–၄ တူ)
+| phase | ဖြစ်တာ | code |
+|---|---|---|
+| `morning` | အိမ်ထဲ နိုး · အမေ: သွားလို့ရတဲ့ နေရာ + 「၅ နာရီ」 (ရက် ၁ = လမ်းထဲကပဲ → `range` = ① ပဲ၊ ဈေး/④ ဝင်ရင် အမေ့အသံ 「`{နာမည်}`!」 ပြန်ပို့) | `setTime(0)` · `range` polygon |
+| `day` | ဂိုဏ်း စု → mission · HUD ရည်မှန်းချက် (SCENARIO §၀ ဇယား) | `goal(text)` |
+| `five` | ၅ နာရီ — မဏ္ဍပ်မှာ ပစ္စည်း တင် (`mandat.add`) · ဆရာကြီး ဝီစီ + 「ဟွန်း… မဆိုးဘူး」 · ဖလား နေရာ ပြ (ရက် ၂ ကစ) | `setTime(.6)` ရွှေရောင် |
+| `night` | အိမ်ထဲ · အမေ/ဘွားဘွား မေးခွန်း → **ရွေးစရာ ၂ ခု** (hud menu) — ဘာရွေးရွေး ဇာတ် မပြောင်း၊ 「…」 ရွေးရင် `{နာမည်}` နားရွက် နီ (chibi `redEar`) · `S.night.push(choice)` · အိပ် → 「ရက် N」 title | `setTime(1.7)` |
+ရက် ၁ ပြီးရင် 「ရက် ၂ — မကြာခင်」 card (T6)။ `?day=1&step=…` debug param။
+
+### ၂။ `mandat.js` — ကြီးလာတဲ့ မဏ္ဍပ် (progress မြင်ရ)
+ကွက်လပ် (set.js ရှိပြီး) မှာ ပုံသေ နေရာ · `parts`: `floor` `cloth` `speaker` `lights` (ရက် ၁) · `sign` (ရက် ၂) · `drum`+`ice` (ရက် ၃) · `bowl` (ရက် ၄) · `add(part)` → ghost → ပေါ် animation (`lift`) · မဏ္ဍပ်ပေါ် ဖလား ထိုင်ရာ (၁-၆ ဘွားဘွား တင်) · main.js ရဲ့ favour-part ghost ပုံစံ ပြန်သုံးလို့ရ · ရေပက်စစ် zone (rules #4) = မဏ္ဍပ် ပတ်လည် ၂ m
+
+### ၃။ `story.js` — scene data (စကားပြော SCENARIO v6 အတိုင်း၊ ဗမာလို၊ calque မပါ)
+`{ id:'1-7', when: 'day', lines:[[who,'…', {face:'shock'}]], then: … }` · hud.say (ရှိ) နဲ့ ပြ · မျက်နှာ CHARACTERS §၁၄ (`anim.face` ရှိရင်၊ မရှိရင် expr/mouth) · ၃၀ စက္ကန့် ထက် မပို
+
+### ၄။ ရက် ၁ scene (SCENARIO §၃ အတိုင်း)
+| | ဘာ | reuse / အသစ် |
+|---|---|---|
+| ၁-၁ | နိုး · အမေ · ဘွားဘွား ဖလား ပွတ် (plant) · လမ်းလျှောက်/ပြေး/ခုန် သင် | rooms.js အိမ် (ရှိ) · 🆕 ဘွားဘွား NPC + ငွေဖလား prop (carry.js `bowl`) |
+| ၁-၂ | ဂိုဏ်း စု (ငဇွဲ → ဖိုးကျော် စက်ဘီး → မေသူ → ချိုချို ချောင်း) · **လက်နက် ၃ မျိုး သင်** (ပြွတ်/ပူဖောင်း/ပုံး — ကစားသူ ပူဖောင်း ရ) · HUD 「ဂိုဏ်း စု — မဏ္ဍပ် ဆောက်မယ်」 | main.js kids (ရှိ) · cast.js ဇာတ်ကောင် opts · war.js လက်နက် code (T3 မပြီးရင် ရိုးရိုး splash) |
+| ၁-၃ M1 ပိတ်စ | အန်တီစိန် ၄ ထပ် ကြိုးပုံး — **ရေ**: ပုံး ဗလာ ဆို လေလို့ မဆင်း → အောက်က **ပုံးထဲ ရေ ပက်ထည့်** (ပြွတ် ချိန်) → လေးလာ → ဆင်း၊ ပိတ်စ ပါ · ၂ ယောက် (ငဇွဲ ပက်၊ `{နာမည်}` ခံ) | pulley.js (ရှိ) + ရေ ထည့်တာ 🆕 |
+| ၁-၄ M2 အသံချဲ့စက် | ကြောင် ရွှေဝါ စက်ပေါ် — **ကြောင်ကို မပက်ရ** (rules #5 ပုံစံ) · ဘေးက သွပ်မိုး ပက် → အသံ → ကြောင် ခုန် → ချိုချို 「ငါးခြောက်」 ချော့ · စက် ၂ ယောက် မ | main.js cat (ရှိ) + သွပ်မိုး target 🆕 |
+| ၁-၅ M3 မီးကြိုး | ကိုဇော် မီးသီး ပဟေဠိ (ရှိ) · **ရေထိရင် ပြန်စ** — ကလေးတွေ ဘေးမှာ ပက်နေ၊ `{နာမည်}` ပုံးနဲ့ ကာ (carry `front`) / ကိုဇော် 「ရေနဲ့ မီး」 | bulbs.js (ရှိ) + ရေ ကာတာ 🆕 |
+| ၁-၆ | ၅ နာရီ · မဏ္ဍပ် ပထမပုံ (`mandat.add ×4`) · ဆရာကြီး 「ဟွန်း… မဆိုးဘူး」 · ဘွားဘွား ဖလား တင် 「မကိုင်နဲ့」 | 🆕 |
+| ၁-၇ | **ဖလား ပျောက်** — ငဇွဲ 「တစ်ချက်တည်း」 · `{နာမည်}` ဖလား ကောက် (carry `front`) · ရေခပ် · **ပစ် mini**: အားဖြည့် bar → `bigthrow` → **ဘယ်လိုပဲ ပစ်ပစ် ချော်** (script — ကစားသူ အမှား မဟုတ်ဘူး ဆိုတာ မြင်အောင် ဖလား လက်က ချော်တဲ့ ပုံ + 「ဟာ」) → ④ ခြံစည်းရိုး ကျော် → 「ဒင်း」 သံ + ④ ကလေးအသံ · အမေ 「၅ နာရီ!」 · ကတိ scene (မေသူ စာအုပ် `note`၊ ချိုချို လက်) · HUD 「ဖလား… ဘယ်သူမှ မပြောရ」 | carry.js throw + script 🆕 · set.js ④ ခြံစည်းရိုး 🆕 |
+| ၁-၈ | ည · ဘွားဘွား 「ဖလား ရှိတယ်နော်」 → ရွေးစရာ 「ရှိတယ်」/「…」 → နားရွက် နီ · အိပ် → 「ရက် ၂」 | day.js night |
+
+### ၅။ ဖြုတ်ရမှာ
+main.js favour ၉ ခု (tea/padauk/fronds/drum/nozzle) + Mandalay ဘတ်စ်ကား + Phoe Tha သူငယ်ချင်း · save.js ERRANDS · ⑤ downtown ရောက်လမ်း (ဘတ်စ်ကား) — code ဖိုင် မဖျက်၊ flow ကပဲ မခေါ်။ `docs/archive/` မှာ v4 flow ရှိနေလို့ မှတ်စရာ မလို
+
+### ✅ ပြီးတယ် ဆိုတာ
+- new game → ၁-၁ … ၁-၈ → 「ရက် ၂」 အထိ **၁၂–၁၅ မိနစ်** ကစားလို့ရ · scene တိုင်း screenshot ၁ ပုံ
+- HUD ရည်မှန်းချက် ၂ ခါ ပြောင်း (၁-၂၊ ၁-၇) · range ① ပဲ (ဈေး ဝင်ရင် အမေ ပြန်ခေါ်)
+- M1–M3 ၃ ခုလုံး ရေပက်ရင်း ဖြေရ (ရေ မပါ mission မရှိ)
+- ၁-၇ ပစ်တာ ၃ ကြိမ် စမ်း — ဘယ်လိုပဲ ပစ်ပစ် ဖလား ④ ဘက် ရောက်
+- ည ရွေးစရာ ၂ ခုလုံး စမ်း — 「…」 ဆို နားရွက် နီ · save/reload ရက်လယ်မှာ ပြန်ဆက်လို့ရ
+- စကားပြော ဗမာလို SCENARIO အတိုင်း (Fable review မှာ calque စစ်မယ်)
+- ဖုန်း 375 · console error 0 · laptop 60fps · `docs/plans/T5.md` + PR
+
+### မလုပ်ရ
+ရက် ၂–၄ content · `world.js` `war.js` `chibi.js` · ⑤ downtown ပြင်တာ · ပြောမှ commit
 
 ---
 
