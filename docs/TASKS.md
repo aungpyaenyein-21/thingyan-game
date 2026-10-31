@@ -10,14 +10,15 @@
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | ⏳ spec ✅ — စလို့ရပြီ | အခြား model · branch `claude/camera` |
-| T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | ⏳ spec ✅ — A–D အခု စလို့ရ၊ orbit က T2 ပြီးမှ | အခြား model · branch `claude/water` |
+| T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
-အစဉ်: T1 → T2 ∥ T4 (ဖိုင် မထပ်: T2 = world/yangon/art, T4 = chibi/cast/carry/bike) → T3 → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T3b → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -118,18 +119,70 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 
 ## T3 ရေပက် core loop
 
-**ရည်ရွယ်ချက်** — ရက် ၄ ဇာတ်လမ်း scene မဆောက်ခင် **ပက်ရတာ လက်ထဲ ကောင်းမကောင်း** ချိန်။ `war.js` ပေါ် ထပ်ဆောက်။ T2 ကင်မရာ ပြီးမှ (လှည့်ရင်း ချိန်ပစ်)။
+**ရည်ရွယ်ချက်** — ဂိမ်းရဲ့ ပင်မ = ရေပက်တာ။ `yangon/war.js` (grit / OUT / ရေအိုးစင် / ၃ ပွဲ / faceAim ရှိပြီး) ပေါ်မှာ **ပက်ရတာ လက်ထဲ ကောင်းအောင်** ချိန်၊ ပြီးမှ ဇာတ်လမ်း scene (T3b)။ ဖန်တီးသူ ကိုယ်တိုင် ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 ဆိုတာ ဖြေနိုင်ရမယ်။
 
-**Library** — **three.quarks** (particle + browser VFX editor → JSON; ပြွတ် ရေလုံး + ribbon trail၊ ပူဖောင်း ပေါက် ရေစက်၊ ပုံး ရေကူး) · `DecalGeometry` (three addons — နံရံ/ကြမ်း/ဇာတ်ကောင်ပေါ် ရေစို အကွက်) · ground **wet-map** (RenderTarget ပေါ် စက်ဝိုင်း ဆွဲ၊ ကြာရင် ခြောက် — ~၄၀ ကြောင်း၊ library မလို) · `Water2` (ချောင်း၊ ရေစည်) · Vibration API (Android ၃၀ms)။ **မသုံး**: postprocessing (ဖုန်း လေး — T3 ပြီးမှ ပြန်စဉ်းစား)၊ fluid sim၊ three-nebula။
+**ကြိုတင်** — T2 (#30) merge ပြီးမှ `war.html` ကို `camera:'orbit'` ပြောင်း (လှည့်ရင်း ချိန်ပစ်)။ **T2 မပြီးခင် စလို့ရတာ**: A/B/C/D (iso ကင်မရာနဲ့ စမ်း) — ဒါပေမဲ့ `world.js`/`life.js` မထိ။ `docs/plans/T3.md` အရင်။ Branch `claude/water`။
 
-**ခံစားမှု checklist (၅ ချက်လုံး ရှိမှ ✅)**
-1. **ထိတဲ့ခဏ** — hit-stop ~၄၀ms · ကင်မရာ ခဏ ယိမ်း · ခံရသူ squash · `drop` emote · `splat` အသံ
-2. **လက်နက် ၃ မျိုး လက်ထဲ မတူ** — ပြွတ် = ဖြောင့်/မြန်/ရေ ကုန်မြန် · ပူဖောင်း = ကွေး၊ ထောင့်ချိုး ကျော်၊ ကျတဲ့နေရာ ဝိုင်းစို · ပုံး = နီး၊ ကျယ်၊ တစ်ခါတည်း ကုန်
-3. **ရေ ကုန်/ဖြည့်** — ကျောပိုးပုံး HUD ကျ · ကုန်ခါနီး ပြွတ်က စက်စက် ကျ (particle နည်း) · ရေစည်မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့်
-4. **ရွှဲတာ မြင်ရ** — ဆံပင် ပြား/အင်္ကျီ ရင့် (ရှိပြီ) + ကြမ်းပြင် wet-map + ပစ်မှတ်ပေါ် decal
-5. **ချိန်ပစ်** — ကင်မရာ လှည့်ရင်း reticle၊ ထောင့်ချိုး ကျော် ပူဖောင်း arc ပြ
+**ဖိုင်** — T3 ပိုင် = `yangon/war.js` · `war.html` · 🆕 `fx.js` (particle/decal/wet-map) · 🆕 `rules.js` (စည်းကမ်း — T3b/T5 ပြန်သုံး) · `carry.js` (hit ချိတ် ၁ ကြောင်း)။ T2 merge ပြီးမှ: `yangon/life.js` → `bike.js` ပြောင်းသုံး (T4 ကျန်)။ `chibi.js` မထိ (lob/bigthrow ရှိပြီး)။
 
-**စစ်ဆေးပုံ** — ဖုန်း (375px) မှာ ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် 30fps အောက် မကျ · ကစားသူ ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 — ဒါ ဖန်တီးသူ ကိုယ်တိုင် ဆုံးဖြတ်။
+### A. လက်နက် ၃ မျိုး — လက်ထဲ မတူရ
+| | ပြွတ် (စတီး) | ပူဖောင်း | ပုံး |
+|---|---|---|---|
+| ပစ်ပုံ | ဖိထား → ဖြောင့် stream၊ အကွာ ၆ m | ချိန် → `lob` ကွေး (arc ပြ)၊ ထောင့်ချိုး ကျော်၊ ကျရာ ဝိုင်း .၈ m စို | နီး ၁.၅ m၊ ကျယ် ၉၀°၊ တစ်ခါတည်း ကုန် |
+| ရေ ကုန် | ၁ စက္ကန့် = ၁၀% | ၁ လုံး = ၁၅% | ၁ ခါ = ၁၀၀% |
+| ထိရင် | grit −.15/s | −.35 | −.6 + knockback |
+| အသံ | `pssh` ဆက် | `splat` | `whoosh`+`splash` |
+war.js မှာ ပြွတ်/ပူဖောင်း ရှိပြီး → ပုံး ထည့်၊ ၃ ခု ကွာခြားမှု ဒီဇယားအတိုင်း ချိန် · လက်နက် ပြောင်း R (ရှိ)
+
+### B. ရေ = ကျည်
+ကျောပိုးပုံး HUD (ရှိ) · **ကုန်ခါနီး ၂၀% အောက်** ပြွတ်က stream အားနည်း + စက်စက် ကျ (particle နည်း) · ရေအိုးစင် (ရှိ) / ရေစည် / ပိုက်ခေါင်း မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့် animation (၁.၅ s၊ ဖြည့်နေတုန်း ပက်ခံရရင် ပျက်) · ဖိုးကျော် `supply` role (war.js — ရေကုန်ခါနီးသူဆီ ဆီပုံး သယ်ပေး၊ T4 bike rack နဲ့)
+
+### C. ထိတဲ့ခဏ (game feel)
+1. hit-stop **၄၀ ms** (world `dt` ကို ၀ ၂–၃ frame) · ကင်မရာ ယိမ်း .၁၅ s (orbit target offset)
+2. ခံရသူ squash (`sy .85` ၁ frame → ပြန်) + `drop` emote + ဆံပင် ပြား/အင်္ကျီ ရင့် (ရှိ) + မျက်နှာ `wet` (CHARACTERS §၁၄)
+3. ပစ်သူ — ပြွတ် recoil .၀၅ m၊ ပူဖောင်း ပစ်ရင် `lob` + ခြေလှမ်း
+4. OUT ဖြစ်ရင် — `shake` + ခေါင်းပေါ် 「OUT」 (ရှိ) + အသံ
+5. ဖုန်း Vibration API ၃၀ ms (Android)
+
+### D. ရွှဲတာ မြင်ရ (`fx.js`)
+- **three.quarks** (CDN) — ပြွတ် stream = ribbon + droplet · ပူဖောင်း ပေါက် = burst ၃၀ · ပုံး = sheet + droplet · ကုန်ခါနီး drip။ Browser VFX editor နဲ့ ချိန်ပြီး JSON `fx/*.json` သိမ်း (ဖန်တီးသူ ကိုယ်တိုင် ချိန်လို့ရအောင်)
+- `DecalGeometry` — နံရံ/ဒရမ်/ကလေးပေါ် ရေစို အကွက် (`wet #2aa7b8`၊ ၆ s ကြာ ပျောက်)၊ decal ≤ ၆၀ ခု pool
+- **wet-map** — ကြမ်းပြင် RenderTarget 512² ပေါ် စက်ဝိုင်း ဆွဲ၊ ၂၀ s ကြာ ခြောက် · ဘယ်ဘက် ပက်ပြီးပြီလဲ မြင်ရ (library မလို)
+- `Water2` — ရေအိုးစင်/ရေစည် ရေမျက်နှာပြင်
+- ဖုန်း: particle ≤ ၂,၀၀၀၊ LEVELS low မှာ decal/wet-map ပိတ်
+
+### E. မရေးထားတဲ့ စည်းကမ်း (`rules.js` — v5 ကနေ ယူ)
+1. တိုက်ရင် **အသံ မထွက်** — နိုင်မှ 「ဟေး!」 (bubble မပြ၊ emote ပဲ)
+2. grit ကုန်ရင် **OUT** → ရှေ့ မတက်ရ၊ ရေအိုးစင် ပြန် (ရှိ)
+3. **OUT ကို မပက်ရ** (ရှိ) — ပက်မိရင် ပက်သူ grit −.3 + 「ဟဲ့!」 (ဒဏ်)
+4. **မဏ္ဍပ်ထဲ မသွင်းရ** — မဏ္ဍပ် zone ထဲ ရောက်ရင် ပက်ခလုတ် ပိတ်
+5. ထိုင်နေသူ/လူကြီး/ဘုန်းကြီး မပက်ရ (DIRECTION — ရှိ)
+HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင်း ပြ · ဒီ module ကို T5/T6 ရပ်ကွက်ထဲ ရေပက်တာမှာလည်း သုံး
+
+### F. NPC — **Yuka** steering
+- `SeekBehavior`/`ArriveBehavior` + `ObstacleAvoidance` (ဒရမ်/နံရံ) + `Alignment/Cohesion/Separation` (flock — ၁၀ ယောက် အတူ ပြေး T3b) · state machine: `advance / hold / flank / retreat(OUT) / refill / supply`
+- သူရ = `ambush` (ထောင့်မှာ စောင့်၊ faceAim) · ငဇွဲ = `advance` ပုံသေ · မေသူ = နောက်တန်း lob · ချိုချို = `hide-behind`
+- war.js ရဲ့ `STANCE`/`think` ကို Yuka ဖြင့် အစားထိုး (၅၁၂ ကြောင်းထဲ AI အပိုင်း ပြန်ရေး) — လမ်းရှာက grid A* ကိုယ်ပိုင် (T1 review #3)
+
+### G. carry ချိတ်
+`hit(k)` ထဲ `carry.hit(k)` ၁ ကြောင်း — ကိုင်ထားတဲ့ item ယိမ်း/ကျ (T4) · OUT ဖြစ်ရင် item ကျ
+
+### ✅ ပြီးတယ် ဆိုတာ
+- C ၅ ချက်လုံး ရှိ (screenshot/video) · A ၃ မျိုး ကိုင်ကြည့်ရင် ကွဲ · B ကုန်/ဖြည့် loop
+- ဖုန်း (375, LEVELS low) ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် **≥ 30 fps** · laptop 60
+- Yuka NPC ၅v၅ ၃ ပွဲ ကိုယ်တိုင် ဆော့ — NPC က ဒရမ်မှာ မငြိ၊ OUT ဆို ပြန်
+- `fx/*.json` ၄ ခု + editor ဖွင့်ပုံ README
+- console error 0 · `docs/plans/T3.md` + PR
+- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ်
+
+### မလုပ်ရ
+`world.js` `chibi.js` `cast.js` · ဇာတ်လမ်း scene (T3b) · ပြောမှ commit
+
+---
+
+## T3b ရက် ၄ vertical slice (T2 + T3 ပြီးမှ)
+
+တံတားထိပ် ၅v၅ (T3 ပွဲ ၃ ပွဲ) → ၄-၄ ဖလား ချောင်းထဲ (**script**: ပွဲ ၂ အလယ်မှာ kinematic ဖလား + ချောင်းဘက် တွန်းအား — T1 review #4) → ၄-၅ ၁၀ ယောက် အတူ ဆယ် (co-op mini: ကြိုး+ပူဖောင်း ပစ် `bigthrow`၊ ④ ပြွတ် ၅ ချောင်း ရေထိုး၊ ချိုချို 「ရေက ဒီဘက်」၊ Yuka flock) → ၄-၆ ၅ နာရီ timer ပြေး (ဖိုးကျော် စက်ဘီး rack ပေါ် `{နာမည်}`+ဖလား၊ ဖိုးဝ၊ ဈေး အမေ ၂ ယောက်) → ၄-၇ ဘွားဘွား ရယ် (CHARACTERS §၁၄ `joy`၊ ဆရာကြီး 「ကောင်းတယ်」) → ၄-၈ `pour` + လူကြီးတွေကိုပါ ရေပက်။ Spec အသေးစိတ် T3 review ပြီးမှ။
 
 ---
 
