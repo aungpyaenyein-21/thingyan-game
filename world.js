@@ -14,7 +14,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=31';
 import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=6';
 import { PAL as TONE } from './palette.js?v=1';
-import { createOrbit } from './camera.js?v=1';
+import { createOrbit } from './camera.js?v=2';
 import { createSky, createSurround } from './sky.js?v=4';
 
 export { THREE };
@@ -62,8 +62,14 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   document.body.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
   const cam = ORBIT ? new THREE.PerspectiveCamera(40, 1, .1, 260) : new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
-  const viewDist = v => THREE.MathUtils.clamp(v * .8, 5, 24); // an iso 'view' height → an orbit distance that frames about the same
-  const orbit = ORBIT ? createOrbit(cam, { dist: viewDist(VIEW) }) : null;
+  // orbit: docs/CAMERA.md — base 11 (a phone held upright 12), the player's zoom offset remembered, never inside a wall
+  const camCollide = (from, to) => { // the camera may not sit inside a building: pull it in to just short of the wall (CAMERA.md §၅)
+    let best = null;
+    for (const o of occluders) { if (!o.box.containsPoint(to) || o.box.containsPoint(from)) continue; cRay.origin.copy(from); cRay.direction.copy(to).sub(from).normalize(); const p = cRay.intersectBox(o.box, cHit); if (p) { const d = p.distanceTo(from); if (best === null || d < best) best = d; } }
+    return best;
+  };
+  const cRay = new THREE.Ray(), cHit = new THREE.Vector3(), oMove = new THREE.Vector3();
+  const orbit = ORBIT ? createOrbit(cam, { base: innerWidth < innerHeight ? 12 : 11, storageKey: 'thingyan.zoom', collide: camCollide }) : null;
   const ISO = new THREE.Vector3(1, 0.95, 1).normalize().multiplyScalar(60);
   const camTarget = new THREE.Vector3();
   scene.add(cam);
@@ -387,7 +393,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     }
     if (touch && Math.hypot(touch.x - touch.x0, touch.y - touch.y0) < 12) { fingers.set(touch.id, { x: touch.x, y: touch.y }); touch = null; home(); } // two fingers: a pinch after all
     fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (fingers.size === 2) pinch = spread();
-    if (ORBIT) { if (fingers.size === 1 && e.clientX >= innerWidth * .5) turn = { id: e.pointerId, x0: e.clientX }; else if (turn && fingers.size > 1) { orbit.drag(0); orbit.release(); turn = null; } } // a second finger: it's a pinch
+    if (ORBIT) { if (fingers.size === 1 && e.clientX >= innerWidth * .5) turn = { id: e.pointerId, x0: e.clientX }; else if (turn && fingers.size > 1) { orbit.drag(0); orbit.dragEnd(); turn = null; } } // a second finger: it's a pinch
   });
   addEventListener('pointermove', e => {
     if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; drawStick(); return; }
@@ -395,7 +401,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const f = fingers.get(e.pointerId); if (f) { f.x = e.clientX; f.y = e.clientY; }
     if (fingers.size === 2 && pinch) { const d = spread(); if (d > 10) { zoom(pinch / d); pinch = d; } }
   });
-  const endTouch = e => { if (turn && e.pointerId === turn.id) { orbit.release(); turn = null; } fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
+  const endTouch = e => { if (turn && e.pointerId === turn.id) { orbit.dragEnd(); turn = null; } fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
   addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch);
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
@@ -434,7 +440,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   composer.addPass(look);
   composer.addPass(new OutputPass());
   function fitCam() {
-    if (ORBIT) { cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 1 ? 56 : 40; cam.updateProjectionMatrix(); return; } // portrait phones: a wider lens
+    if (ORBIT) { cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 1 ? 52 : 40; cam.updateProjectionMatrix(); return; } // CAMERA.md: landscape 40°, portrait 52°
     const a = innerWidth / innerHeight, h = a < 1 ? VIEW * 1.15 / a : VIEW; // portrait phones: keep ~17 units across
     Object.assign(cam, { left: -h * a / 2, right: h * a / 2, top: h / 2, bottom: -h / 2 }); cam.updateProjectionMatrix();
   }
@@ -505,6 +511,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (ORBIT) { orbit.right(oR); orbit.forward(oF); } // the angle on screen right now (mid-turn too), so a turn never knocks you sideways
     const mv = v3.set(0, 0, 0).addScaledVector(ORBIT ? oR : RIGHT, ix).addScaledVector(ORBIT ? oF : UP, iy);
     const moving = mv.lengthSq() > .01;
+    if (moving) oMove.copy(mv).normalize();
     const loop = moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle';
     if ((!['dance', 'sit'].includes(pa.loop) || moving) && loop !== pa.loop) pa.setLoop(loop); // dancing / sitting last until you move; setLoop() drops any one-shot, so only on a real change
     if (moving && pa.speed > 0) {
@@ -580,7 +587,10 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (W.camFocus) v3.lerp(W.camFocus, .5).setY(0); // something to watch (a cat deciding whether to trust you): frame you both
     if (camBounds) { v3.x = THREE.MathUtils.clamp(v3.x, camBounds.x0, camBounds.x1); v3.z = THREE.MathUtils.clamp(v3.z, camBounds.z0, camBounds.z1); }
     else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
-    if (ORBIT) { v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3); camTarget.copy(orbit.state.target).setY(0); } // only the target is clamped to camBounds, never the camera: turning at the edge doesn't jump
+    if (ORBIT) {
+      orbit.context('talk', !!(W.frozen && W.talkWith), W.talkWith?.g.getWorldPosition(new THREE.Vector3())); // a conversation: frame the two of you (main.js talk() sets W.talkWith)
+      v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3, moving && !W.frozen ? { dir: oMove, kind: pa.loop === 'run' ? 'run' : 'walk' } : null); camTarget.copy(orbit.state.target).setY(0);
+    } // only the target is clamped to camBounds, never the camera: turning at the edge doesn't jump
     else { camTarget.lerp(v3, Math.min(1, dt * 3)); cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget); }
     sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
     if (sky) sky.follow(cam.position);
@@ -591,6 +601,18 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     composer.render(); placeBubbles();
   }
   const ticks = [];
+  // ?tune (CAMERA.md §၈): the camera's numbers live; 「JSON」 copies them so they can go back into the doc
+  async function tunePanel() {
+    try {
+      const { GUI } = await import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-gui.esm.min.js');
+      const gui = new GUI({ title: 'ကင်မရာ (?tune)' }), t = orbit.tune;
+      const f1 = gui.addFolder('follow'); f1.add(t, 'followK', .5, 10, .1); f1.add(t, 'azK', 1, 20, .5); f1.add(t, 'distOutK', .3, 8, .1); f1.add(t, 'distInK', .3, 8, .1);
+      const f2 = gui.addFolder('zoom (dist)'); f2.add(t, 'base', 6, 20, .5); for (const k of ['run', 'ride', 'war', 'talk']) f2.add(t, k, -8, 8, .5); f2.add(t, 'room', 3, 12, .5);
+      const f3 = gui.addFolder('look-ahead'); f3.add(t, 'lookWalk', 0, 4, .1); f3.add(t, 'lookRun', 0, 5, .1); f3.add(t, 'lookRide', 0, 6, .1); f3.add(t, 'lookK', .1, 3, .05);
+      const f4 = gui.addFolder('elevation · fade'); f4.add(t, 'elevMin', .05, .6, .01); f4.add(t, 'elevMax', .4, 1.4, .01); f4.add(t, 'fade', 0, 1, .05); f4.add(t, 'autoRotate');
+      gui.add({ JSON: () => { const j = JSON.stringify(t); console.log('camera tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
+    } catch (e) { console.warn('?tune: lil-gui did not load', e.message); }
+  }
   function start() { // call once the zone has built its set: flowers + petals need the trees
     bake();
     if (flowerSpots.length) {
@@ -604,6 +626,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     addEventListener('resize', resize); resize();
     addEventListener('wheel', e => zoom(1 + Math.sign(e.deltaY) * .1), { passive: true });
     snapCam();
+    if (ORBIT && P.has('tune')) tunePanel(); // ?tune: lil-gui for the camera numbers (docs/CAMERA.md §၈)
     renderer.setAnimationLoop(frame);
   }
 
@@ -634,7 +657,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     for (const o of occluders) {
       let hit = false; for (const y of [.25, 1.1]) { RAY.origin.set(p.x, p.y + y, p.z); if (between(o.box)) { hit = true; break; } }
       if (!hit && w) { RAY.origin.set(w.x, w.y + .3, w.z); hit = between(o.box); }
-      const want = hit ? .2 : 1; if (o.a === want) continue;
+      const want = hit ? (orbit?.tune.fade ?? .2) : 1; if (o.a === want) continue;
       o.a += (want - o.a) * Math.min(1, dt * 7); if (Math.abs(o.a - want) < .01) o.a = want;
       for (const c of o.mats) { c.opacity = o.a; c.depthWrite = o.a > .95; }
     }
@@ -714,9 +737,9 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // rooms: a shop interior built off the island swaps in its own walls, floor and camera box; null goes back outside
   const outside = { B, ground, camBounds, bg: null };
   function setRoom(r) { // r: { bounds, ground, camBounds, background, view }; the camera jumps straight there
-    if (!r) { B = outside.B; ground = outside.ground; camBounds = outside.camBounds; scene.background = sky ? null : skyT; if (sky) { sky.visible = true; scene.fog = outside.fog ?? scene.fog; } if (town) town.group.visible = true; if (outside.view) { VIEW = outside.view; outside.view = null; fitCam(); } if (ORBIT) { orbit.lock(null); orbit.setDist(outside.dist ?? viewDist(VIEW)); outside.dist = null; } }
+    if (!r) { B = outside.B; ground = outside.ground; camBounds = outside.camBounds; scene.background = sky ? null : skyT; if (sky) { sky.visible = true; scene.fog = outside.fog ?? scene.fog; } if (town) town.group.visible = true; if (outside.view) { VIEW = outside.view; outside.view = null; fitCam(); } if (ORBIT) orbit.context('room', false); }
     else { B = r.bounds; ground = r.ground; camBounds = r.camBounds; scene.background = new THREE.Color(r.background || '#3a2a3e'); if (sky) { sky.visible = false; outside.fog ??= scene.fog; scene.fog = null; } if (town) town.group.visible = false; if (r.view) { outside.view ??= VIEW; VIEW = r.view; fitCam(); }
-      if (ORBIT) { outside.dist ??= orbit.state.distGoal; orbit.lock(0); orbit.setDist(viewDist(r.view ?? 10) * .85); } } // inside a shop: no turning (three walls are built), a little closer
+      if (ORBIT) orbit.context('room', true, { az: r.az ?? 0 }); } // inside a shop: a cut to a fixed, closer view (three walls are built, so no turning)
     W.ground = ground; W.bounds = B;
     W.player.g.position.y = ground(W.player.g.position.x, W.player.g.position.z);
   }

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Pathfinding } from 'three-pathfinding';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { makeCast } from './cast.js?v=10';
-import { createOrbit } from './camera.js?v=1';
+import { createOrbit } from './camera.js?v=2';
 import { createSky } from './sky.js?v=4';
 import { PAL } from './palette.js?v=1';
 
@@ -136,7 +136,7 @@ const shopReady = new GLTFLoader().loadAsync('./art/shop.glb').then(gltf => {
 }).catch(e => { status('shop.glb မဖွင့်နိုင် — ' + e.message); throw e; });
 
 // ---------------------------------------------------------------- camera: follows with lag, 45° snaps, zoom, see-through buildings
-const orbit = createOrbit(cam, { dist: 11 }), camS = orbit.state; // camera.js (shared with the real game since T2)
+const orbit = createOrbit(cam, { base: 11, userMin: 5 / 11, userMax: 24 / 11 }), camS = orbit.state; // the lab keeps its full 5–24 zoom // camera.js (shared with the real game since T2)
 camS.target.copy(player.ch.root.position);
 const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 function placeCamera(dt) {
@@ -195,7 +195,7 @@ cv.addEventListener('pointermove', e => {
 const endPtr = e => {
   const p = ptrs.get(e.pointerId); if (!p) return; ptrs.delete(e.pointerId);
   if (gesture && !gesture.pinch) {
-    if (gesture.moved) orbit.release();
+    if (gesture.moved) orbit.dragEnd();
     else if (performance.now() - p.t < 400 && e.type === 'pointerup') tapAt(e.clientX, e.clientY);
   }
   if (ptrs.size === 0) gesture = null;

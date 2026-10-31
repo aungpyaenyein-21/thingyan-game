@@ -412,7 +412,7 @@ function gotPart(q) {
 if (S.step === 'build' && S.at === 'ward' && !S.toldBuild) { S.toldBuild = true; setTimeout(() => after(() => hud.say([['', 'ပစ္စည်း ကိုးမျိုးလုံး စုံပြီ။ ကလေးတွေဆီ ပြန်သွားပြီး မဏ္ဍပ်လေး ဆောက်ကြစို့!']])), 2500); } // came back from downtown with the last part
 const after = f => hud.busy() ? setTimeout(() => after(f), 400) : f();
 const ME = 'ကျွန်တော်';
-const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); };
+const talk = (lines, done, who) => { if (who) { face(who); W.talkWith = who; } hud.talk(lines, () => { W.talkWith = null; done?.(); }); }; // T2: the camera frames you and whoever you're talking to
 
 // ---------- the nine favours (the ninth is downtown: downtown.js) ----------
 function talkKids() {

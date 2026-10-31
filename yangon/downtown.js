@@ -242,7 +242,7 @@ function hud2() {
   save();
 }
 const ME = 'ကျွန်တော်', face = (c, t = W.player) => { c.g.rotation.y = Math.atan2(t.g.position.x - c.g.position.x, t.g.position.z - c.g.position.z); };
-const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); };
+const talk = (lines, done, who) => { if (who) { face(who); W.talkWith = who; } hud.talk(lines, () => { W.talkWith = null; done?.(); }); }; // T2: the camera frames you and whoever you're talking to
 function talkBoss() {
   const K = 'ရေပက်အဖွဲ့ ကိုကြီး', q = S.q.nozzle;
   if (S.step === 'quests' && q === 'ask') return talk([
