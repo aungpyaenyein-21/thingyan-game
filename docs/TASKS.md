@@ -7,7 +7,7 @@
 
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
-| T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 🔨 | အခြား model · branch `claude/camlab` |
+| T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 👀 | အခြား model · branch `claude/camlab` |
 
 ---
 
@@ -51,6 +51,13 @@
 ### မလုပ်ရ
 - `world.js`၊ `yangon/*`၊ ဂိမ်းအစစ် မထိ
 - ပြောမှ commit
+
+### ဆောက်ပြီး ရလဒ် (👀 review စောင့်)
+- ၄ ချက်လုံး ရှိ — `camlab.html` / `camlab.js` · `art/building.py` (Blender 4.2 နဲ့ တကယ် run) → `art/shop.glb` · ဆိုင်းဘုတ် စာ `art/signs.html` → `art/signs/*.png`
+- library အရွယ်အစား၊ တွေ့တဲ့ ပြဿနာ ၁၂ ချက် → `camlab.html` ထိပ်က comment
+- screenshot → `docs/camlab/*.jpg` (လှည့်ထောင့် ၂ · ဖလား လေထဲ/ဝါးတိုင်မှာ ငြိ · လက်ရန်း+ရေပူဖောင်း · ချောင်းထဲ ကျ · NPC လမ်း · ဆိုင် ၂ ဘက် · အဆောက်အအုံ ဖျော့ · ဖုန်း 375px)၊ ပြန်စစ်ရင် `node docs/camlab/check.cjs`
+- Console error ၀ (warning ၂ မျိုး — Rapier init, chibi.js ရှိပြီးသား)
+- **Laptop / ဖုန်း FPS မတိုင်းရသေး** — container မှာ GPU မရှိ။ fps စာတန်းကို စက်အစစ်မှာ ကြည့်ရန်
 
 ### ပြီးရင် (Fable review)
 - ၄ ချက်လုံး ရှိ/မရှိ · ဖုန်း performance · SCENARIO v6 ၄-၄/၄-၅ (ဖလား ချောင်းထဲ၊ ၁၀ ယောက် ဆယ်) ဒီ engine နဲ့ ဆောက်လို့ ရမရ · ဂိမ်းအစစ်ကို ပြောင်းမယ့် အစီအစဉ် (T2) ရေး
