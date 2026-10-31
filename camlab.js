@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { Pathfinding } from 'three-pathfinding';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeCast } from './cast.js?v=9';
+import { makeCast } from './cast.js?v=10';
 
 const $ = id => document.getElementById(id);
 const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]); // Burmese digits for the UI
