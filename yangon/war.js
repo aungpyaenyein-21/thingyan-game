@@ -9,6 +9,7 @@ import { createWorld } from '../world.js?v=12';
 import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=1';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
+import { createAI } from './ai.js?v=1';
 
 const P = new URLSearchParams(location.search);
 const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked
@@ -337,49 +338,22 @@ function pickRefill(k) { // the nearest free one, keeping clear of a spot the ot
     for (const o of enemies(k)) if (Math.hypot(pos(o).x - r.x, pos(o).z - r.z) < 4) c += 3; if (c < bd) { bd = c; best = r; } }
   return best;
 }
-// the alleys as a little graph: the back road, the middle alley and the creek road on each side, the cross alleys, two bridges
-const NODES = [], EDGES = [];
-for (const s of [-1, 1]) {
-  if (!ALLEY) break;
-  const xs = [16.6, 8.5, 2.1].map(x => s * x), zs = [-10.6, -4.4, 0, 4.4, 7.6, 10.6];
-  for (const x of xs) for (const z of zs) if (z !== 0 && z !== 7.6 || Math.abs(x) < 3) NODES.push({ x, z }); // z 0 and 7.6: only on the creek road (the bridges)
-}
-const at = (x, z) => NODES.findIndex(n => Math.abs(n.x - x) < .01 && Math.abs(n.z - z) < .01);
-function walkable(ax, az, bx, bz) { // a straight line a kid could walk
-  const n = Math.max(2, Math.ceil(Math.hypot(bx - ax, bz - az) / .3));
-  for (let i = 1; i < n; i++) { const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t;
-    if (ALLEY && Math.abs(x) < 1.6 && !BRIDGES.some(b => z > b.z0 + .2 && z < b.z1 - .2)) return false;
-    for (const h of HOUSES) if (x > h.x0 - .32 && x < h.x1 + .32 && z > h.z0 - .32 && z < h.z1 + .32) return false; }
+// where a kid can stand (ai.js builds its A* grid from this): inside the lot, off the creek, clear of houses, walls, drums, taps, stands
+const R_KID = .32;
+function free(x, z) {
+  if (x < B.x0 + .3 || x > B.x1 - .3 || z < B.z0 + .3 || z > B.z1 - .3) return false;
+  if (ALLEY && Math.abs(x) < 1.6 && !BRIDGES.some(b => z > b.z0 + .2 && z < b.z1 - .2)) return false;
+  for (const h of HOUSES) if (x > h.x0 - R_KID && x < h.x1 + R_KID && z > h.z0 - R_KID && z < h.z1 + R_KID) return false;
+  for (const h of LOW) if (x > h.x0 - R_KID && x < h.x1 + R_KID && z > h.z0 - R_KID && z < h.z1 + R_KID) return false;
+  for (const r of REFILL) if (Math.abs(x - r.x) < .2 + R_KID && Math.abs(z - r.z) < .2 + R_KID) return false;
+  for (const t of ['A', 'B']) if (Math.abs(x - REST[t].x) < .45 + R_KID && Math.abs(z - REST[t].z) < .25 + R_KID) return false;
   return true;
 }
-NODES.forEach((a, i) => NODES.forEach((b, j) => { if (j > i && (a.x === b.x || a.z === b.z) && walkable(a.x, a.z, b.x, b.z)) { (EDGES[i] ??= []).push(j); (EDGES[j] ??= []).push(i); } }));
-function nextStep(px, pz, gx, gz) { // straight there if we can, else along the alleys (Dijkstra over a couple of dozen corners)
-  if (walkable(px, pz, gx, gz)) return [gx, gz];
-  const N = NODES.length, dist = new Array(N).fill(1e9), from = new Array(N).fill(-1), done = new Array(N).fill(false);
-  const goalSeen = NODES.map(n => walkable(n.x, n.z, gx, gz));
-  NODES.forEach((n, i) => { if (walkable(px, pz, n.x, n.z)) { dist[i] = Math.hypot(n.x - px, n.z - pz); from[i] = -2; } });
-  let best = -1, bestD = 1e9;
-  for (;;) {
-    let u = -1; for (let i = 0; i < N; i++) if (!done[i] && dist[i] < 1e9 && (u < 0 || dist[i] < dist[u])) u = i;
-    if (u < 0) break; done[u] = true;
-    if (goalSeen[u]) { const d = dist[u] + Math.hypot(gx - NODES[u].x, gz - NODES[u].z); if (d < bestD) { bestD = d; best = u; } }
-    for (const v of EDGES[u] ?? []) { const d = dist[u] + Math.hypot(NODES[v].x - NODES[u].x, NODES[v].z - NODES[u].z); if (d < dist[v]) { dist[v] = d; from[v] = u; } }
-  }
-  if (best < 0) return [gx, gz];
-  let u = best; while (from[u] >= 0) u = from[u];
-  return [NODES[u].x, NODES[u].z];
-}
-function walk(k, gx, gz, run, dt) {
-  const c = k.c, p = c.g.position;
-  if ((k.navT -= dt) <= 0 || Math.hypot(k.wp[0] - p.x, k.wp[1] - p.z) < .35 || Math.hypot(k.goal[0] - gx, k.goal[1] - gz) > 1) { k.navT = .4; k.goal = [gx, gz]; k.wp = nextStep(p.x, p.z, gx, gz); }
-  const [tx, tz] = k.wp, dx = tx - p.x, dz = tz - p.z, l = Math.hypot(dx, dz);
-  if (l < .25) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
-  const loop = run ? 'run' : 'walk'; if (c.anim.loop !== loop) c.anim.setLoop(loop);
-  let a = Math.atan2(dx, dz); if (k.stuck > .5) a += k.side * 1.3; // slide round a corner
-  let d = a - c.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); c.g.rotation.y += d * Math.min(1, dt * 8);
-  const ox = p.x, oz = p.z, s = c.anim.speed * dt; p.x += Math.sin(a) * s; p.z += Math.cos(a) * s; W.collide(p);
-  k.stuck = Math.hypot(p.x - ox, p.z - oz) < s * .35 ? k.stuck + dt : Math.max(0, k.stuck - dt); if (k.stuck > 1.6) { k.stuck = 0; k.side = -k.side; }
-}
+const OBST = []; // what Yuka's obstacle avoidance steers round: drums, wall stubs (as a row of circles), taps, the stands
+for (const h of LOW) { if (h.drum) { OBST.push({ x: h.drum[0], z: h.drum[1], r: .5 }); continue; }
+  const w = h.x1 - h.x0, d = h.z1 - h.z0, n = Math.max(1, Math.round(Math.max(w, d) / .45)), r = Math.min(w, d) / 2 + .2;
+  for (let i = 0; i < n; i++) { const t = (i + .5) / n; OBST.push(w > d ? { x: h.x0 + w * t, z: (h.z0 + h.z1) / 2, r } : { x: (h.x0 + h.x1) / 2, z: h.z0 + d * t, r }); } }
+for (const r of REFILL) OBST.push({ x: r.x, z: r.z, r: .35 }); for (const t of ['A', 'B']) OBST.push({ x: REST[t].x, z: REST[t].z, r: .6 });
 // how a gang plays it: the home side holds a line across its own half and only steps up to meet a kid who's come in;
 // the visitors push through, spread across the lot. Whoever's two up (or the home side, once the visitors are down to
 // two) goes on the attack; visitors two down fall back and hold. Every kid keeps their own lane, so nobody bunches.
@@ -399,55 +373,6 @@ function teams(dt) {
     f.forEach((k, i) => { const z = -LANE + (i + .5) * 2 * LANE / f.length; k.lane = ALLEY ? LANES_ALLEY.reduce((b, l) => Math.abs(l - (i - (f.length - 1) / 2) * 5) < Math.abs(b - (i - (f.length - 1) / 2) * 5) ? l : b) : z; });
   }
 }
-function engage(k, t) { // where to stand against one kid: close in, back off, or step sideways
-  const p = pos(k), tp = pos(t), d = tp.distanceTo(p);
-  if ((k.sideT -= .016) < 0) { k.sideT = 1 + rnd() * 1.5; k.side = rnd() < .5 ? -1 : 1; }
-  if (d > 5 || !clear(p, tp)) return [tp.x, tp.z, d > 8];
-  if (d < 2.8) return [p.x - (tp.x - p.x), p.z - (tp.z - p.z), false];
-  const a = Math.atan2(tp.x - p.x, tp.z - p.z) + k.side * Math.PI / 2; return [p.x + Math.sin(a) * 2, p.z + Math.cos(a) * 2, false];
-}
-function brain(k, dt) {
-  const c = k.c, p = pos(k), s = SIDE[k.team], R = REST[k.team];
-  k.waiting = false;
-  if (k.out) { if (!atRest(k)) walk(k, R.gx, R.z + (k.i - 2.5) * .35, true, dt); else if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
-  if (k.state === 'wipe') { if ((k.wipeT -= dt) <= 0) { k.grit = Math.min(1, k.grit + .12); k.state = 'fight'; } return; }
-  const foes = enemies(k); if (!foes.length) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); return; }
-  if ((k.think -= dt) <= 0) {
-    k.think = .3 + rnd() * .2; const [t, near] = nearest(k, foes); k.target = t;
-    if (k.water < .7 && k.state === 'fight') { k.state = 'refill'; k.tap = null; }
-    if (k.state === 'refill' && (!k.tap || k.tap.user && k.tap.user !== k && rnd() < .3)) k.tap = pickRefill(k);
-    if (k.state === 'fight' && k.grit < .15 && near > 4) k.state = 'rest';
-    if (k.state === 'fight' && k.grit < .4 && near > 5 && rnd() < .15) { k.state = 'wipe'; k.wipeT = 1.2; c.anim.setLoop('idle'); c.anim.emote('drop'); return; }
-  }
-  if (k.state === 'rest') { // a drink at the water-pot stand
-    if (!atRest(k)) walk(k, R.gx, R.z + (k.i - 2.5) * .35, true, dt); else if (c.anim.loop !== 'idle') c.anim.setLoop('idle');
-    if (k.grit >= .7) k.state = 'fight';
-    if (k.water >= .4 && k.target && pos(k.target).distanceTo(p) < 4) shootAt(k, dt);
-    return;
-  }
-  if (k.state === 'refill') {
-    const r = k.tap ?? (k.tap = pickRefill(k)), dd = Math.hypot(r.x - p.x, r.z - p.z);
-    if (dd < 1.15 && fillAt(k, r, dt)) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); if (k.water >= CAN - .05) { k.state = 'fight'; k.tap = null; } }
-    else if (r.user && r.user !== k && dd < 2.4) { k.waiting = true; if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); }
-    else walk(k, r.x + .9 * Math.sign(p.x - r.x || 1), r.z, true, dt);
-    if (k.water >= .4 && k.target && pos(k.target).distanceTo(p) < 3.5) shootAt(k, dt); // caught at the tap: still shoot back
-    return;
-  }
-  let gx, gz, run = false;
-  if (STANCE[k.team] === 'defend') {
-    const [intr, di] = nearest(k, foes.filter(o => pos(o).x * s > (ALLEY ? 2 : -1.5))); // someone's come over to our side
-    if (intr && di < 7) { [gx, gz, run] = engage(k, intr); k.target = intr; }
-    else { gx = s * (ALLEY ? 8.5 : 5.2); gz = k.lane; run = Math.abs(p.x - gx) > 4; }
-  } else {
-    const deep = -s * (ALLEY ? 8.5 : 7.5), t = k.target, d = t ? pos(t).distanceTo(p) : 99;
-    if (t && d < 5.5 && clear(p, pos(t))) { [gx, gz] = engage(k, t); gx -= s * 1.2; } // fight it out — but keep pressing on
-    else { gx = deep; gz = k.lane; run = Math.abs(p.x - deep) > 4; }
-  }
-  for (const q of kids) { if (q === k || q.team !== k.team || q.out) continue; // spread out
-    const dx = p.x - pos(q).x, dz = p.z - pos(q).z, l = Math.hypot(dx, dz); if (l < 1.8 && l > .01) { gx += dx / l * (1.8 - l) * 2; gz += dz / l * (1.8 - l) * 2; } }
-  if (Math.hypot(gx - p.x, gz - p.z) < .3) { if (c.anim.loop !== 'idle') c.anim.setLoop('idle'); } else walk(k, gx, gz, run, dt);
-  shootAt(k, dt);
-}
 function shootAt(k, dt) { // at whoever's nearest and in sight — a few pump strokes, a balloon over the wall, the bucket up close
   if (k.pend) return;
   if (k.burst > 0) { if ((k.pumpT -= dt) <= 0) { k.pumpT = WEAPONS.pump.every; k.burst--; if (!k.target || k.target.out || !stroke(k, k.target)) k.burst = 0; } return; }
@@ -462,6 +387,11 @@ function shootAt(k, dt) { // at whoever's nearest and in sight — a few pump st
   if (bd < WEAPONS.bucket.range + .2 && k.water > .5 * CAN && rnd() < .35) { if (heave(k, t)) { k.cool = 1.4 + rnd(); return; } }
   k.burst = 1 + Math.floor(rnd() * 3); k.pumpT = 0; k.cool = .7 + rnd() * .8;
 }
+
+// the heads and legs: Yuka steering + a state machine per kid, roles from SCENARIO (yangon/ai.js)
+const ai = createAI({ kids, me, auto: AUTO, B, alley: ALLEY, homeTeam: HOME, CAN, weapons: WEAPONS, rnd, pos, free, obstacles: OBST, collide: p => W.collide(p),
+  side: t => SIDE[t], stance: t => STANCE[t], lane: k => k.lane, rest: t => REST[t], enemies, nearest, clear, pickRefill, fillAt, atRest, shootAt,
+  onSupply: (k, to) => { pop(to, '+ရေ', '#9fe3ff'); } });
 
 // ---------- you ----------
 // The pad, by weapon (R or the three small pads switch): pump — tap = one stroke at the nearest kid you can see, hold = a
@@ -602,7 +532,7 @@ function nextRound() { // everyone back to the start line, full cans, full grit
     k.c.g.position.set(k.start[0], 0, k.start[1]); k.c.g.rotation.y = k.start[2]; k.c.anim.setLoop('idle');
   }
   holding = false; charge = 0; drown = 0; sting = 0; $('wipe').classList.remove('on');
-  W.snapCam(); $('end').hidden = true; playing = true; W.frozen = false; window.war.result = null; scored = ''; score(); roundLabel();
+  ai.reset(); W.snapCam(); $('end').hidden = true; playing = true; W.frozen = false; window.war.result = null; scored = ''; score(); roundLabel();
   say(`ပွဲ ${MY(round)} — စ!`, 2);
 }
 const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
@@ -653,8 +583,8 @@ W.tick(dt => {
   if (playing) {
     teams(dt);
     for (const k of kids) { k.hitT += dt; if (atRest(k) && k.grit < 1) { k.grit = Math.min(1, k.grit + REST_RATE * dt); if (k.out && k.grit >= 1) comeBack(k); } }
-    if (AUTO) brain(me, dt); else mine(dt);
-    for (const k of kids) if (!k.me) brain(k, dt);
+    if (!AUTO) mine(dt);
+    ai.update(dt); // everyone else (and you, on ?auto): yangon/ai.js
     for (const r of REFILL) { if (r.user && (r.user.out || Math.hypot(pos(r.user).x - r.x, pos(r.user).z - r.z) > 1.3)) r.user = null; r.stream.visible = !!r.user && r.user.filling; }
     score();
     if (!ended && (clock -= dt) <= 0) { clock = 0; timeUp(); }
@@ -699,4 +629,4 @@ if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-
 });
 
 W.start();
-window.war = { fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit }), result: null, W, STATS };
+window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit }), result: null, W, STATS };
