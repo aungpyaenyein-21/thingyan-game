@@ -14,7 +14,7 @@
 | T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | ⏳ spec ✅ — A–D အခု စလို့ရ၊ orbit က T2 ပြီးမှ | အခြား model · branch `claude/water` |
 | T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
-| T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
+| T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ · plan 👀 [plans/T5.md](plans/T5.md) (code = T2 merge ပြီးမှ) | အခြား model · branch `claude/day1` |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
