@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=30';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=5';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=6';
 
 export { THREE };
 export const PAL = {
