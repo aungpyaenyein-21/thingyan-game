@@ -1,6 +1,6 @@
 // yangon/save.js — the day-1 save, shared by the ward (main.js) and downtown (downtown.js); the bus between them
 // saves and reloads into the other map (boot.js picks by S.at). Progress is the player's own (STORY.md §၈).
-import { LOOK0 } from './wardrobe.js?v=4';
+import { LOOK0 } from './wardrobe.js?v=5';
 
 const KEY = 'thingyan.day1.v2';
 // nine favours, one part of the kids' coconut-frond mandat each; all are needed

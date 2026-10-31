@@ -5,7 +5,7 @@
 // Three rounds of three minutes: a gang that's all OUT at once has lost the round; at the bell, fewer OUTs takes it.
 // Most rounds wins the match. Home side has four taps and holds its ground; the
 // away side comes with an extra kid, one slow drum, and has to push in (and may use the home side's taps). One kid per tap.
-import { createWorld } from '../world.js?v=11';
+import { createWorld } from '../world.js?v=12';
 import { createSound } from '../sound.js?v=3';
 
 const P = new URLSearchParams(location.search);
@@ -76,16 +76,16 @@ for (const t of ['A', 'B']) {
 const atRest = k => Math.hypot(pos(k).x - REST[k.team].x, pos(k).z - REST[k.team].z) < REST_R;
 
 // ---------- the kids ----------
-const TEAM = { A: { top: '#2f8fd6', hat: 'band' }, B: { top: '#e0574f', hat: 'none' } };
+const TEAM = { A: { top: '#2f8fd6', hat: 'none', can: '#f4f1e8' }, B: { top: '#e0574f', hat: 'none', can: '#d8352a' } }; // no headbands: the shirt and the jerry can tell the sides apart (CHARACTERS.md)
 const kids = [];
 const silver = new THREE.MeshLambertMaterial({ color: '#cfd5dc' }), green = new THREE.MeshLambertMaterial({ color: '#5fe04a' }), red = new THREE.MeshLambertMaterial({ color: '#d8352a' }),
   white = new THREE.MeshLambertMaterial({ color: '#f4f1e8' });
-function gear(ch) { // the pump in the right hand, the jerry can on the back, the red hose between
+function gear(ch, canColor) { // the pump in the right hand, the jerry can on the back, the red hose between
   const hand = ch.arms[1].hand, g = new THREE.Group(); hand.add(g);
   const pipe = new THREE.Mesh(new THREE.CylinderGeometry(.022, .022, .82, 6), silver); pipe.position.y = -.3; g.add(pipe);
   for (const y of [-.02, -.52]) { const grip = new THREE.Mesh(new THREE.CylinderGeometry(.038, .038, .14, 6), green); grip.position.y = y; g.add(grip); }
   const tip = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .06, 6), red); tip.position.y = -.72; g.add(tip);
-  const can = new THREE.Mesh(new THREE.BoxGeometry(.24, .3, .13), white); can.position.set(0, .12, -.2); ch.spine.add(can);
+  const can = new THREE.Mesh(new THREE.BoxGeometry(.24, .3, .13), canColor === TEAM.B.can ? red : white); can.position.set(0, .12, -.2); ch.spine.add(can);
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, .05, 6), red); cap.position.set(.07, .29, -.2); ch.spine.add(cap);
   const hose = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(.07, .3, -.2), new THREE.Vector3(.16, .36, -.05), new THREE.Vector3(.24, .2, .06)]), 8, .014, 4), red);
   ch.spine.add(hose);
@@ -95,7 +95,7 @@ function makeKid(team, i, me) {
   const n = SIZE[team], back = ALLEY ? 16.4 : 11.5, span = ALLEY ? 17 : 12, x = s * (back + (i % 2) * .6), z = -span / 2 + i * span / (n - 1); // both gangs start at the back of their own side
   const goggles = team === 'B' && i === 1;
   const c = W.bean({ age: 'kid', tools: ['none'], tool: 'none', topStyle: pick(['tee', 'stripe', 'tank']), shirt: TEAM[team].top, hat: goggles ? 'goggles' : TEAM[team].hat, x, z, ry: -s * Math.PI / 2 });
-  gear(c.ch); c.dry = true;
+  gear(c.ch, TEAM[team].can); c.dry = true;
   const disc = new THREE.Mesh(new THREE.CircleGeometry(.42, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: team === 'A' ? '#2f8fd6' : '#e0574f', transparent: true, opacity: .55, depthWrite: false }));
   disc.position.y = .02; disc.scale.setScalar(1 / c.g.scale.x); if (!me) c.g.add(disc); // which gang, at a glance (you have your own ring) // our own water does the hitting (the town's only hits what's on screen)
   const emit = c.anim.emit; c.anim.emit = (t, o) => { if (t !== 'squirt' && t !== 'squirtStart') emit(t, o); }; // the pump shoots from game logic, not the pose

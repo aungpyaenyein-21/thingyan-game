@@ -1,5 +1,5 @@
 // yangon/boot.js — one page, two maps: the ward (①–④) or downtown (⑤), whichever the save says you're in.
-import { load } from './save.js?v=5';
+import { load } from './save.js?v=6';
 
 const S = load();
-import(S.at === 'downtown' ? './downtown.js?v=14' : './main.js?v=22');
+import(S.at === 'downtown' ? './downtown.js?v=15' : './main.js?v=23');
