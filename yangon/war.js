@@ -24,7 +24,7 @@ const STATS = { shots: 0, hits: 0, face: 0, fouls: 0 }; // gravity as the town's
 
 // ---------- T3: three weapons that feel different, the beat of a hit, water you can see, the unwritten rules ----------
 // TUNE and WEAPONS are what ?tune edits (lil-gui) — copy the JSON back here once they feel right
-const TUNE = { hitStop: .04, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 2 };
+const TUNE = { hitStop: .04, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 2, soakCap: .5, blurMax: 1.2 }; // soakCap / blurMax: the most the soak overlay may cover the screen
 const WEAPONS = { // cost = share of a full can · grit = what a full hit takes off
   pump: { name: 'ပြွတ်', range: 6, cost: .1, every: .4, grit: .15, speed: 11 }, // a stroke every .4 s while held: 10% of the can a second, −.15 grit a second if it all lands
   balloon: { name: 'ပူဖောင်း', min: 3, range: 9, cost: .15, grit: .35, ring: .8 }, // hold = how far; it goes over walls and round corners
@@ -434,7 +434,7 @@ function setWeapon(w) {
 const nextWeapon = () => setWeapon(ORDER[(ORDER.indexOf(me.weapon) + 1) % ORDER.length]);
 for (const b of document.querySelectorAll('#weps button')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); setWeapon(b.dataset.w); });
 setWeapon('pump');
-const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; drown = 0; me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
+const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; drown = 0; sting = Math.min(sting, .15); me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
 $('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); dragFrom = [e.clientX, e.clientY, e.pointerId]; aimDir = null; try { $('fire').setPointerCapture(e.pointerId); } catch {} press(true); });
 $('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !== dragFrom[2]) return; const dx = e.clientX - dragFrom[0], dy = dragFrom[1] - e.clientY;
   if (W.orbit) { W.orbit.right(RIGHT); W.orbit.forward(UP); } else { RIGHT.set(1, 0, -1).normalize(); UP.set(-1, 0, -1).normalize(); }
@@ -594,13 +594,15 @@ W.tick(dt => {
   }
   stepDrops(dt); stepBalloons(dt); showAim(); tags(); feel(dt); fx.update(dt);
   REST.A.ring.material.opacity = me.out ? .55 + Math.sin(W.time() * 6) * .35 : .45;
-  const shake = !W.orbit && shakeT > 0 ? shakeA * shakeT / TUNE.shakeT * TUNE.shake / 6 : 0; shakeT -= dt; // iso: shake the canvas; orbit shakes the camera (kick) drown = Math.max(0, drown - dt * .3);
+  const shake = !W.orbit && shakeT > 0 ? shakeA * shakeT / TUNE.shakeT * TUNE.shake / 6 : 0; shakeT -= dt; // iso: shake the canvas; orbit shakes the camera (kick)
+  drown = Math.max(0, drown - dt * .3);
   const sw = drown > .05 ? ` scale(${(1 + drown * .025 * (1 + Math.sin(W.time() * 4.5))).toFixed(4)})` : '';
   W.renderer.domElement.style.transform = (shake > .2 ? `translate(${((rnd() - .5) * shake).toFixed(1)}px,${((rnd() - .5) * shake).toFixed(1)}px)` : '') + sw;
   if (stop > 0) { const s = stop; stop = 0; W.paused = true; setTimeout(() => { W.paused = false; }, s * 1000); } // a beat of stillness when a shot really lands
-  sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = sting.toFixed(2); film.style.opacity = Math.min(1, drown * 1.6).toFixed(2);
-  const bl = Math.max(sting > .25 ? sting * 2.2 : 0, drown * 2.4);
-  W.renderer.domElement.style.filter = bl > .3 ? `blur(${bl.toFixed(1)}px)` + (drown > .1 ? ` saturate(${(1 - drown * .35).toFixed(2)}) hue-rotate(${(-drown * 12).toFixed(0)}deg)` : '') : '';
+  // the face-full-of-water overlay never takes the screen away (Fable review): tint and blur stop at TUNE.soakCap of what they could reach
+  sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = Math.min(TUNE.soakCap, sting).toFixed(2); film.style.opacity = Math.min(TUNE.soakCap, drown * 1.6).toFixed(2);
+  const bl = Math.min(TUNE.blurMax, Math.max(sting > .25 ? sting * 2.2 : 0, drown * 2.4));
+  W.renderer.domElement.style.filter = bl > .3 ? `blur(${bl.toFixed(1)}px)` + (drown > .1 ? ` saturate(${(1 - Math.min(drown, TUNE.soakCap) * .35).toFixed(2)}) hue-rotate(${(-Math.min(drown, TUNE.soakCap) * 12).toFixed(0)}deg)` : '') : '';
   $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('water').classList.toggle('low', me.water < LOW_W * CAN); if (ruleT > 0 && (ruleT -= dt) <= 0) $('rule').hidden = true; $('grit').firstChild.style.width = (me.grit * 100) + '%';
   $('note').textContent = me.out ? 'OUT — ရေအိုးစင် ပြန်သွား' : atRest(me) && me.grit < 1 ? 'ခံနိုင်ရည် ဖြည့်နေတယ်…' : me.filling ? 'ရေဖြည့်နေတယ်… (ပက်ခံရရင် ပြန်စ)' : me.waiting ? 'ပိုက်ခေါင်း မအားသေး — စောင့်' : me.water < .6 ? 'ရေကုန်ခါနီး!' : '';
   ringEl.setAttribute('stroke-dashoffset', (333 * (1 - charge)).toFixed(0));
@@ -624,7 +626,7 @@ function feel(dt) {
 // ?tune — lil-gui: hit feel, the three weapons, particle budget; copy the JSON back into TUNE / WEAPONS / fx.js BUDGET
 if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-gui.esm.min.js').then(({ GUI }) => {
   const gui = new GUI({ title: 'ရေပက် tune (T3)' }), f = gui.addFolder('ထိတဲ့ခဏ');
-  f.add(TUNE, 'hitStop', 0, .15, .005); f.add(TUNE, 'outStop', 0, .3, .01); f.add(TUNE, 'shakeT', 0, .5, .01); f.add(TUNE, 'shake', 0, 20, .5); f.add(TUNE, 'squash', .6, 1, .01); f.add(TUNE, 'vibrate', 0, 80, 5); f.add(TUNE, 'faceK', 1, 3, .1);
+  f.add(TUNE, 'hitStop', 0, .15, .005); f.add(TUNE, 'outStop', 0, .3, .01); f.add(TUNE, 'shakeT', 0, .5, .01); f.add(TUNE, 'shake', 0, 20, .5); f.add(TUNE, 'squash', .6, 1, .01); f.add(TUNE, 'vibrate', 0, 80, 5); f.add(TUNE, 'faceK', 1, 3, .1); f.add(TUNE, 'soakCap', 0, 1, .05); f.add(TUNE, 'blurMax', 0, 3, .1);
   for (const w of Object.values(WEAPONS)) { const g = gui.addFolder(w.name); for (const [key, v] of Object.entries(w)) if (typeof v === 'number') g.add(w, key, 0, Math.max(1, v * 3), .01); g.close(); }
   const pf = gui.addFolder('particles (total = live · the rest on reload)'); for (const n of Object.keys(fx.budget)) pf.add(fx.budget, n, 0, fx.budget[n] * 2, 1); pf.close();
   gui.add({ copy: () => { const j = JSON.stringify({ TUNE, WEAPONS, BUDGET: fx.budget }, null, 1); navigator.clipboard?.writeText(j); console.log(j); } }, 'copy').name('JSON copy');
