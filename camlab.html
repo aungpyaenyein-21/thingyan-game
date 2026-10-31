@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ကင်မရာ စမ်းကွင်း</title>
+<!--
+  camlab (T1) — Go-Go Town! ပုံစံ ကင်မရာ + Rapier + three-pathfinding + glTF ကို ဂိမ်းအစစ် မထိဘဲ စမ်းတဲ့ စာမျက်နှာ
+  code → camlab.js · ဆိုင် → art/building.py (Blender) → art/shop.glb · ဆိုင်းဘုတ် စာ → art/signs.html → art/signs/*.png
+
+  ■ Library အရွယ်အစား (CDN က ဒေါင်းရတာ · raw / gzip)
+    three 0.170 (three.module.js) ................ 1,284 KB / 260 KB   (ရှိပြီးသား — ဂိမ်းအစစ်လည်း သုံးနေ)
+    @dimforge/rapier3d-compat 0.19.3 (rapier.mjs) . 2,186 KB / 816 KB   ← အလေးဆုံး (wasm ကို base64 နဲ့ JS ထဲ ထည့်ထားလို့)
+    three-pathfinding 1.3.0 ......................... 10 KB /   4 KB
+    GLTFLoader + BufferGeometryUtils ............... 139 KB /  30 KB
+    art/shop.glb (ဆိုင်းဘုတ် PNG ၄ ခု ပါ) ............ 109 KB
+    → အသစ် ထပ်တိုးတာ gzip ~၈၅၀ KB၊ အဲဒီထဲက ၉၆% က Rapier
+
+  ■ အချိန် (cloud container · headless Chromium မှာ တိုင်း)
+    navmesh (0.5 m grid · ~၆,၀၀၀ triangle) ဆောက် + createZone ... ~၅၀–၆၀ ms
+    Rapier ဒေါင်း + wasm init ............................. ~၂.၅–၃ စက္ကန့် — scene ပေါ်ပြီးမှ dynamic import နဲ့ ဖွင့်လို့ စာမျက်နှာ မပိတ်
+    shop.glb အဆင်သင့် ........................................ စာမျက်နှာ စပြီး ~၃–၃.၅ စက္ကန့်
+
+  ■ တွေ့တဲ့ ပြဿနာ / သတိ
+    ၁။ FPS — ဒီ container မှာ GPU မရှိ (SwiftShader software render) လို့ ၂–၁၁ fps ပဲ ပြ — ဒါ အဓိပ္ပာယ် မရှိ။
+       Laptop FPS **မတိုင်းရသေး** — ဘယ်ဘက် အပေါ်က fps စာတန်းကို GPU ရှိတဲ့ စက်/ဖုန်းမှာ ကြည့်ပါ။
+       draw call ၈၀–၁၇၅ · triangle ၁၅k–၇၂k (zoom အဝေးဆုံး + လမ်းကွက် ပြရင် အများဆုံး)
+    ၂။ ဖုန်းအတွက် လေးမယ့် အချက် — (က) Rapier gzip ၈၁၆ KB (ခ) chibi တစ်ယောက် mesh ~၂၅–၃၀ ခု၊ အကုန် shadow ချ → draw call
+       (ဂ) PCFSoft shadow 1024 (ဃ) pixel ratio 2 အထိ (င) ဖျော့တဲ့ အဆောက်အအုံ = transparent။ ဖုန်းမှာ နှေးရင် — chibi mesh ပေါင်း /
+       shadow ကို ကစားသူပဲ ချ (ကျန်တာ blob) / PCFShadowMap / pixel ratio 1.5
+    ၃။ three-pathfinding ရဲ့ A* က heuristic ကို distance² နဲ့ တွက် (src/AStar.js) → ပန်းတိုင်ဘက် တည့်တည့် ပြေးပြီး ချောင်းကမ်းတလျှောက်
+       ပတ်တဲ့ လမ်း ထွက်။ walkable() နဲ့ "မြင်ရတဲ့ အဝေးဆုံး အမှတ်ကို ခုန်" (line-of-sight) နဲ့ ဖြောင့်အောင် ပြင်ထား (smooth())။
+       ဒါပေမဲ့ အဆောက်အအုံ ဘယ်ဘက်က ပတ်မလဲ ရွေးတာ မှားနိုင်သေး → ဂိမ်းအစစ်မှာ ကိုယ်ပိုင် A* (zone graph ပေါ်) ဒါမှမဟုတ် recast-navigation
+    ၄။ navmesh triangle အလှည့် — အပေါ်ကကြည့်ရင် counter-clockwise ဖြစ်ရ။ ပြောင်းပြန်ဆို funnel ပျက်ပြီး လမ်း ဇစ်ဇက် ဖြစ်
+    ၅။ အဆောက်အအုံ ဖျော့တာ — material.transparent ကို ပြောင်းရင် material.needsUpdate = true မပါရင် ဘာမှ မပြောင်း
+    ၆။ Blender က ထုတ်တဲ့ glTF = PBR (MeshStandardMaterial) — environment map မရှိရင် တခြား Lambert တွေထက် မှောင် → ဖတ်ပြီး Lambert ပြောင်း
+    ၇။ Blender text object က ဗမာစာ ပေါင်းစပ်ပုံ (shaping) မမှန် → ဆိုင်းဘုတ် စာကို browser မှာ ဆွဲ (art/signs.html) ပြီး PNG ကပ်
+    ၈။ world.js ရဲ့ gradient + screen ပုံသေ နေ — လှည့်ရင် ပျက်လို့ sky dome (shader) + ကမ္ဘာ ပုံသေ နေ ဦးတည်ချက်။ နေဝန်းကို အလင်းထက်
+       နိမ့်နိမ့် ထား (ဦးတည်ချက် တူ) — အနီးကပ် ကြည့်ရင် ကောင်းကင်/နေရောင် မြင်ရ၊ အရိပ် အရှည်ကြီး မဖြစ်
+    ၉။ Rapier 0.19.3 — init() က 「using deprecated parameters…」 console.warn ၁ ကြောင်း အမြဲ ထုတ် (library အတွင်းက၊ error မဟုတ်)
+       chibi.js ရှိပြီးသားက 「parameter 'map' has value of undefined」 warning လည်း ထွက် (ဒီဖိုင်နဲ့ မဆိုင်)
+    ၁၀။ physics ရလဒ် ကျပန်း — လက်ရန်းပေါ်က ဖလားကို ရေပူဖောင်း ၁၀ လုံး တစ်ခါ ပစ်ရင် ၂–၅ ကြိမ်မှာ ၁ ခါ ကျ၊ တစ်ခါတလေ တံတားပေါ် ကျ
+       → SCENARIO ၄-၄ (ဇာတ်လမ်း) မှာ physics ကို အားမကိုး၊ ချောင်းဘက် တွန်းအား ထည့် ဒါမှမဟုတ် script နဲ့
+    ၁၁။ ဝါးတိုင် ၄ တိုင် ကြား .၂၈ m < ဖလား .၃ m → ချောင်းလယ်က မျောလာရင် ငြိ၊ ကမ်းနားက မျောရင် လွတ်ပြီး ချောင်းအဆုံးထိ (၄-၅ အတွက်)
+    ၁၂။ ကစားသူ / NPC = physics မသုံး (navmesh ပေါ် clampStep / လမ်းလိုက်) — Rapier ကို ဖလား၊ ရေပူဖောင်းအတွက်ပဲ
+
+  ■ စစ်ပုံ — docs/camlab/check.cjs (Playwright) · screenshot → docs/camlab/*.jpg
+    ?joy = joystick အမြဲ ပြ · window.lab = console ကနေ ထိန်း (lab.advance(စက္ကန့်) = မဆွဲဘဲ ကမ္ဘာ ရှေ့တိုး)
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@500;700&display=swap">
+<style>
+  :root{--ink:#5a3550;--card:rgba(255,246,232,.9);--on:#f2a65a;--line:#e9c9a8}
+  html,body{margin:0;height:100%;overflow:hidden;touch-action:none;color:var(--ink);background:#ffd9b0;
+    font-family:"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif;-webkit-user-select:none;user-select:none}
+  canvas{position:fixed;inset:0;display:block}
+  #hud{position:fixed;left:10px;top:10px;right:10px;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  #status{background:var(--card);border-radius:12px;padding:5px 11px;font-size:14px;max-width:100%;box-sizing:border-box}
+  #fps{background:var(--card);border-radius:8px;padding:2px 8px;font-size:11px;font-family:ui-monospace,monospace;opacity:.85}
+  #help{font-size:11px;background:var(--card);border-radius:8px;padding:3px 8px;opacity:.85}
+  #ui{position:fixed;right:10px;bottom:10px;z-index:2;display:grid;grid-template-columns:repeat(2,auto);gap:6px;background:var(--card);border-radius:14px;padding:8px}
+  button{font:inherit;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+  button.on{background:var(--on);border-color:var(--on);color:#fff}
+  button.big{border-color:#2f8fd6}
+  #joy{position:fixed;left:18px;bottom:22px;width:116px;height:116px;border-radius:50%;background:rgba(255,246,232,.55);border:2px solid rgba(90,53,80,.25);z-index:2;touch-action:none}
+  #knob{position:absolute;left:33px;top:33px;width:50px;height:50px;border-radius:50%;background:rgba(242,166,90,.9);pointer-events:none}
+  @media (max-width:600px){ button{font-size:12.5px;padding:5px 8px} #ui{gap:5px;padding:6px} #status{font-size:12.5px} #help{display:none} }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="status">ဖွင့်နေ…</div>
+  <div id="fps">–</div>
+  <div id="help">WASD / မြား = လမ်းလျှောက် (Shift ပြေး) · Q / E သို့ ဘေးတိုက် ဆွဲ = ၄၅° လှည့် · wheel / ချဲ့ချုံ့ = zoom · တို့ = ကလေး ၃ ယောက် လာ · F = ဖလား ပစ် · Space = ခုန်</div>
+</div>
+<div id="joy" hidden><div id="knob"></div></div>
+<div id="ui">
+  <button id="rotL">ဘယ် လှည့်</button><button id="rotR">ညာ လှည့်</button>
+  <button id="zin">＋ နီး</button><button id="zout">－ ဝေး</button>
+  <button id="throw" class="big">ဖလား ပစ်</button><button id="hop">ခုန်</button>
+  <button id="rail">လက်ရန်းပေါ် တင်</button><button id="back">ဖလား ပြန်ယူ</button>
+  <button id="drop" class="big">ရေပူဖောင်း ၁၀</button><button id="nav">လမ်းကွက်</button>
+</div>
+<script type="importmap">{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "@dimforge/rapier3d-compat":"https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.19.3/rapier.mjs",
+  "three-pathfinding":"https://cdn.jsdelivr.net/npm/three-pathfinding@1.3.0/dist/three-pathfinding.module.js"}}</script>
+<script type="module" src="./camlab.js?v=1"></script>
+</body>
+</html>

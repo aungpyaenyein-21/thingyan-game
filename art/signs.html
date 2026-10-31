@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ဆိုင်းဘုတ် ပုံ</title>
+<!-- art/building.py (Blender) က ဒီ PNG ၄ ခုကို ဆိုင်းဘုတ် texture အဖြစ် သုံး။
+     Blender ရဲ့ text object က ဗမာစာ ပေါင်းစပ်ပုံ (shaping) မမှန်လို့ စာကို browser မှာ ဆွဲပြီး PNG ထုတ်တာ။
+     ထုတ်ပုံ: ဒီစာမျက်နှာ ဖွင့် → ပုံ ၄ ခုပေါ် ညာကလစ် သိမ်း → art/signs/sign-<n>.png
+     (ဒါမှမဟုတ် Playwright နဲ့ window.signs() က dataURL ကို ယူ) -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@700&display=swap">
+<style>body{margin:16px;background:#f3e6d6;font-family:"Noto Sans Myanmar",sans-serif} img{display:block;max-width:100%;margin:0 0 12px;border-radius:6px}</style>
+</head>
+<body>
+<div id="out"></div>
+<script>
+// [file name, text, board colour, text colour, small line]
+const SIGNS = [
+  ['front', 'ရွှေနန်း လက်ဖက်ရည်', '#c8402f', '#ffe9b0', '၁၉၉၈ ကတည်းက'],
+  ['right', 'မုန့်ဟင်းခါး', '#2f7a5a', '#fff6ea', 'မနက် ၆ နာရီ'],
+  ['back', 'ကွမ်းယာ', '#ffc83d', '#5a3550', 'အေး · ချို · စပ်'],
+  ['left', 'သင်္ကြန် မင်္ဂလာ', '#2f6fb3', '#fff6ea', 'ရေ ပက်ပါ'],
+];
+function draw([, text, bg, ink, sub]) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 160; const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 512, 160);
+  g.strokeStyle = ink; g.globalAlpha = .55; g.lineWidth = 6; g.strokeRect(10, 10, 492, 140); g.globalAlpha = 1;
+  g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
+  let s = 56; g.font = `700 ${s}px "Noto Sans Myanmar"`; while (g.measureText(text).width > 460) g.font = `700 ${s -= 2}px "Noto Sans Myanmar"`;
+  g.fillText(text, 256, 62);
+  g.font = '700 22px "Noto Sans Myanmar"'; g.globalAlpha = .85; g.fillText(sub, 256, 132);
+  return c.toDataURL('image/png');
+}
+window.ready = document.fonts.load('700 40px "Noto Sans Myanmar"', 'က').then(() => {
+  const urls = Object.fromEntries(SIGNS.map(s => [s[0], draw(s)]));
+  for (const [k, u] of Object.entries(urls)) { const im = new Image(); im.src = u; im.title = `sign-${k}.png`; document.getElementById('out').append(im); }
+  window.signs = () => urls;
+});
+</script>
+</body>
+</html>
