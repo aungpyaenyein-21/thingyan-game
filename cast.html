@@ -18,7 +18,7 @@
   button.on{background:var(--on);border-color:var(--on);color:#fff}
   button.s1{border-color:#2f8fd6} button.s4{border-color:#e0574f} button.s0{border-color:#8a7a6a}
   .tag{position:fixed;transform:translate(-50%,-100%);background:var(--card);border-radius:8px;padding:2px 8px;font-size:12px;pointer-events:none;white-space:nowrap}
-  @media (max-width:700px){#ui{left:8px;right:8px;width:auto;max-height:40vh;overflow:auto}}
+  @media (max-width:700px){#ui{left:8px;right:8px;width:auto;max-height:40vh;overflow:auto} .tag{font-size:10px;padding:1px 5px}}
 </style>
 </head>
 <body>
@@ -34,7 +34,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CAST, makeCast } from './cast.js?v=8';
+import { CAST, makeCast } from './cast.js?v=9';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -82,16 +82,18 @@ function select(c) {
   const acts = document.getElementById('acts'); acts.innerHTML = '';
   document.getElementById('note').textContent = c ? c.def.name + ' — ' + c.def.note : 'အားလုံး — ① အပြာ · ④ အနီ · လူကြီး မီးခိုး။ နာမည် နှိပ်ရင် အနီးကပ်';
   if (c) c.def.acts.forEach(([k, l]) => btn('acts', l, () => c.act(k)));
-  const p = c ? c.ch.root.position : new THREE.Vector3(innerWidth > 700 ? .7 : 0, 0, 0), h = c ? .62 * c.ch.scale : .7; // lineup sits left of the panel on wide screens
-  goal.target.set(p.x, h, p.z); goal.pos.set(p.x + (c ? 1.6 : 0), c ? h + .5 : 5, p.z + (c ? 2.6 : 12.5));
+  for (const o of all) o.ch.root.visible = !c || o === c; // a close-up shows that one alone (the front row hid the grown-ups)
+  const narrow = innerWidth <= 700, p = c ? c.ch.root.position : new THREE.Vector3(narrow ? 0 : .7, 0, 0), h = c ? .62 * c.ch.scale : narrow ? -.5 : .7; // lineup sits left of the panel on wide screens, above it on phones
+  const fit = Math.max(12.5, 3.9 / (Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.aspect)); // far enough that the whole lineup fits across a phone held upright
+  goal.target.set(p.x, h, p.z); goal.pos.set(p.x + (c ? 1.6 : 0), c ? h + .5 : fit * .4, p.z + (c ? 2.6 : fit));
 }
 const goal = { target: new THREE.Vector3(), pos: new THREE.Vector3() };
-cam.position.set(0, 4.2, 10.5); ctl.target.set(0, .7, 0); select(null); cam.position.copy(goal.pos); ctl.target.copy(goal.target);
+resize(); cam.position.set(0, 4.2, 10.5); ctl.target.set(0, .7, 0); select(null); cam.position.copy(goal.pos); ctl.target.copy(goal.target);
 const qs = new URLSearchParams(location.search); if (qs.get('c')) select(all.find(c => c.def.id === qs.get('c')) || null); if (qs.get('a')) targets().forEach(c => c.anim.setLoop(qs.get('a')));
 window.cast = { all, flying, get sel() { return sel; }, select: id => select(all.find(c => c.def.id === id) || null), act: k => sel?.act(k) };
 
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); cam.aspect = w / h; cam.fov = w <= 700 ? 44 : 28; cam.updateProjectionMatrix(); }
-addEventListener('resize', resize); resize();
+addEventListener('resize', () => { resize(); select(sel); }); resize();
 const clock = new THREE.Clock(), V = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 1 / 30);
@@ -103,7 +105,7 @@ renderer.setAnimationLoop(() => {
   cam.position.lerp(goal.pos, 1 - Math.exp(-dt * 4)); ctl.target.lerp(goal.target, 1 - Math.exp(-dt * 4));
   ctl.update(); renderer.render(scene, cam);
   for (const c of all) { // name tags above the heads (hidden while one character is in close-up)
-    V.set(c.ch.root.position.x, 1.2 * c.ch.scale + .15, c.ch.root.position.z).project(cam);
+    V.set(c.ch.root.position.x, 1.2 * c.ch.scale + .15 + (c.ch.root.position.z < 0 && innerWidth <= 700 ? (all.indexOf(c) % 2) * .35 : 0), c.ch.root.position.z).project(cam); // phones: back-row tags alternate up and down so the names don't sit on each other
     const on = !sel && V.z < 1; c.tag.style.display = on ? '' : 'none';
     if (on) { c.tag.style.left = (V.x + 1) / 2 * innerWidth + 'px'; c.tag.style.top = (1 - V.y) / 2 * innerHeight + 'px'; }
   }

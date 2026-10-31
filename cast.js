@@ -18,7 +18,28 @@ function pump(ch, { long = 1, can = '#f4f1e8' } = {}) {
   mesh(new THREE.BoxGeometry(.24, .3, .13), can, ch.spine, 0, .12, -.2);
   mesh(new THREE.CylinderGeometry(.035, .035, .05, 6), '#d8352a', ch.spine, .07, .29, -.2);
   ch.spine.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(.07, .3, -.2), new THREE.Vector3(.16, .36, -.05), new THREE.Vector3(.24, .2, .06)]), 8, .014, 4), M('#d8352a')));
-  g.rotation.x = -.55; ch.pump = g; return g; // carried with the nozzle forward-down, not hanging like a cane
+  g.rotation.x = PUMP_REST; ch.pump = g; return g; // held level at the hip, nozzle forward — pointed down it read as a walking stick
+}
+const PUMP_REST = -1.35;
+// Phoe Kyaw's: slung across the back over the jerry can, nozzle up by the left shoulder — he's the one who carries the water
+function pumpOnBack(ch) {
+  mesh(new THREE.BoxGeometry(.24, .3, .13), '#f4f1e8', ch.spine, 0, .12, -.2); mesh(new THREE.CylinderGeometry(.035, .035, .05, 6), '#d8352a', ch.spine, .07, .29, -.2);
+  const g = new THREE.Group(); g.position.set(0, .16, -.3); g.rotation.z = .75; ch.spine.add(g);
+  mesh(new THREE.CylinderGeometry(.022, .022, .82, 6), '#cfd5dc', g); for (const y of [-.2, .28]) mesh(new THREE.CylinderGeometry(.038, .038, .14, 6), '#5fe04a', g, 0, y);
+  mesh(new THREE.CylinderGeometry(.03, .03, .06, 6), '#d8352a', g, 0, .42);
+}
+function bikeBell(ch) { // the bicycle bell he talks with — off the bike, it lives in his right hand
+  const g = new THREE.Group(); g.position.set(0, -.07, .04); ch.arms[1].hand.add(g);
+  mesh(new THREE.SphereGeometry(.065, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), '#dfe5ec', g).rotation.x = Math.PI / 2;
+  mesh(new THREE.CylinderGeometry(.012, .012, .05, 6), '#9aa2ac', g, 0, 0, -.03).rotation.x = Math.PI / 2; mesh(new THREE.BoxGeometry(.04, .012, .02), '#9aa2ac', g, .04, .02, 0);
+  ch.bell = g;
+}
+function pouch(ch) { const p = mesh(new THREE.BoxGeometry(.11, .12, .05), '#8a5a3a', ch.hips, -.19, -.04, .06); p.rotation.y = -.4; mesh(new THREE.TorusGeometry(.19, .01, 5, 24), '#6a4028', ch.hips, 0, .04, 0).rotation.x = Math.PI / 2; } // money pouch on a string at the waist
+function pot(ch) { // the big mohinga pot on its stand, in front of her (shown while she stirs)
+  const g = new THREE.Group(); g.position.set(0, 0, .42); ch.root.add(g); g.visible = false;
+  for (const a of [0, 2.1, 4.2]) mesh(new THREE.CylinderGeometry(.015, .015, .42, 5), '#3a3030', g, Math.cos(a) * .17, .21, Math.sin(a) * .17);
+  mesh(new THREE.CylinderGeometry(.24, .2, .3, 18), '#b8bec6', g, 0, .55, 0); mesh(new THREE.CylinderGeometry(.22, .22, .01, 18), '#c98a3a', g, 0, .69, 0);
+  ch.pot = g; return g;
 }
 const R = .3; // head radius (chibi HEAD_R)
 function showerCap(ch, c = '#f6a9c9') { // ရေချိုးခေါင်းစွပ်: a puffy dome over the hair with an elastic rim
@@ -40,7 +61,7 @@ function balloonBag(ch) { // ပူဖောင်းအိတ် on the hip
   const b = mesh(new THREE.SphereGeometry(.095, 12, 10), '#4fb3d9', ch.arms[1].hand, 0, -.11, .03); b.scale.set(1, 1.15, 1); b.visible = false; ch.balloon = b; // one in the throwing hand while winding up
 }
 function snack(ch) { mesh(new THREE.BoxGeometry(.07, .09, .03), '#f2c14e', ch.arms[0].hand, 0, -.06, .05); } // a packet of something, always
-function bandage(ch) { mesh(new THREE.CylinderGeometry(.06, .06, .07, 10, 1, true), '#f4f1e8', ch.arms[0].sh, 0, -.07, 0); } // ပတ်တီး on the left upper arm
+function scar(ch) { const m = mesh(new THREE.BoxGeometry(.018, .11, .012), '#e89a9a', ch.arms[0].sh, .02, -.09, .05); m.rotation.z = .25; } // last year's break: a pale line on the left upper arm, no bandage
 function whistle(ch) { // ဝီစီ on a cord round the neck
   mesh(new THREE.TorusGeometry(.17, .005, 4, 24, Math.PI), '#4a3428', ch.spine, 0, .26, .0).rotation.set(Math.PI / 2 + .3, 0, 0);
   const w = new THREE.Group(); w.position.set(0, .13, .17); ch.spine.add(w);
@@ -54,10 +75,10 @@ function apron(ch) { // ရှေ့ဖုံး tied at the waist, hanging to t
   for (const y of [-.1, -.2]) mesh(new THREE.BoxGeometry(.2, .03, .004), '#c9a27a', a, 0, y + .14, .008); // two faded curry stains
 }
 function ladle(ch) { const g = new THREE.Group(); ch.arms[1].hand.add(g); mesh(new THREE.CylinderGeometry(.01, .01, .34, 6), '#cfd5dc', g, 0, -.14); mesh(new THREE.SphereGeometry(.05, 10, 8, 0, Math.PI * 2, 0, 1.6), '#cfd5dc', g, 0, -.32).rotation.x = Math.PI; }
-function greens(ch) { const g = new THREE.Group(); g.position.set(0, -.06, .02); ch.arms[1].hand.add(g); for (let i = 0; i < 6; i++) mesh(new THREE.SphereGeometry(.045, 8, 6), i % 2 ? '#4f9a3a' : '#7cc45a', g, (i % 3 - 1) * .04, -.03 * i, (i % 2) * .03).scale.set(1, .6, 1.4); }
+function greens(ch) { const g = new THREE.Group(); g.position.set(0, -.06, .02); ch.arms[0].hand.add(g); for (let i = 0; i < 6; i++) mesh(new THREE.SphereGeometry(.045, 8, 6), i % 2 ? '#4f9a3a' : '#7cc45a', g, (i % 3 - 1) * .04, -.03 * i, (i % 2) * .03).scale.set(1, .6, 1.4); }
 function umbrella(ch) { // closed, carried like a cane (the animator keeps ch.cane upright)
   const g = new THREE.Group(); g.position.set(0, -.02, .02); ch.arms[1].hand.add(g);
-  mesh(new THREE.CylinderGeometry(.03, .012, .48, 8), '#2e3a59', g, 0, -.25); mesh(new THREE.TorusGeometry(.03, .01, 6, 12, Math.PI), '#7a4a2e', g, 0, .02);
+  mesh(new THREE.CylinderGeometry(.03, .012, .48, 8), '#1e1a20', g, 0, -.25); mesh(new THREE.TorusGeometry(.03, .01, 6, 12, Math.PI), '#7a4a2e', g, 0, .02);
   ch.cane = g; return g;
 }
 function goggles(ch, lens = '#ffb347') { // ရေကူးမျက်မှန်: a strap round the head and two cups that swing down over the eyes or up on the forehead
@@ -73,7 +94,9 @@ function wall(ch) { // a corner of brick wall, in front and to her right, that s
   for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) mesh(new THREE.BoxGeometry(.17, .09, .012), '#b5765a', w, -.2 + c * .2 + (r % 2) * .1, .12 + r * .21, .053);
   ch.wall = w; return w;
 }
-function earBlush(ch) { const ms = [-1, 1].map(s => mesh(new THREE.SphereGeometry(.052, 10, 8), '#ff8a8a', ch.head, s * R * .98, -.02, 0)); for (const m of ms) { m.scale.set(.5, 1, .8); m.visible = false; } return v => ms.forEach(m => m.visible = v); }
+function earBlush(ch) { // red ears over the real ones: they sit on the skull pivot, which carries the head shape's squash
+  const sk = ch.head.children.find(o => !o.isMesh) ?? ch.head;
+  const ms = [-1, 1].map(s => mesh(new THREE.SphereGeometry(.056, 10, 8), '#ff3a3a', sk, s * R * .99, -.02, 0)); for (const m of ms) { m.scale.set(.6, 1.1, .9); m.visible = false; } return v => ms.forEach(m => m.visible = v); }
 
 // ---------- the characters ----------
 const kid = { age: 'kid', size: .72, print: '', outline: false };
@@ -90,28 +113,28 @@ export const CAST = [
     build: ch => { showerCap(ch); notebook(ch); balloonBag(ch); }, acts: [['note', 'စာအုပ်ထဲ ရေး'], ['lob', 'ပူဖောင်း ပစ်'], ['loop:refuse', 'ရေစို မခံ']] },
   { id: 'phoekyaw', name: 'ဖိုးကျော်', side: 1, note: '၁၃ နှစ် · ဝ · olive · လုံချည် · ဘဲလ်',
     opts: { ...kid, size: .82, build: 'round', hair: 'buzz', top: '#6b7a3a', topStyle: 'tee', bottom: 'longyi', bottomColor: ['#4a4a5a', '#8a8a9a'], hat: 'none', accent: BLUE, thanaka: 'round', eyes: 'sleepy', brows: 'thin', lips: 'grin', marks: 'mole', head: 'soft', shoes: 'slipper', shoeColor: '#5a3a2a' },
-    build: ch => { pump(ch); snack(ch); }, acts: [['loop:munch', 'မုန့်စား'], ['shrug', 'ရတယ် ရတယ်']] },
-  { id: 'chocho', name: 'ချိုချို', side: 1, note: '၇ နှစ် · လိမ္မော် · ပတ်တီး · ရေသေနတ်',
-    opts: { ...kid, size: .6, build: 'round', hair: 'pigtails', top: '#f08a3c', topStyle: 'tee', bottom: 'skirt', bottomColor: ['#f08a3c', '#f08a3c'], hat: 'none', accent: '#e0574f', thanaka: 'dots', eyes: 'round', brows: 'arc', lips: 'grin', marks: 'blush', head: 'round', shoes: 'slipper', shoeColor: '#7a4a2e', prop: 'gun' },
-    build: ch => { bandage(ch); wall(ch); }, acts: [['loop:peek', 'ချောင်းကြည့်'], ['loop:listen', 'နားစွင့်'], ['squirt', 'ရေသေနတ် ပစ်']] },
+    build: ch => { pumpOnBack(ch); snack(ch); bikeBell(ch); }, acts: [['loop:munch', 'မုန့်စား'], ['shrug', 'ရတယ် ရတယ်'], ['ring', 'ဘဲလ် ကလင်']] },
+  { id: 'chocho', name: 'ချိုချို', side: 1, note: '၇ နှစ် · လိမ္မော် · လက်မောင်း အမာရွတ် · ရေသေနတ်',
+    opts: { ...kid, size: .6, build: 'round', hair: 'pigtails', top: '#f08a3c', topStyle: 'tee', bottom: 'shorts', bottomColor: ['#7a5a3a', '#f6ead2'], hat: 'none', accent: '#e0574f', thanaka: 'dots', eyes: 'round', brows: 'arc', lips: 'grin', marks: 'blush', head: 'round', shoes: 'slipper', shoeColor: '#7a4a2e', prop: 'gun' },
+    build: ch => { scar(ch); wall(ch); }, acts: [['loop:peek', 'ချောင်းကြည့်'], ['loop:listen', 'နားစွင့်'], ['squirt', 'ရေသေနတ် ပစ်']] },
   { id: 'sayagyi', name: 'ဆရာကြီး', side: 0, note: 'ကျောမတ် · အဖြူ+အညို · မျက်မှန် · ဝီစီ',
-    opts: { age: 'elder', hunch: .15, build: 'slim', hair: 'buzz', hairColor: HAIR_GREY, top: '#f4f1e8', topStyle: 'shirt', print: '', bottom: 'longyi', bottomColor: ['#5a3a2a', '#5a3a2a'], thanaka: false, eyes: 'bead', brows: 'flat', lips: 'small', marks: 'none', head: 'tall', shoes: 'slipper', shoeColor: '#3a2a1a', cane: false, skin: SKINS[1], smileEyes: false },
+    opts: { age: 'elder', hunch: .15, build: 'slim', hair: 'buzz', hairColor: HAIR_GREY, top: '#f4f1e8', topStyle: 'shirt', print: '', bottom: 'longyi', bottomColor: ['#5a3a2a', '#5a3a2a'], thanaka: false, eyes: 'bead', brows: 'bold', lips: 'small', marks: 'none', head: 'tall', shoes: 'slipper', shoeColor: '#3a2a1a', cane: false, skin: SKINS[1], smileEyes: false },
     build: ch => whistle(ch), acts: [['loop:handsback', 'လက် နောက်ပစ်'], ['whistle', 'ဝီစီ']] },
   { id: 'thura', name: 'သူရ', side: 4, note: 'သွယ် · အနီရင့် · ရေကူးမျက်မှန် · ဖိနပ်မပါ',
-    opts: { ...kid, build: 'slim', hair: 'short', top: '#b8322a', topStyle: 'tank', bottom: 'shorts', bottomColor: ['#2e3a59', '#f6ead2'], hat: 'none', accent: RED, thanaka: false, eyes: 'almond', brows: 'bold', lips: 'cat', marks: 'freckles', head: 'tall', shoes: 'none', skin: SKINS[1] },
+    opts: { ...kid, build: 'slim', hair: 'short', top: '#b8322a', topStyle: 'tank', bottom: 'shorts', bottomColor: ['#26262c', '#f6ead2'], hat: 'none', accent: RED, thanaka: false, eyes: 'almond', brows: 'bold', lips: 'cat', marks: 'freckles', head: 'tall', shoes: 'none', skin: SKINS[1] },
     build: ch => { pump(ch, { long: 1.15, can: '#d8352a' }); ch.goggles = goggles(ch); }, acts: [['goggles', 'မျက်မှန် ချ/တင်']] },
   { id: 'kid4', name: '④ ဂိုဏ်းသား', side: 4, note: 'အနီ/လိမ္မော် အင်္ကျီ · ဆီပုံး အနီ',
     opts: { ...kid, build: 'round', hair: 'short', hairColor: HAIRS[2], top: '#ff8a5b', topStyle: 'stripe', bottom: 'shorts', bottomColor: ['#4a4a5a', '#f6ead2'], hat: 'none', accent: RED, thanaka: 'round', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'round', shoes: 'slipper', shoeColor: '#2e3a59' },
     build: ch => pump(ch, { can: '#d8352a' }), acts: [] },
   { id: 'utinmaung', name: 'ဦးတင်မောင်', side: 0, note: 'ဗိုက် · စွပ်ကျယ် · အစိမ်းကွက် · ပဝါ',
-    opts: { age: 'elder', build: 'round', hair: 'short', hairColor: '#bdb5a8', top: '#f4f1e8', topStyle: 'tank', print: '', bottom: 'longyi', bottomColor: ['#2f6a4a', '#7cc45a'], thanaka: false, eyes: 'sleepy', brows: 'thin', lips: 'grin', marks: 'mole', head: 'soft', shoes: 'slipper', shoeColor: '#5a3a2a', glasses: false, cane: false, skin: SKINS[2] },
+    opts: { age: 'elder', build: 'round', hair: 'short', hairColor: '#bdb5a8', top: '#f4f1e8', topStyle: 'tank', print: '', bottom: 'longyi', bottomColor: ['#2f6a4a', '#7cc45a'], thanaka: false, eyes: 'sleepy', brows: 'thin', lips: 'grin', marks: 'mole', head: 'wide', shoes: 'slipper', shoeColor: '#5a3a2a', glasses: false, cane: false, skin: SKINS[2] },
     build: ch => towel(ch), acts: [['towel', 'ပဝါနဲ့ သုတ်'], ['loop:sit', 'ထိုင်']] },
   { id: 'mom1', name: 'ငဇွဲ့အမေ', side: 1, note: 'မုန့်ဟင်းခါး · ဆံထုံး · ဝ · ယောက်မ · ရှေ့ဖုံး',
     opts: { build: 'round', hair: 'bun', top: '#9ec9ee', topStyle: 'yinphone', print: '', bottom: 'htamein', bottomColor: ['#2e2a3a', '#6a5a7a'], hat: 'none', accent: BLUE, thanaka: 'round', eyes: 'almond', brows: 'bold', lips: 'small', marks: 'mole', head: 'wide', shoes: 'slipper', shoeColor: '#5a3a2a', skin: SKINS[1] },
-    build: ch => { apron(ch); ladle(ch); }, acts: [['loop:vend', 'ဆိုင်ထိုင်']] },
+    build: ch => { apron(ch); ladle(ch); pot(ch); }, acts: [['loop:stir', 'အိုး မွှေ']] },
   { id: 'mom4', name: 'သူရ့အမေ', side: 4, note: 'ဟင်းသီးဟင်းရွက် · ဆံမြီး · သွယ် · ခေါင်းရှည် · ဟင်းရွက်စည်း',
-    opts: { build: 'slim', hair: 'long', hairColor: HAIRS[2], top: '#f6b8c8', topStyle: 'yinphone', print: '', bottom: 'htamein', bottomColor: ['#6a2a2a', '#c0705a'], hat: 'none', accent: RED, thanaka: 'leaf', eyes: 'round', brows: 'thin', lips: 'grin', marks: 'none', head: 'tall', shoes: 'slipper', shoeColor: '#5a3a2a', skin: SKINS[2] },
-    build: ch => greens(ch), acts: [['loop:vend', 'ဆိုင်ထိုင်']] },
+    opts: { build: 'slim', hair: 'long', hairColor: HAIRS[2], top: '#f6b8c8', topStyle: 'yinphone', print: '', bottom: 'htamein', bottomColor: ['#6a2a2a', '#c0705a'], hat: 'none', accent: RED, thanaka: 'square', eyes: 'round', brows: 'thin', lips: 'grin', marks: 'none', head: 'tall', shoes: 'slipper', shoeColor: '#5a3a2a', skin: SKINS[2] },
+    build: ch => { greens(ch); pouch(ch); }, acts: [['loop:sprinkle', 'ဟင်းရွက် ရေဖြန်း']] },
   { id: 'mom0', name: '{နာမည်} အမေ', side: 1, note: 'သွယ် · အစိမ်းနု · သနပ်ခါး ရွက် (မိသားစု)',
     opts: { build: 'slim', hair: 'long', top: '#bfe3b4', topStyle: 'yinphone', print: '', bottom: 'htamein', bottomColor: ['#5a3a6a', '#b08ac0'], thanaka: 'leaf', eyes: 'round', brows: 'arc', lips: 'smile', marks: 'none', head: 'soft', shoes: 'slipper', shoeColor: '#5a3a2a' },
     build: () => {}, acts: [['scold', 'ဟဲ့!']] },
@@ -138,6 +161,10 @@ const EXTRA_LOOPS = {
   handsback(p, T) { Object.assign(p, { armLx: .75, armRx: .75, armLz: .28, armRz: -.28, elbowL: -1.15, elbowR: -1.15, handLz: .4, handRz: -.4, spineRx: -.1, headRx: -.06, headRy: osc(T, .5, .3), expr: 'normal', mouth: 'smile' }); return p; },
   // standing and eating: the snack hand comes up to the mouth every few seconds, then chewing
   munch(p, T) { const c = (T % 3.6), up = ease(clamp01(c / .35)) * (1 - ease(clamp01((c - 1.6) / .3))), chew = c > .5 && c < 3.0; /* hand stays at the mouth a good while, then chewing */ Object.assign(p, { armLx: -1.95 * up, elbowL: -2.55 * up, armLz: .22 * up, headRx: .12 * up + (chew ? .03 * osc(T, 11) : 0), headRz: chew ? .04 * osc(T, 5.5) : 0, mouth: chew && osc(T, 11) > 0 ? 'open' : 'smile', expr: 'normal' }); return p; },
+  // stirring the big pot: leaning over it, the ladle going round and round in front
+  stir(p, T) { const a = T * 2.6; Object.assign(p, { spineRx: .2, headRx: .25, armRx: -.95 + .12 * Math.sin(a), armRz: -.1 + .18 * Math.cos(a), elbowR: -.75, armLx: -.3, elbowL: -.9, armLz: .25, expr: 'normal', mouth: 'smile' }); return p; },
+  // keeping the greens fresh: the bunch held out in the left hand, the right hand dips and flicks water over it
+  sprinkle(p, T) { const c = T % 1.4, f = c < .9 ? 0 : Math.sin((c - .9) / .5 * Math.PI); Object.assign(p, { armLx: -1.05, elbowL: -.7, armLz: .15, armRx: -.8 - .5 * f, elbowR: -1.4 + .9 * f, armRz: .15, handRz: 1.2 * f, spineRx: .1, headRx: .2, headRy: .15, expr: 'normal', mouth: 'smile' }); return p; },
   // hates getting wet: turned away, shoulders up, both forearms shielding the face
   refuse(p, T) { Object.assign(p, { spineRy: .5, spineRx: .18, headRy: .4, headRz: .18, armLx: -1.7, armRx: -1.7, elbowL: -2.4, elbowR: -2.4, armLz: .35, armRz: -.35, sy: .97, expr: 'squint', mouth: 'open' }); return p; },
 };
@@ -146,7 +173,7 @@ ChibiAnimator.prototype._loopPose = function (name) { if (!EXTRA_LOOPS[name]) re
 const bell = (t, a, b, r = .3) => ease(clamp01((t - a) / .3)) * (1 - ease(clamp01((t - b) / r))); // 0 → 1 after a, back to 0 after b
 const moveTo = (m, parent, x, y, z, rx = 0, ry = 0, rz = 0) => { parent.add(m); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); };
 const moveHome = (m, h) => { h.parent.add(m); m.position.copy(h.pos); m.rotation.copy(h.rot); };
-Object.assign(ONESHOT, { bow: 2.4, lift: 2.6, note: 2.2, lob: 1.5, whistle: 1.6, towel: 2.0, goggles: .9, shrug: 1.6, scold: 1.6 });
+Object.assign(ONESHOT, { bow: 2.4, lift: 2.6, note: 2.2, lob: 1.5, whistle: 1.6, towel: 2.0, goggles: .9, shrug: 1.6, scold: 1.6, ring: 1.4 });
 Object.assign(ChibiAnimator.prototype, {
   // scolded: head drops, shoulders slump, both hands clasped low in front, and it holds
   _bow(p, t) { const k = bell(t, 0, 2.0, .35); Object.assign(p, { headRx: .7 * k, spineRx: .18 * k, armLx: -.3 * k, armRx: -.3 * k, armLz: -.22 * k, armRz: .22 * k, elbowL: -.55 * k, elbowR: -.55 * k, handLz: .5 * k, handRz: -.5 * k, sy: 1 - .03 * k, expr: 'normal', mouth: 'smile' }); return p; },
@@ -171,6 +198,8 @@ Object.assign(ChibiAnimator.prototype, {
   _goggles(p, t) { const k = bell(t, 0, .5, .3); Object.assign(p, { armRx: -2.5 * k, elbowR: -2.6 * k, armRz: -.3 * k, headRx: -.12 * k, expr: 'normal' }); if (!this.thrown && t > .32) { this.thrown = true; this.ch.gogglesUp = !this.ch.gogglesUp; this.ch.goggles?.set(this.ch.gogglesUp); } return p; },
   // 「ရတယ် ရတယ်」: both hands out and open, palms up, a shrug of the shoulders and a tilt of the head, grinning
   _shrug(p, t) { const k = bell(t, 0, 1.2, .35); if (this.ch.pump) this.ch.pump.visible = t > 1.5; Object.assign(p, { armLx: -.4 * k, armRx: -.4 * k, armLz: 1.0 * k, armRz: -1.0 * k, elbowL: -1.7 * k, elbowR: -1.7 * k, handLz: -1.1 * k, handRz: 1.1 * k, sy: 1 + .035 * k, headRz: .22 * k, spineRz: -.04 * k, expr: 'happy', mouth: 'open' }); return p; },
+  // 「ကလင်」: the bell comes up in front of the chest and the thumb flicks it, twice
+  _ring(p, t) { const k = bell(t, 0, 1.0, .3), fl = k > .8 ? Math.max(0, Math.sin(t * 22)) : 0; Object.assign(p, { armRx: -1.25 * k, elbowR: -1.5 * k, armRz: -.2 * k, handRz: .5 * fl, headRz: .1 * k, expr: 'happy', mouth: 'smile' }); if (!this.thrown && t > .45) { this.thrown = true; this.emote('note', 1); } return p; },
   // 「ဟဲ့!」: a step forward, hand on the hip, the other arm pointing straight at you, chin out
   _scold(p, t) { const k = bell(t, 0, 1.2, .3); Object.assign(p, { armRx: -1.35 * k, armRz: -.55 * k, elbowR: -.05, handRz: 0, armLx: -.35 * k, armLz: .65 * k, elbowL: -1.9 * k, handLz: -.4 * k, spineRx: .12 * k, headRx: -.06 * k, legRx: -.3 * k, kneeL: .15 * k, expr: 'normal', mouth: t > .3 && t < .9 ? 'open' : 'smile' }); if (!this.thrown && t > .2) { this.thrown = true; this.emote('bang', 1.2); } return p; },
 });
@@ -182,10 +211,12 @@ export function makeCast(id, emit) {
   const act = (k) => { // what this character's own buttons do
     if (k.startsWith('loop:')) {
       const name = k.slice(5); anim.setLoop(name);
-      if (ch.pump) { ch.pump.rotation.set(-.55, 0, 0); if (name === 'shoulder') ch.pump.rotation.x = .45; if (name === 'sulk') ch.pump.rotation.set(0, 0, Math.PI / 2 + .1); } // up past the shoulder / flat across the knees
+      if (ch.pump) { ch.pump.rotation.set(PUMP_REST, 0, 0); if (name === 'shoulder') ch.pump.rotation.set(.45, 0, -.45); if (name === 'sulk') ch.pump.rotation.set(0, 0, Math.PI / 2 + .1); } // up past the shoulder and out to the side, so the head doesn't hide it / flat across the knees
+      if (ch.pot) ch.pot.visible = name === 'stir';
       if (ch.wall) ch.wall.visible = name === 'peek';
       return;
     }
+    if (k === 'redeye' || k === 'ears') { if (anim.loop !== 'idle' && anim.loop !== 'shoulder') act('loop:idle'); } // the face has to be up to see it
     if (k === 'redeye') { ch.opts.redEye = !ch.opts.redEye; ch.faceKey = ''; return; }
     if (k === 'ears') return ch.blushEars?.(ch.earsOn = !ch.earsOn);
     anim.play(k);
