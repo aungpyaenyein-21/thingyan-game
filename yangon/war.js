@@ -5,7 +5,7 @@
 // Three rounds of three minutes: a gang that's all OUT at once has lost the round; at the bell, fewer OUTs takes it.
 // Most rounds wins the match. Home side has four taps and holds its ground; the
 // away side comes with an extra kid, one slow drum, and has to push in (and may use the home side's taps). One kid per tap.
-import { createWorld } from '../world.js?v=12';
+import { createWorld } from '../world.js?v=14';
 import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=1';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';

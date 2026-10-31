@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { Pathfinding } from 'three-pathfinding';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { makeCast } from './cast.js?v=10';
+import { createOrbit } from './camera.js?v=2';
+import { createSky } from './sky.js?v=4';
+import { PAL } from './palette.js?v=1';
 
 const $ = id => document.getElementById(id);
 const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]); // Burmese digits for the UI
@@ -29,24 +32,11 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-const HORIZON = new THREE.Color('#ffd9b0');
-scene.fog = new THREE.Fog(HORIZON, 32, 75);
 const cam = new THREE.PerspectiveCamera(40, 1, .1, 200);
-
-// sun direction is fixed in the world: rotating the camera moves the sun across the screen with everything else.
-// The disc sits lower than the light (same compass bearing) so it shows in close-up views without making the shadows endless.
+// the sky (T2: sky.js, shared with the real game) — the sun stays put in the world while the camera turns
 const SUN = new THREE.Vector3(-.32, .1, -.95).normalize(), LIGHT = new THREE.Vector3(-.32, .62, -.95).normalize();
-const sky = new THREE.Mesh(new THREE.SphereGeometry(90, 32, 16), new THREE.ShaderMaterial({
-  side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { sun: { value: SUN }, top: { value: new THREE.Color('#7fa8dc') }, mid: { value: HORIZON }, low: { value: new THREE.Color('#f6b9a2') }, glow: { value: new THREE.Color('#ffe3a8') } },
-  vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-  fragmentShader: `uniform vec3 sun, top, mid, low, glow; varying vec3 vDir;
-    void main(){ float y = vDir.y; vec3 c = y > 0. ? mix(mid, top, pow(y, .55)) : mix(mid, low, min(1., -y * 4.));
-      float s = max(dot(vDir, sun), 0.); c = mix(c, glow, pow(s, 6.) * .75); gl_FragColor = vec4(c, 1.); }`,
-}));
-sky.renderOrder = -1; scene.add(sky);
-const sunDisc = new THREE.Mesh(new THREE.CircleGeometry(3.2, 32), new THREE.MeshBasicMaterial({ color: '#fff4d6', fog: false, depthWrite: false }));
-sunDisc.renderOrder = -1; scene.add(sunDisc);
+const skyDome = createSky(scene, { sunBearing: SUN });
+scene.fog = new THREE.Fog(skyDome.horizon.clone(), 32, 75);
 
 scene.add(new THREE.HemisphereLight('#ffe9cf', '#a88fb8', 1.5));
 const sun = new THREE.DirectionalLight('#ffc78a', 2.3); sun.castShadow = true;
@@ -62,7 +52,7 @@ const groundS = boxMesh(HALF * 2, 1, slabD, '#e6c9a8', 0, -.5, CREEK + slabD / 2
 boxMesh(HALF * 2, .3, CREEK * 2, '#8a6a4a', 0, BED_Y - .15, 0); // creek bed
 for (const s of [-1, 1]) boxMesh(HALF * 2, .06, .25, '#c9a57e', 0, .03, s * (CREEK + .125)); // a kerb along each bank
 // water: a scrolling stripe texture shows which way it flows
-const wc = document.createElement('canvas'); wc.width = 128; wc.height = 32; { const g = wc.getContext('2d'); g.fillStyle = '#5aa6c8'; g.fillRect(0, 0, 128, 32); g.fillStyle = 'rgba(255,255,255,.28)'; for (let i = 0; i < 6; i++) g.fillRect(i * 22 + (i % 2) * 7, 6 + (i * 9) % 20, 12, 2); }
+const wc = document.createElement('canvas'); wc.width = 128; wc.height = 32; { const g = wc.getContext('2d'); g.fillStyle = PAL.water; g.fillRect(0, 0, 128, 32); g.fillStyle = 'rgba(255,255,255,.28)'; for (let i = 0; i < 6; i++) g.fillRect(i * 22 + (i % 2) * 7, 6 + (i * 9) % 20, 12, 2); }
 const waterTex = new THREE.CanvasTexture(wc); waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping; waterTex.repeat.set(12, 1); waterTex.colorSpace = THREE.SRGBColorSpace;
 const water = new THREE.Mesh(new THREE.PlaneGeometry(HALF * 2, CREEK * 2), new THREE.MeshLambertMaterial({ map: waterTex, transparent: true, opacity: .82, depthWrite: false }));
 water.rotation.x = -Math.PI / 2; water.position.y = WATER_Y; water.receiveShadow = true; scene.add(water);
@@ -146,24 +136,16 @@ const shopReady = new GLTFLoader().loadAsync('./art/shop.glb').then(gltf => {
 }).catch(e => { status('shop.glb မဖွင့်နိုင် — ' + e.message); throw e; });
 
 // ---------------------------------------------------------------- camera: follows with lag, 45° snaps, zoom, see-through buildings
-const STEP = Math.PI / 4;
-const elevAt = d => .22 + .63 * Math.pow(THREE.MathUtils.clamp((d - 5) / 19, 0, 1), .8); // close in = low and level (sky shows), far out = looking down
-const camS = { az: 0, azGoal: 0, drag: 0, dist: 11, distGoal: 11, target: new THREE.Vector3().copy(player.ch.root.position) };
+const orbit = createOrbit(cam, { base: 11, userMin: 5 / 11, userMax: 24 / 11 }), camS = orbit.state; // the lab keeps its full 5–24 zoom // camera.js (shared with the real game since T2)
+camS.target.copy(player.ch.root.position);
 const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 function placeCamera(dt) {
-  const k = 1 - Math.exp(-dt * 3.2); // follow lag
-  _v.copy(player.ch.root.position); _v.y += .55 + Math.max(0, jump.y) * .5; camS.target.lerp(_v, k);
-  camS.az += (camS.azGoal + camS.drag - camS.az) * (1 - Math.exp(-dt * 9)); // smooth tween to the snapped angle
-  camS.dist += (camS.distGoal - camS.dist) * (1 - Math.exp(-dt * 8));
-  const el = elevAt(camS.dist), c = Math.cos(el) * camS.dist;
-  cam.position.set(camS.target.x + Math.sin(camS.az) * c, camS.target.y + Math.sin(el) * camS.dist, camS.target.z + Math.cos(camS.az) * c);
-  cam.lookAt(camS.target);
-  sky.position.copy(cam.position);
-  sunDisc.position.copy(cam.position).addScaledVector(SUN, 80); sunDisc.lookAt(cam.position);
+  _v.copy(player.ch.root.position); _v.y += .55 + Math.max(0, jump.y) * .5; orbit.update(dt, _v);
+  skyDome.follow(cam.position);
   sun.position.copy(camS.target).addScaledVector(LIGHT, 25); sun.target.position.copy(camS.target);
 }
-const rotate = dir => { camS.azGoal += dir * STEP; };
-const zoomBy = f => { camS.distGoal = THREE.MathUtils.clamp(camS.distGoal * f, 5, 24); };
+const rotate = dir => orbit.rotate(dir);
+const zoomBy = f => orbit.zoom(f);
 
 const ray = new THREE.Raycaster(), fadeTargets = fadeables.flatMap(f => f.meshes);
 function updateFades(dt) {
@@ -208,12 +190,12 @@ cv.addEventListener('pointermove', e => {
   if (!gesture) return;
   if (gesture.pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const s = Math.hypot(a.x - b.x, a.y - b.y); camS.distGoal = THREE.MathUtils.clamp(gesture.dist * gesture.span / Math.max(20, s), 5, 24); return; }
   const dx = p.x - p.x0; if (Math.abs(dx) > 8) gesture.moved = true;
-  if (gesture.moved) camS.drag = -dx * .006; // the view follows the finger, then snaps on release
+  if (gesture.moved) orbit.drag(dx); // the view follows the finger, then snaps on release
 });
 const endPtr = e => {
   const p = ptrs.get(e.pointerId); if (!p) return; ptrs.delete(e.pointerId);
   if (gesture && !gesture.pinch) {
-    if (gesture.moved) { camS.azGoal = Math.round((camS.azGoal + camS.drag) / STEP) * STEP; camS.drag = 0; }
+    if (gesture.moved) orbit.dragEnd();
     else if (performance.now() - p.t < 400 && e.type === 'pointerup') tapAt(e.clientX, e.clientY);
   }
   if (ptrs.size === 0) gesture = null;
@@ -350,7 +332,7 @@ function bowlOnRail() { // SCENARIO ၄-၃: ဦးတင်မောင် puts
 }
 function bowlBack() { if (bowlBody) { world.removeRigidBody(bowlBody); bowlBody = null; } holdBowl(); status('ဖလား လက်ထဲ ပြန်ရ'); }
 
-const balloonGeo = new THREE.SphereGeometry(.09, 14, 10), BCOL = ['#4fb3d9', '#f06292', '#ffc83d', '#8bd17c', '#ff7f6b'];
+const balloonGeo = new THREE.SphereGeometry(.09, 14, 10), BCOL = [PAL.water, '#f06292', '#ffc83d', '#8bd17c', '#ff7f6b'];
 function dropBalloons(n = 10) {
   if (!world) return;
   const bp = bowlBody?.translation(), onRail = bp && Math.abs(Math.abs(bp.x) - BRIDGE.rail) < .3 && bp.y > .4;
@@ -375,7 +357,7 @@ function dropBalloons(n = 10) {
 function burst(b, handle) {
   const p = b.body.translation(), wet = p.y < WATER_Y + .1 && Math.abs(p.z) < CREEK;
   const y = wet ? WATER_Y + .01 : Math.max(.012, p.y - .07);
-  const d = new THREE.Mesh(wet ? new THREE.RingGeometry(.12, .2, 20) : new THREE.CircleGeometry(.2, 20), new THREE.MeshBasicMaterial({ color: '#8fd3ee', transparent: true, opacity: .75, depthWrite: false }));
+  const d = new THREE.Mesh(wet ? new THREE.RingGeometry(.12, .2, 20) : new THREE.CircleGeometry(.2, 20), new THREE.MeshBasicMaterial({ color: PAL.splash, transparent: true, opacity: .75, depthWrite: false }));
   d.rotation.x = -Math.PI / 2; d.position.set(p.x, y, p.z); scene.add(d); splats.push({ m: d, life: 2, ring: wet });
   for (const c of people) if (c.ch.root.position.distanceTo(new THREE.Vector3(p.x, 0, p.z)) < .8) { c.anim.soak(.5); c.anim.emote('drop', 1); }
   scene.remove(b.mesh); world.removeRigidBody(b.body); balloons.delete(handle);

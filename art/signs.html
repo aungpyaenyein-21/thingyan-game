@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ဆိုင်းဘုတ် ပုံ</title>
-<!-- art/building.py (Blender) က ဒီ PNG ၄ ခုကို ဆိုင်းဘုတ် texture အဖြစ် သုံး။
+<!-- art/building.py (camlab ဆိုင်) နဲ့ art/buildings.py (T2 ရပ်ကွက် hero ၃ ခု) က ဒီ PNG တွေကို ဆိုင်းဘုတ် texture အဖြစ် သုံး။
      Blender ရဲ့ text object က ဗမာစာ ပေါင်းစပ်ပုံ (shaping) မမှန်လို့ စာကို browser မှာ ဆွဲပြီး PNG ထုတ်တာ။
      ထုတ်ပုံ: ဒီစာမျက်နှာ ဖွင့် → ပုံ ၄ ခုပေါ် ညာကလစ် သိမ်း → art/signs/sign-<n>.png
      (ဒါမှမဟုတ် Playwright နဲ့ window.signs() က dataURL ကို ယူ) -->
@@ -14,21 +14,28 @@
 <body>
 <div id="out"></div>
 <script>
-// [file name, text, board colour, text colour, small line]
+// [file name, text, board colour, text colour, small line, canvas w, canvas h] — w/h = the board's real aspect (default 512 × 160)
 const SIGNS = [
   ['front', 'ရွှေနန်း လက်ဖက်ရည်', '#c8402f', '#ffe9b0', '၁၉၉၈ ကတည်းက'],
   ['right', 'မုန့်ဟင်းခါး', '#2f7a5a', '#fff6ea', 'မနက် ၆ နာရီ'],
   ['back', 'ကွမ်းယာ', '#ffc83d', '#5a3550', 'အေး · ချို · စပ်'],
   ['left', 'သင်္ကြန် မင်္ဂလာ', '#2f6fb3', '#fff6ea', 'ရေ ပက်ပါ'],
+  // T2 ရပ်ကွက် (yangon/set.js ရဲ့ textTex နဲ့ စာ/အရောင် တူ)
+  ['tea-name', 'ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', '#c8553d', '#ffe7a3', '', 1536, 132],
+  ['tea-menu', 'လက်ဖက်ရည် · ပလာတာ · ပေါက်စီ · မုန့်ဟင်းခါး', '#fbf4e6', '#5a3a8a', '', 1536, 76],
+  ['mohinga', 'မုန့်ဟင်းခါး', '#c8553d', '#fff6ea', 'မနက် ၆ နာရီ', 512, 160],
+  ['veg', 'ဟင်းသီးဟင်းရွက်', '#4f8f5a', '#fff6ea', 'လတ်လတ်ဆတ်ဆတ်', 512, 160],
+  ['home-no', 'အမှတ် ၁၂', '#fff6ea', '#5a3550', '', 256, 84],
 ];
-function draw([, text, bg, ink, sub]) {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 160; const g = c.getContext('2d');
-  g.fillStyle = bg; g.fillRect(0, 0, 512, 160);
-  g.strokeStyle = ink; g.globalAlpha = .55; g.lineWidth = 6; g.strokeRect(10, 10, 492, 140); g.globalAlpha = 1;
+function draw([, text, bg, ink, sub, w = 512, h = 160]) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'), m = Math.min(10, h * .07);
+  g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  g.strokeStyle = ink; g.globalAlpha = .55; g.lineWidth = Math.max(3, h * .04); g.strokeRect(m, m, w - 2 * m, h - 2 * m); g.globalAlpha = 1;
   g.fillStyle = ink; g.textAlign = 'center'; g.textBaseline = 'middle';
-  let s = 56; g.font = `700 ${s}px "Noto Sans Myanmar"`; while (g.measureText(text).width > 460) g.font = `700 ${s -= 2}px "Noto Sans Myanmar"`;
-  g.fillText(text, 256, 62);
-  g.font = '700 22px "Noto Sans Myanmar"'; g.globalAlpha = .85; g.fillText(sub, 256, 132);
+  const big = sub ? h * .35 : h * .55, y = sub ? h * .39 : h * .52;
+  let s = big; g.font = `700 ${s}px "Noto Sans Myanmar"`; while (g.measureText(text).width > w * .9) g.font = `700 ${s -= 2}px "Noto Sans Myanmar"`;
+  g.fillText(text, w / 2, y);
+  if (sub) { g.font = `700 ${Math.round(h * .14)}px "Noto Sans Myanmar"`; g.globalAlpha = .85; g.fillText(sub, w / 2, h * .82); }
   return c.toDataURL('image/png');
 }
 window.ready = document.fonts.load('700 40px "Noto Sans Myanmar"', 'က').then(() => {
