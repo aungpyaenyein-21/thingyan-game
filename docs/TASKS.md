@@ -10,7 +10,7 @@
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
-| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | ⏳ spec ✅ — စလို့ရပြီ | အခြား model · branch `claude/camera` |
+| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
 | T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | ⏳ spec ✅ — A–D အခု စလို့ရ၊ orbit က T2 ပြီးမှ | အခြား model · branch `claude/water` |
 | T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
@@ -82,6 +82,12 @@
 - laptop 60fps (Browser pane) · ဖုန်း ≥ 30fps (ဖန်တီးသူ Pages မှာ စစ်) · console error 0
 - camlab.html က `camera.js` / `sky.js` / `palette.js` ကို import ပြောင်းပြီး ဆက်အလုပ်လုပ် (copy မကျန်)
 - `docs/plans/T2.md` + PR
+
+### ✅ Result (Fable review 2026-11-01 · PR #30 merged)
+- camera.js per CAMERA.md (contexts, look-ahead, scene API, ?tune) · sky.js dome + surround · palette.js · `backs()` four sides · home / teashop / stalls .glb · Noto Sans Myanmar self-hosted · war.html stays iso until T3
+- Verified in the Browser pane: 45° snaps, user zoom .6 → 6.6, talk framing (dist 7.4), afternoon/dusk/night, fonts loaded, console 0. FPS: orbit 36 · `?q=off` 61 · iso baseline 35 → camera is not a regression; the post chain is the cost (both modes)
+- Review fix ffe9d1a: the white smear came from unlit ghost mandat parts (v4 flow) + bloom/blur at a low camera — now lit/faded, bloom tightened, blur fades below elevation .5
+- Hand-offs: T5 drops the ghost mandat · night water droplets read as cyan cubes (dim with `night()`) · phone bloom at level 2 — measure on a phone
 
 ## T4 ကောက်-သယ်-ချ system
 
