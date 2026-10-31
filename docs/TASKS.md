@@ -34,6 +34,25 @@
 - **ဖျော့** — camlab ရဲ့ raycast ၂ ကြောင်း ပုံစံ၊ ဒါပေမဲ့ T1 review #1: `needsUpdate` မသုံး — material တိုင်း `transparent:true` variant ကြို clone၊ fade ချိန် swap
 - shadow — PCFShadowMap (Soft မဟုတ်)၊ shadow camera ကစားသူ ပတ်လည် ၁၂ m ပဲ၊ ဖုန်း pixel ratio ≤ 1.5 (`PHONE` flag ရှိပြီး)
 
+### ၁-ခ။ Auto-zoom + ကြိုကြည့် (Go-Go Town! ပုံစံ — 2026-10-31 ထပ်ထည့်)
+ကင်မရာက follow ပဲ မဟုတ်၊ **အခြေအနေ အလိုက် ကိုယ်တိုင် zoom** — ကစားသူ ကိုင်ရတာ လှည့်တာ + zoom offset ပဲ။
+
+| အခြေအနေ | dist (base 11) | ဘာကြောင့် |
+|---|---|---|
+| ရပ် / လမ်းလျှောက် | 11 | ပုံမှန် |
+| ပြေး | +3 (→ 14) | ရှေ့ မြင်ရ |
+| စက်ဘီး (T4 `ride`) | +5၊ elevation ပိုမြင့် | မြန်လို့ |
+| ဆိုင်ထဲ / အိမ်ထဲ (rooms) | −5 (→ 6)၊ az lock | အခန်း သေး |
+| NPC နဲ့ စကားပြော (hud.say ဖွင့်ချိန်) | −4၊ target = ၂ ယောက် အလယ် | မျက်နှာ မြင်ရ |
+| ရေပက်စစ် (war zone ထဲ) | +2 | ပစ်မှတ် မြင်ရ |
+| ဇာတ်လမ်း scene | script သတ်မှတ် (`camera.js` `lock(az)` + `focus(obj, dist)`) | ၁-၇၊ ၄-၄ |
+
+- **ကစားသူ zoom = offset** (×.6 … ×1.6) — auto ပေါ် ထပ်ပေါင်း၊ ပြောင်းလည်း မပျောက် (ဆိုင်ထဲက ထွက်လာလည်း ကစားသူ ရွေးထားတာ ပြန်ရ)
+- **ကြိုကြည့် (look-ahead)** — target ကို ရွေ့တဲ့ဘက် ၁.၂ m (ပြေးရင် ၂ m) ရွှေ့၊ lerp ၂ s — ကစားသူ screen အလယ် အောက်နည်းနည်း
+- **အကုန် lerp** — dist `1−e^(−dt·2)`၊ target `1−e^(−dt·3.2)` (ရှိ) — ခုန်မသွားရ၊ ခေါင်းမမူး
+- lil-gui `?tune` ထဲ ဒီ ဂဏန်း ၇ ခုလုံး
+- auto-rotate (ကစားသူ့ နောက်က လိုက်လှည့်) **မထည့်** — ပုံသေ ပိတ်၊ option ပဲ
+
 ### ၂။ ကောင်းကင် (`sky.js`)
 - `world.js` ရဲ့ canvas gradient + screen ပုံသေ နေ → **sky dome shader** (camlab ပုံစံ) · ဒါပေမဲ့ `setTime` (dusk 0→1→night 2) ကို **ဆက်ထောက်ပံ့** — SKY/NIGHT stop ၄ ခု ကို dome shader uniform အဖြစ် ထည့်၊ နေ ကမ္ဘာ ပုံသေ ဦးတည်ချက် + dusk အလိုက် နိမ့်/နီ · ကြယ် (night) ပါ
 - `paintSky` hook (ရှိပြီး — ပိတောက်ပွင့် စတာ) ဆက်အလုပ်လုပ်ရ — မရရင် ဘာ ပျက်လဲ plan ထဲ ပြော
