@@ -395,9 +395,13 @@ export function makeChibi(opts = {}) {
   root.scale.setScalar(scale);
   const hunch = o.hunch ?? (o.age === 'elder' ? .3 : 0), gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
 
+  // carry sockets (T4): empty pivots on the rig — whatever is parented here rides the animation. No meshes, so skin() leaves them be
+  const sockets = { handR: arms[1].hand, handL: arms[0].hand, chest: pivot(spine, 0, .14, .3), back: pivot(spine, 0, .12, -.22),
+    head: pivot(head, 0, HEAD_R * HS[1] * (o.age === 'kid' ? 1.1 : 1) + .06) }; // just above the hair, on the head pivot (not the squashed skull)
+
   skin(body, new Set([face, torso, skirtMesh, gun, cane].filter(Boolean)), new Set([torso]), wetMats);
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
+  return { root, body, hips, spine, neck, head, legs, arms, tail, sockets, skirtMesh, skirtBase, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
 }
 
@@ -493,10 +497,10 @@ export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, s
   push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 }, coast: { f: 0, A: 0, speed: 0 } };
 const LEG = UP + LO;
 for (const k of ['walk', 'run', 'push', 'carry']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
-export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6 };
-const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup']; // one-shots you can't walk through
+export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6, pick: .55, bigthrow: .75 };
+const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup', 'pick', 'bigthrow']; // one-shots you can't walk through
 const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle', 'coast'];
-const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(); const _ikq = new THREE.Quaternion();
 function sitPose(p, T) {
   const b = Math.sin(T * 1.8);
   p.y = -.2; p.legLx = p.legRx = -1.45; p.kneeL = p.kneeR = 1.45; p.footL = p.footR = 0; p.legLz = .12; p.legRz = -.12;
@@ -505,12 +509,28 @@ function sitPose(p, T) {
 }
 const mix = (a, b, w) => { const o = { ...a }; for (const k of KEYS) o[k] = a[k] + (b[k] - a[k]) * w; return o; };
 
+// T4 arm IK, analytic two-bone. The elbow is a hinge on x (≤ 0 bends forward); the shoulder gets a full turn: a swing that points the
+// shoulder→hand line at the target, then a twist about that line so the elbow points down and a little out (the pole).
+// d = the hand target in the shoulder's parent (spine) space, relative to the shoulder; side = +1 left arm (+x), −1 right.
+const _ik = { h: new THREE.Vector3(), d: new THREE.Vector3(), el: new THREE.Vector3(), pole: new THREE.Vector3(), q: new THREE.Quaternion(), tw: new THREE.Quaternion() };
+export function solveArm(d, side = 1, q = new THREE.Quaternion()) {
+  const a = ARM_UP, b = ARM_LO, len = d.length(), L = Math.min(a + b - 1e-3, Math.max(Math.abs(a - b) + 1e-3, len));
+  const e = -(Math.PI - Math.acos(Math.max(-1, Math.min(1, (a * a + b * b - L * L) / (2 * a * b)))));
+  const dn = _ik.d.copy(d).normalize(); if (len < 1e-6) dn.set(0, -1, 0);
+  q.setFromUnitVectors(_ik.h.set(0, -a - b * Math.cos(e), -b * Math.sin(e)).normalize(), dn);
+  const el = _ik.el.set(0, -1, 0).applyQuaternion(q), pole = _ik.pole.set(side * .45, -1, -.3);
+  el.addScaledVector(dn, -el.dot(dn)); pole.addScaledVector(dn, -pole.dot(dn));
+  if (el.lengthSq() > 1e-8 && pole.lengthSq() > 1e-8) q.premultiply(_ik.tw.setFromAxisAngle(dn, Math.atan2(dn.dot(_ik.h.crossVectors(el, pole)), el.dot(pole))));
+  return { q, e };
+}
+
 export class ChibiAnimator {
   constructor(ch, emit = () => {}) {
     this.ch = ch; this.emit = emit;
     this.loop = 'idle'; this.one = null; this.oneT = 0; this.T = 0; this.phi = 0; this.freq = 0;
     this.from = base(); this.out = base(); this.blendT = 1;
     this.tailA = 0; this.tailV = 0; this.lastStance = 0; this.seed = Math.random() * 10; this.chat = null;
+    this.load = null; this.reach = { L: null, R: null }; // T4 carry: load = 'hand' | 'front' | 'head' (upper-body layer) · reach.L/R = { target: Object3D | world Vector3, w: 0..1 } (arm IK)
   }
   _chat(p, sat) { // talking in a group: the speaker's hands go, the others nod along
     const T = this.T + this.seed;
@@ -550,6 +570,7 @@ export class ChibiAnimator {
     if (c.cane && walking) { pose.armRx = pose.armRx * .3 - .3; pose.armRz = -.1; pose.elbowR = -.5; } // cane hand held forward
     if ((c.tool === 'bucket' || c.hang) && walking) { pose.armLx *= .3; pose.armLz = Math.max(pose.armLz, .3); pose.elbowL = -.06; } // a heavy bucket / basket: arm straight, out from the leg
     if (this.chat && !['walk', 'run', 'push', 'carry', 'cycle'].includes(this.loop)) this._chat(pose, sat);
+    if (this.load && walking) this._loadPose(pose);
     if (this.one) {
       this.oneT += dt; const d = ONESHOT[this.one];
       if (this.oneT >= d) { this.one = null; this._xfade(); }
@@ -641,6 +662,34 @@ export class ChibiAnimator {
     return p;
   }
 
+  // ---- T4 carry ----
+  _loadPose(p) { // upper-body layer while carrying; the hands themselves come from reach (IK)
+    if (this.load === 'front') { p.spineRx -= .1; p.headRx += .05; p.hipsRy *= .5; p.spineRy *= .4; } // a load at the chest: lean back a little, less twist
+    else if (this.load === 'head') { // ခေါင်းရွက်: the body sways, the head (and what's on it) stays level
+      const s = Math.sin(this.phi + Math.PI / 2), k = this.freq > .1 ? 1 : .25;
+      p.hipsRz += .08 * s * k; p.spineRz = -p.hipsRz * .45; p.headRx = -p.spineRx; p.headRy = 0; p.headRz = -(p.hipsRz + p.spineRz); p.sy = 1; p.armLx *= .5;
+    } else if (this.load === 'hand') { p.armRx *= .4; p.elbowR = Math.min(p.elbowR, -.35); } // the hand with the thing in it swings less
+  }
+  _reachIK() {
+    const c = this.ch; c.spine.updateWorldMatrix(true, true);
+    [['L', 0], ['R', 1]].forEach(([k, i]) => {
+      const r = this.reach[k]; if (!r || !(r.w > 0)) return;
+      const a = c.arms[i], d = r.target.isObject3D ? r.target.getWorldPosition(_a) : _a.copy(r.target);
+      c.spine.worldToLocal(d).sub(a.sh.position);
+      const s = solveArm(d, i ? -1 : 1, _ikq), w = Math.min(1, r.w);
+      a.sh.quaternion.slerp(s.q, w); a.elbow.rotation.x += (s.e - a.elbow.rotation.x) * w; // next frame's _apply sets the shoulder back from the pose
+    });
+  }
+  // pickup: knees and back bend, eyes on the thing; the hand gets there by reach
+  _pick(p, t) { const k = Math.sin(Math.PI * clamp01(t / ONESHOT.pick)); Object.assign(p, { y: -.05 * k, legLx: -.5 * k, legRx: -.5 * k, kneeL: .9 * k, kneeR: .9 * k, footL: -.4 * k, footR: -.4 * k, spineRx: .6 * k, headRx: .2 * k, armLx: -.5 * k, armRx: -.5 * k }); return p; }
+  // CHARACTERS §1 ပစ်တာ ကြီး: the whole arm drawn right back, the body turning away, then a big swing through and a step
+  _bigthrow(p, t) {
+    const w = ease(clamp01(t / .3)), f = ease(clamp01((t - .3) / .22)), r = 1 - ease(clamp01((t - .58) / .17));
+    Object.assign(p, { armRx: (1.5 * w - 3.7 * f) * r, armRz: -.35 * w * r, elbowR: (-.7 * w + .6 * f) * r, armLx: (-1.0 * w + .7 * f) * r, armLz: .35 * r, elbowL: -.5 * r,
+      spineRy: (.6 * w - 1.1 * f) * r, hipsRy: (.3 * w - .5 * f) * r, spineRx: (-.15 * w + .32 * f) * r, legLx: -.35 * f * r, kneeL: .2 * f * r, footL: .15 * f * r, expr: 'normal', mouth: f > .2 ? 'open' : 'smile' });
+    if (!this.thrown && t > .44) { this.thrown = true; this.emit('throw', this.ch.arms[1].hand); }
+    return p;
+  }
   _jump(p, t) {
     const tA = .14, v = 4.0, g = 13, tAir = 2 * v / g, tC = ONESHOT.jump - tA - tAir;
     p = { ...p, expr: 'normal', mouth: 'open' };
@@ -743,6 +792,7 @@ export class ChibiAnimator {
     const [aL, aR] = c.arms;
     aL.sh.rotation.set(p.armLx, 0, p.armLz); aR.sh.rotation.set(p.armRx, 0, p.armRz);
     aL.elbow.rotation.x = p.elbowL; aR.elbow.rotation.x = p.elbowR; aL.hand.rotation.z = p.handLz; aR.hand.rotation.z = p.handRz;
+    if (this.reach.L?.w > 0 || this.reach.R?.w > 0) this._reachIK(); // after the pose (one-shots included), so a reach wins over the animation by its weight
     // face
     const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : (c.opts.smileEyes ?? c.opts.age === 'elder') ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes (smileEyes: false for a stern one)
     const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, eye, p.mouth); }

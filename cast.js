@@ -1,7 +1,7 @@
 // cast.js — the named characters of the story (CHARACTERS.md), built on chibi.js: fixed looks, their props, and the
 // animation tics that belong to each of them. makeCast(id) → { ch, anim, acts } where acts = this character's own buttons.
 import * as THREE from 'three';
-import { makeChibi, ChibiAnimator, LOOPS, ONESHOT, SKINS, HAIRS, HAIR_GREY, IRIS } from './chibi.js?v=30';
+import { makeChibi, ChibiAnimator, LOOPS, ONESHOT, SKINS, HAIRS, HAIR_GREY, IRIS } from './chibi.js?v=31';
 
 const BLUE = '#2f8fd6', RED = '#e0574f', YELLOW = '#ffc83d';
 const mat = {}; const M = c => mat[c] ??= new THREE.MeshLambertMaterial({ color: c });
