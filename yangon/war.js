@@ -9,7 +9,7 @@ import { createWorld } from '../world.js?v=14';
 import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=2';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
-import { createAI } from './ai.js?v=1';
+import { createAI } from './ai.js?v=2';
 
 const P = new URLSearchParams(location.search);
 const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked

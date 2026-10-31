@@ -49,7 +49,8 @@ export function createGrid(B, free, cell = .5) {
   }
   // a real corner: an open cell with something solid right beside it, between it and `toward` (± x)
   function corners(toward) { const out = []; for (let j = 1; j < nz - 1; j++) for (let i = 1; i < nx - 1; i++) if (ok(i, j) && !ok(i + toward, j) && ok(i, j - 1) && ok(i, j + 1)) out.push([wx(i), wz(j)]); return out; }
-  return { find, lineFree, corners, ok: (x, z) => ok(cx(x), cz(z)), nx, nz, cell };
+  const snap = (x, z) => { const c = nearestOpen(cx(x), cz(z)); return !c || ok(cx(x), cz(z)) ? [x, z] : [wx(c[0]), wz(c[1])]; }; // a goal inside a drum / tap / wall → the nearest open cell
+  return { find, lineFree, corners, snap, ok: (x, z) => ok(cx(x), cz(z)), nx, nz, cell };
 }
 
 // ---------- the heads ----------
@@ -64,7 +65,7 @@ export function createAI(G) {
   // the legs: go to (x, z) — a new A* path only when the goal has moved a metre or the old one is done
   function goTo(k, x, z, run = true) {
     const a = k.ai, p = pos(k);
-    a.run = run; a.want = true;
+    a.run = run; a.want = true; [x, z] = grid.snap(x, z); // never aim for a point inside something solid (Cho Cho behind a mate by the tap)
     if (a.goal && Math.hypot(a.goal[0] - x, a.goal[1] - z) < 1 && a.pathT > 0 && !a.path.finished()) return;
     if (dist(p, { x, z }) < .3) { stop(k); return; }
     a.goal = [x, z]; a.pathT = 1.2;
