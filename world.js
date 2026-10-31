@@ -1,4 +1,4 @@
-// world.js — the diorama engine shared by the story zones (STORY.md): renderer, light, sky, post, chibi people,
+// world.js — the diorama engine shared by the story zones (docs/archive/STORY.md): renderer, light, sky, post, chibi people,
 // street pets, water + petal particles, input, camera follow and the frame loop. A zone page builds its own set on top.
 // Lifted from diorama.html (which stays as the art prototype); same look, same numbers.
 import * as THREE from 'three';

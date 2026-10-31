@@ -1,4 +1,4 @@
-// yangon/life.js — the ward going about its day (STORY.md §၄): people chatting in knots, eating at the mohinga stall,
+// yangon/life.js — the ward going about its day (docs/archive/STORY.md §၄): people chatting in knots, eating at the mohinga stall,
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.

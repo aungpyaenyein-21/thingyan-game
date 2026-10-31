@@ -1,6 +1,6 @@
-// yangon/downtown.js — ⑤ downtown on day 1 (STORY.md §၄): the Sule Pagoda roundabout, the big stage in front of City Hall,
+// yangon/downtown.js — ⑤ downtown on day 1 (docs/archive/STORY.md §၄): the Sule Pagoda roundabout, the big stage in front of City Hall,
 // Maha Bandula Park and its monument, pandals along the streets, a float circling Sule, crowds dancing in the hoses.
-// Era 2015–19: floats still allowed. The stage is a generic city mandat — no officials, no state symbols (STORY.md §၈).
+// Era 2015–19: floats still allowed. The stage is a generic city mandat — no officials, no state symbols (docs/archive/STORY.md §၈).
 // Favour #9: the water crew will give you a brass sprinkler for the kids' mandat, once you've been soaked at all three stages.
 import { createWorld, PAL } from '../world.js?v=12';
 import { shwedagon, MM } from './set.js?v=17';

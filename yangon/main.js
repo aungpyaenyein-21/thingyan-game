@@ -1,4 +1,4 @@
-// yangon/main.js — story day 1, Yangon (STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
+// yangon/main.js — story day 1, Yangon (docs/archive/STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
 import { createWorld, PAL, SKINS } from '../world.js?v=12';
@@ -146,7 +146,7 @@ const frondMan = npc({ age: 'adult', hair: 'short', topStyle: 'tank', shirt: '#8
 const mohingaLady = npc({ age: 'adult', hair: 'bun', topStyle: 'yinphone', shirt: '#e9a0b4', bottom: 'htamein', hat: 'none', x: 9.4, z: 15.0, ry: 0 });
 const lightsMan = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: 3.0, z: 22.7, ry: 0 });
 // (vendors, shoppers, the bus, traffic, chinlone, knots of people chatting … live in life.js)
-// ④ pagoda + monastery: monks are never splashed (dry) and never joked about (VISION.md §၉)
+// ④ pagoda + monastery: monks are never splashed (dry) and never joked about (docs/archive/VISION.md §၉)
 const ROBE = { topStyle: 'long', shirt: '#9a3a2a', bottom: 'longyi', bottomColor: ['#8a3a2a', '#a8432f'], hair: 'buzz', hairColor: '#3a2a26', hat: 'none', thanaka: false, flower: false, garland: false };
 const novices = [npc({ ...ROBE, age: 'kid', x: L.WELL.x, z: L.WELL.z + .2 }), npc({ ...ROBE, age: 'kid', x: L.POND.x - .4, z: L.POND.z + 1 })];
 const abbot = npc({ ...ROBE, age: 'elder', x: L.MONASTERY.x, z: L.MONASTERY.z - .4, ry: 0 });

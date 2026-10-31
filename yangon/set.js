@@ -1,4 +1,4 @@
-// yangon/set.js — the day-1 Yangon neighbourhood as one walkable map (STORY.md §၄):
+// yangon/set.js — the day-1 Yangon neighbourhood as one walkable map (docs/archive/STORY.md §၄):
 //   ① home lane (walk-up flats, timber home, the empty lot)   ② the main street: shops below, flats above (tea shop, barber, tailor …)
 //   ③ the ward market: vendors on mats along two lanes, sheds   ④ the ward monastery            + compounds, a chinlone lot, a condo going up
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and errands live in story.js.
