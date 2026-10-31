@@ -9,7 +9,7 @@
 | # | task | အခြေအနေ | ဘယ်သူ |
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
-| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | ⏳ spec ✅ · plan 👀 [plans/T2.md](plans/T2.md) | အခြား model · branch `claude/camera` |
+| T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `world.js`/`yangon/*` ကို camlab ကင်မရာ၊ sky dome၊ ဖျော့၊ `palette.js`၊ ① အဆောက်အအုံ ၄ ဘက် | 👀 plan ✅ · code (PR #30) [plans/T2.md](plans/T2.md) | အခြား model · branch `claude/camera` |
 | T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |

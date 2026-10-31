@@ -10,16 +10,21 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=31';
 import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=6';
+import { PAL as TONE } from './palette.js?v=1';
+import { createOrbit } from './camera.js?v=1';
+import { createSky, createSurround } from './sky.js?v=4';
 
 export { THREE };
+// the old key names stay (every zone file uses them); the colours now come from palette.js (docs/PALETTE.md) where a token exists
 export const PAL = {
-  soil:'#b5835a', soilDark:'#8a5f42', grass:'#9cc58a', road:'#7d7085', roadLine:'#efe3c8', walk:'#e6c9a8',
-  cream:'#f6ead2', pink:'#f4a6a6', mint:'#a9d8bf', butter:'#f7d58b', roof:'#c8553d', frame:'#fff7ea',
+  soil:'#b5835a', soilDark:'#8a5f42', grass:'#9cc58a', road:'#7d7085', roadLine:'#efe3c8', frame:'#fff7ea',
   window:'#5b6c9a', shutter:'#6b5a7a', bamboo:'#d8b06a', red:'#d9534f', gold:'#f2c14e', white:'#fff6ea',
-  leaf:'#6a9f58', leafLight:'#86b96d', trunk:'#7a5038', padauk:'#ffc83d', water:'#bfeaff', puddle:'#a9d6ef',
-  hair:'#2b1d1a', eye:'#2b1d1a', thanaka:'#fdf0c8',
+  leaf:'#6a9f58', leafLight:'#86b96d', trunk:'#7a5038', hair:'#2b1d1a', eye:'#2b1d1a', thanaka:'#fdf0c8',
+  ...TONE, // sand dust shade · cream mint pink ochre teal · brick zinc · water wet splash · padauk tarp · gang1 gang4 …
+  walk: TONE.sand, butter: TONE.ochre, roof: TONE.brick, puddle: TONE.wet,
 };
 export const SKINS = ['#efc29c', '#d9a07a', '#b97d58'];
 export const LONGYI = [['#4a5aa8', '#7f8fd6'], ['#a8434a', '#d97a7f'], ['#3f7a5a', '#72b08b'], ['#7a4a9a', '#a985c8'], ['#a8743a', '#d6a76a']];
@@ -34,7 +39,10 @@ const FONT = '"Myanmar Sangam MN","Noto Sans Myanmar",Padauk,sans-serif';
 // opts: half = island half size, or bounds = { x0, x1, z0, z1 } for a non-square map; ground(x, z) = walk height,
 // paintSky(g, W, H, dusk) = extra sky art (skyline, zedi), camClamp = how far the camera follows (small islands),
 // camBounds = { x0, x1, z0, z1 }: on a big map the camera centres on you, kept inside this rect; view = default zoom
-export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, camClamp = 4, camBounds, view = 15, seed = 20270413 } = {}) {
+// camera: 'iso' (the original fixed orthographic view — war.html until T3) | 'orbit' (T2: perspective, turns in 45° steps, camera.js)
+// surround: { rects } — orbit only: ground, streets running on and a low town outside the island (sky.js createSurround)
+export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, camClamp = 4, camBounds, view = 15, seed = 20270413, camera = 'iso', surround = null } = {}) {
+  const ORBIT = camera === 'orbit';
   let B = bounds ?? { x0: -half, x1: half, z0: -half, z1: half };
   const P = new URLSearchParams(location.search);
   let VIEW = +(P.get('v') || view); // ortho view height (units); wheel zooms 7..28
@@ -49,11 +57,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const renderer = new THREE.WebGLRenderer({ antialias: Q === 'off', powerPreference: 'high-performance' });
   const PR = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(PR);
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = ORBIT ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; // orbit: plain PCF (cheaper; the soft kernel smeared at a low sun anyway)
   let shadowTick = 0; if (PHONE) renderer.shadowMap.autoUpdate = false;
   document.body.appendChild(renderer.domElement);
   const scene = new THREE.Scene();
-  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+  const cam = ORBIT ? new THREE.PerspectiveCamera(40, 1, .1, 260) : new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+  const viewDist = v => THREE.MathUtils.clamp(v * .8, 5, 24); // an iso 'view' height → an orbit distance that frames about the same
+  const orbit = ORBIT ? createOrbit(cam, { dist: viewDist(VIEW) }) : null;
   const ISO = new THREE.Vector3(1, 0.95, 1).normalize().multiplyScalar(60);
   const camTarget = new THREE.Vector3();
   scene.add(cam);
@@ -63,6 +73,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString();
   let dusk = 0, night = 0; // setTime: 0..1 afternoon → sunset (dusk), 1..2 sunset → night
   function drawSky() { // gradient + soft sun, redrawn per aspect so the sun stays round
+    if (sky) { sky.setTime(dusk, night); if (scene.fog) scene.fog.color.copy(sky.horizon); return; } // orbit: the dome (sky.js) instead
     const H = 512, W = Math.round(H * innerWidth / innerHeight); skyC.width = W; skyC.height = H; const g = skyC.getContext('2d');
     const NIGHT = ['#0f1433', '#1c2150', '#2f2a5a', '#46386a'];
     const gr = g.createLinearGradient(0, 0, 0, H); SKY.forEach(([a, b], i) => gr.addColorStop(STOPS[i], mix(mix(a, b, dusk), NIGHT[i], night)));
@@ -75,18 +86,22 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   }
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture; scene.environmentIntensity = .45; // only the metals (Standard) use it
-  const hemi = new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.55); scene.add(hemi); // lavender fill = soft lilac shadows
+  const hemi = new THREE.HemisphereLight('#ffe2c4', TONE.shade, 1.55); scene.add(hemi); // lavender fill = soft lilac shadows
   const sun = new THREE.DirectionalLight('#ffb46b', 2.4);
   const SUN = new THREE.Vector3(-14, 11, 6); // the sun's offset from wherever the camera looks, so shadows follow you round a big map
   sun.position.copy(SUN); sun.castShadow = true; scene.add(sun.target);
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
-  Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 50 });
+  Object.assign(sun.shadow.camera, ORBIT ? { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 } : { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 50 }); // orbit: 12 m round you
   scene.add(sun);
+  // orbit: a sky dome that stays right when you turn, fog into the horizon colour, and the town carrying on past the island's edge
+  const sky = ORBIT ? createSky(scene, { paintSky, sunBearing: SUN }) : null;
+  if (sky) { scene.background = null; scene.fog = new THREE.Fog(sky.horizon.clone(), 30, 115); }
+  const town = ORBIT && surround ? createSurround(scene, B, surround) : null;
   const occluders = []; // see occluder() below
   function setTime(t) { // 0 day .. 1 dusk; windows (PAL.window) glow as it gets dark
     dusk = THREE.MathUtils.clamp(t, 0, 1); night = THREE.MathUtils.clamp(t - 1, 0, 1);
     sun.color.set(mix(mix('#ffb46b', '#ff7a5a', dusk), '#8fa0e8', night)); sun.intensity = 2.4 - dusk * 1.5 - night * .6; // the sun goes, a cool moonlight stays
-    hemi.color.set(mix(mix('#ffe2c4', '#9a8ad0', dusk), '#5d68b0', night)); hemi.groundColor.set(mix(mix('#9a7fb8', '#3f3368', dusk), '#221d3e', night)); hemi.intensity = 1.55 - dusk * .35 - night * .55;
+    hemi.color.set(mix(mix('#ffe2c4', '#9a8ad0', dusk), '#5d68b0', night)); hemi.groundColor.set(mix(mix(TONE.shade, '#3f3368', dusk), '#221d3e', night)); hemi.intensity = 1.55 - dusk * .35 - night * .55;
     M(PAL.window).emissive.set('#ffc46b').multiplyScalar(dusk * dusk * .9 + night * .4);
     for (const o of occluders) for (const c of o.mats) if (c.userData.base.emissive) c.emissive.copy(c.userData.base.emissive); // see-through buildings' windows light up too
     document.body.style.background = mix(mix('#f9b8a0', '#7a4f92', dusk), '#1c2150', night);
@@ -244,7 +259,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     c.anim = new ChibiAnimator(ch, (t, o) => emitFx(t, o, ch.root)); c.anim.T = rnd() * 3; // desync idle breathing/blinks
     chars.push(c); return c;
   }
-  const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: '#4fd1ff', transparent: true, opacity: .85, depthWrite: false }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: TONE.water, transparent: true, opacity: .85, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = .012;
   const setPlayer = c => { W.player = c; c.g.add(ring); camTarget.copy(c.g.position); }; // ring: find yourself at any zoom
 
@@ -301,7 +316,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // ---------- particles: water + falling petals ----------
   // drops live in a pool; only the live ones are touched each frame and drawn (water.count). A drop that hits someone stops there
   // and bursts into a little spray off them, instead of flying on through.
-  const NW = 1400, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(.9, 1.25, 1.55) }), NW);
+  const NW = 1400, water = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.07, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(TONE.water).multiplyScalar(1.45) }), NW); // over 1: the water glows a little under bloom
   water.instanceMatrix.setUsage(THREE.DynamicDrawUsage); water.frustumCulled = false; water.count = 0; scene.add(water);
   const free = Array.from({ length: NW }, () => ({ p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0, s: 1, own: null, spray: false })), live = [];
   function spawn(p, v, o) { // o: { own: the thrower's root (never hits them), s: size, life, spray: no hit test }
@@ -314,7 +329,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const back = d.v.clone().multiplyScalar(-.12);
     for (let k = 0; k < 3; k++) spawn(d.p, new THREE.Vector3(back.x + (rnd() - .5) * 2.2, 1 + rnd() * 1.4, back.z + (rnd() - .5) * 2.2), { s: .5, life: .6, spray: true });
   }
-  const NR = 40, rings = new THREE.InstancedMesh(new THREE.RingGeometry(.12, .17, 14), new THREE.MeshBasicMaterial({ color: '#e8f8ff', transparent: true, opacity: .85 }), NR);
+  const NR = 40, rings = new THREE.InstancedMesh(new THREE.RingGeometry(.12, .17, 14), new THREE.MeshBasicMaterial({ color: TONE.splash, transparent: true, opacity: .85 }), NR);
   rings.instanceMatrix.setUsage(THREE.DynamicDrawUsage); rings.frustumCulled = false; scene.add(rings);
   const ringD = Array.from({ length: NR }, () => ({ x: 0, z: 0, t: 9 })); let ri = 0;
   function splash(from, dir, n = 34, own = null) { // a bucketful: a wide, heavy sheet of water that lands a couple of steps away
@@ -340,6 +355,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     keys[e.code] = true; if (e.repeat) return;
     if (e.code === 'KeyE' || e.code === 'Enter') { action(); e.preventDefault(); return; }
     if (e.code === 'KeyR') { swapTool(); return; }
+    if (ORBIT && (e.code === 'KeyZ' || e.code === 'KeyC')) { orbit.rotate(e.code === 'KeyZ' ? -1 : 1); return; } // Q is the wave, E the action: turn on Z / C
     if (W.frozen) return;
     const m = { Space: 'jump', KeyQ: 'wave', Digit1: 'dance', Digit2: 'kadaw' }[e.code];
     if (m) { act(m); e.preventDefault(); }
@@ -360,8 +376,10 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   };
   home();
   const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  let turn = null; // orbit: one finger on the right half (or the right mouse button) dragged sideways turns the view, snapping to 45° on release
+  if (ORBIT) renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
   renderer.domElement.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse') return;
+    if (e.pointerType === 'mouse') { if (ORBIT && e.button === 2) turn = { id: e.pointerId, x0: e.clientX }; return; }
     if (W.frozen) { action(); return; } // talking / a cutscene: a tap anywhere moves it on
     if (!touch && fingers.size === 0 && e.clientX < innerWidth * .5) {
       touch = { x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, id: e.pointerId };
@@ -369,16 +387,19 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     }
     if (touch && Math.hypot(touch.x - touch.x0, touch.y - touch.y0) < 12) { fingers.set(touch.id, { x: touch.x, y: touch.y }); touch = null; home(); } // two fingers: a pinch after all
     fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (fingers.size === 2) pinch = spread();
+    if (ORBIT) { if (fingers.size === 1 && e.clientX >= innerWidth * .5) turn = { id: e.pointerId, x0: e.clientX }; else if (turn && fingers.size > 1) { orbit.drag(0); orbit.release(); turn = null; } } // a second finger: it's a pinch
   });
   addEventListener('pointermove', e => {
     if (touch && e.pointerId === touch.id) { touch.x = e.clientX; touch.y = e.clientY; drawStick(); return; }
+    if (turn && e.pointerId === turn.id && Math.abs(e.clientX - turn.x0) > 8) orbit.drag(e.clientX - turn.x0);
     const f = fingers.get(e.pointerId); if (f) { f.x = e.clientX; f.y = e.clientY; }
     if (fingers.size === 2 && pinch) { const d = spread(); if (d > 10) { zoom(pinch / d); pinch = d; } }
   });
-  const endTouch = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
+  const endTouch = e => { if (turn && e.pointerId === turn.id) { orbit.release(); turn = null; } fingers.delete(e.pointerId); if (fingers.size < 2) pinch = 0; if (touch && e.pointerId === touch.id) { touch = null; if (!PHONE) stick.style.display = 'none'; home(); } };
   addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch);
   document.getElementById('splash')?.addEventListener('pointerdown', e => { e.stopPropagation(); action(); });
   document.getElementById('jump')?.addEventListener('pointerdown', e => { e.stopPropagation(); if (!W.frozen) act('jump'); });
+  for (const [id, d] of [['rotl', -1], ['rotr', 1]]) { const b = document.getElementById(id); if (!b) continue; b.hidden = !ORBIT; b.addEventListener('pointerdown', e => { e.stopPropagation(); orbit?.rotate(d); }); }
 
   // ---------- post: bloom -> depth of field round you/grade/grain -> output ----------
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q === 'off' ? 0 : 4 });
@@ -387,9 +408,9 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const bloom = Q !== 'off' ? new UnrealBloomPass(new THREE.Vector2(1, 1), .5, .45, 1.25) : null; if (bloom) composer.addPass(bloom);
   if (bloom && Q === 'low') { const set = bloom.setSize.bind(bloom); bloom.setSize = (w, h) => set(Math.round(w / 2), Math.round(h / 2)); }
   const look = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: new THREE.Vector2(.5, .52) }, blur: { value: Q === 'off' ? 0 : 5.0 } },
+    uniforms: { tDiffuse: { value: null }, res: { value: new THREE.Vector2(1, 1) }, time: { value: 0 }, focus: { value: new THREE.Vector2(.5, .52) }, blur: { value: Q === 'off' ? 0 : 5.0 }, sat: { value: ORBIT ? .9 : 1.07 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 res, focus; uniform float time, blur; varying vec2 vUv;
+    fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 res, focus; uniform float time, blur, sat; varying vec2 vUv;
       void main(){
         float d = length((vUv - focus) * vec2(res.x / res.y, 1.));
         float r = smoothstep(.15, .6, d) * blur;                // sharp round you, softening the further away it is
@@ -401,7 +422,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
           c = col.rgb / 16.;
         }
         float l = dot(c, vec3(.2126, .7152, .0722));
-        c = mix(vec3(l), c, 1.07);                                // a touch more colour
+        c = mix(vec3(l), c, sat);                                 // PALETTE: an April world, a little faded (orbit mode .9); the water is brighter than 1 going in, so it still reads
         c += vec3(.018, .004, .03) * (1. - smoothstep(0., .5, l)); // lilac lift in the darks (lo-fi)
         float v = smoothstep(.98, .35, length((vUv - .5) * vec2(1.15, 1.)));
         c *= mix(.84, 1., v);                                     // warm vignette
@@ -413,6 +434,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   composer.addPass(look);
   composer.addPass(new OutputPass());
   function fitCam() {
+    if (ORBIT) { cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 1 ? 56 : 40; cam.updateProjectionMatrix(); return; } // portrait phones: a wider lens
     const a = innerWidth / innerHeight, h = a < 1 ? VIEW * 1.15 / a : VIEW; // portrait phones: keep ~17 units across
     Object.assign(cam, { left: -h * a / 2, right: h * a / 2, top: h / 2, bottom: -h / 2 }); cam.updateProjectionMatrix();
   }
@@ -424,7 +446,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   }
 
   // ---------- loop ----------
-  const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize();
+  const RIGHT = new THREE.Vector3(1, 0, -1).normalize(), UP = new THREE.Vector3(-1, 0, -1).normalize(), oR = new THREE.Vector3(), oF = new THREE.Vector3();
   const tmp = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v3 = new THREE.Vector3(), fv = new THREE.Vector3(), fv2 = new THREE.Vector2();
   const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
   const clock = new THREE.Clock(); let T = 0;
@@ -437,11 +459,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     [2, 1, 2048, 1, 1], [1.75, 1, 2048, 1, 1], [1.5, 1, 2048, 1, 1], [1.25, 1, 2048, 1, 1],
     [1.25, 0, 2048, 1, 1], [1, 0, 1024, 1, 1], [1, 0, 1024, 0, 1], [1, 0, 1024, 0, 0]];
   const AQ = { lvl: -1, t: -5, sum: 0, n: 0, ups: 0 };
+  const PHONE0 = ORBIT ? 2 : 1; // a phone starts here: orbit sees to the horizon, so pixel ratio ≤ 1.5 from the start
   function setLevel(l) {
     l = THREE.MathUtils.clamp(l, 0, LEVELS.length - 1); if (l === AQ.lvl) return;
     const [pr, blur, map, glow, shade] = LEVELS[l];
     if (Math.min(PR, pr) !== renderer.getPixelRatio()) { renderer.setPixelRatio(Math.min(PR, pr)); if (AQ.lvl >= 0) resize(); }
-    look.uniforms.blur.value = Q === 'off' ? 0 : blur * 5.0;
+    look.uniforms.blur.value = Q === 'off' ? 0 : blur * (ORBIT ? 3.2 : 5.0); // orbit sees to the horizon: a lighter blur, or the sky goes to mush
     if (bloom) bloom.enabled = !!glow;
     if (sun.shadow.mapSize.x !== map) { sun.shadow.mapSize.set(map, map); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true; }
     sun.castShadow = !!shade;
@@ -450,7 +473,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   function setGfx(m) { // 'auto' | 'high' | 'lite'
     GFX = m; try { localStorage.setItem('thingyan.gfx', m); } catch {}
     AQ.t = -2; AQ.sum = AQ.n = AQ.ups = 0;
-    setLevel(m === 'high' ? 0 : m === 'lite' ? 5 : PHONE ? 1 : 0); gfxLabel();
+    setLevel(m === 'high' ? 0 : m === 'lite' ? 5 : PHONE ? PHONE0 : 0); gfxLabel();
   }
   const gfxBtn = document.getElementById('gfx'), GFX_NAME = { auto: 'အလိုအလျောက်', high: 'အကောင်းဆုံး', lite: 'ဘက်ထရီချွေ' };
   const gfxLabel = () => { if (gfxBtn) gfxBtn.textContent = '🎨 ' + GFX_NAME[GFX]; };
@@ -459,7 +482,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     gfxBtn.addEventListener('pointerdown', e => e.stopPropagation());
     gfxBtn.addEventListener('click', e => { e.stopPropagation(); setGfx({ auto: 'high', high: 'lite', lite: 'auto' }[GFX]); });
   }
-  setLevel(GFX === 'lite' ? 5 : PHONE && GFX !== 'high' ? 1 : 0); gfxLabel();
+  setLevel(GFX === 'lite' ? 5 : PHONE && GFX !== 'high' ? PHONE0 : 0); gfxLabel();
   function adapt(raw) {
     if (GFX !== 'auto' || document.hidden || raw > .5) return; // a long hitch is loading, not the scene
     AQ.t += raw; if (AQ.t < 0) return; AQ.sum += raw; AQ.n++;
@@ -479,7 +502,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     let farDrag = false;
     if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 10) { ix = dx / l; iy = dy / l; farDrag = l > STICK * .8; } }
     if (W.frozen) ix = iy = 0;
-    const mv = v3.set(0, 0, 0).addScaledVector(RIGHT, ix).addScaledVector(UP, iy);
+    if (ORBIT) { orbit.right(oR); orbit.forward(oF); } // the angle on screen right now (mid-turn too), so a turn never knocks you sideways
+    const mv = v3.set(0, 0, 0).addScaledVector(ORBIT ? oR : RIGHT, ix).addScaledVector(ORBIT ? oF : UP, iy);
     const moving = mv.lengthSq() > .01;
     const loop = moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle';
     if ((!['dance', 'sit'].includes(pa.loop) || moving) && loop !== pa.loop) pa.setLoop(loop); // dancing / sitting last until you move; setLoop() drops any one-shot, so only on a real change
@@ -556,9 +580,10 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (W.camFocus) v3.lerp(W.camFocus, .5).setY(0); // something to watch (a cat deciding whether to trust you): frame you both
     if (camBounds) { v3.x = THREE.MathUtils.clamp(v3.x, camBounds.x0, camBounds.x1); v3.z = THREE.MathUtils.clamp(v3.z, camBounds.z0, camBounds.z1); }
     else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
-    camTarget.lerp(v3, Math.min(1, dt * 3));
-    cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget);
+    if (ORBIT) { v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3); camTarget.copy(orbit.state.target).setY(0); } // only the target is clamped to camBounds, never the camera: turning at the edge doesn't jump
+    else { camTarget.lerp(v3, Math.min(1, dt * 3)); cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget); }
     sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
+    if (sky) sky.follow(cam.position);
     look.uniforms.time.value = T % 100;
     cam.updateMatrixWorld(); fv.copy(player.g.position); fv.y += .8; fv.project(cam); // where you are on screen: the focus follows you
     look.uniforms.focus.value.lerp(fv2.set(fv.x * .5 + .5, fv.y * .5 + .5), Math.min(1, dt * 6));
@@ -578,7 +603,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     }
     addEventListener('resize', resize); resize();
     addEventListener('wheel', e => zoom(1 + Math.sign(e.deltaY) * .1), { passive: true });
-    camTarget.copy(W.player.g.position); camTarget.y = 0;
+    snapCam();
     renderer.setAnimationLoop(frame);
   }
 
@@ -587,7 +612,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const keep = o => { o.userData.keep = true; return o; };
   // tall things you can walk behind (flats, shop-houses, the kyaung …): build() makes one; its meshes get their own materials,
   // so it can fade to see-through whenever it stands between the camera and you. Still baked like everything else.
-  const RAY = new THREE.Ray(), ISOdir = ISO.clone().normalize();
+  const RAY = new THREE.Ray(), ISOdir = ISO.clone().normalize(), rayHit = new THREE.Vector3();
+  const between = box => { // is the box between RAY.origin and the camera?
+    if (!ORBIT) { RAY.direction.copy(ISOdir); return RAY.intersectsBox(box); }
+    RAY.direction.copy(cam.position).sub(RAY.origin); const d = RAY.direction.length(); RAY.direction.divideScalar(d);
+    return !!RAY.intersectBox(box, rayHit) && rayHit.distanceTo(RAY.origin) < d;
+  };
   function occluder(build) {
     const n0 = statics.length, r = build(), own = new Map(), box = new THREE.Box3();
     scene.updateMatrixWorld(true);
@@ -602,12 +632,46 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   function fadeOccluders(dt) {
     const p = W.player.g.position, w = W.watch; // watch: something else you need to see (a cat up on a roof)
     for (const o of occluders) {
-      let hit = false; for (const y of [.25, 1.1]) { RAY.origin.set(p.x, p.y + y, p.z); RAY.direction.copy(ISOdir); if (RAY.intersectsBox(o.box)) { hit = true; break; } }
-      if (!hit && w) { RAY.origin.set(w.x, w.y + .3, w.z); RAY.direction.copy(ISOdir); hit = RAY.intersectsBox(o.box); }
+      let hit = false; for (const y of [.25, 1.1]) { RAY.origin.set(p.x, p.y + y, p.z); if (between(o.box)) { hit = true; break; } }
+      if (!hit && w) { RAY.origin.set(w.x, w.y + .3, w.z); hit = between(o.box); }
       const want = hit ? .2 : 1; if (o.a === want) continue;
       o.a += (want - o.a) * Math.min(1, dt * 7); if (Math.abs(o.a - want) < .01) o.a = want;
       for (const c of o.mats) { c.opacity = o.a; c.depthWrite = o.a > .95; }
     }
+  }
+  // hero buildings (T2): build() puts up a code-built stand-in at once; the Blender .glb (art/buildings.py) replaces it when it
+  // arrives — never awaited, so the town opens as fast as before. Both fade like an occluder. place = where the .glb origin goes.
+  const gltf = new GLTFLoader();
+  function hero(url, { x = 0, z = 0, ry = 0 } = {}, build) {
+    const before = new Set(scene.children), n0 = statics.length;
+    const r = build();
+    const added = scene.children.filter(c => !before.has(c)); statics.splice(n0); // the stand-in stays as it is (not baked) until the swap
+    for (const c of added) keep(c);
+    const occ = { box: new THREE.Box3(), mats: [], a: 1 }, own = new Map(); occluders.push(occ);
+    scene.updateMatrixWorld(true);
+    for (const c of added) c.traverse(m => {
+      if (!m.isMesh || Array.isArray(m.material)) return;
+      let k = own.get(m.material); if (!k) { k = m.material.clone(); k.transparent = true; k.userData.base = m.material; own.set(m.material, k); }
+      m.material = k; occ.box.expandByObject(m);
+    });
+    occ.mats = [...own.values()];
+    gltf.loadAsync(url).then(g => {
+      const s = g.scene, mats = new Map(), win = M(PAL.window); s.position.set(x, 0, z); s.rotation.y = ry;
+      s.traverse(m => {
+        if (!m.isMesh) return;
+        const src = m.material; let k = mats.get(src);
+        if (!k) { // Blender gives PBR; the town is flat-shaded Lambert — and a 'window' keeps the town's window colour so it glows at dusk
+          k = new THREE.MeshLambertMaterial({ color: src.name === 'window' ? win.color : src.color, map: src.map, flatShading: !src.map, side: src.side, transparent: true });
+          k.userData.base = src.name === 'window' ? win : k.clone(); mats.set(src, k);
+        }
+        m.material = k; m.castShadow = m.receiveShadow = true;
+      });
+      for (const c of added) c.removeFromParent();
+      scene.add(s); s.updateMatrixWorld(true); occ.box.setFromObject(s); occ.mats = [...mats.values()];
+      for (const k of occ.mats) { if (k.userData.base.emissive) k.emissive.copy(k.userData.base.emissive); k.opacity = occ.a; k.depthWrite = occ.a > .95; }
+      W.onHero?.(url, s);
+    }).catch(e => console.warn('hero: keeping the stand-in for', url, e.message));
+    return r;
   }
   function bake() {
     scene.updateMatrixWorld(true);
@@ -650,17 +714,18 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // rooms: a shop interior built off the island swaps in its own walls, floor and camera box; null goes back outside
   const outside = { B, ground, camBounds, bg: null };
   function setRoom(r) { // r: { bounds, ground, camBounds, background, view }; the camera jumps straight there
-    if (!r) { B = outside.B; ground = outside.ground; camBounds = outside.camBounds; scene.background = skyT; if (outside.view) { VIEW = outside.view; outside.view = null; fitCam(); } }
-    else { B = r.bounds; ground = r.ground; camBounds = r.camBounds; scene.background = new THREE.Color(r.background || '#3a2a3e'); if (r.view) { outside.view ??= VIEW; VIEW = r.view; fitCam(); } }
+    if (!r) { B = outside.B; ground = outside.ground; camBounds = outside.camBounds; scene.background = sky ? null : skyT; if (sky) { sky.visible = true; scene.fog = outside.fog ?? scene.fog; } if (town) town.group.visible = true; if (outside.view) { VIEW = outside.view; outside.view = null; fitCam(); } if (ORBIT) { orbit.lock(null); orbit.setDist(outside.dist ?? viewDist(VIEW)); outside.dist = null; } }
+    else { B = r.bounds; ground = r.ground; camBounds = r.camBounds; scene.background = new THREE.Color(r.background || '#3a2a3e'); if (sky) { sky.visible = false; outside.fog ??= scene.fog; scene.fog = null; } if (town) town.group.visible = false; if (r.view) { outside.view ??= VIEW; VIEW = r.view; fitCam(); }
+      if (ORBIT) { outside.dist ??= orbit.state.distGoal; orbit.lock(0); orbit.setDist(viewDist(r.view ?? 10) * .85); } } // inside a shop: no turning (three walls are built), a little closer
     W.ground = ground; W.bounds = B;
     W.player.g.position.y = ground(W.player.g.position.x, W.player.g.position.z);
   }
-  function zoom(k) { VIEW = THREE.MathUtils.clamp(VIEW * k, 7, 28); fitCam(); } // only changes the projection
-  const snapCam = () => { camTarget.copy(W.player.g.position).setY(0); if (camBounds) { camTarget.x = THREE.MathUtils.clamp(camTarget.x, camBounds.x0, camBounds.x1); camTarget.z = THREE.MathUtils.clamp(camTarget.z, camBounds.z0, camBounds.z1); } };
+  function zoom(k) { if (ORBIT) return orbit.zoom(k); VIEW = THREE.MathUtils.clamp(VIEW * k, 7, 28); fitCam(); } // iso: only changes the projection
+  const snapCam = () => { camTarget.copy(W.player.g.position).setY(0); if (camBounds) { camTarget.x = THREE.MathUtils.clamp(camTarget.x, camBounds.x0, camBounds.x1); camTarget.z = THREE.MathUtils.clamp(camTarget.z, camBounds.z0, camBounds.z1); } if (ORBIT) orbit.snap(v3.copy(camTarget).setY(ground(camTarget.x, camTarget.z) + .5 + W.lift)); };
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
-  const W = { THREE, scene, cam, renderer, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
+  const W = { THREE, scene, cam, renderer, orbit, sky, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

@@ -102,7 +102,12 @@ export function createHud(W) {
   function drawMap(player, goals, T) {
     const c = $('map'), g = c.getContext('2d'); g.drawImage(mapBase, 0, 0);
     for (const p of goals) { const [x, y] = pt(p.x, p.z); g.fillStyle = '#f2c14e'; g.strokeStyle = '#5a3550'; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, 4 + Math.sin(T * 4) * .8, 0, 7); g.fill(); g.stroke(); }
-    const [x, y] = pt(player.x, player.z); g.fillStyle = '#4fd1ff'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 4.5, 0, 7); g.fill(); g.stroke();
+    const [x, y] = pt(player.x, player.z);
+    if (W.orbit) { // north stays up; a soft wedge shows which way the camera looks (T2)
+      const a = Math.atan2(-Math.cos(W.orbit.az), -Math.sin(W.orbit.az)), r = 26; g.fillStyle = 'rgba(255,246,232,.55)';
+      g.beginPath(); g.moveTo(x, y); g.arc(x, y, r, a - .55, a + .55); g.closePath(); g.fill();
+    }
+    g.fillStyle = '#3fd3e0'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 4.5, 0, 7); g.fill(); g.stroke();
   }
 
   W.tick((dt, T) => {

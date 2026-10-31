@@ -2,9 +2,9 @@
 // Maha Bandula Park and its monument, pandals along the streets, a float circling Sule, crowds dancing in the hoses.
 // Era 2015–19: floats still allowed. The stage is a generic city mandat — no officials, no state symbols (docs/archive/STORY.md §၈).
 // Favour #9: the water crew will give you a brass sprinkler for the kids' mandat, once you've been soaked at all three stages.
-import { createWorld, PAL } from '../world.js?v=12';
-import { shwedagon, MM } from './set.js?v=17';
-import { createHud, play } from './hud.js?v=3';
+import { createWorld, PAL } from '../world.js?v=13';
+import { shwedagon, MM, backs } from './set.js?v=18';
+import { createHud, play } from './hud.js?v=4';
 import { makePlayer } from './wardrobe.js?v=5';
 import { load, save as store, finish, travel, party as partyOf, ITEMS, NEED } from './save.js?v=6';
 import { createSound } from '../sound.js?v=3';
@@ -31,7 +31,9 @@ const AREAS = [
 ];
 const areaAt = (x, z) => AREAS.find(a => x > a.x0 && x < a.x1 && z > a.z0 && z < a.z1);
 
-const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -9, x1: 21, z0: -7, z1: 15 }, view: 17 });
+const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -9, x1: 21, z0: -7, z1: 15 }, view: 17, camera: 'orbit', surround: { rects: [ // Maha Bandula and Sule Pagoda Roads carry on past the edge
+  { x0: -150, x1: -16, z0: -3, z1: 3, c: PAL.road }, { x0: 28, x1: 150, z0: -3, z1: 3, c: PAL.road },
+  { x0: -3, x1: 3, z0: -150, z1: -14, c: PAL.road }, { x0: -3, x1: 3, z0: 22, z1: 150, c: PAL.road }] } });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solid, bean, rnd, pick } = W;
 const hud = createHud(W);
 const sound = createSound(W); W.onFx = (n, p) => sound.fx(n, p);
@@ -136,9 +138,10 @@ function shophouse(x, z, rot, w, floors, wall) {
     else { box(.46, .7, .08, PAL.window, wx, y, D / 2, o); mesh(new THREE.CylinderGeometry(.23, .23, .08, 10, 1, false, 0, Math.PI), PAL.window, wx, y + .7, D / 2, o).rotation.set(Math.PI / 2, 0, 0); box(.6, .06, .2, '#fff7ea', wx, y - .05, D / 2 + .08, o); } // arched windows, sills
   }
   if (rnd() < .6) box(w - .3, .08, .5, '#fff7ea', 0, 1.25, D / 2 + .25, o); // balcony ledge
+  backs(W, o, w, D, H, { fh: 1.2, y0: .02 }); // T2: four sides
   const c = Math.abs(Math.cos(rot)) > .5; solid(x, z, c ? w : D, c ? D : w);
 }
-const WALLS = ['#e9c8a8', '#cfe3d2', '#f4c9a8', '#d9d0e8', '#f7d58b', '#e6c9a8'];
+const WALLS = [PAL.cream, PAL.mint, PAL.pink, PAL.ochre, PAL.teal]; // docs/PALETTE.md: buildings from these five only
 for (const [x, w] of [[-14.4, 2.6], [-5.2, 3.6]]) shophouse(x, -6.5, 0, w, 4, pick(WALLS));
 for (const [x, w] of [[-14, 3], [-10.4, 3.6], [-6.2, 3.4]]) shophouse(x, -11.6, 0, w, 3, pick(WALLS));
 // the blocks south of the road sit between it and the camera, so they stay low (2 floors) and start back from the kerb
