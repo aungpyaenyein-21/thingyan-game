@@ -382,3 +382,44 @@
 - bubble: ဘဲလ်ပုံ၊ စာလုံးသေး (တိုးတိုး)၊ စာလုံးကြီး (ဦးဘတင်)
 
 **ဦးစားပေး** — ရက် ၄ ပွဲ prototype အတွက် လိုတာ အရင်: `size` · ငဇွဲ (wipe ပိတ်၊ redeye၊ ပြွတ်ရှည်) · သူရ (goggles ×၁၊ `up`၊ ဖလားဦးထုပ်) · ဖိုးကျော် `supply` · **ငွေဖလား** prop (လက်ရန်းပေါ် → ချောင်းထဲ → ဝါးတိုင် ငြိ)။ ကျန်တာ ဇာတ်လမ်း ဆောက်ရင်း။
+
+## ၁၄။ မျက်နှာ expression (v1.2 — 2026-10-31)
+
+> အခု chibi.js: မျက်နှာ = canvas texture (`faceTex`)၊ expression = pose ထဲက `p.expr` (normal/blink/happy/squint/><) + `p.mouth` (smile/open)၊ မျက်ခုံး ပုံသေ။ **အသစ်: expression = data (အပိုင်း ၄ ခု)၊ ဆွဲတာ = code။** ဇာတ်ကောင်ရဲ့ ကိုယ်ပိုင် မျက်နှာ (§၁၁) က မပြောင်း — `joy` ဆို မေသူ့ almond နဲ့ joy၊ ဖိုးကျော့် sleepy နဲ့ joy။
+
+### အပိုင်း ၄ ခု (🆕 = ဆွဲရမယ့် အသစ်)
+
+| အပိုင်း | ရွေးစရာ |
+|---|---|
+| `eyes` | normal · blink · happy · squint · >< · 🆕 **wide** (အံ့ဩ — မျက်လုံး ကြီး၊ သူငယ်အိမ် သေး) · 🆕 **side** (ဘေး ကြည့် — လိမ်တုန်း) · 🆕 **half** (ငြိမ်/စိတ်လေး — မျက်ခွံ ထက်ဝက်) |
+| `brows` | ဇာတ်ကောင် ပုံသေ ပုံ ပေါ် offset: 0 · 🆕 **up** (အံ့ဩ) · 🆕 **in** (ဒေါသ — အတွင်း ဆင်း) · 🆕 **out** (စိတ်ပူ — အပြင် ဆင်း) · 🆕 **one** (တစ်ဖက် မြှင့် — သံသယ) |
+| `mouth` | smile · open · 🆕 **wide** (ရယ်) · 🆕 **o** (အံ့ဩ) · 🆕 **line** (ငြိမ်) · 🆕 **pout** (စိတ်ကောက်) · 🆕 **wobble** (ငိုမလို) · 🆕 **grit** (သွား ကြိတ်) |
+| `extra` | none · blush (ရှိ) · redEye (ရှိ) · redEar (ရှိ — ear tween) · 🆕 **sweat** (နဖူး ရေစက်) · 🆕 **tear** · 🆕 **lines** (ပါးပေါ် အပြာ မျဉ်း — ကြောက်) |
+
+### Expression ၁၀ ခု
+
+| နာမည် | eyes / brows / mouth / extra | ဇာတ်ထဲ ဘယ်မှာ (SCENARIO v6) |
+|---|---|---|
+| `ok` | normal / 0 / smile / — | idle (ပုံသေ) |
+| `joy` | happy / up / wide / — | ရေပက် ထိ၊ ၄-၈ ရေသွန်း၊ ချိုချို ရေစို |
+| `shock` | wide / up / o / sweat | ၁-၇ ဖလား လွင့်သွားတဲ့ခဏ (၅ ယောက်လုံး)၊ ၄-၄ ချောင်းထဲ ကျ (၁၀ ယောက်) |
+| `worry` | half / out / wobble / sweat | ဖိုးကျော် ၂-၃၊ ငဇွဲ ၃-၃၊ `{နာမည်}` ၄-၆ နာရီ ကြည့် |
+| `lie` | side / 0 / line / redEar | ည 「ရှိတယ်」 (၁-၈၊ ၃-၇)၊ ချိုချို ၂-၇၊ ငဇွဲ ၁-၇ ကတိ |
+| `mad` | squint / in / grit / — | သူရ ရေစစ်၊ မေသူ အင်္ကျီ စို၊ ငဇွဲ war ရှေ့ဆုံး |
+| `pout` | half / in / pout / — | ငဇွဲ `sulk` ၃-၃၊ မေသူ 「ဆေး အရင်」 ၂-၂ |
+| `sly` | side / one / smile / — | ချိုချို 「ချိုချို သိတယ်」၊ ဘွားဘွား ၂-၁ တစ်ချက်ကြည့်၊ ဆရာကြီး 「ငါ မသိဘူး ထင်လား」 |
+| `wet` | >< / out / open / — | ရေထိ (ရှိပြီ — `hitT`) |
+| `cry` | >< / out / wobble / tear | 💭 ကလေး မငိုတဲ့ ဇာတ် — ဘွားဘွား ၄-၇ ရယ်ရင်း မျက်ရည် ၁ စက် ပဲ သုံး |
+
+**ဇာတ်ကောင် ပုံသေ** — ဖိုးကျော် idle = `ok` ပေမဲ့ sleepy မျက်လုံးမို့ အမြဲ ငြိမ်ပုံ · သူရ မျက်မှန် တပ်ထားရင် eyes မမြင်ရ (brows+mouth ပဲ ပြ) · ဆရာကြီး `smileEyes:false` — `joy` မှာတောင် happy eyes မသုံး၊ mouth ပဲ ပြောင်း · ဦးတင်မောင် default `joy`။
+
+### Code ပုံစံ (T6.5)
+
+```js
+export const FACE = { ok:{eyes:'normal',brows:0,mouth:'smile',extra:null}, shock:{eyes:'wide',brows:'up',mouth:'o',extra:'sweat'}, /* … ၁၀ ခု */ };
+// faceTex(o, face)   — cache key ထဲ ၄ ပိုင်းလုံး · pose: p.face = 'shock' (p.expr/p.mouth အစား)
+// anim.face('worry', 1.5) — ၁.၅ စက္ကန့် ထပ်ထား၊ ပြီးရင် loop ရဲ့ face ပြန် · hitT > 0 ဆို 'wet' က အမြဲ နိုင်
+```
+
+**ကူးပြောင်း** — canvas swap မို့ tween မလို။ expression ပြောင်းတိုင်း **blink ၁ frame ကြား ထည့်** (blink-cut) — ရုတ်တရက် ပြောင်းတာ မမြင်ရ။
+**ဘယ်သူ ရေး** — အပိုင်း ၄ ခု ဆွဲတဲ့ code + face editor (dropdown ၄ ခု → ချက်ချင်း မြင် → FACE JSON ထုတ်) = T6.5 · ဘယ်ဇာတ်ကောင် ဘယ် scene ဘယ် face = ဒီဇယား (Fable)။
