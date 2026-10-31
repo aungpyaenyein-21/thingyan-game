@@ -31,6 +31,12 @@
   #fire.on{background:#bfe6ff}
   #wipe{width:66px;height:66px;font-size:14px}
   #wipe.on{background:#ffe1b0}
+  #weps{position:fixed;z-index:3;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(136px + env(safe-area-inset-bottom,0px));display:flex;gap:6px}
+  #weps button{-webkit-tap-highlight-color:transparent;font:inherit;font-size:12px;width:54px;height:54px;border:0;border-radius:50%;color:var(--ink);background:var(--paper);box-shadow:0 3px 0 rgba(0,0,0,.2);touch-action:none;opacity:.7;line-height:1.1}
+  #weps button.on{opacity:1;background:#bfe6ff;box-shadow:0 0 0 3px #2f8fd6,0 3px 0 rgba(0,0,0,.2)}
+  #weps svg{display:block;width:22px;height:22px;margin:0 auto 1px}
+  #water.low>b{background:#e04a3a;animation:blink .8s steps(2) infinite}
+  #rule{position:fixed;z-index:3;left:50%;bottom:calc(200px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:86vw;padding:5px 12px;border-radius:12px;background:#fff1e6;color:#a3321f;font-size:14px;box-shadow:0 3px 0 rgba(0,0,0,.15);white-space:nowrap}
   .kb{display:block;font-size:10px;opacity:.55} @media (pointer:coarse){.kb{display:none}}
   .card{position:fixed;z-index:5;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,30,50,.55);padding:16px}
   .card>div{max-width:440px;width:100%;padding:18px 20px;border-radius:18px;background:var(--paper);box-shadow:0 6px 0 rgba(0,0,0,.2);line-height:1.7}
@@ -73,6 +79,12 @@
 <div id="drown"></div>
 <div id="sting"></div>
 <div id="big" hidden></div>
+<div id="rule" hidden></div>
+<div id="weps">
+  <button type="button" data-w="pump"><svg viewBox="0 0 24 24"><path d="M3 13h13M16 11v4M18 13h3" stroke="#3b2a3a" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="22" cy="13" r="1.4" fill="#3fd3e0"/></svg>ပြွတ်<span class="kb">1</span></button>
+  <button type="button" data-w="balloon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="10" rx="6.5" ry="7.5" fill="#ff7aa8"/><path d="M12 17.5l-1.5 2h3z" fill="#ff7aa8"/><ellipse cx="9.5" cy="7.5" rx="1.6" ry="2.2" fill="#fff" opacity=".6"/></svg>ပူဖောင်း<span class="kb">2</span></button>
+  <button type="button" data-w="bucket"><svg viewBox="0 0 24 24"><path d="M5 9h14l-2 11H7z" fill="#2f8fd6"/><path d="M5 9a7 6 0 0 1 14 0" stroke="#3b2a3a" stroke-width="1.6" fill="none"/><ellipse cx="12" cy="9" rx="7" ry="1.6" fill="#3fd3e0"/></svg>ပုံး<span class="kb">3</span></button>
+</div>
 <div id="pads">
   <button id="wipe" type="button">သုတ်<span class="kb">F</span></button>
   <button id="fire" type="button"><svg viewBox="0 0 116 116"><circle cx="58" cy="58" r="53" fill="none" stroke="#2f8fd6" stroke-width="6" stroke-linecap="round" stroke-dasharray="333" stroke-dashoffset="333" id="ring" transform="rotate(-90 58 58)"/></svg>ပက်<span class="kb">Space</span></button>
@@ -80,7 +92,9 @@
 <div class="card" id="start"><div>
   <h1>ရပ်ကွက်စစ် · 試作</h1>
   <ul>
-    <li><b>ပက်</b> ကို တို့ = အနီးဆုံး ရန်သူကို ချိန်ပက် (အနီဝိုင်းနဲ့ ပြ) · <b>ဖိပြီး ဆွဲ</b> = ကိုယ်တိုင် ချိန် · ကြာကြာ ဖိလေ ဝေးဝေး ပြင်းပြင်း</li>
+    <li><b>ပြွတ်</b> — ပက် ကို တို့ = တစ်ချက် · ဖိထား = ဆက်တိုက် · <b>ဖိပြီး ဆွဲ</b> = ကိုယ်တိုင် ချိန် (အနီးဆုံးကို အနီဝိုင်းနဲ့ ပြ) · ၆ မီတာ</li>
+    <li><b>ပူဖောင်း</b> — ဖိထား = ဝေးဝေး၊ လွှတ် = ပစ် · နံရံ ကျော်၊ ကျရာ ဝိုင်း စို · <b>ပုံး</b> — အနီးကပ် တစ်ပုံးလုံး လောင်း၊ ရေ အကုန် · <b>R</b> / ခလုတ် ၃ ခု = ပြောင်း</li>
+    <li>တိုက်နေတုန်း <b>စကား မပြော</b> · <b>OUT ဖြစ်နေသူကို မပက်ရ</b> — ပက်မိရင် ကိုယ့် ခံနိုင်ရည် −၃၀%</li>
     <li>မျက်နှာ ထိရင် ပိုစပ်ပြီး ရေမွန်းတယ် · <b>သုတ်</b> = မျက်နှာက ရေကို လက်နဲ့ သုတ် — မှုန်ဝါးတာ ပျောက်ပြီး ခံနိုင်ရည် နည်းနည်း ပြန်တက် (သုတ်နေတုန်း ၁ စက္ကန့်ကျော် မလှုပ်နိုင်၊ မပက်နိုင်)</li>
     <li>ခံနိုင်ရည် ကုန်ရင် <b>OUT</b> — ရှေ့ မတက်ရ၊ ကိုယ့်ဘက် <b>ရေအိုးစင်</b> (အစိမ်းဝိုင်း) မှာ ခံနိုင်ရည် ဖြည်းဖြည်း ပြန်ဖြည့်ပြီးမှ ပြန်ဝင် · OUT ဖြစ်နေသူကို ပက်လို့ မရ</li>
     <li>ပိုက်ခေါင်း/ရေစည်နား ရပ်ရင် ရေဖြည့် — တစ်ခါ တစ်ယောက်ပဲ · အဝေးကွင်းက အိမ်ကွင်း ပိုက်ခေါင်းကိုလည်း သုံးလို့ရ</li>
@@ -93,7 +107,8 @@
   <h2 id="etitle"></h2><p id="etext"></p>
   <div class="row"><button id="again" type="button">ပြန်ကစား</button><button id="menu" class="ghost" type="button">mode ပြောင်း</button></div>
 </div></div>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="./yangon/war.js?v=5"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "three.quarks":"https://cdn.jsdelivr.net/npm/three.quarks@0.16.0/dist/three.quarks.esm.js","quarks.core":"https://cdn.jsdelivr.net/npm/quarks.core@0.16.0/dist/quarks.core.esm.js"}}</script>
+<script type="module" src="./yangon/war.js?v=6"></script>
 </body>
 </html>

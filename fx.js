@@ -96,7 +96,8 @@ export function createFx(W, { low = false, json = true } = {}) {
     mat.needsUpdate = true;
     const gr = { g, tex, rect, S: S2, dry: 0 }; grounds.push(gr); return gr;
   }
-  function splat(x, z, r = .6) { // paint water on every wet-mapped ground under this spot
+  function splat(x, z, r = .6) { // paint water on every wet-mapped ground under this spot (off on LEVELS low)
+    if (low) return;
     for (const gr of grounds) {
       const u = (x - gr.rect.x) / gr.rect.z * gr.S, v = (z - gr.rect.y) / gr.rect.w * gr.S, rr = r / gr.rect.z * gr.S; if (u < -rr || v < -rr || u > gr.S + rr || v > gr.S + rr) continue;
       const rg = gr.g.createRadialGradient(u, v, rr * .2, u, v, rr); rg.addColorStop(0, 'rgba(255,255,255,.9)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); gr.g.fillStyle = rg; gr.g.fillRect(u - rr, v - rr, rr * 2, rr * 2);
