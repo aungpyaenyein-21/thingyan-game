@@ -1,21 +1,25 @@
 // yangon/main.js — story day 1, Yangon (docs/archive/STORY.md §၄). You come home for Thingyan; the kids want a mandat of their own.
 // Walk the whole ward — home lane, main street, market, pagoda — and do nine favours for nine parts of a coconut-frond
 // mandat. Build it with the kids, watch the sun go down over it, then catch the night bus to Mandalay.
-import { createWorld, PAL, SKINS } from '../world.js?v=12';
+import { createWorld, PAL, SKINS } from '../world.js?v=13';
 import { CAT_COATS } from '../critters.js?v=6';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=17';
-import { createHud, play } from './hud.js?v=3';
+import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon, frondGeo, MM } from './set.js?v=18';
+import { createHud, play } from './hud.js?v=4';
 import { openBarber, openClothes, makePlayer, redress } from './wardrobe.js?v=5';
-import { buildRooms } from './rooms.js?v=9';
+import { buildRooms } from './rooms.js?v=10';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=15';
+import { startLife } from './life.js?v=16';
 import { brew } from './brew.js?v=1';
 import { pulley } from './pulley.js?v=1';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
 import { load as loadSave, save as store, wipe, finish, travel, party as partyOf, ERRANDS, ITEMS, WHERE, NEED } from './save.js?v=6';
 
-const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16 });
+const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
+  { x0: -150, x1: -10, z0: 6.6, z1: 12.2, c: PAL.road }, { x0: 34, x1: 150, z0: 6.6, z1: 12.2, c: PAL.road },
+  { x0: -150, x1: -10, z0: 5.8, z1: 6.6, c: PAL.walk }, { x0: 34, x1: 150, z0: 5.8, z1: 6.6, c: PAL.walk },
+  { x0: -150, x1: -10, z0: 12.2, z1: 13, c: PAL.walk }, { x0: 34, x1: 150, z0: 12.2, z1: 13, c: PAL.walk },
+  { x0: 11.8, x1: 14.2, z0: 37, z1: 150, c: PAL.road }] } });
 const { THREE, scene, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, bean, rnd, pick } = W;
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's — walk in from the street
@@ -92,7 +96,7 @@ W.tick((dt, T) => {
 const BUCKET_SPOT = new THREE.Vector3(BTOP.x, 0, BTOP.z + .55);
 let hauling = null; // the pulley overlay while it's up
 
-const CLIP = W.renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), BOUNDS.x1 + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), -BOUNDS.x0 + .001)]; // bus slides in/out of the island sides
+const CLIP = W.renderer.clippingPlanes = W.orbit ? [] : [new THREE.Plane(new THREE.Vector3(-1, 0, 0), BOUNDS.x1 + .001), new THREE.Plane(new THREE.Vector3(1, 0, 0), -BOUNDS.x0 + .001)]; // orbit (T2): no clip — the street runs on past the edge (sky.js surround), so the bus drives in from the town // bus slides in/out of the island sides
 
 // ---------- people ----------
 const near = (c, r = 1.8) => c.g.position.distanceTo(W.player.g.position) < r;
@@ -408,7 +412,7 @@ function gotPart(q) {
 if (S.step === 'build' && S.at === 'ward' && !S.toldBuild) { S.toldBuild = true; setTimeout(() => after(() => hud.say([['', 'ပစ္စည်း ကိုးမျိုးလုံး စုံပြီ။ ကလေးတွေဆီ ပြန်သွားပြီး မဏ္ဍပ်လေး ဆောက်ကြစို့!']])), 2500); } // came back from downtown with the last part
 const after = f => hud.busy() ? setTimeout(() => after(f), 400) : f();
 const ME = 'ကျွန်တော်';
-const talk = (lines, done, who) => { if (who) face(who); hud.talk(lines, done); };
+const talk = (lines, done, who) => { if (who) { face(who); W.talkWith = who; } hud.talk(lines, () => { W.talkWith = null; done?.(); }); }; // T2: the camera frames you and whoever you're talking to
 
 // ---------- the nine favours (the ninth is downtown: downtown.js) ----------
 function talkKids() {

@@ -1,12 +1,14 @@
 // sw.js — keeps the Yangon day on the phone so it opens without a connection. Everything the game loads is fetched once
 // when this installs, then served from the cache. Bump VERSION with every push that changes a game file: the new
 // worker downloads the new set, waits, and pwa.js offers a reload (never mid-play on its own).
-const VERSION = 'y10';
+const VERSION = 'y12';
 const CACHE = 'thingyan-' + VERSION;
 const THREE = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const CORE = [
   'yangon.html', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg',
-  'world.js', 'chibi.js', 'critters.js', 'sound.js',
+  'world.js', 'chibi.js', 'critters.js', 'sound.js', 'palette.js', 'camera.js', 'sky.js', // T2: the orbit camera, the sky, the palette
+  'art/home.glb', 'art/teashop.glb', 'art/stalls.glb', // T2 hero buildings (the town shows code-built stand-ins until these load)
+  'fonts/fonts.css', 'fonts/NotoSansMyanmar-myanmar.woff2', 'fonts/NotoSansMyanmar-latin.woff2', 'fonts/NotoSansMyanmar-latin-ext.woff2',
   ...['boot', 'main', 'downtown', 'hud', 'icons', 'life', 'rooms', 'save', 'set', 'wardrobe', 'brew', 'pulley', 'bulbs'].map(f => `yangon/${f}.js`),
   'audio/credits.json',
   ...['bell', 'bike', 'crow1', 'crow2', 'crow3', 'crow4', 'crowd', 'dog', 'gecko', 'handbell', 'hit', 'horn', 'night', 'pagoda',
@@ -15,7 +17,7 @@ const CORE = [
   ...['environments/RoomEnvironment', 'geometries/RoundedBoxGeometry', 'postprocessing/EffectComposer', 'postprocessing/MaskPass',
     'postprocessing/OutputPass', 'postprocessing/Pass', 'postprocessing/RenderPass', 'postprocessing/ShaderPass',
     'postprocessing/UnrealBloomPass', 'shaders/CopyShader', 'shaders/LuminosityHighPassShader', 'shaders/OutputShader',
-    'utils/BufferGeometryUtils'].map(f => `${THREE}examples/jsm/${f}.js`),
+    'utils/BufferGeometryUtils', 'loaders/GLTFLoader'].map(f => `${THREE}examples/jsm/${f}.js`),
 ].map(p => new URL(p, self.registration.scope).href);
 // same-origin files are known by path (the ?v= busters and ?new/&debug don't matter here), the CDN by full URL
 const key = u => (u = new URL(u), u.origin === location.origin ? u.pathname : u.href);

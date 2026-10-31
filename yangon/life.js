@@ -2,8 +2,8 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=12';
-import { ROAD } from './set.js?v=17';
+import { PAL } from '../world.js?v=13';
+import { ROAD } from './set.js?v=18';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
@@ -371,7 +371,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   lollyRun();
 
   // ---------- ② kids with a drum of water by the road: they get whoever comes past ----------
-  const DRUM = V(-1.7, 12.65); cyl(.3, .3, .7, '#3f8fd0', DRUM.x, .14, DRUM.z, 12); mesh(new THREE.CircleGeometry(.27, 12), '#8fd3f0', DRUM.x, .85, DRUM.z, { cast: false }).rotation.x = -Math.PI / 2;
+  const DRUM = V(-1.7, 12.65); cyl(.3, .3, .7, PAL.teal, DRUM.x, .14, DRUM.z, 12); mesh(new THREE.CircleGeometry(.27, 12), PAL.water, DRUM.x, .85, DRUM.z, { cast: false }).rotation.x = -Math.PI / 2;
   W.solid(DRUM.x, DRUM.z, .6, .6);
   const roadKids = [npc({ age: 'kid', tool: 'bucket', hat: 'none', x: -2.5, z: 12.6, ry: Math.PI }), npc({ age: 'kid', tool: 'gun', hat: 'goggles', x: -.9, z: 12.6, ry: Math.PI })];
   roadKids.forEach(k => { k.home = k.g.position.clone(); k.coolT = 1 + rnd() * 2; k.dryT = 0; });
