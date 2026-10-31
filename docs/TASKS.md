@@ -11,13 +11,66 @@
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | 🔨 | အခြား model · branch `claude/camlab` |
 | T2 | ဂိမ်းအစစ် ကင်မရာ ပြောင်း (`world.js` perspective + လှည့် + ဖျော့ + sky dome၊ ① အဆောက်အအုံ ၄ ဘက်) + **အရောင် [PALETTE.md](PALETTE.md) အတိုင်း ပြန်ဆေး** (`palette.js` token ဖိုင်) | ⏳ (T1 review ပြီးမှ spec) | — |
 | T3 | **ရေပက် core loop** + ရက် ၄ vertical slice — ပက်ရတာ ကောင်းအောင် အရင် (→ [T3 အသေးစိတ်](#t3-ရေပက်-core-loop))၊ ပြီးမှ တံတားထိပ် ၅v၅ → ဖလား ချောင်းထဲ → ၁၀ ယောက် ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း · **Yuka** (NPC steering/flock) · **three.quarks** (particle + editor) | ⏳ | — |
-| T4 | ကောက်-သယ်-ချ system (ခေါင်းပေါ်/လက်ထဲ/စက်ဘီးနောက်၊ ရေခဲ timer) · **`CCDIKSolver`** (three addons — လက်ကို ပစ္စည်းဆီ IK၊ ဖလား ကမ်း၊ `pour`) — T3 နဲ့ ပြိုင်လုပ်လို့ရ | ⏳ | — |
+| T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK — T1/T2 မစောင့်ဘဲ စလို့ရ | ⏳ spec ✅ | အခြား model · branch `claude/carry` |
 | T5 | ရက် ၁ — ရက်စဉ် စည်းချက်၊ M1–M3၊ ၁-၇ ဖလား ပစ်လွတ်၊ မဏ္ဍပ် ကြီးလာ | ⏳ | — |
 | T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
 အစဉ်: T1 → T2 → (T3 ∥ T4) → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+
+## T4 ကောက်-သယ်-ချ system
+
+**ရည်ရွယ်ချက်** — SCENARIO v6 ရဲ့ mission ၇ ခုလုံး "တစ်ခုခု သယ်" (ပိုက်ဆံအိတ်၊ ဆေး၊ အဝတ်၊ ရေခဲ၊ ဖလား၊ ပူဖောင်း) ဖြစ်လို့ **တစ်ခါ ဆောက် အကုန် သုံး**တဲ့ system။ Go-Go Town! ရဲ့ ကောက်-ခေါင်းပေါ် သယ်-ချ ပုံစံ။ ကင်မရာနဲ့ မဆိုင်လို့ T1/T2 မစောင့်ဘဲ စလို့ရ။
+
+**ဖိုင်** — `carry.js` (module: API) · `carry-lab.html` (စမ်းကွင်း) · `chibi.js` (socket + carry pose — ရှိပြီးသား animation မပျက်ရ) · `yangon/life.js` ရဲ့ စက်ဘီးကို rack ပါတဲ့ variant (ဖိုးကျော်)။ `world.js` / ဂိမ်း flow မထိ။ Branch `claude/carry`။
+
+### ၁။ ပစ္စည်း (item) = data
+
+```js
+{ id:'ice', name:'ရေခဲတုံး', size:'head', weight:.8, melt:90, wet:true }
+// size: hand (ပိုက်ဆံအိတ်၊ ခဲတံ၊ ဆေးဗူး) · front (ဖလား၊ အဝတ်ခြင်း၊ ပုံး — လက်နှစ်ဖက် ရင်ဘတ်ရှေ့) · head (ရေခဲတုံး၊ ရေပုံး — ခေါင်းပေါ် ရွက်) · bike (စက်ဘီးနောက် rack)
+// weight 0..1 → ပြေးနှုန်း ×(1 − .4·weight)၊ ခုန် မရ (weight > .5)
+// melt: စက္ကန့် (null = မပျော်) · wet: ရေထိရင် texture စို
+```
+စမ်းကွင်း item ၆ ခု: ပိုက်ဆံအိတ် (hand .1)၊ ငွေဖလား (front .3)၊ အဝတ်ခြင်း (front .5)၊ ရေပုံး (head .6, wet)၊ ရေခဲတုံး (head .8, melt 90)၊ ပူဖောင်း (hand .05 — ပစ်လို့ရ)။
+
+### ၂။ Socket ၄ ခု (chibi.js)
+`handR` (ရှိပြီး — prop က လက်ဖျံအတိုင်း ထွက်) · 🆕 `chest` (spine ရှေ့ — cast.js က notebook ကို spine မှာ ချိတ်တဲ့ နည်း ပုံသေ လုပ်) · 🆕 `head` (ခေါင်းထိပ်၊ hunch/size အလိုက်) · 🆕 `back` (ကျောပိုး — ဆီပုံး ရှိပြီး)။ Socket = Object3D pivot ပေါ် child; animation နဲ့ အတူ လိုက်။
+
+### ၃။ လက် IK
+Rig က `THREE.Skeleton` သုံးထား (chibi.js:438) → `CCDIKSolver` သုံးလို့ရ **ဒါပေမဲ့ လက် = ပခုံး-တံတောင်-လက် ၂ ဆစ်ပဲ** မို့ analytic two-bone IK (~၃၀ ကြောင်း) က ပိုရိုးရှင်း၊ ပိုတည်ငြိမ်။ Plan ထဲ ဘယ်ဟာ ရွေးလဲ ပြော။ သုံးတဲ့နေရာ: ကောက်တဲ့ .35s (လက် item ဆီ ရောက်)၊ `front` ကိုင်တုန်း လက်နှစ်ဖက် item ဘေး၊ `head` ကိုင်တုန်း လက်တစ်ဖက် ထောက်၊ ကမ်းပေးတုန်း လက် တစ်ဖက်ဆီ ဆန့်။
+
+### ၄။ State + animation
+| state | ဖြစ်ပုံ |
+|---|---|
+| `pickup` | item ၁ m အတွင်း → highlight ring + ခလုတ် 「ကောက်」 → ကိုယ် ကုန်း (`bow` ပုံစံ .35s)၊ item world → socket lerp၊ ပြီးရင် carry |
+| `carry` | loop variant: idle/walk/run **× size ၃ မျိုး** (hand = ပုံမှန် · front = လက် ရင်ဘတ်ရှေ့၊ ကိုယ် နည်းနည်း နောက်လန် · head = လက်တစ်ဖက် ထောက်၊ ခေါင်း ငြိမ်၊ ကိုယ် ယိမ်း) · weight အလိုက် ခြေလှမ်း နှေး |
+| `drop` | 「ချ」 → မြေပေါ် (ရှေ့ .5 m) · target socket ရှိရင် 「တင်」 (မဏ္ဍပ် စင်၊ စက်ဘီး rack) · ကလေး တစ်ယောက် ၁ m အတွင်း ဆို 「ပေး」 (hand-off: ၂ ယောက်လုံး လက် ဆန့်၊ item ကူး) |
+| `throw` | hand/front item ပဲ: `bigthrow` (CHARACTERS §၁) → ballistic (cast.html lob လို — Rapier hook ထားပေး: `onThrow(item, vel)`) |
+| `hit` | **ရေပက်ခံရရင်** `head` item ယိမ်း (wobble)၊ ၃ ချက် ထိ → ကျ (ပြန်ကောက်ရ) · `front` item ၅ ချက် · `hand` မကျ — ဒါက ရေစစ်နဲ့ သယ်တာ ချိတ်တဲ့ နေရာ (M7 ရေခဲ သယ်) |
+
+### ၅။ ရေခဲ timer
+`melt` ရှိတဲ့ item: HUD bar + mesh scale ၁ → .3 + အောက်က ရေစက် particle (three.quarks မရှိသေးရင် sphere ၃ လုံး) · ပျော်ကုန်ရင် item ပျောက် + 「ရေခဲ ကုန်ပြီ」 · အရိပ်ထဲ (building AABB အောက်) ဆို ×.5 နှေး 💭
+
+### ၆။ ဖိုးကျော့် စက်ဘီး
+life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု **ဒါမှမဟုတ်** ကလေး ၁ ယောက် ထိုင် — ၄-၆) · ကစားသူ စီးလို့ရ (ခလုတ် 「စီး」 — မြန်နှုန်း ×၁.၈၊ ချိုး ကျယ်၊ ဘဲလ်) · rack item ရှိရင် ယိမ်း · ပက်ခံရရင် rack item ၃ ချက် → ကျ
+
+### စမ်းကွင်း (`carry-lab.html`)
+ကြမ်းပြင် ၂၀×၂၀ · ကစားသူ + ဖိုးကျော် (NPC၊ စက်ဘီးနဲ့) + မေသူ (hand-off target) · item ၆ ခု · မဏ္ဍပ် စင် (target socket) · ④ ကလေး ၂ ယောက် ပူဖောင်း ပစ်နေ (war.js ရဲ့ hit ကို ခေါ် — hit state စမ်းဖို့) · ခလုတ် ဗမာလို · 375px ရ။ `window.carry = { player, items, pick(id), drop(), give(), throw() }` debug hook (ship မလုပ်ခင် ဖြုတ်)။
+
+### ✅ ပြီးတယ် ဆိုတာ
+- item ၆ ခုလုံး ကောက်/သယ်/ချ/တင်/ပေး ရ၊ size ၃ မျိုး pose **ကြည့်ရုံနဲ့ ကွဲ** (screenshot ၃ ပုံ)
+- ရေခဲ ၉၀ စက္ကန့် ပျော်၊ bar + scale + ကုန်ရင် ပျောက်
+- ပက်ခံရရင် head item ၃ ချက် ကျ (screenshot)
+- စက်ဘီး rack ပေါ် item/ကလေး တင်ပြီး စီး (screenshot)
+- ရှိပြီးသား animation (cast.html tic ၂၀ ကျော်) **မပျက်** — cast.html ဖွင့် စစ်
+- console error ၀၊ laptop 60fps၊ `docs/plans/T4.md` + PR
+
+### မလုပ်ရ
+`world.js` · ဂိမ်း flow · Rapier ထည့်တာ (T1 က ထည့်မယ် — hook ပဲ ထား) · ပြောမှ commit
+
+---
 
 ## T3 ရေပက် core loop
 
