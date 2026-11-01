@@ -212,7 +212,7 @@ const advance = next => { S.step = next; save(); };
 // fixed spots on the lot and round it
 const HOME_OUT = V(4.4, -3.3), MUM_DAY = V(6.9, -3.5), GATHER = V(-3.3, -2.3);
 const LOT = { ngazwe: [.4, .4], maythu: [1.4, -.3], phoekyaw: [4.8, -.3], chocho: [-.2, 1.2] };
-const FRONT = { hero: [2.6, 4.5], ngazwe: [1.3, 4.0], maythu: [2.0, 4.3], phoekyaw: [3.3, 4.3], chocho: [4.0, 4.0] }; // five o'clock, facing the mandat
+const FRONT = { hero: [5.0, 4.3], ngazwe: [3.4, 4.0], maythu: [4.2, 4.4], phoekyaw: [5.9, 3.8], chocho: [6.5, 3.2] }; // five o'clock, at the mandat's front corner (not in line with the bus stop on the street behind)
 const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(-4.25, -1.55), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
 
 // ---------- the rope bucket from Auntie Sein's balcony (M1) ----------
@@ -279,7 +279,8 @@ function holdable(kind, name, build) {
 const clothLook = b => mesh(new THREE.BoxGeometry(.4, .16, .3), new THREE.MeshLambertMaterial({ map: stripeTex('#f48fb1', '#fff6ea', 6) }), 0, .08, 0, { parent: b });
 const lightsLook = b => { for (let i = 0; i < 10; i++) mesh(new THREE.SphereGeometry(.045, 6, 5), i % 2 ? '#ffd23f' : '#ff8ad8', Math.cos(i * .63) * .16, .06 + (i % 3) * .02, Math.sin(i * .63) * .12, { parent: b, cast: false }); };
 const takeNow = it => { pc.pick(it); }; // bend, both hands, up to the chest
-const deliver = k => { const it = pc.item; if (it) cw.remove(it); hero.anim.play('pick'); mandat.drop(k); if (!S.got.includes(k)) S.got.push(k); GANG.forEach(g => g.g.visible && g.anim.emote('heart')); };
+const letGo = () => { const it = pc.item ?? pc.busy?.it; pc.busy = null; if (it && it !== bowl && it.state !== 'gone') cw.remove(it); pc.release(true); }; // empty hands now (never mid-pick: carry would put it back)
+const deliver = k => { letGo(); hero.anim.play('pick'); mandat.drop(k); if (!S.got.includes(k)) S.got.push(k); GANG.forEach(g => g.g.visible && g.anim.emote('heart')); };
 
 // ---------- the scenes ----------
 const MISSION = { m1: 0, catDown: false, wet: 0, puzzle: 0, told: false };
@@ -309,7 +310,7 @@ const CUES = {
   ball: () => { S.ball = true; setTool('balloon'); hud.toast('+ ပူဖောင်း 🎈'); maythu.anim.play('wave'); },
   // 1-6
   lift: async () => {
-    W.orbit?.focus(V(L.STAGE.x, L.STAGE.z, 1.2), { dist: 9, t: .8 });
+    W.orbit?.focus(V(L.STAGE.x, L.STAGE.z, 1.2), { dist: 10, elev: .7, t: .8 }); // from above: over the bus stop on the street
     bwWalk = walk(bwabwa, [[5.4, -1.6], [5.3, 3.4], [3.6, 3.45]], 'walk', 14); // she's on her way with the bowl meanwhile
     for (const k of ['floor', ...S.got.filter(k => k !== 'floor')]) { await mandat.add(k); if (!S.parts.includes(k)) S.parts.push(k); GANG.forEach(g => g.anim.emote('heart', 1)); }
     S.got = []; save(); W.orbit?.release();
@@ -381,7 +382,7 @@ function stage(step) {
   const H = ROOMS.home, out = !['1-1', '1-8', 'done'].includes(step);
   day.phase(PHASE_OF[step]); day.goal({ '1-1': '', '1-2': '', '1-8': GOALS['1-7'], done: GOALS['1-7'] }[step] ?? GOALS['1-2']); // the goal line appears in 1-2 (its cue) and changes in 1-7
   // family
-  if (out) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else put(mom, H.mom.x, H.mom.z, H.mom.ry, .05);
+  if (out) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night by the door side, out of the way
   if (step === '1-6') put(bwabwa, 4.6, -3.0, 0); else toRoomChair();
   // the bowl: in Bwa Bwa's lap → in her arms (1-6) → on its seat (1-7) → over the fence (after)
   if (bowl.by) { bowl.by.release(true); bowl.by = null; } if (bowl.at) { bowl.at.item = null; bowl.at = null; }
@@ -407,11 +408,11 @@ function stage(step) {
   const ampHere = !S.got.includes('speaker') && !S.parts.includes('speaker'); L.AMP.g.visible = ampHere; L.AMP.solid.x0 = ampHere ? L.AMP.at.x - .2 : 1e9; L.AMP.solid.x1 = ampHere ? L.AMP.at.x + .2 : 1e9;
   CAT.at = ampHere ? 'amp' : 'home'; CAT.hop = null; if (!ampHere) { shweWa.g.position.set(UNCLE.x + .6, ground(UNCLE.x + .6, UNCLE.z + .6), UNCLE.z + .6); shweWa.anim.setLoop('sit'); }
   fishM.visible = false; speaker = null; Object.assign(MISSION, { m1: 0, catDown: false, wet: 0, puzzle: 0, told: false });
-  if (shield) { cw.remove(shield); shield = null; } if (pc.item) cw.remove(pc.item);
-  if (step === '1-5') shield = holdable('shield', 'ပုံး'), shield.g.position.set(-1.3, 0, 3.7);
+  letGo(); if (shield) { if (shield.state !== 'gone') cw.remove(shield); shield = null; }
+  if (step === '1-5') { shield = holdable('shield', 'ပုံး'); shield.g.position.set(-1.3, 0, 3.7); }
   // you
   if (step === '1-1') { setInside('home', V(H.mat.x + .5, H.mat.z + .4)); }
-  else if (step === '1-8' || step === 'done') setInside('home', V(H.chair.x - .9, H.chair.z + .9));
+  else if (step === '1-8' || step === 'done') { setInside('home', V(H.chair.x - .7, H.chair.z + 1.3)); face(hero, bwabwa); }
   else if (inside) setOutside(HOME_OUT);
   else day.range.watch(true);
   hero.ch.blushEars(false); $('end').hidden = true;
@@ -431,7 +432,7 @@ function tutorial() { // 1-1: walk, run, jump — one hint at a time, until you'
 W.tick(dt => {
   if (!tut || hud.busy()) return;
   const a = hero.anim, [k, text] = tut.steps[tut.i] ?? [];
-  if (!k) { tut = null; return; }
+  if (!k || S.step >= '1-3') { tut = null; return; } // (by the first mission you've found your feet)
   if ((k === 'walk' && a.loop === 'walk') || (k === 'run' && a.loop === 'run') || (k === 'jump' && a.one === 'jump') || (k === 'door' && !inside)) { tut.i++; tut.t = 0; return; }
   if ((tut.t -= dt) <= 0) { tut.t = 3; hud.toast(text); }
 });
@@ -473,8 +474,8 @@ function slip(it, vel) { // carry.js calls this at the release: we fly it oursel
   const r = hero.g.rotation.y; for (let i = 0; i < 40; i++) W.spawn(from.clone(), V(Math.sin(r) * (3.5 + 3 * p) + (rnd() - .5), Math.cos(r) * (3.5 + 3 * p) + (rnd() - .5), 2.4 + 2 * p + rnd()), { own: hero.g, s: .9 });
   // … the bowl doesn't: it squirts out of the wet hands sideways, tumbling — 「ဟာ」
   life.say(hero, 'ဟာ', 1.8, 1.7); hero.anim.emote('bang', 2); it.water && (it.water.visible = false);
-  const to = L.LAND4.clone().add(V(p * .8, (rnd() - .5) * .4)); // a bit further the harder you threw — always in ④'s yard
-  flight = { it, p, t: 0, dur: 1.15 + .35 * p, from, to, h: 3.3 + 2.4 * p, crossed: false };
+  const to = L.LAND4.clone().add(V((rnd() - .5) * .4, (rnd() - .5) * .4)); // always into ④'s yard: how hard you threw only changes how high it goes
+  flight = { it, p, t: 0, dur: 1.2 + .35 * p, from, to, h: 4.0 + 2.0 * p, crossed: false }; // h: the top of the arc — the power bar only changes this
   for (const k of [hero, ...GANG]) k.anim.emote('bang', 2.6); // five kids: shock
   W.orbit?.focus(it.g, { dist: 7, t: .4 });
   return true;
@@ -515,8 +516,8 @@ const SPOTS = [
   { at: () => TABLE_SPOT, r: 1.2, label: () => on('1-5')() && !fixing && pc.item?.def.name !== 'မီးကြိုး' ? 'မီးကြိုး ပြင် 💡' : null, goal: () => on('1-5')() && (MISSION.wet === 0 || pc.item === shield), run: m3 },
   { at: () => shield?.g.position ?? V(0, -99, -99), r: 1.0, label: () => on('1-5')() && shield?.state === 'ground' && !pc.item ? 'ပုံး ကောက် 🪣' : null, goal: () => on('1-5')() && MISSION.wet > 0 && shield?.state === 'ground', run: () => takeNow(shield) },
   // 1-7: take the bowl, fill it, throw
-  { at: () => mandat.seatAt, stand: () => V(mandat.seatAt.x, 3.35), r: 1.6, label: () => on('1-7')() && bowl.state === 'placed' ? 'ဖလား ကောက်' : null, goal: () => on('1-7')() && bowl.state === 'placed', run: () => takeNow(bowl) },
-  { at: () => WATER, r: 1.3, label: () => on('1-7')() && pc.item === bowl && !bowl.water?.visible ? 'ဖလားနဲ့ ရေခပ်' : null, goal: () => on('1-7')() && pc.item === bowl && !bowl.water?.visible, run: scoop },
+  { at: () => mandat.seatAt, stand: () => V(mandat.seatAt.x, 3.35), r: 1.6, label: () => on('1-7')() && bowl.state === 'placed' && !pc.item && !pc.busy ? 'ဖလား ကောက်' : null, goal: () => on('1-7')() && bowl.state === 'placed', run: () => takeNow(bowl) },
+  { at: () => WATER, r: 1.3, label: () => on('1-7')() && pc.item === bowl && !pc.busy && !bowl.water?.visible ? 'ဖလားနဲ့ ရေခပ်' : null, goal: () => on('1-7')() && pc.item === bowl && !bowl.water?.visible, run: scoop },
   { at: () => THROW, r: 1.4, label: () => on('1-7')() && pc.item === bowl && bowl.water?.visible && !pc.busy ? 'ပစ်' : null, goal: () => on('1-7')() && pc.item === bowl && !!bowl.water?.visible, run: throwBowl },
   // the shops (off the main street — out of Mum's range on day 1)
   { at: () => L.BARBER, r: 1.3, label: () => null /* v6: the hero is a cast.js kid; the wardrobe still dresses the v4 adult (T6 decides) */, goal: () => false, run: () => enter('barber') },
@@ -555,6 +556,7 @@ W.tick(dt => { // Nga Zwe squirts up into it too, while you're there
   face(ngazwe, v.set(BTOP.x, 0, BTOP.z)); stream(ngazwe, V(BTOP.x, BTOP.z, BK.y + .3), .5); setTimeout(() => addWater(.12), 600);
 });
 function putDown() {
+  if (pc.busy) return; // still lifting it
   if (S.step === '1-3') { deliver('cloth'); advance('1-4'); for (const k of [chocho, phoekyaw]) walk(k, [[-3.3, k === chocho ? .3 : -.6]], 'run'); return; }
   if (S.step === '1-4') {
     speaker = null; L.AMP.g.visible = false; deliver('speaker'); fishM.visible = false;
@@ -597,12 +599,12 @@ W.tick(dt => { // the kids splashing nearby: now and then a splash comes over th
   if (!fixing || (wetT -= dt) > 0) return;
   wetT = 6;
   const from = V(-2.0, 1.4, .8); jet(from, V(TABLE.x, TABLE.z, .6), { n: 16, t: .5 }); maythu.anim.play('splash');
-  if (pc.item === shield) { flash('💦 → 🪣 ✓'); shield.wob = 1; return; }
+  if (pc.item === shield) { flash('💦 → 🪣 ✓'); shield.wob = 1; MISSION.blocked = (MISSION.blocked ?? 0) + 1; return; }
   flash('💦'); const f = fixing; fixing = null; f.close(); MISSION.wet++;
   story.play('1-5', 'wet').then(() => { hud.cinematic(false); hud.toast('ပုံး ကိုင်ပြီး ကာ 🪣'); });
 });
 function lightsDone() {
-  if (shield) { cw.remove(shield); shield = null; }
+  letGo(); if (shield) { if (shield.state !== 'gone') cw.remove(shield); shield = null; }
   kozaw.anim.play('wave'); setTimeout(() => takeNow(holdable('lights', 'မီးကြိုး', lightsLook)), 300);
 }
 function scoop() { // fill the bowl from Phoe Kyaw's bucket
@@ -658,7 +660,7 @@ $('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); locati
 stage(S.step); save();
 W.start();
 if (DEBUG) window.zone = { W, S: () => S, day, story, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
-  bulbs: () => fixing, talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
+  bulbs: () => fixing, throwing: () => !!flight?.it, talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
   // tests: do what the goal points at — go there and press E (an auto spot just needs you there)
   next() {
     if (hud.busy() || story.playing || flight || fixing) return 'busy';
