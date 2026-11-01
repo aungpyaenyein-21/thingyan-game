@@ -19,7 +19,7 @@ import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
 import { load as loadSave, save as store, wipe } from './save.js?v=7';
 import { createDay, debugStart, PHASE_OF } from './day.js?v=1';
-import { createStory, GOALS, NIGHT, RED_EARS } from './story.js?v=1';
+import { createStory, GOALS, NIGHT } from './story.js?v=2';
 import { createMandat } from './mandat.js?v=1';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
@@ -214,6 +214,7 @@ const HOME_OUT = V(4.4, -3.3), MUM_DAY = V(6.9, -3.5), GATHER = V(-3.3, -2.3);
 const LOT = { ngazwe: [.4, .4], maythu: [1.4, -.3], phoekyaw: [4.8, -.3], chocho: [-.2, 1.2] };
 const FRONT = { hero: [5.0, 4.3], ngazwe: [3.4, 4.0], maythu: [4.2, 4.4], phoekyaw: [5.9, 3.8], chocho: [6.5, 3.2] }; // five o'clock, at the mandat's front corner (not in line with the bus stop on the street behind)
 const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(-4.25, -1.55), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
+const AZ_SIDE = Math.atan2(THROW.x - L.LAND4.x, THROW.z - L.LAND4.z) - Math.PI / 2; // side-on to the throw: the lot on one side of the frame, ④'s fence and yard on the other
 
 // ---------- the rope bucket from Auntie Sein's balcony (M1) ----------
 const bucket = W.keep(new THREE.Group()); scene.add(bucket);
@@ -326,18 +327,26 @@ const CUES = {
     await wait(1.2); // five kids, very still
     sound.fx('icebell', L.LAND4); dingBubble(); await wait(1.0);
   },
+  back: () => { W.orbit?.release(); if (W.orbit) W.orbit.state.azGoal = -.3; }, // after the ④ kid's voice: back to the five of you from the south, a little west — the lane's lamp posts stay at the frame's edges (T5 review) so the lane's lamp post (7.1, −3.85) stays out of the middle (T5 review)
   pinky: () => { face(chocho, hero); face(hero, chocho); chocho.anim.play('wave'); hero.anim.play('wave'); chocho.anim.emote('heart', 2); },
   // 1-8
   choice: () => new Promise(r => hud.menu({ title: 'ဖလား မဏ္ဍပ်ပေါ် ရှိတယ်နော်', close: null, items: NIGHT.map(([k, label]) => ({ label, on: () => { S.night[S.day - 1] = k; save(); r(k); } })) })),
-  ears: () => { const red = S.night[S.day - 1] === RED_EARS; hero.ch.blushEars(red); if (red) hero.anim.emote('dots', 2); },
+  ears: () => { hero.ch.blushEars(true); hero.anim.emote('dots', 2); }, // whatever you answer, the ears give you away (SCENARIO §3 1-8)
   sleep: async () => {
     const m = ROOMS.home.mat; await new Promise(r => day.walkTo(V(m.x, m.z), r)); hero.g.rotation.y = 0; hero.anim.setLoop('sit');
     await hud.fade(true, 1200);
     advance('done'); hero.ch.blushEars(false); day.card('ရက် ၂ — မကြာခင်');
   },
 };
-const dingSprite = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex('ဒင်း'), depthWrite: false }))); dingSprite.scale.set(1.6, .6, 1); dingSprite.visible = false; scene.add(dingSprite);
-function dingBubble() { dingSprite.position.copy(L.LAND4).setY(2.4); dingSprite.visible = true; setTimeout(() => { dingSprite.visible = false; }, 1600); }
+// story bubbles (「ဟာ」 at the slip, 「ဒင်း」 over ④'s yard): our own HTML, because world.js hides its speech layer while a scene
+// is busy (body.busy #bubbles) — and these two only ever happen inside one. Timed in game time, so a slow frame can't eat them.
+const cueCss = document.createElement('style'); cueCss.textContent = `.cuebub{position:fixed;z-index:6;left:0;top:0;padding:3px 12px 4px;border:2px solid #5a3550;border-radius:14px;background:#fff6ea;color:#5a3550;font:16px/1.5 "Noto Sans Myanmar",sans-serif;white-space:nowrap;pointer-events:none;transform:translate(-50%,-100%)}`; document.head.appendChild(cueCss);
+const cues = [], cp = new THREE.Vector3();
+function cueBubble(text, at, secs = 1.6) { const el = document.createElement('div'); el.className = 'cuebub'; el.textContent = text; el.style.display = 'none'; document.body.appendChild(el); cues.push({ el, at, end: W.time() + secs }); }
+W.tick(() => { for (let i = cues.length - 1; i >= 0; i--) { const c = cues[i]; if (W.time() > c.end) { c.el.remove(); cues.splice(i, 1); continue; }
+  cp.copy(typeof c.at === 'function' ? c.at() : c.at).project(W.cam); const on = cp.z < 1 && Math.abs(cp.x) < 1.05 && Math.abs(cp.y) < 1.05;
+  c.el.style.display = on ? 'block' : 'none'; if (on) { c.el.style.left = ((cp.x * .5 + .5) * innerWidth).toFixed(0) + 'px'; c.el.style.top = ((-cp.y * .5 + .5) * innerHeight - 8).toFixed(0) + 'px'; } } });
+const dingBubble = () => cueBubble('ဒင်း', L.LAND4.clone().setY(2.4), 1.6);
 
 // ---------- rooms: walk in off the street (shops) or the lane (home) ----------
 let inside = null, backTo = null, seated = null;
@@ -473,11 +482,11 @@ function slip(it, vel) { // carry.js calls this at the release: we fly it oursel
   // the water goes where you aimed …
   const r = hero.g.rotation.y; for (let i = 0; i < 40; i++) W.spawn(from.clone(), V(Math.sin(r) * (3.5 + 3 * p) + (rnd() - .5), Math.cos(r) * (3.5 + 3 * p) + (rnd() - .5), 2.4 + 2 * p + rnd()), { own: hero.g, s: .9 });
   // … the bowl doesn't: it squirts out of the wet hands sideways, tumbling — 「ဟာ」
-  life.say(hero, 'ဟာ', 1.8, 1.7); hero.anim.emote('bang', 2); it.water && (it.water.visible = false);
+  cueBubble('ဟာ', () => hero.g.position.clone().setY(hero.g.position.y + 1.9), 1.7); hero.anim.emote('bang', 2); it.water && (it.water.visible = false);
   const to = L.LAND4.clone().add(V((rnd() - .5) * .4, (rnd() - .5) * .4)); // always into ④'s yard: how hard you threw only changes how high it goes
   flight = { it, p, t: 0, dur: 1.2 + .35 * p, from, to, h: 4.0 + 2.0 * p, crossed: false }; // h: the top of the arc — the power bar only changes this
   for (const k of [hero, ...GANG]) k.anim.emote('bang', 2.6); // five kids: shock
-  W.orbit?.focus(it.g, { dist: 7, t: .4 });
+  W.orbit?.focus(it.g, { dist: 8, elev: .5, az: AZ_SIDE, t: .4 }); // follow the bowl side-on: you, the arc and ④'s fence in one frame, never the house wall (T5 review)
   return true;
 }
 W.tick(dt => {
@@ -490,7 +499,8 @@ W.tick(dt => {
   if (k >= 1) { g.position.copy(f.to); g.rotation.set(0, g.rotation.y, 0); f.it.state = 'ground'; lastThrow.land = { x: +f.to.x.toFixed(2), z: +f.to.z.toFixed(2), side4: f.to.x > L.FENCE4.x }; flight = null; afterThrow(); }
 });
 async function afterThrow() {
-  await wait(1.5); W.orbit?.release(); bowl.g.visible = false; // a ④ kid has it now
+  W.orbit?.focus(THROW.clone().lerp(L.LAND4, .65).setY(1.3), { dist: 9, elev: .45, az: AZ_SIDE, t: .5 }); // hold side-on over the fence: the fence, the 「ဒင်း」 above it, the lot's edge — released after the ④ kid's voice (cue 'back')
+  await wait(1.5); bowl.g.visible = false; // a ④ kid has it now
   hud.cinematic(false);
   await story.play('1-7', 'after');
   scene18();
@@ -660,7 +670,7 @@ $('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); locati
 stage(S.step); save();
 W.start();
 if (DEBUG) window.zone = { W, S: () => S, day, story, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
-  bulbs: () => fixing, throwing: () => !!flight?.it, talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
+  bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
   // tests: do what the goal points at — go there and press E (an auto spot just needs you there)
   next() {
     if (hud.busy() || story.playing || flight || fixing) return 'busy';

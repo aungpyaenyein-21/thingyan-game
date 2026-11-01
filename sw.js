@@ -1,7 +1,7 @@
 // sw.js — keeps the Yangon day on the phone so it opens without a connection. Everything the game loads is fetched once
 // when this installs, then served from the cache. Bump VERSION with every push that changes a game file: the new
 // worker downloads the new set, waits, and pwa.js offers a reload (never mid-play on its own).
-const VERSION = 'y14';
+const VERSION = 'y15';
 const CACHE = 'thingyan-' + VERSION;
 const THREE = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const CORE = [

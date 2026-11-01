@@ -61,6 +61,7 @@ export const SCENES = {
     after: [
       [null, null, { cue: 'ding' }],
       ['kid4', 'ဟေး ဘာကျလာတာလဲ', { voice: true }],
+      [null, null, { cue: 'back' }],
       ['mom', '{name}! ၅ နာရီ!', { voice: true }],
       ['maythu', 'ဖလား ၁ — ဘွားဘွားကို အကြွေး', { act: 'note' }],
       ['ngazwe', 'ဘယ်သူမှ မပြောရ။ မနက်ဖြန် ငါတို့ ကိုယ်တိုင် ပြန်ယူမယ်', { face: 'lie' }],
@@ -80,7 +81,7 @@ export const SCENES = {
   out: { lines: [['mom', '{name}!', { voice: true }]] },
 };
 // 1-8's two answers (hud.menu); the one that gives the red ears (TASKS T5 §1: 「…」 → red ears)
-export const NIGHT = [['yes', 'ရှိတယ်'], ['dots', '…']], RED_EARS = 'dots';
+export const NIGHT = [['yes', 'ရှိတယ်'], ['dots', '…']]; // either answer: the ears go red (SCENARIO §3 1-8 — Fable review)
 
 // how long a line holds before it moves on by itself (s): enough to read it, never so long a scene passes 30 s
 export const hold = text => Math.min(4.5, Math.max(2.4, 1.2 + text.length * .07));

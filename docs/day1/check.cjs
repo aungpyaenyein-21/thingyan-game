@@ -23,7 +23,7 @@ const log = (...a) => console.log(...a);
     return p;
   }
   const state = p => p.evaluate(() => ({ step: zone.S().step, t: +zone.W.time().toFixed(1), playing: zone.story.playing, busy: zone.hud.busy(), menu: !document.getElementById('menu').hidden, mini: !!zone.mini()?.power, bulbs: !!zone.bulbs(), goal: document.getElementById('goal').hidden ? '' : document.getElementById('gtext').textContent, card: !document.getElementById('end').hidden }));
-  const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.jpg'), type: 'jpeg', quality: 72 });
+  const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.jpg'), type: 'jpeg', quality: 72, timeout: 180000 });
   // one beat of the auto-player: answer whatever is open, else go do what the goal points at
   async function beat(p, { power = .5, night = 0 } = {}) {
     const s = await state(p);
@@ -74,7 +74,10 @@ const log = (...a) => console.log(...a);
   for (const pw of [0, .5, 1]) {
     const q = await open('new&day=1&step=1-7');
     let shotT = false;
-    await until(q, async s => { if (pw === 1 && !shotT && await q.evaluate(() => zone.throwing())) { shotT = true; await shot(q, '1-7-throw'); } return s.step === '1-8'; }, { power: pw }, 600);
+    let shotD = false, shotA = false; await until(q, async s => { if (pw === 1 && !shotT && await q.evaluate(() => zone.throwing())) { shotT = true; await shot(q, '1-7-throw'); }
+      if (pw === .5 && !shotD && await q.evaluate(() => zone.ding())) { shotD = true; await q.evaluate(() => { zone.fast = false; }); /* real line lengths until the after-talk shot */ await q.waitForFunction(() => [...document.querySelectorAll('.cuebub')].some(e => e.textContent === 'ဒင်း' && e.style.display === 'block'), null, { timeout: 60000, polling: 100 }).catch(() => {}); await shot(q, '1-7-ding'); } /* the 「ဒင်း」 frame: fence + bubble + lot's edge (T5 review) */
+      if (pw === .5 && shotD && !shotA && await q.evaluate(() => /ဖလား ၁/.test(document.getElementById('dlg')?.textContent || ''))) { shotA = true; await shot(q, '1-7-after'); await q.evaluate(() => { zone.fast = true; }); } /* the talk after: the lamp post must be off-axis */
+      return s.step === '1-8'; }, { power: pw }, 600);
     const r = await q.evaluate(() => zone.lastThrow);
     log(`  power ${pw}: land ${JSON.stringify(r.land)} · over the fence by ${r.clear} m → ${r.land?.side4 ? '④ side ✓' : '✗'}`);
     await q.close();
