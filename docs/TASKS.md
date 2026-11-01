@@ -15,11 +15,11 @@
 | T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
-| T6 | ရက် ၂ + ၃ — M4–M7၊ ဖိုးဝ၊ ဖလားဦးထုပ်၊ ရေဒီယို | ⏳ | — |
+| T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T3b → T5 → T6 → T6.5 → T7။ Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T5 → T6 → T3b → T6.5 → T7။ (T3b after T6 so the day-4 slice lands on a finished day 1–3.) Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -164,6 +164,8 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 | အသံ | `pssh` ဆက် | `splat` | `whoosh`+`splash` |
 war.js မှာ ပြွတ်/ပူဖောင်း ရှိပြီး → ပုံး ထည့်၊ ၃ ခု ကွာခြားမှု ဒီဇယားအတိုင်း ချိန် · လက်နက် ပြောင်း R (ရှိ)
 
+**Creator (2026-11-01): the three weapons must feel clearly different in damage** — widen the gaps (pump ≈ −.08/stroke-hit, balloon −.35, bucket −.7 + shove + full soak), per-weapon hit feedback (bar chips vs chunks, hit-stop 60 ms for the bucket), costs that make the choice matter. In `?tune`.
+
 ### B. ရေ = ကျည်
 ကျောပိုးပုံး HUD (ရှိ) · **ကုန်ခါနီး ၂၀% အောက်** ပြွတ်က stream အားနည်း + စက်စက် ကျ (particle နည်း) · ရေအိုးစင် (ရှိ) / ရေစည် / ပိုက်ခေါင်း မှာ ဖြည့် `glug` + ပုံး ပြန်ပြည့် animation (၁.၅ s၊ ဖြည့်နေတုန်း ပက်ခံရရင် ပျက်) · ဖိုးကျော် `supply` role (war.js — ရေကုန်ခါနီးသူဆီ ဆီပုံး သယ်ပေး၊ T4 bike rack နဲ့)
 
@@ -206,7 +208,7 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 - Yuka NPC ၅v၅ ၃ ပွဲ ကိုယ်တိုင် ဆော့ — NPC က ဒရမ်မှာ မငြိ၊ OUT ဆို ပြန်
 - `fx/*.json` ၄ ခု + editor ဖွင့်ပုံ README
 - console error 0 · `docs/plans/T3.md` + PR
-- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ်
+- **ဖန်တီးသူ: ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」** — ဒါ မဟုတ်ရင် merge မလုပ် → **✅ 2026-11-01 creator played the Browser pane build: 「いいと思う」** (camera T2 and the T3 splash feel both accepted; T3 merge waits only on the rebase + blur cap)
 
 ### မလုပ်ရ
 `world.js` `chibi.js` `cast.js` · ဇာတ်လမ်း scene (T3b) · ပြောမှ commit
@@ -268,6 +270,54 @@ main.js favour ၉ ခု (tea/padauk/fronds/drum/nozzle) + Mandalay ဘတ်�
 
 ### မလုပ်ရ
 ရက် ၂–၄ content · `world.js` `war.js` `chibi.js` · ⑤ downtown ပြင်တာ · ပြောမှ commit
+
+---
+
+## T6 Day 2 + Day 3
+
+**Goal** — SCENARIO v6 §4 (day 2, 2-1 … 2-8) and §5 (day 3, 3-1 … 3-7) playable end to end on top of T5's daily system. Day 2 = the adventure day (into ward ④, the bowl seen on Thura's head, a fight you are meant to lose). Day 3 = the squeeze (gang short-handed, Nga Zwe scared, the bowl spotted on the ice truck, the match for tomorrow set). Each day 12–15 min.
+
+**Prereqs** — T5 merged (`day.js`, `mandat.js`, `story.js`, home interior, carry people wrapper) · T3 merged (`rules.js`, weapons, `fx.js`, `ai.js`) · T4 (carry, bike). Write `docs/plans/T6.md` first. Branch `claude/day23`.
+
+**Files** — T6 owns `yangon/main.js` (day 2/3 flow), `yangon/story.js` (scenes 2-x, 3-x), `yangon/set.js` (④ lane + fence gate, drain run, May Thu's porch + washing line, ice truck spot), `yangon/day.js` (day 2/3 ranges), `yangon/mandat.js` (sign, drum, ice parts), 🆕 `yangon/missions/` (`drain.js`, `lane4.js`, `laundry.js`, `icerun.js`), `cast.js` (Thura bowl helmet + goggles-up, U Tin Maung ice truck/radio props, Phoe Wa dog via critters.js). Not: `world.js`, `camera.js`, `war.js` core (call its skirmish API), `chibi.js`.
+
+### Day 2 (SCENARIO §4)
+| scene | what | gameplay / reuse |
+|---|---|---|
+| 2-1 | Mum: market allowed, ④ forbidden, 5 o'clock · Bwa Bwa's one look | `day.range` = ① + market street · goal 「④ ဘက် ဝင်ရှာမယ်」 (the player chooses to disobey — the range check for ④ shows Mum's line once, then lets you through with a 「…」) |
+| 2-2 | gang gathers · Saya Gyi: sign paint from the betel uncle · Phoe Kyaw brought the purse (plant) · May Thu / Nga Zwe argue, Cho Cho resolves | story.js |
+| 2-3 / 2-4 **M4 purse** | on the main street grown-ups are splashing · Phoe Kyaw dodges → purse drops into the roadside drain and floats off · goal 「ဖိုးကျော့် ပိုက်ဆံအိတ် အရင်」 | 🆕 `drain.js`: a flowing drain along the street (visible current, the purse bobbing); **two kids needed** — Nga Zwe (NPC) sprays from upstream to push the purse, the player waits at one of **three grates** downstream and presses E at the right moment to catch; miss → next grate; miss all three → restart. Use `rules`/weapons for Nga Zwe's spray, `carry` for the purse (hand). Phoe Kyaw rings the bell ×3 on success |
+| 2-5 | betel uncle sells the paint · hint 「④ kids are wearing something shiny on their heads」 | story.js |
+| 2-6 **M5 lane ④** | Phoe Wa the dog at the lane mouth (Phoe Kyaw won't pass) · Cho Cho knows its name and that it likes fried rice → buy fried rice at the market → the dog sits · inside: **Thura wearing the silver bowl as a helmet** + five ④ kids · dialogue · **4 v 5 skirmish you are meant to lose** (no refill on ① side, ④ has a drum; it ends when the ① cans are empty) · goal 「သူရတို့ဆီမှာ — ပြန်ယူမယ်」 | 🆕 `lane4.js`: set.js ④ lane + gate; critters.js dog with a `sit` state and a food trigger; war.js skirmish API (`startSkirmish({ map:'lane4', sides, refill:{A:false,B:true}, endWhen:'A-empty' })` — add that entry point to war.js if missing, nothing else in war.js); Thura's helmet = carry `bowl` on his `head` socket + goggles up; the bowl stays on him when it ends |
+| 2-7 | back soaked · **paint the gang name on the sign** (mini: trace 3 strokes with the pointer, any result is accepted, it goes on the mandat) · Saya Gyi 「…ဖလား ဘယ်မှာလဲ」 → Cho Cho's lie → 「ဟွန်း」 | `mandat.add('sign')` with the painted texture (CanvasTexture) · story.js |
+| 2-8 | night: Mum 「④ ဘက် မကူးဘူးနော်」 → 「မကူးဘူး」 / 「…」 · Bwa Bwa smiles · bowl location card 「④ · သူရ ခေါင်းပေါ်」 | day.js night + 🆕 bowl-location card |
+
+### Day 3 (SCENARIO §5)
+| scene | what | gameplay / reuse |
+|---|---|---|
+| 3-1 | Mum: hottest day, ice needed, ④ **allowed** today · goal 「ရေခဲ လိုတယ် — ဦးတင်မောင့်ဆီ」 | range = ① + market + ④ · world saturation −20% today (PALETTE "hottest day") |
+| 3-2 | only Nga Zwe at the corner — Phoe Kyaw on water runs (10 trips), May Thu doing the laundry · Cho Cho free → three of you | story.js · Phoe Kyaw NPC cycling market ↔ shop on a loop (bike.js), May Thu NPC at her porch |
+| 3-3 | Nga Zwe's trouble: 「…ငါ မသွားရဲဘူး」 (the radio) · red ears · goal 「ငဇွဲ မသွားရဲ — အရင် ပြင်ပေး」 · plan: fetch the other two by helping with their chores | story.js, `earBlush` |
+| 3-4 **M6 laundry** | May Thu's porch, basket of 10 clothes · **three roles**: Nga Zwe (NPC) sprays the clothes clean (a water bar per item), the player wrings and **throws each onto the washing line** (`bigthrow` power → lands on the line or falls back), Cho Cho / May Thu peg them · an item that is not pegged in time slips off → re-wash · May Thu takes off the shower cap and joins (CHARACTERS §3) | 🆕 `laundry.js`: line with 10 peg spots, throw arc + catch zone; carry `front` for the basket |
+| 3-5 **M7 ice run** | Phoe Kyaw at the market: 3 trips left → May Thu's plan: fetch the ice and deliver ice water to the shop in one trip · at U Tin Maung's truck Nga Zwe stands with his back turned; the radio is **playing** — 「၁၀ ခါ ပျက်… ၁၀ ခါ ပြင်…」 (not looking at him) · red ears + smile · Cho Cho peeks: **the bowl is the ice-water scoop on the truck** · U Tin Maung: Thura traded it for one block; tomorrow ① v ④ at the bridge head, winner takes it, he referees · goal 「ဖလား ရေခဲကားပေါ် ရောက်နေပြီ」 · **the run**: ice block on the bike rack (carry `bike`), Phoe Kyaw pedals (or the player rides, see T4), the others run alongside; **melt timer**; ④ kids ambush along the street → shield the ice (hit → rack item wobbles, 3 hits → it falls, pick it up again), spray back; one stop at the shop; then the mandat | 🆕 `icerun.js`: route with 2 ambush points (ai.js `ambush`), melt timer HUD, shop stop; ice truck + radio props on U Tin Maung (CHARACTERS §7); bowl visible on the truck (not takeable) |
+| 3-6 | ice into the drum → `mandat.add('drum')`, `mandat.add('ice')` · Saya Gyi 「ဟွန်း… မဆိုးဘူး」 · U Tin Maung arrives, one game of chess with Saya Gyi (background, no scene) | mandat.js · two NPCs seated at the tea shop |
+| 3-7 | night: Mum 「မနက်ဖြန် ၅ နာရီ မဖြစ်မနေ」 · Bwa Bwa 「ဖလား ရှိတယ်နော်」 → choice · card 「ရေခဲကား → မနက်ဖြန် တံတားထိပ်」 · 「Day 4」 title → "coming soon" until T3b | day.js |
+
+### Rules of thumb
+- Water in every mission: M4 pushes the purse with water, M5 is a water fight, M6 washes with water, M7 defends the ice with water. No fetch-only steps.
+- Every mission needs ≥ 2 kids; the NPC partner's role is visible (Nga Zwe spraying, Cho Cho pegging).
+- Dialogue verbatim from SCENARIO §4/§5; faces from CHARACTERS §14; no scene over 30 s.
+- Thura is named from 2-6 (Cho Cho says it); HUD shows 「သူရ」.
+- Bowl location card appears every night from day 2 (a small drawing: ④ lane / Thura's head / the truck).
+
+### ✅ Done means
+- `?day=2` and `?day=3` from a fresh save play through to the next day's title: 12–15 min each (I measure), one screenshot per scene
+- M4 catch at each of the three grates; M5 skirmish ends when ① is empty and the bowl stays on Thura; M6 all 10 clothes on the line; M7 ice arrives with ≥ 30% left on a normal run, falls and is recovered after 3 hits
+- goal line changes per SCENARIO §0 (2-1, 2-3, 2-6, 3-1, 3-3, 3-5)
+- phone 375, console errors 0, 60 fps laptop, `docs/plans/T6.md` + PR
+
+### Don't
+Day 4 content (T3b) · `world.js` `camera.js` `chibi.js` · war.js beyond the skirmish entry point · commit unless asked
 
 ---
 
