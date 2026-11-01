@@ -266,7 +266,7 @@ function pop(k, text, color = '#fff', size = 22) { // a word that jumps off the 
 let drown = 0; // that water-up-your-nose feeling, for you
 let shakeT = 0, shakeA = 0, buzzT = 0;
 const kick = (a, t = TUNE.shakeT) => { if (a < shakeA * Math.max(0, shakeT) / TUNE.shakeT) return; shakeA = a; shakeT = t; W.orbit?.shake(a * .015 * TUNE.shake / 6, t); }; // the view jolts for .15 s (orbit: the camera itself)
-const buzz = () => { if (W.time() > buzzT) { buzzT = W.time() + .25; try { navigator.vibrate?.(TUNE.vibrate); } catch {} } }; // Android: a 30 ms buzz
+const buzz = () => { if (W.time() > buzzT && navigator.userActivation?.hasBeenActive) { buzzT = W.time() + .25; try { navigator.vibrate?.(TUNE.vibrate); } catch {} } }; // Android: a 30 ms buzz — only after the player has touched the page (Chrome logs an error otherwise)
 // one hit, whatever it came from: grit off, a squash, the drop emote, the burst, the sound, the beat of stillness
 function soak(k, o) {
   const g = o.grit * (o.face ? TUNE.faceK : 1); STATS.hits++; if (o.face) STATS.face++;

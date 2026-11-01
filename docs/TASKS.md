@@ -11,15 +11,19 @@
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
-| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31) | other model |
-| T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31 · vibrate guard #37) | other model |
+| T3b | [Day 4 + epilogue](#t3b-day-4--epilogue) — bridge-head match → the bowl into the creek (scripted) → ten kids fish it out → the 5 o'clock run → Bwa Bwa laughs → the pouring → photo | ⏳ spec ✅ (after T6 merge) | other model · branch `claude/day4` |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | 👀 code review — plan ✅ [plans/T5.md](plans/T5.md) (Results) · check `docs/day1/check.cjs` · PR #32 | အခြား model · branch `claude/day1` |
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
-| T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
+| T6.5 | [Pose/tic editor + face editor](#t65-posetic-editor--face-editor) — `cast.html?edit`: keyframe JSON tics played by chibi.js, FACE table (CHARACTERS §14) with 14 new face parts, `anim.face()` | ⏳ spec ✅ (after T10 merge — chibi.js) | other model · branch `claude/editor` |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
+| T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | ⏳ spec ✅ — start now | other model · branch `claude/goggles` |
+| T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ⏳ spec ✅ — start now (∥ T8) | other model · branch `claude/speed` |
+| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ⏳ spec ✅ (after T5 + T9 merge) | other model · branch `claude/talk` |
+| T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | ⏳ spec ✅ (after T8 merge — same war.js) | other model · branch `claude/rally` |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T5 → T6 → T3b → T6.5 → T7။ (T3b after T6 so the day-4 slice lands on a finished day 1–3.) Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → **now: T5 (coding) ∥ T8 ∥ T9** → T11 (after T8) · T10 (after T5 + T9) → T6 → T3b → T6.5 → T7။ Files: T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5 = yangon/* story. Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -221,9 +225,100 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 
 ---
 
-## T3b ရက် ၄ vertical slice (T2 + T3 ပြီးမှ)
+## T6.5 Pose/tic editor + face editor
 
-တံတားထိပ် ၅v၅ (T3 ပွဲ ၃ ပွဲ) → ၄-၄ ဖလား ချောင်းထဲ (**script**: ပွဲ ၂ အလယ်မှာ kinematic ဖလား + ချောင်းဘက် တွန်းအား — T1 review #4) → ၄-၅ ၁၀ ယောက် အတူ ဆယ် (co-op mini: ကြိုး+ပူဖောင်း ပစ် `bigthrow`၊ ④ ပြွတ် ၅ ချောင်း ရေထိုး၊ ချိုချို 「ရေက ဒီဘက်」၊ Yuka flock) → ၄-၆ ၅ နာရီ timer ပြေး (ဖိုးကျော် စက်ဘီး rack ပေါ် `{နာမည်}`+ဖလား၊ ဖိုးဝ၊ ဈေး အမေ ၂ ယောက်) → ၄-၇ ဘွားဘွား ရယ် (CHARACTERS §၁၄ `joy`၊ ဆရာကြီး 「ကောင်းတယ်」) → ၄-၈ `pour` + လူကြီးတွေကိုပါ ရေပက်။ Spec အသေးစိတ် T3 review ပြီးမှ။
+**Goal** — Stop hand-coding tics. A browser editor on top of `cast.html` where the creator (and Fable, in review) can pose the rig, scrub a timeline, pick a face, attach a prop, and export JSON that chibi.js plays. Also the face system from CHARACTERS §14: expression = data (eyes / brows / mouth / extra), 10 named faces, `anim.face(name, sec)`, blink-cut. T7 then authors every story tic with this instead of code.
+
+**Prereqs** — T10 merged (last task that edits chibi.js animation code). Plan file first. Branch `claude/editor`.
+
+**Files** — T6.5 owns `chibi.js` (face parts + FACE + JSON tic player — no change to existing code tics), `cast.html` (`?edit` mounts the editor; the roster page stays as is), 🆕 `editor.js`, 🆕 `tics/` (`*.json` + `README.md`), 🆕 `faces.json` (the FACE table), `cast.js` (register JSON tics next to the code ones). Not: `world.js`, `camera.js`, `war.js`, `yangon/*`.
+
+### 1. Tic JSON (what the editor saves, what chibi.js plays)
+```json
+{ "name": "bow", "kind": "oneshot", "duration": 2.4, "still": true,
+  "keys": [
+    { "t": 0,   "pose": {}, "face": "ok" },
+    { "t": 0.5, "pose": { "spineRx": 0.55, "headRx": 0.3, "armLx": -0.6, "armRx": -0.6, "elbowL": -0.9, "elbowR": -0.9 }, "face": "worry", "ease": "out" },
+    { "t": 1.9, "pose": { "spineRx": 0.55, "headRx": 0.3 }, "hold": true },
+    { "t": 2.4, "pose": {}, "face": "ok" } ],
+  "props": [ { "id": "book", "at": 0.3, "to": "chest", "pos": [0.02, 0.1, 0.24], "rot": [-0.95, 0, 0] }, { "id": "book", "at": 1.9, "to": "home" } ],
+  "emit": [ { "at": 0.6, "type": "lob", "from": "handR" } ] }
+```
+- `pose` keys = the animator's `KEYS` (armLx … spineRz, sy, x, y, headRx/Ry/Rz, hipsRy/Rz, handLz/Rz, kneeL/R, footL/R, legLx/Lz/Rx/Rz, elbowL/R, expr/mouth are replaced by `face`). Missing keys = the base loop's value (so a tic can layer on idle/walk like `_loadPose` does).
+- `kind: "loop"` has `cycle` seconds and wraps; `oneshot` has `duration` and goes into `ONESHOT` / `STILL` (when `still: true`).
+- `ease`: `in | out | inout | linear` between keys; `hold` keeps the previous key until this one.
+- `props`: moves a named prop (`cast.js` props: book, pencil, whistle, towel, balloon, pump …) to a socket (`handR handL chest head back home`) at a time — the `moveTo / moveHome` pattern, data-driven.
+- `emit`: fires `anim.emit(type, pivot)` at a time (cast.html's balloon lob uses this).
+- chibi.js: `registerTic(json)` → `LOOPS[name]` / `ONESHOT[name]` + a `_json` player that interpolates keys and applies face/props/emit; `tics/index.json` lists the files; cast.js loads them at start. Code tics keep priority if a name clashes (so nothing existing changes).
+
+### 2. The editor (`cast.html?edit`, `editor.js`)
+- Left: character picker (the 13) · tic list (code tics read-only, JSON tics editable, 「+ new」 from the current pose) · kind / duration / cycle / still.
+- Centre: the character, orbit camera (cast.html's), onion-skin ghost of the previous key, play / pause / scrub / loop, speed ×.25–×1.
+- Right: slider groups — head (Rx Ry Rz) · spine · hips · arm L/R (sh x/z, elbow, hand) · leg L/R (hip x/z, knee, foot) · body (y, sy) · **mirror L↔R** · **reset to base** · face picker (10 FACE names + the 4 raw parts) · prop row (prop → socket at this key) · emit row.
+- Timeline: keys as dots, drag to move, double-click to add at the playhead, delete, copy/paste a key, ease per key.
+- **Save**: 「Copy JSON」 · 「Download tics/<name>.json」 · autosave draft to localStorage; the file is then committed by hand (no server). `?edit&tic=name` opens one straight away.
+- Phone: not required (laptop tool); must not break the normal `cast.html`.
+
+### 3. Faces (CHARACTERS §14)
+- chibi.js `faceTex(o, face)` draws the four parts; new parts: eyes `wide side half`, brows `up in out one` (offsets on the character's own brow shape), mouth `wide o line pout wobble grit`, extra `sweat tear lines` (blush / redEye / redEar exist).
+- `faces.json` = the FACE table (10 named expressions from §14); `anim.face(name, sec)` overlays for `sec` then returns to the loop's face; `hitT > 0` → `wet` wins; a blink frame between two different faces (blink-cut).
+- Per-character overrides from §14: Saya Gyi `smileEyes:false` (no happy eyes even in `joy`), Thura with goggles down shows brows + mouth only, U Tin Maung default `joy`.
+- Face editor tab: the 4 dropdowns + a **13-character grid** showing the chosen face on everyone at once (the §11 uniqueness check in one screenshot); 「Save faces.json」.
+
+### 4. Migration proof
+- Re-author **three** existing code tics as JSON with the editor and ship them as `tics/bow.json`, `tics/note.json`, `tics/lob.json` (the JSON versions win only when `?jsontics` is set, so the roster still matches `regress.cjs`); a side-by-side screenshot pair for each.
+- Write `tics/README.md`: how to open the editor, author, export, and register a tic (Burmese + English, short).
+
+### ✅ Done means
+- Editor: open `cast.html?edit`, pose Nga Zwe, add 3 keys, play, export JSON, reload the page with `?jsontics` and see it play on him (screen capture or 4 screenshots)
+- `faces.json` 10 expressions × 13 characters grid screenshot; `anim.face('shock', 1)` from the console works on the roster page
+- The three migrated tics match their code versions within one frame (side-by-side screenshots)
+- `cast.html` without `?edit` is pixel-identical to before (regress.cjs 0 diffs); console 0; `docs/plans/T6.5.md` + PR
+
+### Don't
+Blender / Mixamo / glTF animation · touching world.js, war.js, yangon/* · changing any existing code tic's look · commit unless asked
+
+---
+
+## T3b Day 4 + epilogue
+
+**Goal** — SCENARIO v6 §6 (4-1 … 4-9) and §7 (the epilogue photo) playable end to end: the climax of the story. 15–18 min. This is where every system meets: war.js (T3), carry + bike (T4), orbit camera scenes (T2), day.js / mandat.js / story.js (T5), ward ④ + the dog + the market (T6), the talk director (T10), goggles (T8), Yuka flock (T3).
+
+**Prereqs** — T5, T6 merged (T10 preferred, not required: lines carry `{ face, act, shot }` either way). Plan file `docs/plans/T3b.md` first. Branch `claude/day4`.
+
+**Files** — T3b owns `yangon/main.js` (day-4 flow), `yangon/story.js` (4-x + epilogue), `yangon/set.js` (bridge head, creek + four bamboo poles, the rail seat for the bowl), 🆕 `yangon/missions/bridge.js` (match wrapper), 🆕 `yangon/missions/rescue.js` (the co-op fish-out), 🆕 `yangon/missions/run.js` (the timed run), `yangon/day.js` (the day-4 clock), `yangon/mandat.js` (`bowl` part + the pouring). war.js: only a `startMatch()` entry point with callbacks (rounds, a hook at a given moment); no gameplay changes. Not: `world.js`, `camera.js`, `chibi.js`.
+
+### Scenes
+| scene | what | gameplay / reuse |
+|---|---|---|
+| 4-1 | early morning at the pagoda with Bwa Bwa (short cutscene, 20 s: she pours water, 「ညနေ ဖလားနဲ့ သွန်းမှ…」, `{name}` silent) · Mum: 5 o'clock, no exceptions · **the HUD clock appears** (today only, game time: 9:00 → 17:00 over the day; the clock only advances inside scenes/missions, not while wandering) · goal 「၅ နာရီ မတိုင်ခင် ဖလားနဲ့ အိမ်ပြန်」 | day.js clock mode · a pagoda spot in set.js (the monastery exists — reuse) |
+| 4-2 | the whole gang · Phoe Kyaw says 「ရတယ် ရတယ်」 again (first time since day 2) · May Thu's notebook 「ဖလား ၁ — ဒီနေ့ ဆပ်」 · Cho Cho brings Saya Gyi's rusty pump (Saya Gyi left it at the door — she thinks she stole it) · **weapon pick** (pump / balloon / bucket pads — the war.js HUD) | story.js · cast.js rusty pump prop on Cho Cho |
+| 4-3 **the match** | bridge head, U Tin Maung referees, the bowl sits on the rail, drums on both sides (refill allowed), best of three · round 1 plays out (win or lose) · round 2 starts — | `bridge.js` → war.js `startMatch({ map: 'bridge', sides: 5v5 named cast, rounds: 3, refill: both, onMoment })`; Thura goggles down (T8); the match uses the day-4 clock (round = ~15 game-minutes) |
+| 4-4 **the bowl falls** | **scripted, ~40 s into round 2**: a balloon "from nobody" hits the rail → the bowl (kinematic until now) tips into the creek and floats with the current → both sides freeze (war.js pauses, kids' AI → `watch`) · Thura pushes his goggles up · Nga Zwe 「ငါ ဆင်းမယ်」 · Thura 「ငါလည်း」 · goal 「ချောင်းထဲ ကျသွားပြီ — အတူ ဆယ်」 · camera `focus(bowl)` down to the water, then `release` | the bowl = carry `bowl` item with a scripted path (no physics roll of the dice — T1 review #4): rail → splash → drift → snags on the **second** bamboo pole mid-creek · fx.js splash + wet ring |
+| 4-5 **fish it out** (10 kids, co-op) | the creek is too deep to wade. The bowl is snagged on a pole mid-stream. Roles, all visible: **Phoe Kyaw** uncoils the bike rope · **May Thu** ties a balloon to its end · **the player** throws it (`bigthrow`, power bar: the balloon must land just past the bowl — too short / too long = retry, three zones) · **the ④ kids** line the far bank and spray the pole with five pumps to free the bowl (a shared "push" bar fills while they spray — the player can add with their own pump) · **Nga Zwe + Thura** on the near bank under the bridge pull the rope in together (a two-button rhythm tap, Nga Zwe's side is the player's) · **Cho Cho** 「ချိုချို သိတယ်၊ ရေက ဒီဘက် စီးတယ်」 (points the throw side) · the bowl comes up **dented** — camera close, ten faces `shock` → the clock reads **4:40** | `rescue.js`: three sub-steps (throw → free → pull), each ≤ 40 s, no fail state (retry inline) · Yuka `watch`/`line-up` for the ④ kids · faces CHARACTERS §14 |
+| 4-6 **the run** (timer: 20 game-minutes = **2 real minutes**) | bridge → ④ lane (Phoe Wa blocks; Thura 「ဖိုးဝ ထိုင်」 → it sits) → market (the two mothers at tea, watching ten kids run past: 「ဟိုကလေးတွေ ဘယ်တုန်းက သူငယ်ချင်း ဖြစ်သွားတာလဲ」; Thura's mum calls 「သူရ! ဆိုင် —」 / 「ခဏနော်!」 — a 5 s stop) → ① → the mandat · **Phoe Kyaw pedals, `{name}` + the bowl on the rack** (the player steers the bike — T4 ride, ×1.8, bell), the other eight run alongside as a Yuka flock; stragglers catch up at each checkpoint · HUD: the clock counting to 5:00; arriving late is **not** a fail — Mum's face just says it (the scene still plays), arriving early gives the gang 10 s of breath | `run.js`: 4 checkpoints, the flock, the dog, the market stop · bike.js ride with a rack passenger (T4) |
+| 4-7 **5 o'clock** | at the mandat: Bwa Bwa, Mum, Saya Gyi, U Tin Maung; ten soaked, panting kids · `{name}` hands over the bowl: 「ဘွားဘွား… [သား/သမီး] ပစ်လွတ်လိုက်တာ။ ချိုင့်သွားတယ်」 (one line, no drama; carry `give` to Bwa Bwa) · Bwa Bwa looks at the dent and **laughs** (`joy`, the one `laugh` of the game): 「ဒီချိုင့်က ဘွားဘွား ၁၀ နှစ်တုန်းက…」 · May Thu 「…အကြွေး?」 / 「ဘာ အကြွေးလဲ」 / she crosses out 「ဖလား ၁」 (`note`) · Saya Gyi to Cho Cho 「ငါ မသိဘူး ထင်လား」 / 「…ချိုချို သိတယ်」 (`sly`) · Saya Gyi to the mandat: 「ဟွန်း… **ကောင်းတယ်**」 | story.js · talk director shots (T10) · `mandat.add('bowl')` on the seat |
+| 4-8 **the pouring** | Bwa Bwa scoops from the drum with the bowl and pours over the ten heads (`pour` one-shot, the player only watches, 25 s) · 「နှစ်ဟောင်း ကုန်ပြီ」 · U Tin Maung tips a bucket over the grown-ups · **free splashing for everyone** (war.js free-play, no OUT, no grit, adults splashable, 60 s or until the player walks away) · camera pulls back: the finished mandat, the bowl on top | mandat complete · war.js `freePlay()` mode (no rules, no bars) |
+| 4-9 | night: Mum 「ဒီနေ့ ဘာလုပ်ခဲ့လဲ」 → **one choice only** 「အကုန် ပြောမယ်」 → fade | day.js |
+| epilogue | New Year's morning: everyone in white (CHARACTERS: colours only in hair / cans / the bowl) · the **photo** in front of the mandat: ten kids (① five + ④ five), Thura goggles on his forehead, Cho Cho holding Saya Gyi's pump, the bowl in the middle · the player presses the shutter (one tap; the frame freezes with a flash and a border) · Bwa Bwa's voice 「နောက်နှစ်လည်း ဒီဖလားနဲ့ပဲ」 · the photo yellows → end card → the save can be replayed from any day (`?day=`) | 🆕 photo mode: freeze + CanvasTexture of the frame, saved to `S.photo` (data URL) so the title screen can show it later |
+
+### Rules of thumb
+- Water in every step: the match, the pole spray, the pouring, the free play. The run has none — that's the breath before the end; keep it to 2 minutes.
+- **Nothing in day 4 can fail the story**: the match may be lost, the throw retried, the run late — the scene adapts in one line and goes on.
+- The scripted bowl fall must never look like the player's fault and never depend on physics.
+- Lines verbatim from SCENARIO §6/§7; no scene over 30 s except 4-5 and the pouring.
+- Adults: present in 4-7/4-8 only; they organise and laugh, they don't solve.
+
+### ✅ Done means
+- `?day=4` from a fresh save plays 4-1 → epilogue in 15–18 min (I measure), one screenshot per scene + the photo
+- The match hook fires at ~40 s of round 2 regardless of the score; the bowl snags on the pole every time (10 runs in a check script)
+- The rescue's three sub-steps each complete with the roles visible (screenshots: throw, spray bar, pull)
+- The run: late arrival and early arrival both play 4-7 correctly; the flock arrives (no kid left behind at the last checkpoint)
+- The photo saves and shows on reload
+- phone 375, console 0, 60 fps laptop (the ten-kid flock is the heaviest scene — report draw calls), `docs/plans/T3b.md` + PR
+
+### Don't
+`world.js` `camera.js` `chibi.js` · war.js gameplay (entry points only) · a title screen (T7) · commit unless asked
 
 ---
 
@@ -324,6 +419,57 @@ main.js favour ၉ ခု (tea/padauk/fronds/drum/nozzle) + Mandalay ဘတ်�
 
 ### Don't
 Day 4 content (T3b) · `world.js` `camera.js` `chibi.js` · war.js beyond the skirmish entry point · commit unless asked
+
+---
+
+## Issues → tasks (2026-11-01, Fable)
+
+Four issues from the creator are already written as near-specs. The sections below only add the design decisions, the deltas and the file ownership; **the issue text is the spec** — read it first.
+
+## T8 Swim goggles (issue #33)
+
+Spec: [#33](https://github.com/aungpyaenyein-21/thingyan-game/issues/33). Fits CHARACTERS §8 (Thura: goggles down in a fight, face ×1, the toughest kid) and the no-drawback decision.
+
+**Decisions**
+- Numbers as proposed: `goggleFaceK 1.0`, `goggleSoakK .4`, `thuraK .8`, all in `?tune`.
+- **Where you buy them (T6, not T8):** a market stall on day 2 (the betel uncle's neighbour), price 500 ks from **Thingyan pocket money** — Mum gives 1,000 ks on the day-2 morning when she allows the market (2-1). That is the only money in the game; `save.js` gets `S.money` and `S.goggles`. Never a goal line; a kid at the stall wearing them is the hint. T6 owns this.
+- T8 scope = war.js only: `soak()` reads `k.goggles` / `k.toughK`, HUD pad **G** (uses cast.js `goggles` one-shot, ~.9 s, no firing meanwhile), Thura + the ④ goggles kid down by default, town kids up, `?goggles` to test, the flat 「ဖျန်း」 + lens flash feedback.
+- Branch `claude/goggles`. Plan file first. Acceptance = the issue's list (damage.cjs −.08 vs −.12, Thura outlasts everyone in `?auto`, overlay light under 40 face hits, up/down reads).
+
+## T9 Kids move quick and nimble (issue #34)
+
+Spec: [#34](https://github.com/aungpyaenyein-21/thingyan-game/issues/34).
+
+**Decisions**
+- **chibi.js is open for this task** (T4 is merged): kid `gait` 1.15 → ~1.45, new `jog` loop (f ~2.0, A ~.6), the hop-skip flourish. Targets: player kid walk ~1.6 m/s, jog ~2.6, run ~3.8. Adults/elders unchanged.
+- world.js player move: accel to full speed ~.1 s, stop ~.08 s, turn ~.08 s, stick bands walk / jog / run (jog is the default band), `?tune` for all of it.
+- Camera: bump CAMERA.md look-ahead if the kid runs off the leading edge (lookRun 2 → ~2.6) — update `docs/CAMERA.md` §3 numbers in the PR.
+- Re-run T3's `?auto` and `damage.cjs` after: the pump's 6 m range vs the new run speed must still feel fair; if kids now outrun the stream, raise `WEAPONS.pump.range` to 7 and say so.
+- cast.html tics must not change (regress.cjs from T4).
+- Branch `claude/speed`. Can run now, in parallel with T8 (no shared files) — but **not** with T10 (both touch chibi.js): T10 waits for this.
+
+## T10 Talk director (issue #35)
+
+Spec: [#35](https://github.com/aungpyaenyein-21/thingyan-game/issues/35).
+
+**Decisions**
+- **CAMERA.md §2 `talk` changes**: not one held two-shot but per-line shots. `talkShot(speaker, listener, kind)` in camera.js, kinds `ots | two | close | wide`, default `ots`; same speaker twice = hold; 3+ people = `wide` first line then `ots`; cut when the box advances, glide .35 s; `release()` after the last line. Collision fallback flips sides, then `two`. I will update CAMERA.md after the PR.
+- Gestures live in **cast.js** (`point`, `hips`, `scratch`, `nod` next to `shrug/scold/bow`), the **mouth rhythm in chibi.js** (`p.mouth` flaps while `hud.typing`); chibi.js is open after T9 merges.
+- Line data `[who, text, { face, act, shot }]` — **T5 writes story.js in this format from the start** (I'm telling the T5 session now); T10 makes the options do something. Until T10 lands, hud.talk ignores the options.
+- Listener: head/eyes on the speaker, nod every ~3 s, emote on `{ react: 'bang' | 'drop' | 'heart' | 'note' }`.
+- Skippable; after a fast tap-through the camera and poses must be sane (acceptance item).
+- Branch `claude/talk`, after T5 and T9 merge. Owns camera.js (talkShot), hud.js (onLine / typing), cast.js gestures, chibi.js mouth, a talk director module (`yangon/talk.js`), and the one scene wiring in main.js.
+
+## T11 Home rally (issue #36)
+
+Spec: [#36](https://github.com/aungpyaenyein-21/thingyan-game/issues/36). Fits DIRECTION's "adults 20%": a cameo event, not a system.
+
+**Decisions**
+- Trigger, barrage, rules exactly as the issue (once a round, not in the first 30 s, not when decided; 2–4 adults, 25–30 balloons over 6–8 s, landing rings .6 s ahead, −.25 and never below .1 grit, `canOut` false).
+- The event's adults are `immune` (hittable, no grit, no foul, no schedule change) — **not** `protected`; rules.js keeps "sitting / elders / monks are protected" for everyone else. Kids' silence rule stays; adults may shout.
+- ai.js gains `duck` (visitors scatter out of rings, behind walls/drums) — reuse for T6's ambushes later.
+- `?mode=away` mirrors it against the player; `?rally=force` for testing.
+- Branch `claude/rally`, **after T8 merges** (both edit war.js `soak` / HUD). Plan file first.
 
 ---
 
