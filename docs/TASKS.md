@@ -16,7 +16,7 @@
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
-| T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
+| T6.5 | [Pose/tic editor + face editor](#t65-posetic-editor--face-editor) — `cast.html?edit`: keyframe JSON tics played by chibi.js, FACE table (CHARACTERS §14) with 14 new face parts, `anim.face()` | ⏳ spec ✅ (after T10 merge — chibi.js) | other model · branch `claude/editor` |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 | T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | ⏳ spec ✅ — start now | other model · branch `claude/goggles` |
 | T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ⏳ spec ✅ — start now (∥ T8) | other model · branch `claude/speed` |
@@ -222,6 +222,61 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 
 ### မလုပ်ရ
 `world.js` `chibi.js` `cast.js` · ဇာတ်လမ်း scene (T3b) · ပြောမှ commit
+
+---
+
+## T6.5 Pose/tic editor + face editor
+
+**Goal** — Stop hand-coding tics. A browser editor on top of `cast.html` where the creator (and Fable, in review) can pose the rig, scrub a timeline, pick a face, attach a prop, and export JSON that chibi.js plays. Also the face system from CHARACTERS §14: expression = data (eyes / brows / mouth / extra), 10 named faces, `anim.face(name, sec)`, blink-cut. T7 then authors every story tic with this instead of code.
+
+**Prereqs** — T10 merged (last task that edits chibi.js animation code). Plan file first. Branch `claude/editor`.
+
+**Files** — T6.5 owns `chibi.js` (face parts + FACE + JSON tic player — no change to existing code tics), `cast.html` (`?edit` mounts the editor; the roster page stays as is), 🆕 `editor.js`, 🆕 `tics/` (`*.json` + `README.md`), 🆕 `faces.json` (the FACE table), `cast.js` (register JSON tics next to the code ones). Not: `world.js`, `camera.js`, `war.js`, `yangon/*`.
+
+### 1. Tic JSON (what the editor saves, what chibi.js plays)
+```json
+{ "name": "bow", "kind": "oneshot", "duration": 2.4, "still": true,
+  "keys": [
+    { "t": 0,   "pose": {}, "face": "ok" },
+    { "t": 0.5, "pose": { "spineRx": 0.55, "headRx": 0.3, "armLx": -0.6, "armRx": -0.6, "elbowL": -0.9, "elbowR": -0.9 }, "face": "worry", "ease": "out" },
+    { "t": 1.9, "pose": { "spineRx": 0.55, "headRx": 0.3 }, "hold": true },
+    { "t": 2.4, "pose": {}, "face": "ok" } ],
+  "props": [ { "id": "book", "at": 0.3, "to": "chest", "pos": [0.02, 0.1, 0.24], "rot": [-0.95, 0, 0] }, { "id": "book", "at": 1.9, "to": "home" } ],
+  "emit": [ { "at": 0.6, "type": "lob", "from": "handR" } ] }
+```
+- `pose` keys = the animator's `KEYS` (armLx … spineRz, sy, x, y, headRx/Ry/Rz, hipsRy/Rz, handLz/Rz, kneeL/R, footL/R, legLx/Lz/Rx/Rz, elbowL/R, expr/mouth are replaced by `face`). Missing keys = the base loop's value (so a tic can layer on idle/walk like `_loadPose` does).
+- `kind: "loop"` has `cycle` seconds and wraps; `oneshot` has `duration` and goes into `ONESHOT` / `STILL` (when `still: true`).
+- `ease`: `in | out | inout | linear` between keys; `hold` keeps the previous key until this one.
+- `props`: moves a named prop (`cast.js` props: book, pencil, whistle, towel, balloon, pump …) to a socket (`handR handL chest head back home`) at a time — the `moveTo / moveHome` pattern, data-driven.
+- `emit`: fires `anim.emit(type, pivot)` at a time (cast.html's balloon lob uses this).
+- chibi.js: `registerTic(json)` → `LOOPS[name]` / `ONESHOT[name]` + a `_json` player that interpolates keys and applies face/props/emit; `tics/index.json` lists the files; cast.js loads them at start. Code tics keep priority if a name clashes (so nothing existing changes).
+
+### 2. The editor (`cast.html?edit`, `editor.js`)
+- Left: character picker (the 13) · tic list (code tics read-only, JSON tics editable, 「+ new」 from the current pose) · kind / duration / cycle / still.
+- Centre: the character, orbit camera (cast.html's), onion-skin ghost of the previous key, play / pause / scrub / loop, speed ×.25–×1.
+- Right: slider groups — head (Rx Ry Rz) · spine · hips · arm L/R (sh x/z, elbow, hand) · leg L/R (hip x/z, knee, foot) · body (y, sy) · **mirror L↔R** · **reset to base** · face picker (10 FACE names + the 4 raw parts) · prop row (prop → socket at this key) · emit row.
+- Timeline: keys as dots, drag to move, double-click to add at the playhead, delete, copy/paste a key, ease per key.
+- **Save**: 「Copy JSON」 · 「Download tics/<name>.json」 · autosave draft to localStorage; the file is then committed by hand (no server). `?edit&tic=name` opens one straight away.
+- Phone: not required (laptop tool); must not break the normal `cast.html`.
+
+### 3. Faces (CHARACTERS §14)
+- chibi.js `faceTex(o, face)` draws the four parts; new parts: eyes `wide side half`, brows `up in out one` (offsets on the character's own brow shape), mouth `wide o line pout wobble grit`, extra `sweat tear lines` (blush / redEye / redEar exist).
+- `faces.json` = the FACE table (10 named expressions from §14); `anim.face(name, sec)` overlays for `sec` then returns to the loop's face; `hitT > 0` → `wet` wins; a blink frame between two different faces (blink-cut).
+- Per-character overrides from §14: Saya Gyi `smileEyes:false` (no happy eyes even in `joy`), Thura with goggles down shows brows + mouth only, U Tin Maung default `joy`.
+- Face editor tab: the 4 dropdowns + a **13-character grid** showing the chosen face on everyone at once (the §11 uniqueness check in one screenshot); 「Save faces.json」.
+
+### 4. Migration proof
+- Re-author **three** existing code tics as JSON with the editor and ship them as `tics/bow.json`, `tics/note.json`, `tics/lob.json` (the JSON versions win only when `?jsontics` is set, so the roster still matches `regress.cjs`); a side-by-side screenshot pair for each.
+- Write `tics/README.md`: how to open the editor, author, export, and register a tic (Burmese + English, short).
+
+### ✅ Done means
+- Editor: open `cast.html?edit`, pose Nga Zwe, add 3 keys, play, export JSON, reload the page with `?jsontics` and see it play on him (screen capture or 4 screenshots)
+- `faces.json` 10 expressions × 13 characters grid screenshot; `anim.face('shock', 1)` from the console works on the roster page
+- The three migrated tics match their code versions within one frame (side-by-side screenshots)
+- `cast.html` without `?edit` is pixel-identical to before (regress.cjs 0 diffs); console 0; `docs/plans/T6.5.md` + PR
+
+### Don't
+Blender / Mixamo / glTF animation · touching world.js, war.js, yangon/* · changing any existing code tic's look · commit unless asked
 
 ---
 
