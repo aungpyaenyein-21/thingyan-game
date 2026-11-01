@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
-| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | 👀 code review — [plans/T3.md](plans/T3.md) · PR #31 (orbit + palette.js after T2 merges) | အခြား model · branch `claude/water` |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31) | other model |
 | T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
@@ -198,6 +198,12 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 
 ### G. carry ချိတ်
 `hit(k)` ထဲ `carry.hit(k)` ၁ ကြောင်း — ကိုင်ထားတဲ့ item ယိမ်း/ကျ (T4) · OUT ဖြစ်ရင် item ကျ
+
+### ✅ Result (Fable review 2026-11-01 · PR #31 merged)
+- war.js on the orbit camera · WEAPONS pump (strokes) / balloon (lob) / bucket (heave) with damage −.12 / −.35 / −.70 + chunk feedback · ammo < 20% + 1.5 s refill · soak()/hit-stop/shake/squash/vibrate · fx.js (three.quarks 0.16, decals, wet-map) + fx/*.json + fx/make.html · rules.js · yangon/ai.js (Yuka 0.7.8 + grid A*) · soak cap (TUNE.soakCap .5, blurMax 1.2) · ?tune
+- Verified: orbit aim after turns, damage numbers, soak cap, 50 fps, phone 375, `?auto` 3 rounds 0 snags, creator accepted the feel
+- Leftover: `navigator.vibrate` before a user gesture logs console errors → tiny follow-up PR (guard with `navigator.userActivation.hasBeenActive`)
+- Hand-offs: T5 teaches the three weapons in 1-2 via WEAPONS/rules.js · T6 uses the skirmish entry point for 2-6 · life.js → bike.js still pending (T6 or T3b)
 
 ### H. ကိရိယာ
 - lil-gui `?tune`: hit-stop ms · ကင်မရာ ယိမ်း · လက်နက် ၃ မျိုး ဂဏန်း (အကွာ၊ ရေကုန်၊ grit) · particle အရေအတွက် — ဖန်တီးသူ ချိန်ပြီး JSON → `rules.js`/`fx/*.json` · `PositionalAudio` — ပြွတ်/ပူဖောင်း/ပုံး/ဘဲလ် အသံကို ဇာတ်ကောင်ပေါ် ချိတ် (sound.js ရှိပြီးသား buffer သုံး)
