@@ -12,7 +12,7 @@
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
 | T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31) | other model |
-| T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
+| T3b | [Day 4 + epilogue](#t3b-day-4--epilogue) — bridge-head match → the bowl into the creek (scripted) → ten kids fish it out → the 5 o'clock run → Bwa Bwa laughs → the pouring → photo | ⏳ spec ✅ (after T6 merge) | other model · branch `claude/day4` |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
@@ -225,9 +225,45 @@ HUD ထဲ စည်းကမ်း ချိုးရင် ၁ ကြောင
 
 ---
 
-## T3b ရက် ၄ vertical slice (T2 + T3 ပြီးမှ)
+## T3b Day 4 + epilogue
 
-တံတားထိပ် ၅v၅ (T3 ပွဲ ၃ ပွဲ) → ၄-၄ ဖလား ချောင်းထဲ (**script**: ပွဲ ၂ အလယ်မှာ kinematic ဖလား + ချောင်းဘက် တွန်းအား — T1 review #4) → ၄-၅ ၁၀ ယောက် အတူ ဆယ် (co-op mini: ကြိုး+ပူဖောင်း ပစ် `bigthrow`၊ ④ ပြွတ် ၅ ချောင်း ရေထိုး၊ ချိုချို 「ရေက ဒီဘက်」၊ Yuka flock) → ၄-၆ ၅ နာရီ timer ပြေး (ဖိုးကျော် စက်ဘီး rack ပေါ် `{နာမည်}`+ဖလား၊ ဖိုးဝ၊ ဈေး အမေ ၂ ယောက်) → ၄-၇ ဘွားဘွား ရယ် (CHARACTERS §၁၄ `joy`၊ ဆရာကြီး 「ကောင်းတယ်」) → ၄-၈ `pour` + လူကြီးတွေကိုပါ ရေပက်။ Spec အသေးစိတ် T3 review ပြီးမှ။
+**Goal** — SCENARIO v6 §6 (4-1 … 4-9) and §7 (the epilogue photo) playable end to end: the climax of the story. 15–18 min. This is where every system meets: war.js (T3), carry + bike (T4), orbit camera scenes (T2), day.js / mandat.js / story.js (T5), ward ④ + the dog + the market (T6), the talk director (T10), goggles (T8), Yuka flock (T3).
+
+**Prereqs** — T5, T6 merged (T10 preferred, not required: lines carry `{ face, act, shot }` either way). Plan file `docs/plans/T3b.md` first. Branch `claude/day4`.
+
+**Files** — T3b owns `yangon/main.js` (day-4 flow), `yangon/story.js` (4-x + epilogue), `yangon/set.js` (bridge head, creek + four bamboo poles, the rail seat for the bowl), 🆕 `yangon/missions/bridge.js` (match wrapper), 🆕 `yangon/missions/rescue.js` (the co-op fish-out), 🆕 `yangon/missions/run.js` (the timed run), `yangon/day.js` (the day-4 clock), `yangon/mandat.js` (`bowl` part + the pouring). war.js: only a `startMatch()` entry point with callbacks (rounds, a hook at a given moment); no gameplay changes. Not: `world.js`, `camera.js`, `chibi.js`.
+
+### Scenes
+| scene | what | gameplay / reuse |
+|---|---|---|
+| 4-1 | early morning at the pagoda with Bwa Bwa (short cutscene, 20 s: she pours water, 「ညနေ ဖလားနဲ့ သွန်းမှ…」, `{name}` silent) · Mum: 5 o'clock, no exceptions · **the HUD clock appears** (today only, game time: 9:00 → 17:00 over the day; the clock only advances inside scenes/missions, not while wandering) · goal 「၅ နာရီ မတိုင်ခင် ဖလားနဲ့ အိမ်ပြန်」 | day.js clock mode · a pagoda spot in set.js (the monastery exists — reuse) |
+| 4-2 | the whole gang · Phoe Kyaw says 「ရတယ် ရတယ်」 again (first time since day 2) · May Thu's notebook 「ဖလား ၁ — ဒီနေ့ ဆပ်」 · Cho Cho brings Saya Gyi's rusty pump (Saya Gyi left it at the door — she thinks she stole it) · **weapon pick** (pump / balloon / bucket pads — the war.js HUD) | story.js · cast.js rusty pump prop on Cho Cho |
+| 4-3 **the match** | bridge head, U Tin Maung referees, the bowl sits on the rail, drums on both sides (refill allowed), best of three · round 1 plays out (win or lose) · round 2 starts — | `bridge.js` → war.js `startMatch({ map: 'bridge', sides: 5v5 named cast, rounds: 3, refill: both, onMoment })`; Thura goggles down (T8); the match uses the day-4 clock (round = ~15 game-minutes) |
+| 4-4 **the bowl falls** | **scripted, ~40 s into round 2**: a balloon "from nobody" hits the rail → the bowl (kinematic until now) tips into the creek and floats with the current → both sides freeze (war.js pauses, kids' AI → `watch`) · Thura pushes his goggles up · Nga Zwe 「ငါ ဆင်းမယ်」 · Thura 「ငါလည်း」 · goal 「ချောင်းထဲ ကျသွားပြီ — အတူ ဆယ်」 · camera `focus(bowl)` down to the water, then `release` | the bowl = carry `bowl` item with a scripted path (no physics roll of the dice — T1 review #4): rail → splash → drift → snags on the **second** bamboo pole mid-creek · fx.js splash + wet ring |
+| 4-5 **fish it out** (10 kids, co-op) | the creek is too deep to wade. The bowl is snagged on a pole mid-stream. Roles, all visible: **Phoe Kyaw** uncoils the bike rope · **May Thu** ties a balloon to its end · **the player** throws it (`bigthrow`, power bar: the balloon must land just past the bowl — too short / too long = retry, three zones) · **the ④ kids** line the far bank and spray the pole with five pumps to free the bowl (a shared "push" bar fills while they spray — the player can add with their own pump) · **Nga Zwe + Thura** on the near bank under the bridge pull the rope in together (a two-button rhythm tap, Nga Zwe's side is the player's) · **Cho Cho** 「ချိုချို သိတယ်၊ ရေက ဒီဘက် စီးတယ်」 (points the throw side) · the bowl comes up **dented** — camera close, ten faces `shock` → the clock reads **4:40** | `rescue.js`: three sub-steps (throw → free → pull), each ≤ 40 s, no fail state (retry inline) · Yuka `watch`/`line-up` for the ④ kids · faces CHARACTERS §14 |
+| 4-6 **the run** (timer: 20 game-minutes = **2 real minutes**) | bridge → ④ lane (Phoe Wa blocks; Thura 「ဖိုးဝ ထိုင်」 → it sits) → market (the two mothers at tea, watching ten kids run past: 「ဟိုကလေးတွေ ဘယ်တုန်းက သူငယ်ချင်း ဖြစ်သွားတာလဲ」; Thura's mum calls 「သူရ! ဆိုင် —」 / 「ခဏနော်!」 — a 5 s stop) → ① → the mandat · **Phoe Kyaw pedals, `{name}` + the bowl on the rack** (the player steers the bike — T4 ride, ×1.8, bell), the other eight run alongside as a Yuka flock; stragglers catch up at each checkpoint · HUD: the clock counting to 5:00; arriving late is **not** a fail — Mum's face just says it (the scene still plays), arriving early gives the gang 10 s of breath | `run.js`: 4 checkpoints, the flock, the dog, the market stop · bike.js ride with a rack passenger (T4) |
+| 4-7 **5 o'clock** | at the mandat: Bwa Bwa, Mum, Saya Gyi, U Tin Maung; ten soaked, panting kids · `{name}` hands over the bowl: 「ဘွားဘွား… [သား/သမီး] ပစ်လွတ်လိုက်တာ။ ချိုင့်သွားတယ်」 (one line, no drama; carry `give` to Bwa Bwa) · Bwa Bwa looks at the dent and **laughs** (`joy`, the one `laugh` of the game): 「ဒီချိုင့်က ဘွားဘွား ၁၀ နှစ်တုန်းက…」 · May Thu 「…အကြွေး?」 / 「ဘာ အကြွေးလဲ」 / she crosses out 「ဖလား ၁」 (`note`) · Saya Gyi to Cho Cho 「ငါ မသိဘူး ထင်လား」 / 「…ချိုချို သိတယ်」 (`sly`) · Saya Gyi to the mandat: 「ဟွန်း… **ကောင်းတယ်**」 | story.js · talk director shots (T10) · `mandat.add('bowl')` on the seat |
+| 4-8 **the pouring** | Bwa Bwa scoops from the drum with the bowl and pours over the ten heads (`pour` one-shot, the player only watches, 25 s) · 「နှစ်ဟောင်း ကုန်ပြီ」 · U Tin Maung tips a bucket over the grown-ups · **free splashing for everyone** (war.js free-play, no OUT, no grit, adults splashable, 60 s or until the player walks away) · camera pulls back: the finished mandat, the bowl on top | mandat complete · war.js `freePlay()` mode (no rules, no bars) |
+| 4-9 | night: Mum 「ဒီနေ့ ဘာလုပ်ခဲ့လဲ」 → **one choice only** 「အကုန် ပြောမယ်」 → fade | day.js |
+| epilogue | New Year's morning: everyone in white (CHARACTERS: colours only in hair / cans / the bowl) · the **photo** in front of the mandat: ten kids (① five + ④ five), Thura goggles on his forehead, Cho Cho holding Saya Gyi's pump, the bowl in the middle · the player presses the shutter (one tap; the frame freezes with a flash and a border) · Bwa Bwa's voice 「နောက်နှစ်လည်း ဒီဖလားနဲ့ပဲ」 · the photo yellows → end card → the save can be replayed from any day (`?day=`) | 🆕 photo mode: freeze + CanvasTexture of the frame, saved to `S.photo` (data URL) so the title screen can show it later |
+
+### Rules of thumb
+- Water in every step: the match, the pole spray, the pouring, the free play. The run has none — that's the breath before the end; keep it to 2 minutes.
+- **Nothing in day 4 can fail the story**: the match may be lost, the throw retried, the run late — the scene adapts in one line and goes on.
+- The scripted bowl fall must never look like the player's fault and never depend on physics.
+- Lines verbatim from SCENARIO §6/§7; no scene over 30 s except 4-5 and the pouring.
+- Adults: present in 4-7/4-8 only; they organise and laugh, they don't solve.
+
+### ✅ Done means
+- `?day=4` from a fresh save plays 4-1 → epilogue in 15–18 min (I measure), one screenshot per scene + the photo
+- The match hook fires at ~40 s of round 2 regardless of the score; the bowl snags on the pole every time (10 runs in a check script)
+- The rescue's three sub-steps each complete with the roles visible (screenshots: throw, spray bar, pull)
+- The run: late arrival and early arrival both play 4-7 correctly; the flock arrives (no kid left behind at the last checkpoint)
+- The photo saves and shows on reload
+- phone 375, console 0, 60 fps laptop (the ten-kid flock is the heaviest scene — report draw calls), `docs/plans/T3b.md` + PR
+
+### Don't
+`world.js` `camera.js` `chibi.js` · war.js gameplay (entry points only) · a title screen (T7) · commit unless asked
 
 ---
 
