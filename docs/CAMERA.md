@@ -31,7 +31,7 @@ cam.lookAt(target + (0, .55, 0))
 | `run` | +3 | curve | + look-ahead ၂ m | ၁ | `anim.loop === 'run'` ≥ .3 s / ရပ်ရင် ၁ s ကြာမှ ပြန် |
 | `ride` (စက်ဘီး) | +5 | curve + .1 | + look-ahead ၂.၅ m | ၂ | T4 `ride.on` |
 | `war` (ရေပက်စစ် zone) | +2 | curve | ကစားသူ | ၃ | rules.js zone ထဲ |
-| `talk` (hud.say ဖွင့်) | −4 | min .3 | **ကစားသူ ↔ NPC အလယ်**၊ az ကို NPC ဘေးဘက် ±၂၀° ထိ ဆွဲ (မျက်နှာ ၂ ခု မြင်ရ) | ၄ | `hud.busy()` |
+| `talk` (hud.say ဖွင့်) | −4 | min .3 | **ကစားသူ ↔ NPC အလယ်**၊ az ကို NPC ဘေးဘက် ±၂၀° ထိ ဆွဲ (မျက်နှာ ၂ ခု မြင်ရ) — **T10 (issue #35) ကစ: စာကြောင်းတိုင်း ပြောသူဆီ cut** (`talkShot` ots / two / close / wide၊ §၆-ခ) | ၄ | `hud.busy()` |
 | `room` (ဆိုင်/အိမ်ထဲ) | −5 (→ 6) | .35 ပုံသေ | အခန်း အလယ် | ၅ | `setRoom(r)` — **cut** (lerp မလုပ်)၊ az = `r.az` lock၊ လှည့် ပိတ် |
 | `scene` (ဇာတ်လမ်း) | script | script | script | ၆ (အမြင့်ဆုံး) | `focus()` / `lock()` ခေါ်ချိန် · ပြီးရင် ရှေ့ context ပြန် |
 
@@ -72,6 +72,14 @@ cam.context(name, on)                            // run/ride/war/talk — day.js
 - ၁-၇ ဖလား လွင့်: `focus(bowl, {dist 7, t .4})` → ခြံစည်းရိုး ကျော်ရင် `focus(fence, {dist 10})` → ၁.၅ s → `release()`
 - ၄-၄ ချောင်းထဲ ကျ: `focus(bowl, {dist 6, elev .25})` ချောင်း အထိ လိုက် → `release()`
 - scene တိုင်း **၆ s ထက် မပို** ကင်မရာ ယူထားတာ (ကစားသူ ထိန်းချုပ်မှု ဆုံးရှုံးချိန် တို)
+
+## ၆-ခ။ စကားပြော shot (T10 — issue #35)
+
+- စာကြောင်းတိုင်း **ပြောသူဆီ** — `talkShot(speaker, listener, kind)`: `ots` (နားထောင်သူ ပခုံးကျော်၊ မျက်နှာ အမြင့်၊ ပြောသူ ⅓ မျဉ်း) · `two` · `close` · `wide` (၃ ယောက်+ ပထမ စာကြောင်း) — ပုံသေ `ots`
+- တစ်ယောက်တည်း ဆက်ပြောရင် ကင်မရာ မရွှေ့ · cut = box ရှေ့တက်ချိန်၊ glide .35 s · နောက်ဆုံး စာကြောင်း ပြီး `release()` .5 s
+- နံရံ ဖောက်ရင် ဘက် ပြောင်း → မရရင် `two` · အခန်းထဲ: ဖွင့်ထားတဲ့ ဘက်ကပဲ
+- ပြောသူ: ပါးစပ် flap (စာ ရိုက်နေတုန်း)၊ ခေါင်း နားထောင်သူဘက်၊ gesture ၁ ခု/စာကြောင်း (`act`)၊ မျက်နှာ (`face`) · နားထောင်သူ: ကြည့်၊ ခေါင်းညိတ်၊ `react` emote
+- Line data `[who, text, { face, act, shot, react }]`
 
 ## ၇။ ဖုန်း
 

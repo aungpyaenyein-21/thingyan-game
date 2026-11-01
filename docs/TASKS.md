@@ -18,8 +18,12 @@
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
 | T6.5 | **Pose/tic editor + face editor** — `cast.html` ပေါ် ထပ်ဆောက်: pivot ထောင့် slider၊ keyframe → JSON၊ chibi.js က JSON tic ဖတ် · **face**: expression = data ၄ ပိုင်း (eyes/brows/mouth/extra)၊ 🆕 part ၁၄ ခု ဆွဲ၊ `FACE` table ၁၀ ခု၊ `anim.face(name, sec)`၊ blink-cut — spec [CHARACTERS §၁၄](../CHARACTERS.md#၁၄-မျက်နှာ-expression-v12--2026-10-31)။ Blender/Mixamo မသုံး | ⏳ | — |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
+| T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | ⏳ spec ✅ — start now | other model · branch `claude/goggles` |
+| T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ⏳ spec ✅ — start now (∥ T8) | other model · branch `claude/speed` |
+| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ⏳ spec ✅ (after T5 + T9 merge) | other model · branch `claude/talk` |
+| T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | ⏳ spec ✅ (after T8 merge — same war.js) | other model · branch `claude/rally` |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ∥ T3 (ဖိုင် မထပ်: T2 = world/yangon/art, T3 = war/fx/rules) → T5 → T6 → T3b → T6.5 → T7။ (T3b after T6 so the day-4 slice lands on a finished day 1–3.) Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → **now: T5 (coding) ∥ T8 ∥ T9** → T11 (after T8) · T10 (after T5 + T9) → T6 → T3b → T6.5 → T7။ Files: T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5 = yangon/* story. Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -324,6 +328,57 @@ main.js favour ၉ ခု (tea/padauk/fronds/drum/nozzle) + Mandalay ဘတ်�
 
 ### Don't
 Day 4 content (T3b) · `world.js` `camera.js` `chibi.js` · war.js beyond the skirmish entry point · commit unless asked
+
+---
+
+## Issues → tasks (2026-11-01, Fable)
+
+Four issues from the creator are already written as near-specs. The sections below only add the design decisions, the deltas and the file ownership; **the issue text is the spec** — read it first.
+
+## T8 Swim goggles (issue #33)
+
+Spec: [#33](https://github.com/aungpyaenyein-21/thingyan-game/issues/33). Fits CHARACTERS §8 (Thura: goggles down in a fight, face ×1, the toughest kid) and the no-drawback decision.
+
+**Decisions**
+- Numbers as proposed: `goggleFaceK 1.0`, `goggleSoakK .4`, `thuraK .8`, all in `?tune`.
+- **Where you buy them (T6, not T8):** a market stall on day 2 (the betel uncle's neighbour), price 500 ks from **Thingyan pocket money** — Mum gives 1,000 ks on the day-2 morning when she allows the market (2-1). That is the only money in the game; `save.js` gets `S.money` and `S.goggles`. Never a goal line; a kid at the stall wearing them is the hint. T6 owns this.
+- T8 scope = war.js only: `soak()` reads `k.goggles` / `k.toughK`, HUD pad **G** (uses cast.js `goggles` one-shot, ~.9 s, no firing meanwhile), Thura + the ④ goggles kid down by default, town kids up, `?goggles` to test, the flat 「ဖျန်း」 + lens flash feedback.
+- Branch `claude/goggles`. Plan file first. Acceptance = the issue's list (damage.cjs −.08 vs −.12, Thura outlasts everyone in `?auto`, overlay light under 40 face hits, up/down reads).
+
+## T9 Kids move quick and nimble (issue #34)
+
+Spec: [#34](https://github.com/aungpyaenyein-21/thingyan-game/issues/34).
+
+**Decisions**
+- **chibi.js is open for this task** (T4 is merged): kid `gait` 1.15 → ~1.45, new `jog` loop (f ~2.0, A ~.6), the hop-skip flourish. Targets: player kid walk ~1.6 m/s, jog ~2.6, run ~3.8. Adults/elders unchanged.
+- world.js player move: accel to full speed ~.1 s, stop ~.08 s, turn ~.08 s, stick bands walk / jog / run (jog is the default band), `?tune` for all of it.
+- Camera: bump CAMERA.md look-ahead if the kid runs off the leading edge (lookRun 2 → ~2.6) — update `docs/CAMERA.md` §3 numbers in the PR.
+- Re-run T3's `?auto` and `damage.cjs` after: the pump's 6 m range vs the new run speed must still feel fair; if kids now outrun the stream, raise `WEAPONS.pump.range` to 7 and say so.
+- cast.html tics must not change (regress.cjs from T4).
+- Branch `claude/speed`. Can run now, in parallel with T8 (no shared files) — but **not** with T10 (both touch chibi.js): T10 waits for this.
+
+## T10 Talk director (issue #35)
+
+Spec: [#35](https://github.com/aungpyaenyein-21/thingyan-game/issues/35).
+
+**Decisions**
+- **CAMERA.md §2 `talk` changes**: not one held two-shot but per-line shots. `talkShot(speaker, listener, kind)` in camera.js, kinds `ots | two | close | wide`, default `ots`; same speaker twice = hold; 3+ people = `wide` first line then `ots`; cut when the box advances, glide .35 s; `release()` after the last line. Collision fallback flips sides, then `two`. I will update CAMERA.md after the PR.
+- Gestures live in **cast.js** (`point`, `hips`, `scratch`, `nod` next to `shrug/scold/bow`), the **mouth rhythm in chibi.js** (`p.mouth` flaps while `hud.typing`); chibi.js is open after T9 merges.
+- Line data `[who, text, { face, act, shot }]` — **T5 writes story.js in this format from the start** (I'm telling the T5 session now); T10 makes the options do something. Until T10 lands, hud.talk ignores the options.
+- Listener: head/eyes on the speaker, nod every ~3 s, emote on `{ react: 'bang' | 'drop' | 'heart' | 'note' }`.
+- Skippable; after a fast tap-through the camera and poses must be sane (acceptance item).
+- Branch `claude/talk`, after T5 and T9 merge. Owns camera.js (talkShot), hud.js (onLine / typing), cast.js gestures, chibi.js mouth, a talk director module (`yangon/talk.js`), and the one scene wiring in main.js.
+
+## T11 Home rally (issue #36)
+
+Spec: [#36](https://github.com/aungpyaenyein-21/thingyan-game/issues/36). Fits DIRECTION's "adults 20%": a cameo event, not a system.
+
+**Decisions**
+- Trigger, barrage, rules exactly as the issue (once a round, not in the first 30 s, not when decided; 2–4 adults, 25–30 balloons over 6–8 s, landing rings .6 s ahead, −.25 and never below .1 grit, `canOut` false).
+- The event's adults are `immune` (hittable, no grit, no foul, no schedule change) — **not** `protected`; rules.js keeps "sitting / elders / monks are protected" for everyone else. Kids' silence rule stays; adults may shout.
+- ai.js gains `duck` (visitors scatter out of rings, behind walls/drums) — reuse for T6's ambushes later.
+- `?mode=away` mirrors it against the player; `?rally=force` for testing.
+- Branch `claude/rally`, **after T8 merges** (both edit war.js `soak` / HUD). Plan file first.
 
 ---
 
