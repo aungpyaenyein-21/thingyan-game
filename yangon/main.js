@@ -486,7 +486,7 @@ W.tick(dt => {
   g.position.lerpVectors(f.from, f.to, k); g.position.y = f.from.y * (1 - k) + 4 * f.h * k * (1 - k);
   if (k < .15) g.position.addScaledVector(V(Math.cos(hero.g.rotation.y), -Math.sin(hero.g.rotation.y)), .3 * Math.sin(side * Math.PI)); // the fumble: out of the hands to the left first
   g.rotation.x += dt * 9; g.rotation.z += dt * 5;
-  if (!f.crossed && g.position.x > L.FENCE4.x) { f.crossed = true; lastThrow.clear = +(g.position.y - L.FENCE4.y).toFixed(2); W.orbit?.focus(L.FENCE4, { dist: 10, t: .6 }); }
+  if (!f.crossed && g.position.x > L.FENCE4.x) { f.crossed = true; const kc = (L.FENCE4.x - f.from.x) / (f.to.x - f.from.x); lastThrow.clear = +(f.from.y * (1 - kc) + 4 * f.h * kc * (1 - kc) - L.FENCE4.y).toFixed(2); /* height over the fence top where the arc crosses it */ W.orbit?.focus(L.FENCE4, { dist: 10, t: .6 }); }
   if (k >= 1) { g.position.copy(f.to); g.rotation.set(0, g.rotation.y, 0); f.it.state = 'ground'; lastThrow.land = { x: +f.to.x.toFixed(2), z: +f.to.z.toFixed(2), side4: f.to.x > L.FENCE4.x }; flight = null; afterThrow(); }
 });
 async function afterThrow() {
