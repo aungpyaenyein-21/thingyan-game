@@ -2,8 +2,8 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=14';
-import { ROAD } from './set.js?v=18';
+import { PAL } from '../world.js?v=15';
+import { ROAD } from './set.js?v=19';
 
 export function startLife(W, { L, BOUNDS, ground, phase }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
