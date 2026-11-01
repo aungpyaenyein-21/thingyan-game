@@ -146,23 +146,23 @@
 </style>
 </head>
 <body>
-<div id="goal" class="panel"><b>ရည်မှန်းချက်</b><div id="gtext"></div></div>
-<div id="where" class="panel">အကြိုနေ့ · ၁/၅ · ရန်ကုန်
+<div id="goal" class="panel" hidden><b>ရည်မှန်းချက်</b><div id="gtext"></div></div>
+<div id="where" class="panel">ရက် ၁ · မနက်
   <div id="stage" hidden>ကလေးမဏ္ဍပ် ပစ္စည်း<i id="scount"></i></div>
   <canvas id="map" width="180" height="148" aria-label="မြေပုံ"></canvas>
   <div id="bag"></div>
 </div>
-<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · <b>R</b> ရေပုံး⇄ရေသေနတ် · Space ခုန် · wheel zoom</div>
+<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · <b>R</b> ရေပုံး⇄ပူဖောင်း · Space ခုန် · wheel zoom</div>
 <div id="prompt" class="panel" hidden><span class="key">E</span><span id="ptext"></span></div>
 <div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small><span class="kb">E </span>▸ ဆက်</small></div>
 <div id="toast" class="panel" hidden></div>
 <div id="area" class="panel"></div>
-<div id="title" class="panel">သင်္ကြန်ပွဲ · ရန်ကုန်<small>အကြိုနေ့ · ရပ်ကွက်ထဲ ပြန်ရောက်ပြီ</small></div>
+<div id="title" class="panel">သင်္ကြန်ပွဲ<small>ရန်ကုန်</small></div>
 <div id="menu" class="panel" hidden><h3 id="mtitle"></h3><div id="mlist"></div><button id="mclose" type="button">ပိတ်မယ်</button></div>
 <div id="mini" class="panel" hidden><span id="mtitle2"></span> <b id="mcount"></b><div id="mbar"><div id="mband"></div><div id="mcur"></div></div><small>E / တို့ — အနီရောင်တံ ရွှေရောင်ထဲ ရောက်မှ နှိပ်</small></div>
 <div id="fade"></div>
-<div id="end" class="panel" hidden><h2>ရက် ၁ · ရန်ကုန် ပြီးဆုံး</h2><p>“<span id="ename"></span>” ✓ · ပစ္စည်း <span id="epart"></span></p><p>ငယ်သူငယ်ချင်း ဖိုးသာနဲ့ ညကား စီးပြီး မန္တလေးကို ထွက်ခဲ့ပြီ… အဲဒီမှာ သူငယ်ချင်းတွေ စောင့်နေကြတယ်</p><p style="opacity:.65">ရက် ၂ · မန္တလေး — မကြာခင်</p>
-  <button id="estay" type="button">ရပ်ကွက်ထဲ ဆက်နေမယ်</button><button id="eagain" type="button" class="alt">အစက ပြန်ကစားမယ်</button></div>
+<div id="end" class="panel" hidden><h2 id="ehead"></h2><p id="ebody"></p><!-- the end-of-day card (day.js card()) -->
+  <button id="eagain" type="button" class="alt">အစက ပြန်ကစားမယ်</button></div>
 <button id="splash" type="button" aria-label="ရေပက် / လုပ်"><b>💦</b>ရေပက်</button>
 <button id="jump" type="button" aria-label="ခုန်"><b>⏫</b>ခုန်</button>
 <div id="turn"><button id="rotl" type="button" aria-label="ဘယ်ဘက် လှည့်" hidden>⟲</button><button id="rotr" type="button" aria-label="ညာဘက် လှည့်" hidden>⟳</button></div>
@@ -176,7 +176,7 @@
 </div>
 <button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="./yangon/boot.js?v=26"></script>
+<script type="module" src="./yangon/boot.js?v=27"></script>
 <script type="module" src="./pwa.js?v=1"></script>
 </body>
 </html>
