@@ -24,11 +24,11 @@ const STATS = { shots: 0, hits: 0, face: 0, fouls: 0 }; // gravity as the town's
 
 // ---------- T3: three weapons that feel different, the beat of a hit, water you can see, the unwritten rules ----------
 // TUNE and WEAPONS are what ?tune edits (lil-gui) — copy the JSON back here once they feel right
-const TUNE = { hitStop: .04, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 2, soakCap: .5, blurMax: 1.2 }; // soakCap / blurMax: the most the soak overlay may cover the screen
-const WEAPONS = { // cost = share of a full can · grit = what a full hit takes off
-  pump: { name: 'ပြွတ်', range: 6, cost: .1, every: .4, grit: .15, speed: 11 }, // a stroke every .4 s while held: 10% of the can a second, −.15 grit a second if it all lands
+const TUNE = { hitStop: .04, bucketStop: .06, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 1.5, soakCap: .5, blurMax: 1.2, chunk: .3 }; // chunk: a loss this big reads as a chunk off the bar // soakCap / blurMax: the most the soak overlay may cover the screen
+const WEAPONS = { // cost = share of a full can · grit = what a full hit takes off — the creator (2026-11-01): the three must differ clearly
+  pump: { name: 'ပြွတ်', range: 6, cost: .1, every: .4, grit: .08, speed: 11 }, // a stroke every .4 s while held (10% of the can a second) · −.08 a stroke if all of it lands: chips off the bar
   balloon: { name: 'ပူဖောင်း', min: 3, range: 9, cost: .15, grit: .35, ring: .8 }, // hold = how far; it goes over walls and round corners
-  bucket: { name: 'ပုံး', range: 1.5, cone: 90, cost: 1, grit: .6, push: 1.2, need: .3 }, // the whole can at once, close up (needs 30% in it)
+  bucket: { name: 'ပုံး', range: 1.5, cone: 90, cost: 1, grit: .7, push: 1.2, need: .4 }, // the whole can at once, close up (needs 40%): −.7, a shove, soaked through
 };
 const ORDER = Object.keys(WEAPONS), LOW_W = .2; // under 20% the pump goes weak and the can drips
 const fx = createFx(W, { low: P.get('q') === 'lite' });
@@ -156,7 +156,7 @@ function stroke(k, target, dirIn) {
   const sharp = k.me && !AUTO, err = (sharp ? .03 : .09) * (1 + d / 6), n = weak ? 5 : 10, st = { landed: false };
   for (let j = 0; j < n; j++) {
     const a = Math.atan2(dir.x, dir.z) + (rnd() - .5) * 2 * err, sp = vh * (.93 + rnd() * .1);
-    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy + (rnd() - .5) * .6 * (sharp ? .3 : 1), Math.cos(a) * sp), wait: j * .018, life: d / vh * 1.3 + .2, own: k, dmg: Wp.grit * Wp.every / 10, push: dir, s: weak ? .6 : 1, st });
+    drops.push({ p: o.clone(), v: new THREE.Vector3(Math.sin(a) * sp, vy + (rnd() - .5) * .6 * (sharp ? .3 : 1), Math.cos(a) * sp), wait: j * .018, life: d / vh * 1.3 + .2, own: k, dmg: Wp.grit / 10, push: dir, s: weak ? .6 : 1, st });
   }
   fx.stream(o, new THREE.Vector3(dir.x * vh, vy, dir.z * vh)); if (weak) fx.drip(o);
   recoil(k, dir, .05); if (k.me) kick(2); else if (pos(k).distanceTo(pos(me)) < 7) kick(.8);
@@ -204,7 +204,7 @@ function burst(b) { // splat: a ring of water .8 m across where it came down
     if (k.team === b.own.team) continue; const q = pos(k);
     if (Math.hypot(q.x - p.x, q.z - p.z) > Wb.ring + .2 * k.c.g.scale.x || p.y > q.y + H(k) + .4) continue;
     if (k.out) { foul(b.own, k); continue; }
-    soak(k, { grit: Wb.grit, face: false, push: new THREE.Vector3(q.x - p.x, 0, q.z - p.z).normalize(), from: b.own, at: p, big: true });
+    soak(k, { grit: Wb.grit, face: false, push: new THREE.Vector3(q.x - p.x, 0, q.z - p.z).normalize(), from: b.own, at: p, big: true, kind: 'balloon' });
   }
 }
 // ③ the bucket: the whole can at once, everyone within 1.5 m in a 90° wedge in front gets it — and is shoved back
@@ -226,7 +226,7 @@ function dump(k) { // the 'splash' beat of the swing
     let a = Math.atan2(v.x, v.z) - Math.atan2(b.dir.x, b.dir.z); a = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))); if (a > half && d > .45) continue;
     if (!clear(p, pos(q))) continue;
     if (q.out) { foul(k, q); continue; }
-    soak(q, { grit: g, face: false, push: v.normalize(), from: k, at: pos(q).clone().setY(H(q) * .8), big: true, kb: Wk.push });
+    soak(q, { grit: g, face: false, push: v.normalize(), from: k, at: pos(q).clone().setY(H(q) * .8), big: true, kb: Wk.push, kind: 'bucket' });
   }
   if (k.me) { kick(5); buzz(); } else if (p.distanceTo(pos(me)) < 6) kick(2);
 }
@@ -247,7 +247,7 @@ function moveDrops(dt) {
       if (k === d.own || k.team === d.own.team) continue; // a kid who's OUT still gets wet — and the one who did it pays (rules.js 3)
       const p = pos(k), r = .34 * k.c.g.scale.x;
       if (Math.abs(d.p.x - p.x) > r || Math.abs(d.p.z - p.z) > r || d.p.y > p.y + H(k) || d.p.y < p.y) continue;
-      dead = true; if (k.out) foul(d.own, k); else { soak(k, { grit: d.dmg, face: (d.p.y - p.y) / H(k) > .66, push: d.push, from: d.own, at: d.p, first: !d.st.landed }); d.st.landed = true; } break;
+      dead = true; if (k.out) foul(d.own, k); else { soak(k, { grit: d.dmg, face: (d.p.y - p.y) / H(k) > .66, push: d.push, from: d.own, at: d.p, first: !d.st.landed, kind: 'pump' }); d.st.landed = true; } break;
     }
     if (dead && d.p.y < .1 && rnd() < .3) fx.splat(d.p.x, d.p.z, .3); else if (dead && d.p.y >= .1 && rnd() < .25) wallDecal(d.p, .25);
     if (dead) { if (d.p.y < .1 || rnd() < .3) W.spawn(d.p.clone().setY(Math.max(.1, d.p.y)), new THREE.Vector3((rnd() - .5) * 1.5, 1 + rnd(), (rnd() - .5) * 1.5), { spray: true, s: .5, life: .4 }); continue; }
@@ -257,10 +257,10 @@ function moveDrops(dt) {
 }
 let hitSnd = 0, stop = 0;
 const pops = document.createElement('div'); pops.style.cssText = 'position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden'; document.body.appendChild(pops);
-function pop(k, text, color = '#fff') { // a word that jumps off the kid you got
+function pop(k, text, color = '#fff', size = 22) { // a word that jumps off the kid you got
   const v = pos(k).clone(); v.y += H(k) + .3; v.project(W.cam);
   const e = document.createElement('b'); e.textContent = text;
-  e.style.cssText = `position:absolute;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px;transform:translate(-50%,-50%);font-size:22px;color:${color};text-shadow:0 2px 0 #3b2a3a,0 0 6px rgba(0,0,0,.4);transition:transform .6s ease-out,opacity .6s ease-in;white-space:nowrap`;
+  e.style.cssText = `position:absolute;left:${(v.x * .5 + .5) * innerWidth}px;top:${(-v.y * .5 + .5) * innerHeight}px;transform:translate(-50%,-50%);font-size:${size}px;color:${color};text-shadow:0 2px 0 #3b2a3a,0 0 6px rgba(0,0,0,.4);transition:transform .6s ease-out,opacity .6s ease-in;white-space:nowrap`;
   pops.appendChild(e); requestAnimationFrame(() => { e.style.transform = 'translate(-50%,-150%) scale(1.25)'; e.style.opacity = 0; }); setTimeout(() => e.remove(), 650);
 }
 let drown = 0; // that water-up-your-nose feeling, for you
@@ -270,7 +270,9 @@ const buzz = () => { if (W.time() > buzzT) { buzzT = W.time() + .25; try { navig
 // one hit, whatever it came from: grit off, a squash, the drop emote, the burst, the sound, the beat of stillness
 function soak(k, o) {
   const g = o.grit * (o.face ? TUNE.faceK : 1); STATS.hits++; if (o.face) STATS.face++;
-  k.grit = Math.max(0, k.grit - g); k.hitT = 0; k.c.anim.soak(o.big ? .6 : .25); if (k.wipeT > 0) k.wipeT = 0;
+  if (o.from?.me) { const t = STATS.dealt ??= {}; t[o.kind] = +((t[o.kind] ?? 0) + g).toFixed(3); } // what your own hits took off, by weapon (checks)
+  k.grit = Math.max(0, k.grit - g); k.hitT = 0; k.c.anim.soak(o.kind === 'bucket' ? 1 : o.big ? .6 : .25); if (k.wipeT > 0) k.wipeT = 0; // a bucket soaks you through
+  k.trailHold = .35; if (g >= TUNE.chunk) k.chunkT = .35; // the bar: a red trail shows what you just lost, and a chunk shakes it
   if (k.filling) { k.fillT = 0; k.water = k.fillFrom; } // hit while filling: start the can again
   const p = pos(k); p.addScaledVector(o.push, o.big ? .15 : .045); W.collide(p); // the water shoves you back a little
   if (o.kb) k.kb = { v: o.push.clone().multiplyScalar(o.kb / .25), t: .25 };
@@ -281,8 +283,9 @@ function soak(k, o) {
   if (hitSnd <= 0) { sound.fx(o.face || o.big ? 'splash' : 'hit', p); hitSnd = .12; }
   if (k.me) { kick(o.big ? 8 : o.face ? 6 : 3); buzz(); drown = Math.min(1, drown + (o.big ? .25 : o.face ? .07 : .03)); if (o.face || o.big) sting = Math.min(1, sting + (o.big ? .35 : .2)); }
   const mine = o.from?.me;
-  if (mine && (k.popT ?? 0) < W.time()) { k.popT = W.time() + .5; pop(k, o.big ? 'ရွှဲ!' : o.face ? 'မျက်နှာ!' : 'ဖျန်း!', o.face || o.big ? '#ffe36b' : '#fff'); if (o.big) buzz(); }
-  if ((mine || k.me) && (o.big || o.face || o.first)) stop = Math.max(stop, TUNE.hitStop);
+  if (mine && ((k.popT ?? 0) < W.time() || o.big)) { k.popT = W.time() + .5; // the word says which weapon: a pump chips, a balloon bursts, a bucket drenches
+    if (o.kind === 'bucket') pop(k, 'ရွှဲ!!', '#ffe36b', 34); else if (o.kind === 'balloon') pop(k, 'ဖောင်း!', '#ffd0e4', 26); else pop(k, o.face ? 'မျက်နှာ!' : 'ဖျန်း', o.face ? '#ffe36b' : '#fff', o.face ? 20 : 16); if (o.big) buzz(); }
+  if ((mine || k.me) && (o.big || o.face || o.first)) stop = Math.max(stop, o.kind === 'bucket' ? TUNE.bucketStop : TUNE.hitStop);
   if (k.grit <= 0) { goOut(k); if (mine) { pop(k, 'OUT!', '#ff8a7a'); stop = Math.max(stop, TUNE.outStop); kick(7); } }
 }
 // someone splashed a kid who's OUT (rule 3): it costs them grit, and the kid lets them know
@@ -559,8 +562,8 @@ const ICON = {
 };
 for (const k of kids) {
   const e = document.createElement('div'); e.className = 'tag ' + k.team + (k.me ? ' me' : '');
-  e.innerHTML = '<div class="bars"><i class="g"><b></b></i><i class="w"><b></b></i></div><div class="ic"></div>'; $('tags').appendChild(e);
-  k.tag = { e, g: e.querySelector('.g b'), w: e.querySelector('.w b'), ic: e.querySelector('.ic'), s: null };
+  e.innerHTML = '<div class="bars"><i class="g"><u></u><b></b></i><i class="w"><b></b></i></div><div class="ic"></div>'; $('tags').appendChild(e);
+  k.tag = { e, g: e.querySelector('.g b'), tr: e.querySelector('.g u'), w: e.querySelector('.w b'), ic: e.querySelector('.ic'), s: null }; k.trail = 1;
 }
 const tp = new THREE.Vector3();
 function tags() {
@@ -568,7 +571,7 @@ function tags() {
     const T = k.tag; tp.copy(pos(k)); tp.y += H(k) + .2; tp.project(W.cam);
     if (tp.z > 1 || Math.abs(tp.x) > 1.1 || Math.abs(tp.y) > 1.1) { T.e.style.display = 'none'; continue; }
     T.e.style.display = ''; T.e.style.transform = `translate(${((tp.x * .5 + .5) * innerWidth).toFixed(0)}px,${((-tp.y * .5 + .5) * innerHeight).toFixed(0)}px) translate(-50%,-100%)`;
-    T.g.style.width = (k.grit * 100).toFixed(0) + '%'; T.w.style.width = (k.water / CAN * 100).toFixed(0) + '%';
+    T.g.style.width = (k.grit * 100).toFixed(0) + '%'; T.tr.style.width = (k.trail * 100).toFixed(0) + '%'; T.e.classList.toggle('chunk', k.chunkT > 0); T.w.style.width = (k.water / CAN * 100).toFixed(0) + '%';
     const st = k.out ? 'out' : atRest(k) && k.grit < 1 ? 'rest' : k.filling ? 'fill' : k.waiting ? 'wait' : k.water < .6 ? 'low' : '';
     if (st !== T.s) { T.s = st; T.ic.innerHTML = ICON[st] || ''; T.e.dataset.s = st; }
   }
@@ -603,7 +606,7 @@ W.tick(dt => {
   sting = Math.max(0, sting - dt * .35); $('sting').style.opacity = Math.min(TUNE.soakCap, sting).toFixed(2); film.style.opacity = Math.min(TUNE.soakCap, drown * 1.6).toFixed(2);
   const bl = Math.min(TUNE.blurMax, Math.max(sting > .25 ? sting * 2.2 : 0, drown * 2.4));
   W.renderer.domElement.style.filter = bl > .3 ? `blur(${bl.toFixed(1)}px)` + (drown > .1 ? ` saturate(${(1 - Math.min(drown, TUNE.soakCap) * .35).toFixed(2)}) hue-rotate(${(-Math.min(drown, TUNE.soakCap) * 12).toFixed(0)}deg)` : '') : '';
-  $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('water').classList.toggle('low', me.water < LOW_W * CAN); if (ruleT > 0 && (ruleT -= dt) <= 0) $('rule').hidden = true; $('grit').firstChild.style.width = (me.grit * 100) + '%';
+  $('water').firstChild.style.width = (me.water / CAN * 100) + '%'; $('water').classList.toggle('low', me.water < LOW_W * CAN); if (ruleT > 0 && (ruleT -= dt) <= 0) $('rule').hidden = true; $('grit').querySelector('b').style.width = (me.grit * 100) + '%'; $('grit').querySelector('i').style.width = (me.trail * 100) + '%'; $('grit').classList.toggle('chunk', me.chunkT > 0);
   $('note').textContent = me.out ? 'OUT — ရေအိုးစင် ပြန်သွား' : atRest(me) && me.grit < 1 ? 'ခံနိုင်ရည် ဖြည့်နေတယ်…' : me.filling ? 'ရေဖြည့်နေတယ်… (ပက်ခံရရင် ပြန်စ)' : me.waiting ? 'ပိုက်ခေါင်း မအားသေး — စောင့်' : me.water < .6 ? 'ရေကုန်ခါနီး!' : '';
   ringEl.setAttribute('stroke-dashoffset', (333 * (1 - charge)).toFixed(0));
   $('wipe').classList.toggle('hint', drown > .4 && !me.out && me.state !== 'wipe'); // the wipe pad pulses while water's up your nose
@@ -615,6 +618,7 @@ let dripT = 0, dripI = 0, lowT = 0;
 function feel(dt) {
   for (const k of kids) {
     k.c.g.scale.y = k.sq > 0 ? k.base * TUNE.squash : k.base; k.sq -= dt;
+    if ((k.trailHold -= dt) <= 0) k.trail = Math.max(k.grit, (k.trail ?? 1) - dt * .7); if (k.grit > k.trail) k.trail = k.grit; k.chunkT = (k.chunkT ?? 0) - dt; // the red trail drains after a beat
     if (k.kb) { const p = pos(k); p.addScaledVector(k.kb.v, Math.min(dt, k.kb.t)); W.collide(p); if ((k.kb.t -= dt) <= 0) k.kb = null; }
     if (k.pend && (k.pend.t -= dt) <= 0) (k.pend.kind === 'balloon' ? release : dump)(k);
   }
@@ -626,7 +630,7 @@ function feel(dt) {
 // ?tune — lil-gui: hit feel, the three weapons, particle budget; copy the JSON back into TUNE / WEAPONS / fx.js BUDGET
 if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-gui.esm.min.js').then(({ GUI }) => {
   const gui = new GUI({ title: 'ရေပက် tune (T3)' }), f = gui.addFolder('ထိတဲ့ခဏ');
-  f.add(TUNE, 'hitStop', 0, .15, .005); f.add(TUNE, 'outStop', 0, .3, .01); f.add(TUNE, 'shakeT', 0, .5, .01); f.add(TUNE, 'shake', 0, 20, .5); f.add(TUNE, 'squash', .6, 1, .01); f.add(TUNE, 'vibrate', 0, 80, 5); f.add(TUNE, 'faceK', 1, 3, .1); f.add(TUNE, 'soakCap', 0, 1, .05); f.add(TUNE, 'blurMax', 0, 3, .1);
+  f.add(TUNE, 'hitStop', 0, .15, .005); f.add(TUNE, 'bucketStop', 0, .2, .005); f.add(TUNE, 'chunk', 0, 1, .05); f.add(TUNE, 'outStop', 0, .3, .01); f.add(TUNE, 'shakeT', 0, .5, .01); f.add(TUNE, 'shake', 0, 20, .5); f.add(TUNE, 'squash', .6, 1, .01); f.add(TUNE, 'vibrate', 0, 80, 5); f.add(TUNE, 'faceK', 1, 3, .1); f.add(TUNE, 'soakCap', 0, 1, .05); f.add(TUNE, 'blurMax', 0, 3, .1);
   for (const w of Object.values(WEAPONS)) { const g = gui.addFolder(w.name); for (const [key, v] of Object.entries(w)) if (typeof v === 'number') g.add(w, key, 0, Math.max(1, v * 3), .01); g.close(); }
   const pf = gui.addFolder('particles (total = live · the rest on reload)'); for (const n of Object.keys(fx.budget)) pf.add(fx.budget, n, 0, fx.budget[n] * 2, 1); pf.close();
   gui.add({ copy: () => { const j = JSON.stringify({ TUNE, WEAPONS, BUDGET: fx.budget }, null, 1); navigator.clipboard?.writeText(j); console.log(j); } }, 'copy').name('JSON copy');

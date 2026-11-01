@@ -21,6 +21,8 @@
   .bar{height:10px;border-radius:6px;background:rgba(0,0,0,.12);overflow:hidden;margin:2px 0 6px}
   .bar>b{display:block;height:100%;width:100%;border-radius:6px;transition:width .15s}
   #water>b{background:#4fb4ff} #grit>b{background:#f2a65a}
+  #grit{position:relative} #grit>b{position:relative} #grit>i{position:absolute;left:0;top:0;height:100%;border-radius:6px;background:#e04a3a} /* the red trail: what the last hit took */
+  .chunk{animation:chunk .35s ease-out} @keyframes chunk{20%{transform:translateX(-3px) scale(1.06);filter:brightness(1.8)}50%{transform:translateX(3px)}100%{transform:none}} /* a big hit (balloon, bucket) knocks a chunk off */
   #msg{position:fixed;z-index:3;left:50%;top:calc(52px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:80vw;padding:6px 14px;border-radius:14px;background:var(--paper);font-size:15px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.15);transition:opacity .3s}
   #msg.off{opacity:0}
   @media (max-width:600px){#msg{top:calc(146px + env(safe-area-inset-top,0px))}}
@@ -55,7 +57,8 @@
   .tag.A .bars{box-shadow:0 0 0 1.5px #2f8fd6} .tag.B .bars{box-shadow:0 0 0 1.5px #e0574f}
   .tag.me .bars{display:none} .tag[data-s=out] .bars{opacity:.35}
   .tag .bars i{display:block;height:4px;margin:1px 0;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
-  .tag .bars b{display:block;height:100%;border-radius:2px} .tag .g b{background:#f2a65a} .tag .w b{background:#4fb4ff}
+  .tag .bars b{display:block;height:100%;border-radius:2px}
+  .tag .g{position:relative} .tag .g b{position:relative} .tag .g u{position:absolute;left:0;top:0;height:100%;border-radius:2px;background:#ff5a4a} .tag .g b{background:#f2a65a} .tag .w b{background:#4fb4ff}
   .tag .ic{line-height:0}
   .tag .ic svg{width:20px;height:22px}
   .tag .ic .out{display:inline-block;padding:2px 6px;border-radius:8px;background:#e04a3a;color:#fff;font:bold 11px/14px sans-serif;box-shadow:0 2px 0 rgba(0,0,0,.25)}
@@ -76,7 +79,7 @@
 </head>
 <body>
 <div id="score"><span class="a">① <span id="sa"></span></span><b id="mid"><small id="rnd"></small><span id="clock">3:00</span></b><span class="b"><span id="sb"></span> ④</span></div>
-<div id="me">ရေ (ဆီပုံး)<div class="bar" id="water"><b></b></div>ခံနိုင်ရည်<div class="bar" id="grit"><b></b></div><span id="note"></span></div>
+<div id="me">ရေ (ဆီပုံး)<div class="bar" id="water"><b></b></div>ခံနိုင်ရည်<div class="bar" id="grit"><i></i><b></b></div><span id="note"></span></div>
 <div id="msg" class="off"></div>
 <div id="tags"></div>
 <div id="drown"></div>
@@ -114,6 +117,6 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
   "three.quarks":"https://cdn.jsdelivr.net/npm/three.quarks@0.16.0/dist/three.quarks.esm.js","quarks.core":"https://cdn.jsdelivr.net/npm/quarks.core@0.16.0/dist/quarks.core.esm.js",
   "yuka":"https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.module.js"}}</script>
-<script type="module" src="./yangon/war.js?v=9"></script>
+<script type="module" src="./yangon/war.js?v=10"></script>
 </body>
 </html>
