@@ -1,5 +1,5 @@
-// yangon/rooms.js — the shop interiors you can walk into from the main street: tea shop, clothes shop (a tailor's),
-// barber. Each is a cut-away room built far off the island (only two walls, so the camera sees in), switched in with
+// yangon/rooms.js — the interiors you can walk into: tea shop, clothes shop (a tailor's), barber off the main street, and home
+// on the lane (T5). Each is a cut-away room built far off the island (only two walls, so the camera sees in), switched in with
 // world.setRoom(). People and what you do inside live in main.js; this is the set and where things are.
 import { PAL } from '../world.js?v=14';
 import { icon, TEA_MENU } from './icons.js?v=1';
@@ -112,6 +112,34 @@ export function buildRooms(W) {
       q.fillStyle = '#5a3550'; q.font = '16px "Noto Sans Myanmar",Padauk,sans-serif'; q.textAlign = 'center'; q.fillText('သင်္ကြန် ဆံပင်ပုံစံ', 180, 104); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })());
     box(1.6, .3, .45, '#8a5a3a', cx + 1.6, .25, z0 + .5); box(1.6, .06, .5, '#a8744a', cx + 1.6, .55, z0 + .5); solid(cx + 1.6, z0 + .5, 1.6, .45); // waiting bench
     r.boss = { x: x0 + 2.0, z: cz - .3 };
+  }
+
+  // ---------- home (T5 · SCENARIO v6 1-1 / 1-8): the downstairs room of the timber house on the lane — plank walls, a woven
+  // sleeping mat with pillows and a blanket, Bwa Bwa's low chair, the wall shelf where the silver bowl lives, the shrine
+  // shelf up in the corner, a window onto the lane; the doormat is the way out to the lane ----------
+  {
+    const cx = 192, cz = 0, r = R.home = room(cx, cz, 6, 5, '#d9b98f', '#a8744a', floorTex('#c9a27a', '#bb9268', 6), { view: 8, bg: '#2a1f2c' });
+    const z0 = cz - 2.5, x0 = cx - 3;
+    for (let i = 0; i < 9; i++) box(.03, 2.9, .02, '#b8946a', x0 + .35 + i * .66, .05, z0 + .01, { cast: false }); // plank seams on the back wall
+    box(1.3, .9, .06, '#3b2a24', cx + .6, 1.2, z0 + .02, { cast: false }); for (const s of [-1, 1]) box(.6, .86, .04, '#9fc3dc', cx + .6 + s * .32, 1.22, z0 + .05, { cast: false }); // window onto the lane
+    // the sleeping mat (ဖျာ) along the left wall: two pillows, a folded blanket — where you wake and where you sleep
+    mesh(new THREE.BoxGeometry(1.5, .03, 2.1), new THREE.MeshLambertMaterial({ map: stripeTex('#e6cf8f', '#cdb06a', 10) }), x0 + 1.0, .06, cz - .4, { cast: false });
+    for (const px of [-.35, .35]) box(.42, .1, .28, '#fff6ea', x0 + 1.0 + px, .08, cz - 1.25, { cast: false });
+    box(1.2, .08, .5, '#c86a6a', x0 + 1.0, .08, cz + .35, { cast: false });
+    r.mat = { x: x0 + 1.0, z: cz - .7, ry: Math.PI };
+    // Bwa Bwa's low chair (ခုံပု) by the window, a betel box beside it
+    const CX = cx + 1.6, CZ = cz - 1.3;
+    box(.5, .26, .46, '#7a5038', CX, .05, CZ); box(.5, .4, .06, '#7a5038', CX, .31, CZ - .22); for (const lx of [-.2, .2]) for (const lz of [-.18, .18]) box(.04, .05, .04, '#5a3a28', CX + lx, .02, CZ + lz);
+    box(.3, .14, .22, '#a8432f', CX + .55, .05, CZ + .1); box(.32, .03, .24, '#d9a84a', CX + .55, .19, CZ + .1);
+    solid(CX, CZ, .55, .5);
+    r.chair = { x: CX, z: CZ + .05, ry: 0, lift: .2 };
+    // the wall shelf where the bowl sits (r.shelf: the spot on top) and, up in the corner, the shrine shelf (ဘုရားစင်)
+    const SX = cx - .9; box(1.2, .05, .32, '#8a5a3a', SX, 1.05, z0 + .18); for (const s of [-1, 1]) box(.04, .2, .3, '#6b4a32', SX + s * .5, .85, z0 + .18);
+    box(.22, .3, .18, '#e8d8a8', SX + .4, 1.1, z0 + .16); box(.16, .2, .14, '#c8553d', SX - .42, 1.1, z0 + .16); // a tin of tea leaf, a jar
+    r.shelf = new THREE.Vector3(SX, 1.1, z0 + .2);
+    box(.8, .05, .4, '#6b3a2a', x0 + .45, 2.3, z0 + .45, { cast: false }); box(.18, .26, .14, '#d9a84a', x0 + .45, 2.35, z0 + .4); // shrine shelf + a little Buddha
+    for (const px of [-.25, .25]) { cyl(.04, .03, .14, '#fff6ea', x0 + .45 + px, 2.35, z0 + .5, 8); mesh(new THREE.SphereGeometry(.06, 8, 6), '#ffc83d', x0 + .45 + px, 2.52, z0 + .5); } // padauk in two vases
+    r.mom = { x: cx + .2, z: cz + .9, ry: Math.PI * .85 }; // where Mum stands in the morning, between you and the door
   }
   return R;
 }
