@@ -1,7 +1,7 @@
 // yangon/rooms.js — the interiors you can walk into: tea shop, clothes shop (a tailor's), barber off the main street, and home
 // on the lane (T5). Each is a cut-away room built far off the island (only two walls, so the camera sees in), switched in with
 // world.setRoom(). People and what you do inside live in main.js; this is the set and where things are.
-import { PAL } from '../world.js?v=14';
+import { PAL } from '../world.js?v=15';
 import { icon, TEA_MENU } from './icons.js?v=1';
 
 export function buildRooms(W) {

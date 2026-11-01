@@ -2,7 +2,7 @@
 // five o'clock at the mandat → night at home with one question. This file owns the parts every day shares: the phase
 // (and its light), the range Mum allows today, the goal line on the HUD, the 「ရက် N」 title and the end-of-day card, and
 // the ?day=&step= debug start. What happens in each scene is story.js (lines) and main.js (play).
-import { MM } from './set.js?v=18';
+import { MM } from './set.js?v=19';
 
 // W.setTime: 0 the morning/afternoon light · .6 the golden five o'clock · 1.7 night
 export const PHASES = { morning: 0, day: 0, five: .6, night: 1.7 };

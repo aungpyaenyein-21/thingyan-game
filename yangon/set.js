@@ -4,7 +4,7 @@
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and what they do live in main.js / story.js.
 // T5 (v6 day 1): the lot is cleared for the mandat (mandat.js), U Ba Tin's amplifier + the zinc lean-to (M2), ④'s fence (1-7).
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=14';
+import { PAL } from '../world.js?v=15';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 37 };
