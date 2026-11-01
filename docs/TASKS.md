@@ -11,7 +11,7 @@
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
-| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | ⏳ spec ✅ — A–D အခု စလို့ရ၊ orbit က T2 ပြီးမှ | အခြား model · branch `claude/water` |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — လက်နက် ၃ မျိုး · ရေ=ကျည် · ထိတဲ့ခဏ · fx (three.quarks/decal/wet-map) · စည်းကမ်း · Yuka NPC · carry ချိတ် | 👀 code review — [plans/T3.md](plans/T3.md) · PR #31 (orbit + palette.js after T2 merges) | အခြား model · branch `claude/water` |
 | T3b | [ရက် ၄ vertical slice](#t3b-ရက်-၄-vertical-slice-t2--t3-ပြီးမှ) — ၅v၅ → ဖလား ချောင်းထဲ (script) → အတူ ဆယ် → ၅ နာရီ ပြေး → ရေသွန်း | ⏳ (T2+T3 ပြီးမှ spec) | — |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |

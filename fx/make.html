@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ရေ fx</title>
+
+<style>html,body{margin:0;height:100%;background:#e8cfa6;font-family:"Noto Sans Myanmar",sans-serif;color:#5a3550}#ui{position:fixed;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap}button{font:inherit;padding:6px 10px;border-radius:10px;border:1.5px solid #e9c9a8;background:#fff6e8}#n{position:fixed;left:10px;bottom:10px;font:12px ui-monospace,monospace}</style>
+</head>
+<body>
+<!-- T3 fx: the four water effects of fx.js, played here so they can be seen, and saved as fx/<name>.json (三 quarks editor format).
+     「JSON」 downloads the code-built version; open it in the three.quarks editor (fx/README.md), tune, save over fx/<name>.json — fx.js loads it. -->
+<div id="ui"><button data-p="stream">ပြွတ်</button><button data-p="burst">ပေါက်</button><button data-p="sheet">ပုံး</button><button data-p="drip">စက်</button><button id="json">JSON ×4</button></div>
+<div id="n"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+  "three.quarks":"https://cdn.jsdelivr.net/npm/three.quarks@0.16.0/dist/three.quarks.esm.js","quarks.core":"https://cdn.jsdelivr.net/npm/quarks.core@0.16.0/dist/quarks.core.esm.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { createFx, build, BUDGET } from '../fx.js?v=1';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.prepend(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#e8cfa6');
+const cam = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 100); cam.position.set(0, 3, 6); cam.lookAt(0, .8, 0);
+scene.add(new THREE.HemisphereLight('#fff', '#b39bd1', 2));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#e8cfa6' })); scene.add(ground); ground.updateMatrixWorld();
+const wall = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, .3), new THREE.MeshLambertMaterial({ color: '#f1c2b8' })); wall.position.set(0, .75, -2); scene.add(wall); wall.updateMatrixWorld();
+const W = { scene, keep: o => o };
+const fx = createFx(W, { json: !new URLSearchParams(location.search).has('code') }); fx.wet(ground);
+const at = new THREE.Vector3(-1.5, 1, 1), dir = new THREE.Vector3(.6, .15, -1);
+const PLAY = { stream: () => fx.stream(at, dir), burst: () => { fx.burst(new THREE.Vector3(0, .8, -1.8)); fx.decal(wall, new THREE.Vector3(0, .8, -1.85), new THREE.Vector3(0, 0, 1)); fx.splat(0, -1.4, .7); },
+  sheet: () => fx.sheet(new THREE.Vector3(1.2, .9, 1), new THREE.Vector3(-.2, .4, -1)), drip: () => fx.drip(new THREE.Vector3(1.5, 1.2, 0)) };
+document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => PLAY[b.dataset.p]());
+document.getElementById('json').onclick = () => { for (const n of Object.keys(PLAY)) { const j = JSON.stringify(window.fxlab.json(n)); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([j], { type: 'application/json' })); a.download = n + '.json'; a.click(); } };
+// json(): wrapped in a group so Object3D.toJSON collects the material / texture / geometry libraries the quarks loader needs
+window.fxlab = { fx, PLAY, json: n => { const g = new THREE.Group(); g.name = 'fx-' + n; g.add(build(n, BUDGET[n]).emitter); return g.toJSON(); }, step: s => { for (let t = 0; t < s; t += 1 / 30) fx.update(1 / 30); r.render(scene, cam); } };
+const clock = new THREE.Clock();
+r.setAnimationLoop(() => { fx.update(Math.min(clock.getDelta(), .05)); r.render(scene, cam); document.getElementById('n').textContent = `particles ${fx.count()} / ${BUDGET.total}`; });
+</script>
+</body>
+</html>
