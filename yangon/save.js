@@ -1,30 +1,29 @@
-// yangon/save.js — the day-1 save, shared by the ward (main.js) and downtown (downtown.js); the bus between them
-// saves and reloads into the other map (boot.js picks by S.at). Progress is the player's own (docs/archive/STORY.md §၈).
+// yangon/save.js — the story save (SCENARIO v6): which day, which scene, what's up on the mandat, what you said at night.
+// One key per story version: the v4 "nine favours" save (thingyan.day1.v2) is wiped the first time this loads.
 import { LOOK0 } from './wardrobe.js?v=5';
 
-const KEY = 'thingyan.day1.v2';
-// nine favours, one part of the kids' coconut-frond mandat each; all are needed
-export const ERRANDS = ['cloth', 'padauk', 'cat', 'tea', 'sign', 'fronds', 'lights', 'drum', 'nozzle'];
-export const ITEMS = { fronds: 'အုန်းလက်နဲ့ ဝါး', cloth: 'ပိတ်စ', padauk: 'ပိတောက်ခက်', cat: 'အသံချဲ့စက်', tea: 'ရေပိုက်', sign: 'ဆိုင်းဘုတ်', lights: 'မီးကြိုး', drum: 'ရေစည်', nozzle: 'ရေပန်းခေါင်း' };
-export const WHERE = { fronds: '③ ဈေး', cloth: '① အန်တီစိန်', padauk: '① အဘွား → ④ မူလတန်းကျောင်း', cat: '① ဦးဘတင်', tea: '③ လက်ဖက်ရည်ဆိုင်ကြီး', sign: '② ကွမ်းယာဆိုင်', lights: '③ ဈေး', drum: '④ ဘုန်းကြီးကျောင်း', nozzle: '⑤ မြို့လယ် (ဘတ်စ်ကား)' };
-export const NEED = ERRANDS.length;
-
-// step: arrive → quests (the favours, any order) → build → evening → done;  at: 'ward' | 'downtown'
-export const fresh = () => ({ step: 'arrive', at: 'ward', q: Object.fromEntries(ERRANDS.map(k => [k, 'ask'])), parts: [], gifts: 3, served: [], water: 0, soaked: [],
-  signName: 'ကလေးမဏ္ဍပ်', look: { ...LOOK0 }, intro: false, introDown: false });
+const KEY = 'thingyan.v6', OLD = ['thingyan.day1.v2'];
+// day: 1–4 · step: the scene you're in ('1-1' … '1-8'; 'done' once the day card is up) — saved after every scene
+// parts: what's up on the mandat (mandat.js PARTS) · got: today's mission items, delivered to the lot but not lifted yet
+// night: what you answered each night ('yes' | 'dots') · name: {နာမည်} · ball: May Thu gave you the balloon (1-2)
+export const fresh = () => ({ v: 6, day: 1, step: '1-1', parts: [], got: [], night: [], name: 'မောင်မောင်', ball: false, look: { ...LOOK0 } });
 export function load() {
   let S = fresh();
   try {
+    for (const k of OLD) localStorage.removeItem(k);
     const P = new URLSearchParams(location.search);
-    if (P.has('new')) { localStorage.removeItem(KEY); P.delete('new'); history.replaceState(null, '', location.pathname + (P.size ? '?' + P : '')); } // so a bus ride's reload doesn't wipe it again
+    if (P.has('new')) { localStorage.removeItem(KEY); P.delete('new'); history.replaceState(null, '', location.pathname + (P.size ? '?' + P : '')); } // so a reload doesn't wipe it again
     const old = JSON.parse(localStorage.getItem(KEY) || '{}');
-    S = { ...fresh(), ...old }; S.q = { ...fresh().q, ...old.q }; S.look = { ...LOOK0, ...old.look };
+    S = { ...fresh(), ...(old.v === 6 ? old : {}) }; S.look = { ...LOOK0, ...old.look };
+    if (P.get('name')) S.name = P.get('name');
   } catch {}
   return S;
 }
 export const save = S => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 export const wipe = () => { try { localStorage.removeItem(KEY); } catch {} };
-export const party = S => S.step === 'evening' || S.step === 'done';
-// a favour done: its part goes on the mandat; true when that was the last one
-export function finish(S, q) { S.q[q] = 'done'; if (!S.parts.includes(q)) S.parts.push(q); const all = S.parts.length >= NEED; if (all && S.step === 'quests') S.step = 'build'; save(S); return all; }
+
+// ---------- v4 leftovers: only downtown.js (⑤, unreachable in the v6 story) still imports these; they keep it loading ----------
+export const ITEMS = { nozzle: 'ရေပန်းခေါင်း' }, NEED = 9, ERRANDS = [], WHERE = {}; // ERRANDS/WHERE: the old main.js, until the day-1 flow replaces it
+export const party = S => S.step === 'done';
+export function finish(S, q) { if (!(S.parts ??= []).includes(q)) S.parts.push(q); save(S); return false; }
 export function travel(S, to) { S.at = to; save(S); location.reload(); }
