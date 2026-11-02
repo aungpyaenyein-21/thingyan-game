@@ -1,9 +1,10 @@
 // yangon/set.js — the day-1 Yangon neighbourhood as one walkable map (docs/archive/STORY.md §၄):
 //   ① home lane (walk-up flats, timber home, the empty lot)   ② the main street: shops below, flats above (tea shop, barber, tailor …)
 //   ③ the ward market: vendors on mats along two lanes, sheds   ④ the ward monastery            + compounds, a chinlone lot, a condo going up
-// Everything here is scenery: it is baked into a few meshes at start (world.bake). People and errands live in story.js.
+// Everything here is scenery: it is baked into a few meshes at start (world.bake). People and what they do live in main.js / story.js.
+// T5 (v6 day 1): the lot is cleared for the mandat (mandat.js), U Ba Tin's amplifier + the zinc lean-to (M2), ④'s fence (1-7).
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=14';
+import { PAL } from '../world.js?v=15';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 export const BOUNDS = { x0: -10, x1: 34, z0: -10, z1: 37 };
@@ -207,9 +208,9 @@ export function buildSet(W) {
     solid(X, Z, 5.5, 3.5); solid(X, Z + 2.05, 5.2, .9);
   });
   W.occluder(() => { const X = 5.6, Z = -6.5; for (const px of [-2.2, -1.8]) { mesh(new THREE.SphereGeometry(.2, 12, 8), M('#b8653d', { flatShading: false }), X + px, .5, Z + 2.2); cyl(.13, .13, .03, '#d9b98f', X + px, .67, Z + 2.2, 10); } }); // the water pots on the porch
-  // the empty lot where the kids' mandat goes up
+  // the empty lot where the kids' mandat goes up (T5: cleared — weeds only along its rim, the middle is the mandat's (mandat.js), the haul pile's and the throw's)
   box(8, .03, 5.4, '#c99a6b', 2.6, 0, 2.1, { cast: false });
-  for (let i = 0; i < 26; i++) { const x = -1.2 + rnd() * 7.6, z = -.4 + rnd() * 5; if (Math.hypot(x - 2.6, z - 1.9) > 2) mesh(new THREE.ConeGeometry(.09, .22, 4), pick([PAL.leaf, PAL.leafLight]), x, .12, z, { cast: false }); }
+  for (let i = 0; i < 26; i++) { const x = -1.2 + rnd() * 7.6, z = -.4 + rnd() * 5; if (Math.abs(x - 2.6) > 3.3 || Math.abs(z - 1.9) > 2.3) mesh(new THREE.ConeGeometry(.09, .22, 4), pick([PAL.leaf, PAL.leafLight]), x, .12, z, { cast: false }); }
   { const sb = new THREE.Group(); sb.position.set(-.6, .02, .6); sb.rotation.y = Math.PI / 4; scene.add(sb);
     for (const px of [-.45, .45]) cyl(.04, .04, 1.3, '#8a5a3a', px, 0, 0, 5, { parent: sb });
     mesh(new THREE.PlaneGeometry(1.1, .55), new THREE.MeshLambertMaterial({ map: textTex('ကလေးမဏ္ဍပ် ဆောက်မည်', '#fff6ea', '#5a3550', 512, 256, 46) }), 0, 1.0, .03, { parent: sb });
@@ -225,8 +226,15 @@ export function buildSet(W) {
   }
   { // U Ba Tin's door on the side lane: table, transistor radio, the amplifier
     box(.7, .5, .5, '#8a5a3a', -5.25, .02, .2); box(.4, .26, .2, '#3b3440', -5.25, .52, .2); cyl(.06, .06, .02, '#d9b98f', -5.13, .62, .31, 10);
-    box(.36, .7, .36, '#26222b', -5.3, .02, -1.55); mesh(new THREE.CircleGeometry(.12, 12), '#4a4452', -5.11, .4, -1.55).rotation.y = Math.PI / 2;
-    solid(-5.25, .2, .7, .5); solid(-5.3, -1.55, .4, .4);
+    solid(-5.25, .2, .7, .5);
+    // T5 M2: the amplifier is its own object (it gets carried to the mandat in 1-4), and over the door a zinc lean-to — Shwe Wa naps on
+    // the amplifier under it; splash the zinc and the din sends her down (L.ROOF.sheet is kept out of the bake so it can rattle)
+    const amp = W.keep(new THREE.Group()); amp.position.set(-5.3, .02, -1.55); scene.add(amp);
+    box(.36, .7, .36, '#26222b', 0, 0, 0, { parent: amp }); mesh(new THREE.CircleGeometry(.12, 12), '#4a4452', .19, .38, 0, { parent: amp }).rotation.y = Math.PI / 2;
+    L.AMP = { g: amp, at: new THREE.Vector3(-5.3, 0, -1.55), top: .72, solid: W.solids[solid(-5.3, -1.55, .4, .4) - 1] }; // solid() returns the list's new length
+    const sheet = W.keep(mesh(new THREE.BoxGeometry(1.4, .04, 2.9), zinc, -5.12, 1.86, -.8)); sheet.rotation.z = -.22; // sloping down to the lane
+    for (const pz of [-2.15, .55]) cyl(.035, .035, 1.72, '#8a5a3a', -4.52, .02, pz, 5);
+    L.ROOF = { sheet, at: new THREE.Vector3(-4.75, 1.75, -1.55), y: sheet.position.y };
   }
   L.CAR = new THREE.Vector3(-3.95, 0, 4.3);
   { // the old car on the side lane (Shwe Wa's roof)
@@ -325,6 +333,15 @@ export function buildSet(W) {
     return new THREE.Vector3(gx, 0, z1 + .6);
   }
   compound(11, 17.2, -9.6, -2.6, { c: PAL.pink, tree: true });
+  { // T5: ④'s side (SCENARIO v6 1-7) — the pink compound across the east lane is where the ④ kids are: a tall fence of zinc sheets on
+    // bamboo along its lane side, so from the lot you can't see in. The silver bowl goes over it in 1-7 and lands in the yard (L.LAND4)
+    const X = 11.14, z0 = -9.4, z1 = -2.75, n = 9, w = (z1 - z0) / n;
+    for (let i = 0; i < n; i++) { const sh = mesh(new THREE.BoxGeometry(.04, 1.05, w + .04), zinc, X, 1.38, z0 + w * (i + .5)); sh.rotation.x = (i % 2 ? .03 : -.03); }
+    for (let i = 0; i <= n; i += 3) cyl(.05, .05, 2.0, PAL.bamboo, X - .06, .02, z0 + w * i, 5);
+    box(.06, .06, z1 - z0, PAL.bamboo, X - .06, 1.92, (z0 + z1) / 2);
+    mesh(new THREE.PlaneGeometry(.5, .5), new THREE.MeshLambertMaterial({ map: textTex('④', '#c8553d', '#fff6ea', 128, 128, 90) }), X - .04, 1.45, -3.5, { cast: false }).rotation.y = -Math.PI / 2; // painted on, lane side
+    L.FENCE4 = new THREE.Vector3(X, 1.95, -3.4); L.LAND4 = new THREE.Vector3(12.5, 0, -3.35);
+  }
   compound(22.8, 27.4, -9.6, -2.6, { c: PAL.teal, w: 2.6 });
   L.FIELD = new THREE.Vector3(20, 0, -5.4);   // the chinlone lot: a patch of beaten earth between two compound walls
   box(5, .02, 5.2, '#c99a6b', 20, 0, -5.6, { cast: false });
