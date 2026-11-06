@@ -2,7 +2,7 @@
 // five o'clock at the mandat → night at home with one question. This file owns the parts every day shares: the phase
 // (and its light), the range Mum allows today, the goal line on the HUD, the 「ရက် N」 title and the end-of-day card, and
 // the ?day=&step= debug start. What happens in each scene is story.js (lines) and main.js (play).
-import { MM } from './set.js?v=19';
+import { MM, BOUNDS, LANES } from './set.js?v=20';
 
 // W.setTime: 0 the morning/afternoon light · .6 the golden five o'clock · 1.7 night
 export const PHASES = { morning: 0, day: 0, five: .6, night: 1.7 };
@@ -12,8 +12,10 @@ export const PHASE_OF = { '1-1': 'morning', '1-2': 'day', '1-3': 'day', '1-4': '
 // the day's title card (SCENARIO §3 heading)
 const TITLE = { 1: ['ရက် ၁', 'အကြိုနေ့ — 「မဏ္ဍပ် ဆောက်」'] };
 // where Mum lets you go: a polygon on the ward's ground (x, z). Day 1 = ① only — the lane, the lot, the houses round it;
-// the main street (②, z > 5.8) and everything east of the east lane (x > 10.6, ④'s compound) are out
-export const RANGES = { 1: [[-9.8, -9.8], [10.5, -9.8], [10.5, 5.4], [-9.8, 5.4]] };
+// the main street (②, z > 5.8) and everything east of the east lane (④'s compound) are out. T12: from set.js, so it grows
+// with the lanes — x −10.8…11.3, z −10.8…5.4 (was −9.8…10.5, −9.8…5.4)
+const R1 = { x0: BOUNDS.x0 + .2, x1: LANES.east.x1 - .1, z0: BOUNDS.z0 + .2, z1: 5.4 };
+export const RANGES = { 1: [[R1.x0, R1.z0], [R1.x1, R1.z0], [R1.x1, R1.z1], [R1.x0, R1.z1]] };
 // what a save has to hold to start straight at a scene (?day=1&step=1-7): the parts and items the earlier scenes give
 const BEFORE = {
   '1-1': {}, '1-2': {}, '1-3': { ball: true }, '1-4': { ball: true, got: ['cloth'] }, '1-5': { ball: true, got: ['cloth', 'speaker'] },

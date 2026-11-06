@@ -59,6 +59,11 @@ cam.lookAt(target + (0, .55, 0))
 - world.js `occluder()` ရဲ့ **ကြို clone ထားတဲ့ transparent material** သုံး — `needsUpdate` မသုံး (T1 review #1)
 - `talk` ထဲမှာ NPC ဆီလည်း ray ၁ ကြောင်း (NPC မမြင်ရရင် ဖျော့)
 - ကင်မရာက နံရံ **အတွင်း** ဝင်သွားရင် (dist ကြီး + building နီး) → dist ကို ထိတဲ့ အကွာ −.3 ထိ ချ (sphere-cast ရိုးရိုး) — ဒါ ၆ ထောင့် screenshot မှာ စစ်
+- **ကင်မရာ အနီး fade (T12 · issue #41 §3 option A)** — လမ်းဘေး ပစ္စည်း (ဓာတ်တိုင် + ကန့်လန့်တန်း · ဓာတ်ကြိုး `sag()` · မီးတိုင် လက်/အုံ (bulb နဲ့ glow မပါ — MeshBasic/additive) · လွတ်လွတ် ရပ်တဲ့ ဆိုင်းဘုတ် · အမိုးစ (awning) · သင်္ကြန် အလံတန်း · ပိတောက်ပင် အရွက် + ပင်စည်) က ကင်မရာနဲ့ နီးရင် **ပျောက်** — world.js `furniture(material)` (`W.furniture` / `W.nearM(colour)`): fragment ရဲ့ ကင်မရာ အကွာ `length(vViewPosition)` ကို `smoothstep(nearIn, nearOut)` · 4×4 Bayer threshold (`gl_FragCoord`) ထက် နည်းရင် `discard`။ **opaque** — sort မလို၊ ခုန် မရှိ (pixel လိုက် ပါးသွား)
+  - `nearIn 1.5` m (ဒီထက် နီး = လုံးဝ ပျောက်) · `nearOut 3` m (ဒီထက် ဝေး = အပြည့်) — `?tune` folder 「ကင်မရာ အနီး」 · uniform မျှ (`W.near`)
+  - ဆိုင်မျက်နှာစာ ဆိုင်းဘုတ် (နံရံပေါ်) — fade **မလုပ်** (အိမ်နဲ့ အတူ occluder fade)။ အိမ်/တိုက် = အပေါ်က occluder fade ပဲ
+  - `discard` က color pass ပဲ — **ပျောက်နေတဲ့ ဓာတ်တိုင်ရဲ့ အရိပ် ကျန်** (shadow pass က ကိုယ်ပိုင် depth material) — လက်ခံ
+  - `bake()`: furniture က vertex-colour family သီးသန့် (`near`) — 8 m ကွက်လိုက် ပေါင်းပေမဲ့ hook မပျောက်။ `occluder()` / `hero()` clone ရင် hook ပြန်တပ်
 
 ## ၆။ ဇာတ်လမ်း scene API (`camera.js`)
 
@@ -90,7 +95,7 @@ cam.context(name, on)                            // run/ride/war/talk — day.js
 
 ## ၈။ `?tune` (lil-gui) ဂဏန်း
 
-`followK 3.2` · `azK 9` · `distOutK 2` · `distInK 4` · `base 11` · `run +3` · `ride +5` · `war +2` · `talk −4` · `room 6` · `lookWalk 1.2` · `lookRun 2` · `lookK .5` · `elevMin .22` · `elevMax .85` · `fade .25` · `autoRotate off` — JSON copy → ဒီစာ §၁–၃ ပြန်ပြင်
+`followK 3.2` · `azK 9` · `distOutK 2` · `distInK 4` · `base 11` · `run +3` · `ride +5` · `war +2` · `talk −4` · `room 6` · `lookWalk 1.2` · `lookRun 2` · `lookK .5` · `elevMin .22` · `elevMax .85` · `fade .25` · `autoRotate off` · 「ကင်မရာ အနီး」 `nearIn 1.5` · `nearOut 3` (T12) — JSON copy → ဒီစာ §၁–၃ ပြန်ပြင်
 
 ## ၉။ ✅ စမ်းသပ်ချက် (T2 review)
 

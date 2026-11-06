@@ -4,28 +4,28 @@
 // Mum's range, goal line, cards), story.js holds the lines, mandat.js the mandat, carry.js the bowl and what you hold.
 // The v4 "nine favours + Mandalay bus + Phoe Tha" flow is gone (git history / docs/archive); the shops, the tea shop's
 // people and the street life stay — on day 1 they're out of Mum's range.
-import { createWorld, PAL, SKINS } from '../world.js?v=15';
+import { createWorld, PAL, SKINS } from '../world.js?v=16';
 import { CAT_COATS } from '../critters.js?v=6';
-import { buildSet, BOUNDS, ground, AREAS, areaAt, shwedagon } from './set.js?v=19';
+import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=20';
 import { createHud, play } from './hud.js?v=5';
 import { openBarber, openClothes, redress } from './wardrobe.js?v=5';
-import { buildRooms } from './rooms.js?v=11';
+import { buildRooms } from './rooms.js?v=12';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=17';
+import { startLife } from './life.js?v=18';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
 import { makeCast, earBlush } from '../cast.js?v=11';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
 import { load as loadSave, save as store, wipe } from './save.js?v=7';
-import { createDay, debugStart, PHASE_OF } from './day.js?v=1';
+import { createDay, debugStart, PHASE_OF } from './day.js?v=2';
 import { createStory, GOALS, NIGHT } from './story.js?v=2';
 import { createMandat } from './mandat.js?v=1';
 
-const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -3, x1: 27, z0: -4, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
-  { x0: -150, x1: -10, z0: 6.6, z1: 12.2, c: PAL.road }, { x0: 34, x1: 150, z0: 6.6, z1: 12.2, c: PAL.road },
-  { x0: -150, x1: -10, z0: 5.8, z1: 6.6, c: PAL.walk }, { x0: 34, x1: 150, z0: 5.8, z1: 6.6, c: PAL.walk },
-  { x0: -150, x1: -10, z0: 12.2, z1: 13, c: PAL.walk }, { x0: 34, x1: 150, z0: 12.2, z1: 13, c: PAL.walk },
+const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -4, x1: 27, z0: -5, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
+  { x0: -150, x1: BOUNDS.x0, z0: 6.6, z1: 12.2, c: PAL.road }, { x0: 34, x1: 150, z0: 6.6, z1: 12.2, c: PAL.road },
+  { x0: -150, x1: BOUNDS.x0, z0: 5.8, z1: 6.6, c: PAL.walk }, { x0: 34, x1: 150, z0: 5.8, z1: 6.6, c: PAL.walk },
+  { x0: -150, x1: BOUNDS.x0, z0: 12.2, z1: 13, c: PAL.walk }, { x0: 34, x1: 150, z0: 12.2, z1: 13, c: PAL.walk },
   { x0: 11.8, x1: 14.2, z0: 37, z1: 150, c: PAL.road }] } });
 const { THREE, scene, mesh, box, cyl, stripeTex, bubbleTex, bean, rnd, pick } = W;
 const L = buildSet(W);
@@ -56,12 +56,12 @@ function person(id, x, z, ry = 0) {
   const c = W.adopt({ g: p.ch.root, ch: p.ch, anim: p.anim, act: p.act, def: p.def, id });
   put(c, x, z, ry); return c;
 }
-const hero = person('hero', 4.4, -3.3, Math.PI); hero.ch.blushEars = earBlush(hero.ch);
+const hero = person('hero', 4.4, -3.3 + OZ, Math.PI); hero.ch.blushEars = earBlush(hero.ch); // at the door (HOME_OUT below)
 W.setPlayer(hero); const pc = cw.carrier(hero);
-const mom = person('mom0', 6.9, -3.5, Math.PI);
+const mom = person('mom0', 6.9, -3.5 + OZ, Math.PI); // (MUM_DAY below)
 const bwabwa = person('bwabwa', 0, 0); const bwc = cw.carrier(bwabwa, { npc: true });
 const ngazwe = person('ngazwe', -3.3, -2.3, Math.PI / 2);
-const maythu = person('maythu', -5.6, 1.6), phoekyaw = person('phoekyaw', -2.95, 5.2), chocho = person('chocho', -3.9, -3.1, Math.PI / 2);
+const maythu = person('maythu', -5.6 + OX, 1.6), phoekyaw = person('phoekyaw', -2.95, 5.2), chocho = person('chocho', -3.9, -3.1 + OZ, Math.PI / 2);
 const sayagyi = person('sayagyi', 7, 4);
 const GANG = [ngazwe, maythu, phoekyaw, chocho];
 const kozaw = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: -.5, z: 3.4, ry: Math.PI }); // Ko Zaw brings his string of lights to the lot (M3)
@@ -73,7 +73,7 @@ const bowl = cw.item('bowl', 0, 0); // ငွေဖလား — Bwa Bwa's silve
 const AB = L.flatsA.bal(3, 2), BTOP = AB.at(.55, .2, .38), BBOT = BTOP.clone().setY(.06), STUCK = 1.95; // STUCK: where the empty bucket hangs, too light to come down
 const auntie = npc({ hair: 'bun', flower: true, age: 'adult', skin: SKINS[1], shirt: '#e9a0b4', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#7a4a9a', '#c79be0'], hat: 'none', build: 'round' });
 auntie.g.position.copy(AB.at(-.3, .08, -.08)); auntie.dry = true;
-const UNCLE = V(-5.15, -.7);
+const UNCLE = L.UNCLE; // by his door (set.js: it moved west with flats B, T12)
 const uncle = npc({ age: 'elder', hair: 'short', topStyle: 'taikpon', shirt: '#f3ead8', bottom: 'longyi', hat: 'none', x: UNCLE.x, z: UNCLE.z, ry: Math.PI / 2 });
 // ① vegetable seller with her cart at the corner, calling out
 const vendor = npc({ hair: 'bun', age: 'adult', skin: SKINS[2], shirt: '#e9b44c', topStyle: 'yinphone', bottom: 'htamein', bottomColor: ['#6e4428', '#a8743a'], hat: 'bucket' });
@@ -111,7 +111,10 @@ const abbot = npc({ ...ROBE, age: 'elder', x: L.MONASTERY.x, z: L.MONASTERY.z - 
 [...novices, abbot].forEach(m => { m.dry = true; });
 W.idlers.push(auntie, uncle, betelMan, barber, tailor, phoneGirl, teaBoss);
 // the ward's life (life.js) follows the day's phase
-const life = startLife(W, { L, BOUNDS, ground, phase: () => ({ morning: 'morning', day: 'day', five: 'late', night: 'evening' }[day.at] ?? 'day') });
+// T12 quiet zones (issue #41 §1): the house front is ±8 m from the door, i.e. the whole back lane end to end, and the east
+// lane off it; and where the gang gathers. No extras spawn, park, idle or pass there (the story's own people do)
+const life = startLife(W, { L, BOUNDS, ground, phase: () => ({ morning: 'morning', day: 'day', five: 'late', night: 'evening' }[day.at] ?? 'day'),
+  quiet: [LANES.back, LANES.east, { x: -3.3, z: -2.3, r: 2.5 }] });
 life.knot(oldMen, true);
 const JOURNAL = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 84; const q = c.getContext('2d'); q.fillStyle = '#f6f1e6'; q.fillRect(0, 0, 64, 84);
   q.fillStyle = '#c8553d'; q.fillRect(4, 4, 56, 10); q.fillStyle = '#7a8fd0'; q.fillRect(6, 20, 26, 22); q.fillStyle = '#5a5560'; for (let y = 22; y < 80; y += 6) q.fillRect(y < 44 ? 36 : 6, y, y < 44 ? 22 : 52, 2);
@@ -157,8 +160,8 @@ async function greet() {
 }
 const boyBack = () => { doorBoy.asking = false; const gen = ++rounds; life.walk(doorBoy, [DOOR_POST]).then(() => { doorBoy.g.rotation.y = -Math.PI / 2; if (gen === rounds) waitTables(gen); }); };
 
-W.addPet('dog', 'house', 3.6, -3.75);     // home dog on the porch step
-W.addPet('cat', 'house', -2.0, -4.6);     // cat at the stairwell
+W.addPet('dog', 'house', 3.6, -3.75 + OZ); // home dog on the porch step
+W.addPet('cat', 'house', -2.0, -4.6 + OZ); // cat at the stairwell
 W.addPet('dog', 'walker', 0, -2.4);
 W.addPet('dog', 'shop', 11.2, 30.0);      // waiting by the tea shop for scraps
 W.addPet('dog', 'shop', 7.6, 25.6);       // and by the mohinga pot
@@ -204,16 +207,21 @@ setTool(S.ball ? S.tool : 'bucket');
 
 // ---------- the story runner + the day's beats ----------
 const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => CUES[k]?.(id) });
+{ // T12: a scene clears the stage — extras within 10 m walk off and stay off till a little after it (life.clearFor); story.js untouched
+  const play0 = story.play; let on = 0;
+  story.play = (id, beat) => { on++; life.clearFor(600); return play0(id, beat).finally(() => { if (--on === 0) life.clearFor(8, null); }); };
+}
 const wait = s => life.wait(window.zone?.fast ? Math.min(s, .2) : s);
 const walk = (c, pts, loop = 'walk', max = 9) => { const gen = c.walkGen = (c.walkGen ?? 0) + 1; // a newer walk cancels this one's "arrive anyway"
   return Promise.race([life.walk(c, pts, loop), life.wait(max)]).then(() => { if (c.walkGen !== gen) return; const e = pts[pts.length - 1], [x, z] = e.isVector3 ? [e.x, e.z] : e; if (Math.hypot(c.g.position.x - x, c.g.position.z - z) > .3) put(c, x, z); }); }; // never stuck: arrive anyway
 const advance = next => { S.step = next; save(); };
 
 // fixed spots on the lot and round it
-const HOME_OUT = V(4.4, -3.3), MUM_DAY = V(6.9, -3.5), GATHER = V(-3.3, -2.3);
+// T12: the home row moved 1 m away from the lot (OZ, set.js) — the door and Mum's spot with it; everything on the lot side stays
+const HOME_OUT = V(4.4, -3.3 + OZ), MUM_DAY = V(6.9, -3.5 + OZ), GATHER = V(-3.3, -2.3);
 const LOT = { ngazwe: [.4, .4], maythu: [1.4, -.3], phoekyaw: [4.8, -.3], chocho: [-.2, 1.2] };
 const FRONT = { hero: [5.0, 4.3], ngazwe: [3.4, 4.0], maythu: [4.2, 4.4], phoekyaw: [5.9, 3.8], chocho: [6.5, 3.2] }; // five o'clock, at the mandat's front corner (not in line with the bus stop on the street behind)
-const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(-4.25, -1.55), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
+const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(L.AMP.at.x + 1.05, L.AMP.at.z), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
 const AZ_SIDE = Math.atan2(THROW.x - L.LAND4.x, THROW.z - L.LAND4.z) - Math.PI / 2; // side-on to the throw: the lot on one side of the frame, ④'s fence and yard on the other
 
 // ---------- the rope bucket from Auntie Sein's balcony (M1) ----------
@@ -242,7 +250,7 @@ const CAT = { at: 'amp', hop: null, back: 0, fish: null };
 const catTo = (to, then = 'sit', dur = .55) => { CAT.hop = { from: shweWa.g.position.clone(), to: to.clone(), t: 0, dur, then }; shweWa.anim.play('hop'); shweWa.g.rotation.y = Math.atan2(to.x - shweWa.g.position.x, to.z - shweWa.g.position.z); };
 shweWa.hit = () => { // splash the cat, not the roof: she bolts, U Ba Tin calls out — and she's back on the amplifier in a moment
   shweWa.anim.soak(); shweWa.anim.emote('bang'); if (CAT.at !== 'amp') return;
-  life.say(uncle, 'ဟဲ့!', 1.6, 2.0); uncle.anim.play('call'); CAT.at = 'away'; CAT.back = 5; catTo(V(-4.1, 1.4), 'sit', .7);
+  life.say(uncle, 'ဟဲ့!', 1.6, 2.0); uncle.anim.play('call'); CAT.at = 'away'; CAT.back = 5; catTo(V(L.AMP.at.x + 1.2, 1.4), 'sit', .7);
 };
 let roofK = 0;
 W.tick(dt => {
@@ -299,8 +307,8 @@ const CUES = {
     await wait(.9);
     scene.attach(phoekyaw.g); put(phoekyaw, -2.3, -2.2); phoekyaw.anim.setLoop('idle'); face(phoekyaw, ngazwe);
   },
-  maythu: () => { put(maythu, -5.4, 1.6); return walk(maythu, [[-4.0, 1.4], [-3.6, -1.4], [-2.6, -3.0]]).then(() => face(maythu, hero)); },
-  peek: () => { put(chocho, -3.95, -3.35, Math.PI / 2); chocho.act('loop:peek'); },
+  maythu: () => { put(maythu, -5.4 + OX, 1.6); return walk(maythu, [[-4.0, 1.4], [-3.6, -1.4], [-2.6, -3.0]]).then(() => face(maythu, hero)); },
+  peek: () => { put(chocho, -3.95, -3.35 + OZ, Math.PI / 2); chocho.act('loop:peek'); }, // at the flats' edge of the lane
   goal: id => { day.goal(GOALS[id]); if (id === '1-2') chocho.act('loop:idle'); },
   weapons: async () => { // the three ways the gang throws water (T3 WEAPONS: ပြွတ် · ပူဖောင်း · ပုံး) — each shows theirs
     const at = V(-1.0, -2.4);
@@ -321,7 +329,7 @@ const CUES = {
     await (bwWalk ?? walk(bwabwa, [[3.6, 3.45]], 'walk', 8)); face(bwabwa, mandat.seatAt);
     bwc.place(mandat.seat); await wait(.9);
   },
-  home: () => { walk(bwabwa, [[5.3, 3.4], [5.4, -1.6], [4.4, -3.6]], 'walk', 16).then(() => { if (S.step !== '1-6') toRoomChair(); }); walk(sayagyi, [[8.5, 4.6], [9.6, 5.2]], 'walk', 8).then(() => hide(sayagyi)); },
+  home: () => { walk(bwabwa, [[5.3, 3.4], [5.4, -1.6], [HOME_OUT.x, HOME_OUT.z - .3]], 'walk', 16).then(() => { if (S.step !== '1-6') toRoomChair(); }); walk(sayagyi, [[8.5, 4.6], [9.6, 5.2]], 'walk', 8).then(() => hide(sayagyi)); },
   // 1-7
   ding: async () => {
     await wait(1.2); // five kids, very still
@@ -392,7 +400,7 @@ function stage(step) {
   day.phase(PHASE_OF[step]); day.goal({ '1-1': '', '1-2': '', '1-8': GOALS['1-7'], done: GOALS['1-7'] }[step] ?? GOALS['1-2']); // the goal line appears in 1-2 (its cue) and changes in 1-7
   // family
   if (out) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night by the door side, out of the way
-  if (step === '1-6') put(bwabwa, 4.6, -3.0, 0); else toRoomChair();
+  if (step === '1-6') put(bwabwa, 4.6, -3.0 + OZ, 0); else toRoomChair();
   // the bowl: in Bwa Bwa's lap → in her arms (1-6) → on its seat (1-7) → over the fence (after)
   if (bowl.by) { bowl.by.release(true); bowl.by = null; } if (bowl.at) { bowl.at.item = null; bowl.at = null; }
   if (['1-1', '1-2', '1-3', '1-4', '1-5', '1-6'].includes(step)) { bwc._load(bowl); bowl.g.visible = true; }
@@ -581,7 +589,7 @@ async function m2() { // M2 the speaker
     hud.cinematic(true); face(hero, L.ROOF.at); shweWa.dry = true; hero.anim.play('splash'); await wait(.4); // (this splash is for the roof: the drops coming off it don't count against you)
     jet(hero.ch.sockets.chest.getWorldPosition(new THREE.Vector3()), L.ROOF.at, { t: .5, own: hero.g });
     await wait(.5); roofK = 1; for (let i = 0; i < 3; i++) setTimeout(() => sound.fx('hit', L.ROOF.at), i * 140);
-    if (CAT.at === 'amp') { shweWa.anim.emote('bang', 1.5); await wait(.6); CAT.at = 'down'; catTo(V(-4.6, -.9)); await wait(.8); }
+    if (CAT.at === 'amp') { shweWa.anim.emote('bang', 1.5); await wait(.6); CAT.at = 'down'; catTo(V(L.AMP.at.x + .7, -.9)); await wait(.8); }
     // Cho Cho holds out the dried fish; Shwe Wa trots over to her
     fishM.visible = true; face(chocho, shweWa); chocho.anim.play('wave'); CAT.at = 'fish'; MISSION.catDown = true; setTimeout(() => { shweWa.dry = false; }, 2500);
     hud.cinematic(false); return;

@@ -117,6 +117,28 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // ---------- builders ----------
   const matCache = {};
   const M = (c, o = {}) => matCache[c + JSON.stringify(o)] ??= new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...o });
+  // ---------- T12 near-lens fade (issue #41 §3 option A, CAMERA.md §5): street furniture between the lens and you — a pole,
+  // a wire, a padauk — dissolves instead of filling the frame. furniture(mat) adds to its fragment shader: how near the
+  // fragment is to the camera, smoothstep(uNearIn, uNearOut), against a 4×4 Bayer threshold on the pixel → discard. Opaque,
+  // no sorting, no popping: it thins out pixel by pixel. (The shadow pass draws with its own depth material: a faded pole
+  // still casts its shadow.) nearM(colour): a flat furniture material of its own, cached — never the M() colour cache.
+  const NEAR = { uNearIn: { value: 1.5 }, uNearOut: { value: 3 } };
+  const NEAR_GLSL = `uniform float uNearIn; uniform float uNearOut;
+float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
+  const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.); return (B[k] + .5) / 16.; }
+`;
+  function furniture(mt) {
+    mt.userData.near = true;
+    mt.onBeforeCompile = sh => {
+      sh.uniforms.uNearIn = NEAR.uNearIn; sh.uniforms.uNearOut = NEAR.uNearOut;
+      sh.fragmentShader = NEAR_GLSL + sh.fragmentShader.replace('#include <clipping_planes_fragment>',
+        '#include <clipping_planes_fragment>\n  if (smoothstep(uNearIn, uNearOut, length(vViewPosition)) < nearBayer(gl_FragCoord.xy)) discard;');
+    };
+    mt.customProgramCacheKey = () => 'near1';
+    return mt;
+  }
+  const nearCache = {};
+  const nearM = (c, o = {}) => nearCache[c + JSON.stringify(o)] ??= furniture(new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...o }));
   const statics = [], LOD = 26; // LOD: |dx| + |dz| from the camera beyond which people and pets stop animating
   function mesh(geo, color, x = 0, y = 0, z = 0, opt = {}) {
     const m = new THREE.Mesh(geo, typeof color === 'string' ? M(color) : color);
@@ -206,9 +228,9 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // padauk trees: their blossom spots feed the instanced flowers + falling petals (built in start())
   const flowerSpots = [];
   function padauk(x, z, s = 1, bloom = true) { // bloom: false for a tree that hasn't flowered yet
-    cyl(.12 * s, .18 * s, 1.4 * s, PAL.trunk, x, 0, z, 6);
+    cyl(.12 * s, .18 * s, 1.4 * s, nearM(PAL.trunk), x, 0, z, 6); // T12: trunk and canopy fade near the lens, like the poles
     for (const [ox, oy, oz, r, c] of [[0, 1.9, 0, .95, PAL.leaf], [.55, 1.6, .3, .6, PAL.leafLight], [-.5, 1.65, -.25, .65, PAL.leafLight], [.1, 2.5, -.1, .6, PAL.leaf]]) {
-      mesh(new THREE.IcosahedronGeometry(r * s, 0), c, x + ox * s, oy * s, z + oz * s);
+      mesh(new THREE.IcosahedronGeometry(r * s, 0), nearM(c), x + ox * s, oy * s, z + oz * s);
       for (let k = 0; k < (bloom === true ? 7 : bloom || 0); k++) { // bloom: a number for a tree in full flower
         const v = new THREE.Vector3(rnd() - .5, rnd() * .9 - .1, rnd() - .5).normalize().multiplyScalar(r * s * .95);
         flowerSpots.push(new THREE.Vector3(x + ox * s + v.x, oy * s + v.y, z + oz * s + v.z));
@@ -216,7 +238,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     }
     solid(x, z, .6, .6);
   }
-  const cableM = M('#3b3040');
+  const cableM = nearM('#3b3040');
   function sag(a, b, drop = .45) { // sagging overhead cable between two points
     const mid = a.clone().lerp(b, .5); mid.y -= drop;
     mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 16, .014, 4), cableM, 0, 0, 0, { cast: false });
@@ -621,13 +643,14 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       const f2 = gui.addFolder('zoom (dist)'); f2.add(t, 'base', 6, 20, .5); for (const k of ['run', 'ride', 'war', 'talk']) f2.add(t, k, -8, 8, .5); f2.add(t, 'room', 3, 12, .5);
       const f3 = gui.addFolder('look-ahead'); f3.add(t, 'lookWalk', 0, 4, .1); f3.add(t, 'lookRun', 0, 5, .1); f3.add(t, 'lookRide', 0, 6, .1); f3.add(t, 'lookK', .1, 3, .05);
       const f4 = gui.addFolder('elevation · fade'); f4.add(t, 'elevMin', .05, .6, .01); f4.add(t, 'elevMax', .4, 1.4, .01); f4.add(t, 'fade', 0, 1, .05); f4.add(t, 'autoRotate');
-      gui.add({ JSON: () => { const j = JSON.stringify(t); console.log('camera tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
+      const f5 = gui.addFolder('ကင်မရာ အနီး'); f5.add(NEAR.uNearIn, 'value', 0, 4, .1).name('nearIn (m)'); f5.add(NEAR.uNearOut, 'value', .5, 8, .1).name('nearOut (m)'); // T12: the near-lens fade (CAMERA.md §5)
+      gui.add({ JSON: () => { const j = JSON.stringify({ ...t, nearIn: NEAR.uNearIn.value, nearOut: NEAR.uNearOut.value }); console.log('camera tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
     } catch (e) { console.warn('?tune: lil-gui did not load', e.message); }
   }
   function start() { // call once the zone has built its set: flowers + petals need the trees
     bake();
     if (flowerSpots.length) {
-      const fl = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.09, 0), M(PAL.padauk), flowerSpots.length);
+      const fl = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.09, 0), nearM(PAL.padauk), flowerSpots.length); // in the canopy: they fade with it
       flowerSpots.forEach((p, i) => fl.setMatrixAt(i, new THREE.Matrix4().setPosition(p)));
       fl.castShadow = false; scene.add(fl);
       petals = new THREE.InstancedMesh(new THREE.PlaneGeometry(.11, .07), new THREE.MeshLambertMaterial({ color: PAL.padauk, side: THREE.DoubleSide }), 70);
@@ -658,7 +681,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     for (const m of statics.slice(n0)) {
       if (Array.isArray(m.material)) continue;
       let c = own.get(m.material);
-      if (!c) { c = m.material.clone(); c.transparent = true; c.userData.base = m.material; own.set(m.material, c); }
+      if (!c) { c = m.material.clone(); c.transparent = true; c.userData.base = m.material; if (m.material.userData.near) furniture(c); own.set(m.material, c); } // clone() drops the near-fade hook: put it back
       m.material = c; box.expandByObject(m);
     }
     occluders.push({ box, mats: [...own.values()], a: 1 }); return r;
@@ -685,7 +708,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     scene.updateMatrixWorld(true);
     for (const c of added) c.traverse(m => {
       if (!m.isMesh || Array.isArray(m.material)) return;
-      let k = own.get(m.material); if (!k) { k = m.material.clone(); k.transparent = true; k.userData.base = m.material; own.set(m.material, k); }
+      let k = own.get(m.material); if (!k) { k = m.material.clone(); k.transparent = true; k.userData.base = m.material; if (m.material.userData.near) furniture(k); own.set(m.material, k); }
       m.material = k; occ.box.expandByObject(m);
     });
     occ.mats = [...own.values()];
@@ -713,7 +736,8 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     const groups = new Map(), ctr = new THREE.Vector3();
     // plain flat colours (most of the town) merge across colours as vertex colours, in 8-unit squares so the ones off screen
     // are still skipped; a see-through building stays its own set so it can fade. Anything that changes later (glowing
-    // windows, fading roofs, textures) merges by material as before.
+    // windows, fading roofs, textures) merges by material as before. T12: street furniture (furniture(), the near-lens fade)
+    // is a vertex-colour family of its own, so it keeps the fade hook (merged into the town's material it would lose it).
     const owner = new Map(); occluders.forEach((o, i) => o.mats.forEach(c => owner.set(c, i)));
     const win = M(PAL.window), vcMats = {};
     const plain = mt => mt.isMeshLambertMaterial && !mt.map && !mt.emissiveMap && !mt.vertexColors && !mt.emissive.getHex() && mt !== win && mt.userData.base !== win
@@ -729,9 +753,11 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       let key = mt.uuid + flags;
       if (plain(mt)) {
         const o = owner.get(mt); m.getWorldPosition(ctr);
-        key = `vc${mt.flatShading ? 'f' : ''}${mt.side}${flags}|` + (o ?? `${Math.floor(ctr.x / 8)},${Math.floor(ctr.z / 8)}`);
-        const fam = `${mt.flatShading}${mt.side}` + (o ?? '');
-        const vm = vcMats[fam] ??= new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: mt.flatShading, side: mt.side, transparent: o !== undefined });
+        const near = mt.userData.near ? 'n' : '';
+        const sq = near ? 16 : 8; /* thin furniture: bigger squares, fewer draw calls */
+        key = `vc${near}${mt.flatShading ? 'f' : ''}${mt.side}${flags}|` + (o ?? `${Math.floor(ctr.x / sq)},${Math.floor(ctr.z / sq)}`);
+        const fam = `${near}${mt.flatShading}${mt.side}` + (o ?? '');
+        const vm = vcMats[fam] ??= (x => near ? furniture(x) : x)(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: mt.flatShading, side: mt.side, transparent: o !== undefined }));
         if (o !== undefined && !occluders[o].mats.includes(vm)) { vm.userData.base = {}; occluders[o].mats.push(vm); }
         const n = g.attributes.position.count, col = new Float32Array(n * 3); for (let i = 0; i < n; i++) mt.color.toArray(col, i * 3);
         g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -759,7 +785,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, orbit, sky, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
-    padauk, flowerSpots, sag, bean, adopt, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
+    padauk, flowerSpots, sag, furniture, nearM, near: NEAR, bean, adopt, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }

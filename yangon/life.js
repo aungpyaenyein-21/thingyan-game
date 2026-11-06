@@ -2,15 +2,21 @@
 // vendors on their stools calling out, shoppers and old folk with offering trays in the morning, a trishaw doing the
 // market run, bicycles, the odd car, the yellow YBS bus and the people waiting for it, kids with a drum of water by the
 // road, chinlone once the day cools. None of it is a quest; it's the street. main.js owns the story people.
-import { PAL } from '../world.js?v=15';
-import { ROAD } from './set.js?v=19';
+// T12 (issue #41 §1): quiet zones (main.js: the home lane, the east lane, where the gang gathers) — none of these extras
+// spawn, park, idle or pass there; ① has them only on the side lane ↔ the main street. clearFor(secs): a story scene is on —
+// extras within 10 m of you walk off past 12 m and stay away till it's over.
+import { PAL } from '../world.js?v=16';
+import { ROAD } from './set.js?v=20';
 
-export function startLife(W, { L, BOUNDS, ground, phase }) {
+export function startLife(W, { L, BOUNDS, ground, phase, quiet = [] }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;
   const V = (x, z) => new THREE.Vector3(x, 0, z);
   const group = () => { const g = W.keep(new THREE.Group()); scene.add(g); return g; };
-  const npc = (o = {}) => { const c = bean({ prop: 'none', print: '', ...o }); c.g.position.y = ground(c.g.position.x, c.g.position.z); return c; };
-  const show = (c, on) => { c.g.visible = on; };
+  const npc = (o = {}) => { const c = bean({ prop: 'none', print: '', ...o }); c.g.position.y = ground(c.g.position.x, c.g.position.z); c.extra = true; return c; }; // extra: one of ours (main.js's story people are not)
+  const away = new Map(); let clear = null; // T12 clearFor: extras sent off for a scene → how they were (put back after) · the scene's spot + until when
+  const show = (c, on) => { const a = away.get(c); if (a) a.vis = on; else c.g.visible = on; }; // one who's been sent off stays off till they're back
+  // quiet zones: rects { x0, x1, z0, z1 } or circles { x, z, r }
+  const inQuiet = (x, z) => quiet.some(q => q.r !== undefined ? Math.hypot(x - q.x, z - q.z) < q.r : x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1);
   const isNight = () => W.night() > .3; // after dark the market packs up, the kids go in, the shops shut
   const morning = () => phase() === 'morning', evening = () => phase() === 'late' || phase() === 'evening';
   const lift = (c, y, k = .45) => { c.ty = { from: c.g.position.y, to: y, t: 0, k }; }; // ease the body up/down onto a seat
@@ -27,22 +33,25 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const wait = s => new Promise(r => jobs.push({ t: s, r }));
   const until = f => new Promise(r => jobs.push({ f, r }));
   const pts = list => list.map(p => p.isVector3 ? p.clone() : V(p[0], p[1]));
-  function walk(c, list, loop = 'walk') { return new Promise(r => { c.path = pts(list); c.pi = 0; c.walkLoop = loop; c.arrive = r; walkers.add(c); }); }
+  function walk(c, list, loop = 'walk') { return new Promise(r => { const w = { path: pts(list), pi: 0, walkLoop: loop, arrive: r }, a = away.get(c);
+    if (a) { a.own = w; return; } // sent off: their own walk waits till they're back
+    Object.assign(c, w); walkers.add(c); }); }
   const back = list => [...list].reverse();
   function stepWalker(c, dt) {
     const p = c.g.position, t = c.path[c.pi], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
-    if (d < .12) { if (++c.pi >= c.path.length) { walkers.delete(c); c.anim.setLoop('idle'); const r = c.arrive; c.arrive = null; r(); } return; }
-    const pp = W.player.g.position, blocked = Math.hypot(pp.x - (p.x + dx / d * .45), pp.z - (p.z + dz / d * .45)) < .5; // give way to you
-    if (blocked) { if (c.anim.loop !== 'idle' && !c.anim.one) c.anim.setLoop('idle'); return; }
+    if (d < .12 || (c.extra && !c.off && inQuiet(t.x, t.z))) { if (++c.pi >= c.path.length) { walkers.delete(c); c.anim.setLoop('idle'); const r = c.arrive; c.arrive = null; r(); } return; } // (a point in a quiet zone is skipped)
+    const pp = W.player.g.position, blocked = !c.off && Math.hypot(pp.x - (p.x + dx / d * .45), pp.z - (p.z + dz / d * .45)) < .5; // give way to you
+    const held = c.extra && !c.off && clear && W.time() < clear.until && Math.hypot(t.x - clear.at.x, t.z - clear.at.z) < 11 && Math.hypot(p.x - clear.at.x, p.z - clear.at.z) > 10; // a scene on: no walking in on it
+    if (blocked || held) { if (c.anim.loop !== 'idle' && !c.anim.one) c.anim.setLoop('idle'); return; }
     if (c.anim.loop !== c.walkLoop) c.anim.setLoop(c.walkLoop);
     let a = Math.atan2(dx, dz) - c.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); c.g.rotation.y += a * Math.min(1, dt * 8);
-    const s = Math.min(d, c.anim.speed * dt); p.x += dx / d * s; p.z += dz / d * s; p.y = (c.floor ?? ground)(p.x, p.z); // c.floor: someone walking about inside a shop
+    const s = Math.min(d, c.anim.speed * (c.off ? 1.3 : 1) * dt); p.x += dx / d * s; p.z += dz / d * s; p.y = (c.floor ?? ground)(p.x, p.z); // c.floor: someone walking about inside a shop
   }
   // vehicles: a group that faces +x locally, moved along a path at its own speed (bike, trishaw, cart)
   function drive(v, list) { return new Promise(r => { v.path = pts(list); v.pi = 0; v.arrive = r; drivers.add(v); }); }
   function stepDriver(v, dt) {
     const p = v.g.position, t = v.path[v.pi], dx = t.x - p.x, dz = t.z - p.z, d = Math.hypot(dx, dz);
-    if (d < .15) { if (++v.pi >= v.path.length) { drivers.delete(v); v.moving = false; const r = v.arrive; v.arrive = null; r(); } return; }
+    if (d < .15 || inQuiet(t.x, t.z)) { if (++v.pi >= v.path.length) { drivers.delete(v); v.moving = false; const r = v.arrive; v.arrive = null; r(); } return; }
     const sx = Math.sin(v.g.rotation.y) * (v.side || 0), sz = Math.cos(v.g.rotation.y) * (v.side || 0); // a sidecar sweeps its own strip
     const what = blockedAhead(v, p.x, p.z, dx / d, dz / d, 1.4, .15) || (v.side ? blockedAhead(v, p.x + sx, p.z + sz, dx / d, dz / d, 1.2, .2) : null);
     v.blockT = what ? (v.blockT || 0) + dt : 0; v.moving = !what || (what !== 'you' && v.blockT > (v.giveUp ?? 1e9)); // never through you
@@ -242,8 +251,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   }
   const ROUTES = [
     [[BOUNDS.x0 - 2, 11.7], [BOUNDS.x1 + 2, 11.7]], [[BOUNDS.x1 + 2, 6.95], [BOUNDS.x0 - 2, 6.95]], // along each kerb
-    [[BOUNDS.x0 - 2, 11.7], [-4.1, 11.7], [-3.6, 9.4], [-3.05, 6.9], [-3.05, 5.9], [-3.05, 2.8], [-3.6, 2.5], [-3.6, -2.4], [9.8, -2.4], [9.8, -10.4]],  // in on the eastbound side, across at the gap by the side lane, up it, along the back lane, out by the east lane
-    [[9.8, -10.4], [9.8, -2.4], [-3.6, -2.4], [-3.6, 2.5], [-3.05, 2.8], [-3.05, 5.9], [-3.0, 6.95], [BOUNDS.x0 - 2, 6.95]], // …and the other way
+    // (T12: the loop up the side lane, along the back lane and out by the east lane is gone — the home lane is a quiet zone)
     [[13.6, BOUNDS.z1 + 1], [13.6, 13.4], [13.8, 11.7], [BOUNDS.x1 + 2, 11.7]],                                            // down the market street (the ice cart keeps to the other side)
   ];
   async function cyclist(v, first) {
@@ -271,7 +279,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   const TRIKE_OUT = [[-2.2, 5.0], [-3.0, 7.4], [-3.1, 10.8], [11.6, 10.8], [12.6, 13.8], [12.6, 15.5]], TRIKE_BACK = [[13.4, 14.8], [13.4, 13.1], [12.8, 7.6], [-2.0, 7.6], [-2.2, 5.0], [-2.2, 1.0]];
   async function trishawRun() {
     for (;;) {
-      await wait(6 + rnd() * 8); await until(() => !isNight()); // parked for the night
+      await wait(6 + rnd() * 8); await until(() => !isNight() && !clear); // parked for the night (or while a scene plays)
       const fetch = !fare.g.visible && (morning() || rnd() < .4);
       if (fetch) { // she walks out of the flats, climbs into the sidecar
         fare.g.position.set(BOUNDS.x0 - .6, 0, 6.05); show(fare, true); await walk(fare, [[-3.1, 6.05], [-3.05, 5.9], [-3.05, 2.8], [-2.95, 1.7]]); // in from the street, up the side lane
@@ -377,7 +385,7 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
   roadKids.forEach(k => { k.home = k.g.position.clone(); k.coolT = 1 + rnd() * 2; k.dryT = 0; });
   function stepRoadKids(dt) {
     for (const k of roadKids) {
-      if (!k.g.visible || (k.coolT -= dt) > 0 || k.anim.one) continue;
+      if (!k.g.visible || away.has(k) || (k.coolT -= dt) > 0 || k.anim.one) continue;
       const range = k.ch.tool === 'gun' ? 4.5 : 1.9, kp = k.g.position;
       let best = null, bd = range;
       const consider = (g, pos) => { const d = Math.hypot(pos.x - kp.x, pos.z - kp.z); if (d < bd && d > .5) { bd = d; best = pos; } };
@@ -408,6 +416,54 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     for (const c of ring) { let d = Math.atan2(ball.position.x - c.g.position.x, ball.position.z - c.g.position.z) - c.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); c.g.rotation.y += d * Math.min(1, dt * 4); }
   }
 
+  // ---------- T12: clear the stage for a story scene ----------
+  // clearFor(secs, at = where you are): every extra of ours within 10 m of `at` hurries (1.3× a run) to a spot 12.5 m out — on open ground,
+  // by a line no wall or stall crosses (two legs if one won't do) — and is hidden there; whatever they were doing waits. Until
+  // `secs` have passed nobody walks back in; then each one is put back as they were, once you're 10 m from that spot.
+  // clearFor(secs, null) only resets how long the clear lasts (main.js: 8 s more once the scene is over).
+  const CLEAR_IN = 10, CLEAR_OUT = 12.5, solidOn = (x, z) => W.solids.some(s => x > s.x0 - .25 && x < s.x1 + .25 && z > s.z0 - .25 && z < s.z1 + .25);
+  const walkable = (x, z) => x > BOUNDS.x0 + .6 && x < BOUNDS.x1 - .6 && z > BOUNDS.z0 + .6 && z < BOUNDS.z1 - .6 && !solidOn(x, z);
+  const openSpot = (x, z) => walkable(x, z) && !inQuiet(x, z); // where they end up: never in a quiet zone (on the way through is fine)
+  const lineClear = (a, b, at) => { const n = Math.ceil(a.distanceTo(b) / .3); for (let i = 1; i <= n; i++) { const x = a.x + (b.x - a.x) * i / n, z = a.z + (b.z - a.z) * i / n;
+    if (solidOn(x, z) || x < BOUNDS.x0 + .4 || x > BOUNDS.x1 - .4 || z < BOUNDS.z0 + .4 || z > BOUNDS.z1 - .4 || Math.hypot(x - at.x, z - at.z) < .9) return false; } return true; }; // (not through you either)
+  function routeOff(from, at) { // the shortest way to 12.5 m out
+    const ring = []; for (let i = 0; i < 32; i++) { const a = i / 32 * Math.PI * 2, x = at.x + Math.sin(a) * CLEAR_OUT, z = at.z + Math.cos(a) * CLEAR_OUT; if (openSpot(x, z)) ring.push(V(x, z)); }
+    let best = null, bl = 1e9;
+    for (const t of ring) { const l = from.distanceTo(t); if (l < bl && lineClear(from, t, at)) { best = [t]; bl = l; } }
+    if (best) return best;
+    for (let r = 2; r <= 8; r += 2) for (let i = 0; i < 16; i++) { // one turn on the way
+      const a = i / 16 * Math.PI * 2, m = V(from.x + Math.sin(a) * r, from.z + Math.cos(a) * r); if (!walkable(m.x, m.z) || !lineClear(from, m, at)) continue;
+      for (const t of ring) { const l = r + m.distanceTo(t); if (l < bl && lineClear(m, t, at)) { best = [m, t]; bl = l; } }
+    }
+    return best;
+  }
+  const extras = () => W.chars.filter(c => c.extra && c.g.parent === scene && c.g.visible && !away.has(c));
+  function clearFor(secs, at = W.player.g.position) {
+    const now = W.time(); clear = { at: clear?.at ?? V(0, 0), until: now + secs, n: clear?.n ?? 0, popped: clear?.popped ?? 0 };
+    if (!at) return;
+    clear.at = V(at.x, at.z);
+    for (const c of extras()) {
+      const p = c.g.position; if (Math.hypot(p.x - at.x, p.z - at.z) >= CLEAR_IN) continue;
+      const a = { pos: p.clone(), ry: c.g.rotation.y, loop: c.anim.loop, vis: true, own: walkers.has(c) ? { path: c.path, pi: c.pi, walkLoop: c.walkLoop, arrive: c.arrive } : null };
+      away.set(c, a); clear.n++; c.ty = null;
+      const way = routeOff(V(p.x, p.z), clear.at);
+      if (!way) { c.g.visible = false; clear.popped++; continue; } // boxed in: just gone (counted — docs/ward/check.cjs prints it)
+      c.off = true; c.path = way; c.pi = 0; c.walkLoop = 'run'; c.arrive = () => { c.g.visible = false; c.off = false; }; walkers.add(c);
+      c.anim.chat = null; c.anim.setLoop('run');
+    }
+  }
+  function stepClear() {
+    if (!clear || W.time() < clear.until) return;
+    const pp = W.player.g.position; let left = 0;
+    for (const [c, a] of away) {
+      if (Math.hypot(pp.x - a.pos.x, pp.z - a.pos.z) < CLEAR_IN) { left++; continue; } // not while you're right there
+      away.delete(c); c.off = false; walkers.delete(c); c.arrive = null;
+      c.g.position.copy(a.pos); c.g.rotation.y = a.ry; c.g.visible = a.vis; c.anim.setLoop(a.loop);
+      if (a.own) { Object.assign(c, a.own); walkers.add(c); }
+    }
+    if (!left) clear = null;
+  }
+
   let lastDay = true;
   // ---------- the frame ----------
   W.tick(dt => {
@@ -429,11 +485,11 @@ export function startLife(W, { L, BOUNDS, ground, phase }) {
     { const day = !isNight(); if (day !== lastDay) { lastDay = day; for (const c of [...vendors, ...dayOnly, ...marketKnot.ppl, ...roadKids, lolly]) show(c, day); icecart.visible = day; } }
     // the ice cart rides in front of its man
     { const p = lolly.g.position, ry = lolly.g.rotation.y; icecart.position.set(p.x + Math.sin(ry) * .8, ground(p.x, p.z) + .02, p.z + Math.cos(ry) * .8); icecart.rotation.y = ry - Math.PI / 2; }
-    stepBus(dt); stepCars(dt); stepRoadKids(dt); stepChinlone(dt);
+    stepBus(dt); stepCars(dt); stepRoadKids(dt); stepChinlone(dt); stepClear();
     shove(0, 0, bus.position.x, bus.position.z, BUS.len / 2, .75);
     for (const v of CARS) if (v.on) shove(0, 0, v.g.position.x, v.g.position.z, 1, .5);
   });
   people.push(...ring, ...roadKids, alighter);
   const vehicles = () => [...(BUS.away <= 0 ? [bus.position] : []), ...CARS.filter(v => v.on).map(v => v.g.position)]; // for the engine sound
-  return { bus, BUS, knot, people, say, vehicles, walk, wait };
+  return { bus, BUS, knot, people, say, vehicles, walk, wait, clearFor, inQuiet, cleared: () => clear && { ...clear, away: away.size } };
 }
