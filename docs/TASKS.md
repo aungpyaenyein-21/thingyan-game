@@ -11,19 +11,21 @@
 |---|---|---|---|
 | T1 | [camlab — Go-Go Town! ပုံစံ ကင်မရာ + library ၃ ခု prototype](#t1-camlab) | ✅ 2026-10-31 (PR #28) | အခြား model |
 | T2 | [ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE](#t2-ဂိမ်းအစစ်-ကင်မရာ-ပြောင်း--palette) — `camera.js` / `sky.js` / `palette.js`၊ အဆောက်အအုံ ၄ ဘက်၊ hero glTF ၃၊ font self-host | ✅ 2026-11-01 (PR #30) | အခြား model |
-| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31) | other model |
+| T3 | [**ရေပက် core loop**](#t3-ရေပက်-core-loop) — weapons ×3, ammo, hit feel, fx (three.quarks), rules.js, Yuka AI, orbit | ✅ 2026-11-01 (PR #31 · vibrate guard #37) | other model |
 | T3b | [Day 4 + epilogue](#t3b-day-4--epilogue) — bridge-head match → the bowl into the creek (scripted) → ten kids fish it out → the 5 o'clock run → Bwa Bwa laughs → the pouring → photo | ⏳ spec ✅ (after T6 merge) | other model · branch `claude/day4` |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
-| T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ⏳ spec ✅ (T2 merge ပြီးမှ စ) | အခြား model · branch `claude/day1` |
-| T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5 + T3 merge) | other model · branch `claude/day23` |
+| T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ✅ 2026-11-02 (PR #32 · plan [plans/T5.md](plans/T5.md) · 2 reviews) — day 1 as SCENARIO v6; the story beats get reworked in T5b | အခြား model · branch `claude/day1` |
+| T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3: cinematic opening (31 lines), day-1 kit (no pumps), the bowl lent → forgotten → picked up by Thura, no throw, new night question | ⏳ spec ✅ (after T12 merge; T10 preferred) | other model · branch `claude/day1b` |
+| T12 | [Ward: clear, widen, near-lens fade](#t12-ward-clear-widen-near-lens-fade-issue-41) — issue #41 · life.js exclusion zone, lanes ×1.5 in set.js, dithered near-lens fade for street furniture (`?tune`) | 👀 plan 🔁 (2026-11-06, PR #42: 3 fixes — bake() merges plain mats, which row moves, quiet zone = whole back lane) → code | other model · branch `claude/ward` |
+| T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5b merge) — v6.1 deltas below: pump stall + 1,000 ks, Thura 「ကောက်ရတာ」, bowl never in ④'s yard | other model · branch `claude/day23` |
 | T6.5 | [Pose/tic editor + face editor](#t65-posetic-editor--face-editor) — `cast.html?edit`: keyframe JSON tics played by chibi.js, FACE table (CHARACTERS §14) with 14 new face parts, `anim.face()` | ⏳ spec ✅ (after T10 merge — chibi.js) | other model · branch `claude/editor` |
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
-| T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | ⏳ spec ✅ — start now | other model · branch `claude/goggles` |
-| T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ⏳ spec ✅ — start now (∥ T8) | other model · branch `claude/speed` |
+| T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | 👀 plan ✅ (2026-11-06, PR #38) → code | other model · branch `claude/goggles` |
+| T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | 👀 plan ✅ (2026-11-06, PR #39: gait 1.6 OK, jog default, hop-skip pose-only) → code | other model · branch `claude/speed` |
 | T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ⏳ spec ✅ (after T5 + T9 merge) | other model · branch `claude/talk` |
 | T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | ⏳ spec ✅ (after T8 merge — same war.js) | other model · branch `claude/rally` |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → **now: T5 (coding) ∥ T8 ∥ T9** → T11 (after T8) · T10 (after T5 + T9) → T6 → T3b → T6.5 → T7။ Files: T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5 = yangon/* story. Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → T5 ✅ → **now: T12 ∥ T8 ∥ T9** → T10 (after T9) · T11 (after T8) → **T5b (after T12; T10 preferred)** → T6 → T3b → T6.5 → T7။ Files: T12 = set.js/life.js/world.js fade hook + main.js anchors · T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move (world.js: T9 touches the player move only, T12 the material hook — different functions, rebase whoever lands second) · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5b = yangon/* story + cast.js gear toggles (after T12 and T10 — both touch main.js/cast.js). Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -297,7 +299,7 @@ Blender / Mixamo / glTF animation · touching world.js, war.js, yangon/* · chan
 | 4-4 **the bowl falls** | **scripted, ~40 s into round 2**: a balloon "from nobody" hits the rail → the bowl (kinematic until now) tips into the creek and floats with the current → both sides freeze (war.js pauses, kids' AI → `watch`) · Thura pushes his goggles up · Nga Zwe 「ငါ ဆင်းမယ်」 · Thura 「ငါလည်း」 · goal 「ချောင်းထဲ ကျသွားပြီ — အတူ ဆယ်」 · camera `focus(bowl)` down to the water, then `release` | the bowl = carry `bowl` item with a scripted path (no physics roll of the dice — T1 review #4): rail → splash → drift → snags on the **second** bamboo pole mid-creek · fx.js splash + wet ring |
 | 4-5 **fish it out** (10 kids, co-op) | the creek is too deep to wade. The bowl is snagged on a pole mid-stream. Roles, all visible: **Phoe Kyaw** uncoils the bike rope · **May Thu** ties a balloon to its end · **the player** throws it (`bigthrow`, power bar: the balloon must land just past the bowl — too short / too long = retry, three zones) · **the ④ kids** line the far bank and spray the pole with five pumps to free the bowl (a shared "push" bar fills while they spray — the player can add with their own pump) · **Nga Zwe + Thura** on the near bank under the bridge pull the rope in together (a two-button rhythm tap, Nga Zwe's side is the player's) · **Cho Cho** 「ချိုချို သိတယ်၊ ရေက ဒီဘက် စီးတယ်」 (points the throw side) · the bowl comes up **dented** — camera close, ten faces `shock` → the clock reads **4:40** | `rescue.js`: three sub-steps (throw → free → pull), each ≤ 40 s, no fail state (retry inline) · Yuka `watch`/`line-up` for the ④ kids · faces CHARACTERS §14 |
 | 4-6 **the run** (timer: 20 game-minutes = **2 real minutes**) | bridge → ④ lane (Phoe Wa blocks; Thura 「ဖိုးဝ ထိုင်」 → it sits) → market (the two mothers at tea, watching ten kids run past: 「ဟိုကလေးတွေ ဘယ်တုန်းက သူငယ်ချင်း ဖြစ်သွားတာလဲ」; Thura's mum calls 「သူရ! ဆိုင် —」 / 「ခဏနော်!」 — a 5 s stop) → ① → the mandat · **Phoe Kyaw pedals, `{name}` + the bowl on the rack** (the player steers the bike — T4 ride, ×1.8, bell), the other eight run alongside as a Yuka flock; stragglers catch up at each checkpoint · HUD: the clock counting to 5:00; arriving late is **not** a fail — Mum's face just says it (the scene still plays), arriving early gives the gang 10 s of breath | `run.js`: 4 checkpoints, the flock, the dog, the market stop · bike.js ride with a rack passenger (T4) |
-| 4-7 **5 o'clock** | at the mandat: Bwa Bwa, Mum, Saya Gyi, U Tin Maung; ten soaked, panting kids · `{name}` hands over the bowl: 「ဘွားဘွား… [သား/သမီး] ပစ်လွတ်လိုက်တာ။ ချိုင့်သွားတယ်」 (one line, no drama; carry `give` to Bwa Bwa) · Bwa Bwa looks at the dent and **laughs** (`joy`, the one `laugh` of the game): 「ဒီချိုင့်က ဘွားဘွား ၁၀ နှစ်တုန်းက…」 · May Thu 「…အကြွေး?」 / 「ဘာ အကြွေးလဲ」 / she crosses out 「ဖလား ၁」 (`note`) · Saya Gyi to Cho Cho 「ငါ မသိဘူး ထင်လား」 / 「…ချိုချို သိတယ်」 (`sly`) · Saya Gyi to the mandat: 「ဟွန်း… **ကောင်းတယ်**」 | story.js · talk director shots (T10) · `mandat.add('bowl')` on the seat |
+| 4-7 **5 o'clock** | at the mandat: Bwa Bwa, Mum, Saya Gyi, U Tin Maung; ten soaked, panting kids · `{name}` hands over the bowl: the v6.1 confession (SCENARIO §6 4-7: 「…ငှားပေးလိုက်လို့ ပျောက်သွားတာ။ ချိုင့်သွားတယ်」, creator's wording when it lands — one line, no drama; carry `give` to Bwa Bwa) · Bwa Bwa looks at the dent and **laughs** (`joy`, the one `laugh` of the game): v6.1 — the dent is Grandpa's (SCENARIO §6 4-7 line) · May Thu 「…အကြွေး?」 / 「ဘာ အကြွေးလဲ」 / she crosses out 「ဖလား ၁」 (`note`) · Saya Gyi to Cho Cho 「ငါ မသိဘူး ထင်လား」 / 「…ချိုချို သိတယ်」 (`sly`) · Saya Gyi to the mandat: 「ဟွန်း… **ကောင်းတယ်**」 | story.js · talk director shots (T10) · `mandat.add('bowl')` on the seat |
 | 4-8 **the pouring** | Bwa Bwa scoops from the drum with the bowl and pours over the ten heads (`pour` one-shot, the player only watches, 25 s) · 「နှစ်ဟောင်း ကုန်ပြီ」 · U Tin Maung tips a bucket over the grown-ups · **free splashing for everyone** (war.js free-play, no OUT, no grit, adults splashable, 60 s or until the player walks away) · camera pulls back: the finished mandat, the bowl on top | mandat complete · war.js `freePlay()` mode (no rules, no bars) |
 | 4-9 | night: Mum 「ဒီနေ့ ဘာလုပ်ခဲ့လဲ」 → **one choice only** 「အကုန် ပြောမယ်」 → fade | day.js |
 | epilogue | New Year's morning: everyone in white (CHARACTERS: colours only in hair / cans / the bowl) · the **photo** in front of the mandat: ten kids (① five + ④ five), Thura goggles on his forehead, Cho Cho holding Saya Gyi's pump, the bowl in the middle · the player presses the shutter (one tap; the frame freezes with a flash and a border) · Bwa Bwa's voice 「နောက်နှစ်လည်း ဒီဖလားနဲ့ပဲ」 · the photo yellows → end card → the save can be replayed from any day (`?day=`) | 🆕 photo mode: freeze + CanvasTexture of the frame, saved to `S.photo` (data URL) so the title screen can show it later |
@@ -382,6 +384,12 @@ main.js favour ၉ ခု (tea/padauk/fronds/drum/nozzle) + Mandalay ဘတ်�
 
 **Files** — T6 owns `yangon/main.js` (day 2/3 flow), `yangon/story.js` (scenes 2-x, 3-x), `yangon/set.js` (④ lane + fence gate, drain run, May Thu's porch + washing line, ice truck spot), `yangon/day.js` (day 2/3 ranges), `yangon/mandat.js` (sign, drum, ice parts), 🆕 `yangon/missions/` (`drain.js`, `lane4.js`, `laundry.js`, `icerun.js`), `cast.js` (Thura bowl helmet + goggles-up, U Tin Maung ice truck/radio props, Phoe Wa dog via critters.js). Not: `world.js`, `camera.js`, `war.js` core (call its skirmish API), `chibi.js`.
 
+### v6.1 deltas (issue #40, 2026-11-02) — read before the plan
+- **The bowl was picked up, not thrown.** Thura found it in ①'s lane on day 1 (SCENARIO §3 1-8). 2-6 line: 「လမ်းမှာ ကောက်ရတာ။ ကောက်ရတဲ့သူ ပိုင်တယ်」 (creator wording may change). Nothing in ④'s yard; `L.LAND4` and the fence arc are gone with T5b.
+- **Money + the pump stall (2-5-ခ).** Mum gives **1,000 ks** at 2-1 (`S.money`). A stall next to the betel uncle sells **steel pumps 400** and **goggles 500** (T8's stall is this one); fried rice for Phoe Wa 100. Buying the pump is required before M5 (goal line 「ပြွတ် ဝယ်」 shows only if the player walks past); goggles optional. The three pump kids (hero, Nga Zwe, Phoe Kyaw) buy theirs at the stall in one scene — cast.js `gear` on from here (T5b adds the toggle). May Thu keeps balloons, Cho Cho the toy gun.
+- **2-1**: Bwa Bwa looks at the **empty bench** at the house front, then at the hero — no line.
+- **Night cards**: 「④ · သူရ ခေါင်းပေါ်」 unchanged.
+
 ### Day 2 (SCENARIO §4)
 | scene | what | gameplay / reuse |
 |---|---|---|
@@ -450,6 +458,8 @@ Spec: [#34](https://github.com/aungpyaenyein-21/thingyan-game/issues/34).
 
 ## T10 Talk director (issue #35)
 
+> v6.1 (2026-11-02): the day-1 opening is a 9-line cinematic at home and a 22-line scene at the house front (SCENARIO §3) — T5b plays them through story.js; the per-speaker cuts come from T10. Scenes A/B are the first real test of the director: plan the `shot` data with those two scenes in mind.
+
 Spec: [#35](https://github.com/aungpyaenyein-21/thingyan-game/issues/35).
 
 **Decisions**
@@ -470,6 +480,67 @@ Spec: [#36](https://github.com/aungpyaenyein-21/thingyan-game/issues/36). Fits D
 - ai.js gains `duck` (visitors scatter out of rings, behind walls/drums) — reuse for T6's ambushes later.
 - `?mode=away` mirrors it against the player; `?rally=force` for testing.
 - Branch `claude/rally`, **after T8 merges** (both edit war.js `soak` / HUD). Plan file first.
+
+---
+
+## T5b Day 1 rework (issue #40)
+
+Spec: [#40](https://github.com/aungpyaenyein-21/thingyan-game/issues/40) + its two comments (no pumps on day 1; the day-1 kit table) — the creator's handwritten script, transcribed and checked. **SCENARIO v6.1 §3** is the authoritative scene list (1-1 … 1-9); CHARACTERS v1.3 has the kit and the new facts (the bowl is Grandpa's, Saya Gyi won't build this year, ကြီးမေ off-screen). Lines in SCENARIO marked 💭 are Fable's drafts — **ask the creator for the final wording before coding those** (issue #40 thread); everything else is verbatim.
+
+**Prereqs** — T5 merged (✅ #32). **T12 merged** (the lane anchors move; place the day-1 spots once). T10 preferred (the opening is a dialogue scene — with T10 the camera cuts to the speaker; without it, `W.talkWith` framing). Plan `docs/plans/T5b.md` first. Branch `claude/day1b`.
+
+**Files** — `yangon/story.js` (scenes 1-1 … 1-9 + `out`), `yangon/main.js` (day-1 flow), `yangon/day.js` (`STEPS[1]` = nine steps, `BEFORE`, `PHASE_OF`), `yangon/save.js` (`S.step` ids; bump KEY — day-1 saves from T5 are wiped), `yangon/set.js` (the house-front bench; **remove** ④'s fence `L.FENCE4` / `L.LAND4` and the lot's bowl seat stays for day 4), `yangon/mandat.js` (seat unchanged), `cast.js` (gear toggle: `pump` / `can` off, day-1 kit on), `yangon/hud.js` (nothing new expected). Not: `world.js` `camera.js` `chibi.js` `war.js`.
+
+### What changes, scene by scene (SCENARIO §3 has the lines)
+| scene | build |
+|---|---|
+| Prologue | title over the house front: the bowl on the bamboo bench, Bwa Bwa polishes it and goes in (15 s, no lines) → cut inside |
+| 1-1 Scene A | 9 lines at home, Mum + Bwa Bwa + hero, faces per the acting column (`sly` `worry` `pout` `ok`) · then the walk/run/jump hints on the way out (T5's) · `[သား/သမီး]` from the save's gender |
+| 1-2 Scene B | the hero steps out → **Nga Zwe walks up** (empty-handed) → **May Thu + Cho Cho together** → **Phoe Kyaw last** on the bike with two buckets, bell · 22 lines · each kid's kit visible on arrival (balloon / toy gun / buckets) · goal 「ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်」 after line 25 · **no weapons tutorial** |
+| 1-3 the lend | E 「ဖလား ယူ」 at the bench (carry `pick`, the bowl is `hand`) → walk to Nga Zwe → E 「ငဇွဲကို ပေး」 (carry `give`) · Nga Zwe holds it all day (his splash = scoop and fling, water from the bowl: reuse the cast `splash` anim with the bowl in `handR`) · goal 「ချိုချို နောက် လိုက် — ပစ္စည်း ရှာ」 |
+| 1-4 … 1-6 | M1–M3 as T5, **player tool = bucket** (the balloon is gone; `setTool('bucket')`; the M1 jet into the rope bucket becomes a bucket throw upward — same hit test) · each mission opens with a Cho Cho line 「ချိုချို သိတယ်၊ …」 pointing at the house (creator wording; 💭) |
+| 1-7 five o'clock | before the lift: Nga Zwe **sets the bowl down at the lane edge** (a fixed spot `BOWL_LEFT`, carry `place` on a ground target) to help carry the lights; camera `focus(bowl, { dist: 5, t: .4 })` for 2 s, then on · `mandat.add ×4` · Saya Gyi 「ဟွန်း… မဆိုးဘူး」 · **Bwa Bwa does not come** |
+| 1-8 gone | hero's line → Nga Zwe pats himself, `earBlush` → goal 「ဖလား — လမ်းထိပ် ပြန်ရှာ」 → the five run back (player-controlled, the gang follows) → `BOWL_LEFT` empty → **a far cut**: a kid with goggles on his forehead and a veg basket (a `bean` with Thura's look, unnamed) walks out of the lane's east end with a glint in the basket (the bowl mesh, `visible` in the basket for 3 s) → the player may chase → Mum's voice 「`{name}`! ၅ နာရီ!」 at the range edge (day.js `out` reused, no walk-back needed — the kid is gone) → the three v6 promise lines → goal 「ဖလား… ဘယ်သူမှ မပြောရ」 |
+| 1-9 night | the bench is empty (visible walking in) · Bwa Bwa's day question (💭 wording) · two answers (💭) · 「အင်း」 · ears red either way (until the creator says otherwise) · sleep → 「ရက် ၂ — မကြာခင်」 |
+
+### Rules of thumb
+- Lines verbatim; acting notes become `{ face, act }`, never text. Kids 「ငါ/မင်း」, Cho Cho by her name; `[သား/သမီး]` resolved from the save.
+- Scene A and B are long (9 and 22 lines) — they are the exception to "30 s per scene": auto-advance stays (tap skips), but **a line never disappears before its reading time**. Keep each under 90 s total.
+- Water in every mission still holds; the bowl is Nga Zwe's water tool all day so the player sees it constantly (the forgetting lands because of that).
+- Nothing in 1-8 lets the player catch the kid; Mum's voice is the wall, not an invisible one.
+
+### ✅ Done means
+- `?new` → Prologue → 1-1 … 1-9 → 「ရက် ၂」 in 12–16 min (I measure); one screenshot per scene; Scene A ≤ 60 s, Scene B ≤ 90 s at reading speed
+- Every non-💭 line appears verbatim (node one-liner like T5's); the 💭 lines use the creator's final wording from the issue thread
+- The bowl is in Nga Zwe's hand in the 1-4 / 1-5 / 1-6 screenshots; at the lane edge in 1-7; gone in 1-8; the bench is empty in 1-9
+- No steel pump on any kid on day 1 (`cast.js` gear off); the kit matches the table
+- `?day=1&step=1-8` loads straight into the run-back; reload mid-day resumes; phone 375; console 0; `docs/plans/T5b.md` + PR
+
+### Don't
+Day 2+ (T6 — the pump stall, Bwa Bwa's 2-1 look) · `world.js` `camera.js` `chibi.js` `war.js` · the talk director itself (T10) · commit unless asked
+
+---
+
+## T12 Ward: clear, widen, near-lens fade (issue #41)
+
+Spec: [#41](https://github.com/aungpyaenyein-21/thingyan-game/issues/41) + the creator's comment (§3: **option A only**). The issue text is the spec; this section adds decisions and file ownership.
+
+**Decisions**
+- **§1 exclusion zone** — `life.js` gets `quiet: [{ x, z, r }]` rects/circles from main.js: the house front (±8 m along the lane) and the gathering spot. `startLife` never spawns, routes or parks anyone inside; walkers whose path crosses it go round (reuse `blockedAhead` with the zone as a wall). `life.clearFor(seconds)` makes extras within 10 m of the player walk off while a story scene plays (story.js calls it on `play`). The market, main street and tea shop keep today's life.
+- **§2 widen ×1.5** — lanes in ① and the home lane to 1.5× today's width; house rows shift outward in `set.js`. One pass, done in set.js by **constants** (`LANE_W`, row offsets) so the mandat lot, bus stop, ④'s fence (until T5b removes it), the minimap and life paths all derive from them. Re-anchor T5's spots in main.js (`HOME_OUT MUM_DAY GATHER LOT FRONT BUCKET_SPOT AMP_SPOT TABLE TABLE_SPOT WATER`) and `day.js RANGES[1]` (the ① polygon). `BOUNDS` / `camBounds` grow with it.
+- **§3 near-lens fade (A)** — street furniture materials (poles, power lines, lamp arms, sign boards, awnings, tree canopies — the set.js furniture material set, baked or not) get an `onBeforeCompile` hook: alpha = `smoothstep(nearFadeNear, nearFadeFar, length(vViewPosition))`, dithered discard (an ordered 4×4 Bayer on `gl_FragCoord`) so there is no sorting, no `transparent`. Defaults `nearFadeFar 3`, `nearFadeNear 1.5`; both in `?tune` and CAMERA.md §5. Houses keep the occluder fade; nothing else changes. Not B / C / D.
+- Branch `claude/ward`. Plan `docs/plans/T12.md` first (½ page: the constants, the material list, the spots that move). Can start now, in parallel with T8 (war.js) and T9 (chibi.js / world.js player move — T12's world.js change is the material hook only).
+
+**Files** — `yangon/set.js` (widths, rows, wires), `yangon/life.js` (zone + clearFor), `world.js` (fade hook + tune + registering furniture), `yangon/main.js` (anchors only — no flow changes), `yangon/day.js` (range polygon), the minimap source, `docs/CAMERA.md` §5. Not: `story.js`, `camera.js`, `chibi.js`, `cast.js`, `war.js`.
+
+### ✅ Done means
+- Lane widths measure ~1.5× (print old/new in the plan); `?new&debug` day 1 plays 1-1 → 1-8 unchanged (T5's `check.cjs` still passes — update its coordinates)
+- No extras inside the house-front zone in `1-2.jpg` and during 1-1/1-2; a scene with 3 extras nearby: they walk off within 3 s
+- A walk down the home lane with the camera at dist 6 and 11, four az values: no pole / wire / canopy fills the frame; the fade is dithered, no popping (screenshots ×4 in `docs/ward/`)
+- FPS not worse than before on laptop (I measure, pane visible); console 0; `docs/plans/T12.md` + PR
+
+### Don't
+Story / flow changes · fade options B, C, D · `camera.js` collide changes · commit unless asked
 
 ---
 

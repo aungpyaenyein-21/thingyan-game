@@ -265,6 +265,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     c.anim = new ChibiAnimator(ch, (t, o) => emitFx(t, o, ch.root)); c.anim.T = rnd() * 3; // desync idle breathing/blinks
     chars.push(c); return c;
   }
+  // T5: someone built outside bean() — cast.js makeCast(), { g: ch.root, ch, anim } — joins the crowd: animated, culled off screen,
+  // splashable, and their buckets and squirters throw real water, like everyone else's
+  function adopt(c) {
+    if (!c.g.parent) scene.add(c.g); c.cool ??= rnd() * 2; c.idleT ??= 2 + rnd() * 6;
+    const own = c.anim.emit; c.anim.emit = (t, o) => { if (o) emitFx(t, o, c.g); own?.(t, o); };
+    chars.push(c); return c;
+  }
   const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .37, 32), new THREE.MeshBasicMaterial({ color: TONE.water, transparent: true, opacity: .85, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = .012;
   const setPlayer = c => { W.player = c; c.g.add(ring); camTarget.copy(c.g.position); }; // ring: find yourself at any zoom
@@ -752,7 +759,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const removeChar = c => { scene.remove(c.g); for (const list of [chars, W.idlers]) { const i = list.indexOf(c); if (i >= 0) list.splice(i, 1); } };
 
   const W = { THREE, scene, cam, renderer, orbit, sky, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
-    padauk, flowerSpots, sag, bean, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
+    padauk, flowerSpots, sag, bean, adopt, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
   return W;
 }
