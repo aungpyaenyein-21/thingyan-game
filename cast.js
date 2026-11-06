@@ -88,6 +88,7 @@ function goggles(ch, lens = '#ffb347') { // ရေကူးမျက်မှန
   const set = up => { hinge.rotation.x = up ? -1.1 : 0; }; set(true);
   return { hinge, set };
 }
+export { goggles }; // T8: war.js straps them on its kids (Thura, the ④ goggles kid, you once you own a pair)
 function wall(ch) { // a corner of brick wall, in front and to her right, that she leans out past
   const w = new THREE.Group(); w.position.set(-.3, 0, .22); ch.root.add(w); w.visible = false;
   mesh(new THREE.BoxGeometry(.62, 1.35, .1), '#c98a6a', w, 0, .675, 0); mesh(new THREE.BoxGeometry(.66, .06, .14), '#8a5a4a', w, 0, 1.38, 0);
