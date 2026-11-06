@@ -94,7 +94,7 @@ function wall(ch) { // a corner of brick wall, in front and to her right, that s
   for (let r = 0; r < 6; r++) for (let c = 0; c < 3; c++) mesh(new THREE.BoxGeometry(.17, .09, .012), '#b5765a', w, -.2 + c * .2 + (r % 2) * .1, .12 + r * .21, .053);
   ch.wall = w; return w;
 }
-function earBlush(ch) { // red ears over the real ones: they sit on the skull pivot, which carries the head shape's squash
+export function earBlush(ch) { // red ears over the real ones (exported: the ward puts them on {နာမည်} too — 1-8): they sit on the skull pivot, which carries the head shape's squash
   const sk = ch.head.children.find(o => !o.isMesh) ?? ch.head;
   const ms = [-1, 1].map(s => mesh(new THREE.SphereGeometry(.056, 10, 8), '#ff3a3a', sk, s * R * .99, -.02, 0)); for (const m of ms) { m.scale.set(.6, 1.1, .9); m.visible = false; } return v => ms.forEach(m => m.visible = v); }
 

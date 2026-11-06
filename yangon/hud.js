@@ -1,5 +1,5 @@
-// yangon/hud.js — the DOM side of day 1: dialogue box, toasts, pick-one menus (bus, barber, clothes, sign name),
-// the timing mini-game, fades, the area banner and the minimap. Everything that blocks walking goes through sync().
+// yangon/hud.js — the DOM side of the ward: dialogue box, toasts, pick-one menus (barber, clothes, the night choice),
+// the timing mini-game, the power bar (1-7 throw), fades, the area banner and the minimap. Everything that blocks walking goes through sync().
 const $ = id => document.getElementById(id);
 
 export function createHud(W) {
@@ -36,7 +36,7 @@ export function createHud(W) {
   W.tick(() => { const f = later.shift(); if (f) f(); });
   function menu({ title, items, close = 'ပိတ်မယ်', onClose, side = false }) {
     later.length = 0; // side: dock to the right so you can see yourself (wardrobe)
-    menuOpen = { onClose }; sync(); $('menu').classList.toggle('side', side);
+    menuOpen = { onClose, forced: close === null }; sync(); $('menu').classList.toggle('side', side);
     $('mtitle').textContent = title;
     const list = $('mlist'); list.innerHTML = '';
     for (const it of items) {
@@ -51,11 +51,11 @@ export function createHud(W) {
       b.addEventListener('click', e => { e.stopPropagation(); if (it.on?.(b)) { if (b.isConnected) { list.querySelectorAll('button.on').forEach(x => x.classList.remove('on')); b.classList.add('on'); } } else closeMenu(); }); // isConnected: a pick that re-opened the menu has marked its own choice
       list.appendChild(b);
     }
-    $('mclose').textContent = close; $('menu').hidden = false;
+    $('mclose').textContent = close ?? ''; $('mclose').hidden = close === null; $('menu').hidden = false; // close: null = you have to pick one (the night question)
     (list.querySelector('button.on:not(:disabled)') ?? list.querySelector('button:not(:disabled)'))?.focus({ preventScroll: true }); // keyboard starts on your current choice
   }
-  function closeMenu() { if (!menuOpen) return; const f = menuOpen.onClose; menuOpen = null; $('menu').hidden = true; sync(); f?.(); }
-  $('mclose').addEventListener('click', e => { e.stopPropagation(); closeMenu(); });
+  function closeMenu(byUser) { if (!menuOpen || byUser && menuOpen.forced) return; const f = menuOpen.onClose; menuOpen = null; $('menu').hidden = true; sync(); f?.(); }
+  $('mclose').addEventListener('click', e => { e.stopPropagation(); closeMenu(true); });
 
   // ---------- timing mini-game: tap when the cursor is in the gold band; the band narrows each hit ----------
   function timing({ title, need = 3, band = .26, speed = 1.6, onHit, onMiss, onDone }) {
@@ -63,7 +63,18 @@ export function createHud(W) {
     $('mtitle2').textContent = title; $('mini').hidden = false; drawMini();
   }
   function drawMini() { $('mcount').textContent = `${mm(mini.hits)}/${mm(mini.need)}`; $('mband').style.width = `${mini.band * 100}%`; $('mband').style.left = `${(1 - mini.band) / 2 * 100}%`; }
-  function snap() {
+  // ---------- power bar (1-7): the marker runs along the bar and back; tap to let go — how far along is how hard ----------
+  const MINI_SMALL = $('mini').querySelector('small')?.textContent;
+  function power({ title, speed = .9 }) {
+    return new Promise(r => {
+      mini = { power: true, T: 0, speed, r }; sync();
+      $('mtitle2').textContent = title; $('mcount').textContent = ''; const s = $('mini').querySelector('small'); if (s) s.textContent = 'E / တို့ — ပစ်';
+      Object.assign($('mband').style, { left: '0%', width: '100%', background: 'linear-gradient(90deg,#fff6ea,#f2c14e,#c8553d)' }); $('mini').hidden = false;
+    });
+  }
+  const powerAt = m => 1 - Math.abs((m.T * m.speed) % 2 - 1); // 0 → 1 → 0 …
+  function snap(force) {
+    if (mini.power) { const x = force ?? powerAt(mini), f = mini.r; mini = null; $('mini').hidden = true; $('mband').style.background = ''; const s = $('mini').querySelector('small'); if (s) s.textContent = MINI_SMALL; sync(); f(x); return; }
     const x = (Math.sin(mini.T * mini.speed) + 1) / 2;
     if (Math.abs(x - .5) < mini.band / 2) { mini.hits++; mini.band *= .75; mini.speed *= 1.25; mini.onHit?.(); } else mini.onMiss?.();
     drawMini();
@@ -83,7 +94,7 @@ export function createHud(W) {
     if (scene) return true;
     return false;
   }
-  addEventListener('keydown', e => { if (e.code === 'Escape' && menuOpen) closeMenu(); });
+  addEventListener('keydown', e => { if (e.code === 'Escape' && menuOpen) closeMenu(true); });
 
   // ---------- minimap: areas + roads painted once, then you and the gold goal dots on top ----------
   let mapBase = null, mapK = 1, B = null;
@@ -111,14 +122,14 @@ export function createHud(W) {
   }
 
   W.tick((dt, T) => {
-    if (mini) { mini.T += dt; $('mcur').style.left = `${(Math.sin(mini.T * mini.speed) + 1) / 2 * 100}%`; }
+    if (mini) { mini.T += dt; $('mcur').style.left = `${(mini.power ? powerAt(mini) : (Math.sin(mini.T * mini.speed) + 1) / 2) * 100}%`; }
     if (toastT > 0 && (toastT -= dt) <= 0) $('toast').hidden = true;
     if (areaT > 0 && (areaT -= dt) <= 0) $('area').classList.remove('on');
   });
 
-  const tool = t => { $('tool').innerHTML = t === 'gun' ? '<i>🔫</i><b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : '<i>🪣</i><b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun'); };
+  const tool = t => { $('tool').innerHTML = t === 'gun' ? '<i>🔫</i><b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : t === 'balloon' ? '<i>🎈</i><b>ပူဖောင်း</b><small>R · ပြောင်း</small>' : '<i>🪣</i><b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun' || t === 'balloon'); };
   tool(W.player?.ch.tool ?? 'bucket');
-  return { talk, say, next, toast, area, menu, closeMenu, timing, fade, cinematic, action, initMap, tool,
+  return { talk, say, next, toast, area, menu, closeMenu, timing, power, release: p => mini?.power && snap(p), fade, cinematic, action, initMap, tool,
     map: (p, goals, T, dt) => { if ((mapT -= dt) <= 0 && mapBase) { mapT = .1; drawMap(p, goals, T); } },
     talking: () => !!talking, menuOpen: () => !!menuOpen, mini: () => mini, busy: () => !!(talking || menuOpen || mini || scene) };
 }
