@@ -27,7 +27,7 @@ cam.lookAt(target + (0, .55, 0))
 
 | context | Δdist | elev | target | ဦးစားပေး | ဝင်/ထွက် အချက် |
 |---|---|---|---|---|---|
-| `idle` / `walk` | 0 (base 11) | curve | ကစားသူ | — | ပုံသေ |
+| `idle` / `walk` / `jog` (T9) | 0 (base 11) | curve | ကစားသူ | — | ပုံသေ |
 | `run` | +3 | curve | + look-ahead ၂ m | ၁ | `anim.loop === 'run'` ≥ .3 s / ရပ်ရင် ၁ s ကြာမှ ပြန် |
 | `ride` (စက်ဘီး) | +5 | curve + .1 | + look-ahead ၂.၅ m | ၂ | T4 `ride.on` |
 | `war` (ရေပက်စစ် zone) | +2 | curve | ကစားသူ | ၃ | rules.js zone ထဲ |
@@ -41,7 +41,7 @@ cam.lookAt(target + (0, .55, 0))
 
 ## ၃။ ကြိုကြည့် (look-ahead)
 
-- ရွေ့တဲ့ ဦးတည်ချက် × `L` (walk 1.2 m · run 2 m · ride 2.5 m) ကို target ပေါ် ပေါင်း၊ lerp `1 − e^(−dt·.5)` (၂ s လောက်)
+- ရွေ့တဲ့ ဦးတည်ချက် × `L` (walk 1.2 m · jog 1.6 m (T9) · run 2 m · ride 2.5 m) ကို target ပေါ် ပေါင်း၊ lerp `1 − e^(−dt·.5)` (၂ s လောက်)
 - ရပ်ရင် ၀ ဆီ ပြန် (တူညီတဲ့ နှေးနှုန်း) — ကစားသူ screen အလယ် **အောက် ၄၀%** လောက် (ရှေ့ ပိုမြင်)
 - ဘေးတိုက် ပြေးလှည့်ရင် look-ahead ကြောင့် ကင်မရာ ယိမ်းတာ ကြီးလွန်းရင် `L` ×.5 (`?tune`)
 
@@ -90,7 +90,7 @@ cam.context(name, on)                            // run/ride/war/talk — day.js
 
 ## ၈။ `?tune` (lil-gui) ဂဏန်း
 
-`followK 3.2` · `azK 9` · `distOutK 2` · `distInK 4` · `base 11` · `run +3` · `ride +5` · `war +2` · `talk −4` · `room 6` · `lookWalk 1.2` · `lookRun 2` · `lookK .5` · `elevMin .22` · `elevMax .85` · `fade .25` · `autoRotate off` — JSON copy → ဒီစာ §၁–၃ ပြန်ပြင်
+`followK 3.2` · `azK 9` · `distOutK 2` · `distInK 4` · `base 11` · `run +3` · `ride +5` · `war +2` · `talk −4` · `room 6` · `lookWalk 1.2` · `lookJog 1.6` · `lookRun 2` · `lookK .5` · `elevMin .22` · `elevMax .85` · `fade .25` · `autoRotate off` — JSON copy → ဒီစာ §၁–၃ ပြန်ပြင်
 
 ## ၉။ ✅ စမ်းသပ်ချက် (T2 review)
 

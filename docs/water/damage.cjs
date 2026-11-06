@@ -2,7 +2,7 @@
 const { chromium } = require('playwright'); const OUT = __dirname + '/';
 (async () => { const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await b.newPage({ viewport: { width: 900, height: 560 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.goto('http://localhost:8792/war.html?mode=home&dt=.1&clock=900'); await p.waitForFunction(() => window.war?.kids, null, { timeout: 120000 });
+  await p.goto(`http://localhost:${process.argv[2] || 8792}/war.html?mode=home&dt=.1&clock=900`); await p.waitForFunction(() => window.war?.kids, null, { timeout: 120000 });
   const game = async s => { const t0 = await p.evaluate(() => war.W.time()); await p.waitForFunction(t => war.W.time() > t, t0 + s, { timeout: 300000, polling: 200 }); };
   await game(.4); const out = {};
   for (const [wpn, d] of [['pump', 3], ['balloon', 5], ['bucket', 1.2]]) {
