@@ -63,7 +63,7 @@ cam.lookAt(target + (0, .55, 0))
   - `nearIn 1.5` m (ဒီထက် နီး = လုံးဝ ပျောက်) · `nearOut 3` m (ဒီထက် ဝေး = အပြည့်) — `?tune` folder 「ကင်မရာ အနီး」 · uniform မျှ (`W.near`)
   - ဆိုင်မျက်နှာစာ ဆိုင်းဘုတ် (နံရံပေါ်) — fade **မလုပ်** (အိမ်နဲ့ အတူ occluder fade)။ အိမ်/တိုက် = အပေါ်က occluder fade ပဲ
   - `discard` က color pass ပဲ — **ပျောက်နေတဲ့ ဓာတ်တိုင်ရဲ့ အရိပ် ကျန်** (shadow pass က ကိုယ်ပိုင် depth material) — လက်ခံ
-  - `bake()`: furniture က vertex-colour family သီးသန့် (`near`) — 8 m ကွက်လိုက် ပေါင်းပေမဲ့ hook မပျောက်။ `occluder()` / `hero()` clone ရင် hook ပြန်တပ်
+  - `bake()`: furniture က vertex-colour family သီးသန့် (`near`) — 16 m ကွက်လိုက် (ကျန်တာ 8 m) ပေါင်းပေမဲ့ hook မပျောက်။ `occluder()` / `hero()` clone ရင် hook ပြန်တပ်
 
 ## ၆။ ဇာတ်လမ်း scene API (`camera.js`)
 
