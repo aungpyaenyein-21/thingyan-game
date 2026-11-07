@@ -60,7 +60,7 @@ cam.lookAt(target + (0, .55, 0))
 - `talk` ထဲမှာ NPC ဆီလည်း ray ၁ ကြောင်း (NPC မမြင်ရရင် ဖျော့)
 - ကင်မရာက နံရံ **အတွင်း** ဝင်သွားရင် (dist ကြီး + building နီး) → dist ကို ထိတဲ့ အကွာ −.3 ထိ ချ (sphere-cast ရိုးရိုး) — ဒါ ၆ ထောင့် screenshot မှာ စစ်
 - **ကင်မရာ အနီး fade (T12 · issue #41 §3 option A)** — လမ်းဘေး ပစ္စည်း (ဓာတ်တိုင် + ကန့်လန့်တန်း · ဓာတ်ကြိုး `sag()` · မီးတိုင် လက်/အုံ (bulb နဲ့ glow မပါ — MeshBasic/additive) · လွတ်လွတ် ရပ်တဲ့ ဆိုင်းဘုတ် · အမိုးစ (awning) · သင်္ကြန် အလံတန်း · ပိတောက်ပင် အရွက် + ပင်စည်) က ကင်မရာနဲ့ နီးရင် **ပျောက်** — world.js `furniture(material)` (`W.furniture` / `W.nearM(colour)`): fragment ရဲ့ ကင်မရာ အကွာ `length(vViewPosition)` ကို `smoothstep(nearIn, nearOut)` · 4×4 Bayer threshold (`gl_FragCoord`) ထက် နည်းရင် `discard`။ **opaque** — sort မလို၊ ခုန် မရှိ (pixel လိုက် ပါးသွား)
-  - `nearIn 1.5` m (ဒီထက် နီး = လုံးဝ ပျောက်) · `nearOut 3` m (ဒီထက် ဝေး = အပြည့်) — `?tune` folder 「ကင်မရာ အနီး」 · uniform မျှ (`W.near`)
+  - `nearIn 2.5` m (ဒီထက် နီး = လုံးဝ ပျောက်) · `nearOut 5` m (ဒီထက် ဝေး = အပြည့်) — `?tune` folder 「ကင်မရာ အနီး」 · uniform မျှ (`W.near`)
   - ဆိုင်မျက်နှာစာ ဆိုင်းဘုတ် (နံရံပေါ်) — fade **မလုပ်** (အိမ်နဲ့ အတူ occluder fade)။ အိမ်/တိုက် = အပေါ်က occluder fade ပဲ
   - `discard` က color pass ပဲ — **ပျောက်နေတဲ့ ဓာတ်တိုင်ရဲ့ အရိပ် ကျန်** (shadow pass က ကိုယ်ပိုင် depth material) — လက်ခံ
   - `bake()`: furniture က vertex-colour family သီးသန့် (`near`) — 16 m ကွက်လိုက် (ကျန်တာ 8 m) ပေါင်းပေမဲ့ hook မပျောက်။ `occluder()` / `hero()` clone ရင် hook ပြန်တပ်

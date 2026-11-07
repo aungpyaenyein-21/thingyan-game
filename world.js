@@ -122,7 +122,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   // fragment is to the camera, smoothstep(uNearIn, uNearOut), against a 4×4 Bayer threshold on the pixel → discard. Opaque,
   // no sorting, no popping: it thins out pixel by pixel. (The shadow pass draws with its own depth material: a faded pole
   // still casts its shadow.) nearM(colour): a flat furniture material of its own, cached — never the M() colour cache.
-  const NEAR = { uNearIn: { value: 1.5 }, uNearOut: { value: 3 } };
+  const NEAR = { uNearIn: { value: 2.5 }, uNearOut: { value: 5 } };
   const NEAR_GLSL = `uniform float uNearIn; uniform float uNearOut;
 float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
   const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.); return (B[k] + .5) / 16.; }
