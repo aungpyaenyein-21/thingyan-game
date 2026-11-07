@@ -3,8 +3,8 @@
 import * as THREE from 'three';
 import { Pathfinding } from 'three-pathfinding';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeCast } from './cast.js?v=12';
-import { createOrbit } from './camera.js?v=3';
+import { makeCast } from './cast.js?v=13';
+import { createOrbit } from './camera.js?v=4';
 import { createSky } from './sky.js?v=4';
 import { PAL } from './palette.js?v=1';
 

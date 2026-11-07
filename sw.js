@@ -1,7 +1,7 @@
 // sw.js — keeps the Yangon day on the phone so it opens without a connection. Everything the game loads is fetched once
 // when this installs, then served from the cache. Bump VERSION with every push that changes a game file: the new
 // worker downloads the new set, waits, and pwa.js offers a reload (never mid-play on its own).
-const VERSION = 'y20';
+const VERSION = 'y21';
 const CACHE = 'thingyan-' + VERSION;
 const THREE = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const CORE = [
@@ -10,7 +10,7 @@ const CORE = [
   'cast.js', 'carry.js', 'bike.js', 'rules.js', // T5: the named cast, carrying (the bowl), Phoe Kyaw's bike, the water-fight rules
   'art/home.glb', 'art/teashop.glb', 'art/stalls.glb', // T2 hero buildings (the town shows code-built stand-ins until these load)
   'fonts/fonts.css', 'fonts/NotoSansMyanmar-myanmar.woff2', 'fonts/NotoSansMyanmar-latin.woff2', 'fonts/NotoSansMyanmar-latin-ext.woff2',
-  ...['boot', 'main', 'downtown', 'hud', 'icons', 'life', 'rooms', 'save', 'set', 'wardrobe', 'brew', 'pulley', 'bulbs', 'day', 'story', 'mandat'].map(f => `yangon/${f}.js`),
+  ...['boot', 'main', 'downtown', 'hud', 'icons', 'life', 'rooms', 'save', 'set', 'wardrobe', 'brew', 'pulley', 'bulbs', 'day', 'story', 'mandat', 'talk'].map(f => `yangon/${f}.js`),
   'audio/credits.json',
   ...['bell', 'bike', 'crow1', 'crow2', 'crow3', 'crow4', 'crowd', 'dog', 'gecko', 'handbell', 'hit', 'horn', 'night', 'pagoda',
     'sparrow1', 'sparrow2', 'sparrow3', 'sparrow4', 'splash', 'squirt', 'stadium', 'traffic'].map(f => `audio/${f}.mp3`),

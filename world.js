@@ -11,10 +11,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=32';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=7';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=33';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=8';
 import { PAL as TONE } from './palette.js?v=1';
-import { createOrbit } from './camera.js?v=3';
+import { createOrbit, TALK } from './camera.js?v=4';
 import { createSky, createSurround } from './sky.js?v=4';
 
 export { THREE };
@@ -633,7 +633,7 @@ float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
     if (camBounds) { v3.x = THREE.MathUtils.clamp(v3.x, camBounds.x0, camBounds.x1); v3.z = THREE.MathUtils.clamp(v3.z, camBounds.z0, camBounds.z1); }
     else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
     if (ORBIT) {
-      orbit.context('talk', !!(W.frozen && W.talkWith), W.talkWith?.g.getWorldPosition(new THREE.Vector3())); // a conversation: frame the two of you (main.js talk() sets W.talkWith)
+      orbit.context('talk', !!(W.frozen && W.talkWith && !W.talkDirector), W.talkWith?.g.getWorldPosition(new THREE.Vector3())); // a conversation: frame the two of you (main.js talk() sets W.talkWith) — off while the T10 talk director cuts per line (?talk=0 brings this back)
       v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3, moving && !W.frozen ? { dir: oMove, kind: pa.loop === 'run' || pa.loop === 'jog' ? pa.loop : 'walk' } : null); camTarget.copy(orbit.state.target).setY(0);
     } // only the target is clamped to camBounds, never the camera: turning at the edge doesn't jump
     else { camTarget.lerp(v3, Math.min(1, dt * 3)); cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget); }
@@ -659,6 +659,12 @@ float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
       const f4 = gui.addFolder('elevation · fade'); f4.add(t, 'elevMin', .05, .6, .01); f4.add(t, 'elevMax', .4, 1.4, .01); f4.add(t, 'fade', 0, 1, .05); f4.add(t, 'autoRotate');
       const f5 = gui.addFolder('ကင်မရာ အနီး'); f5.add(NEAR.uNearIn, 'value', 0, 4, .1).name('nearIn (m)'); f5.add(NEAR.uNearOut, 'value', .5, 8, .1).name('nearOut (m)'); // T12: the near-lens fade (CAMERA.md §5)
       gui.add({ JSON: () => { const j = JSON.stringify({ ...t, nearIn: NEAR.uNearIn.value, nearOut: NEAR.uNearOut.value }); console.log('camera tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
+      const tf = gui.addFolder('စကားပြော'); // T10: the talk director's shots (camera.js TALK, CAMERA.md §၆-ခ) — the next line's cut uses them
+      tf.add(TALK, 'glide', 0, 1, .05); tf.add(TALK, 'back', .3, 3, .05).name('ots back (m)'); tf.add(TALK, 'third', 0, .6, .01).name('ots ⅓ offset'); tf.add(TALK, 'edge', 0, 1, .05).name('ots listener edge');
+      tf.add(TALK, 'otsElev', -.1, .6, .01); tf.add(TALK, 'otsMax', 2, 8, .5); tf.add(TALK, 'otsMin', 0, 1, .05); tf.add(TALK, 'twoMin', 2, 8, .1); tf.add(TALK, 'twoK', 1, 3, .05); tf.add(TALK, 'twoElev', 0, .8, .01); tf.add(TALK, 'twoYaw', 0, 1.2, .05);
+      tf.add(TALK, 'closeDist', 1, 4, .1); tf.add(TALK, 'closeElev', -.1, .5, .01); tf.add(TALK, 'closeYaw', 0, 1.2, .05); tf.add(TALK, 'wideElev', .1, 1, .01); tf.add(TALK, 'wideYaw', 0, 1.5, .05); tf.add(TALK, 'wideSpeaker', 0, 1, .05); tf.add(TALK, 'widePad', 0, 3, .1); tf.add(TALK, 'wideMin', 2, 12, .5); tf.add(TALK, 'wideMax', 4, 20, .5);
+      tf.add(TALK, 'pullMax', 0, 1, .05); tf.add(TALK, 'roomSpan', 20, 90, 5); tf.add(TALK, 'boxLift', 0, .6, .02);
+      tf.add({ JSON: () => { const j = JSON.stringify(TALK); console.log('talk tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
       const mf = gui.addFolder('လှုပ်ရှား'); // T9: the player's legs (MOVE) and the kids' gait (chibi.js KID) — docs/plans/T9.md
       mf.add(MOVE, 'walkBand', .1, .9, .05); mf.add(MOVE, 'runBand', .3, 1, .05); mf.add(MOVE, 'accel', 0, .5, .01); mf.add(MOVE, 'stop', 0, .5, .01); mf.add(MOVE, 'turn', .02, .5, .01);
       mf.add(MOVE, 'carryWalk'); mf.add(MOVE, 'hopEvery', 1, 20, .5); mf.add(KID, 'gait', .8, 2.2, .05); mf.add(KID, 'stride', .7, 1.3, .02); mf.add(KID, 'lean', 0, .4, .01); mf.add(KID, 'hop');
@@ -804,7 +810,7 @@ float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
 
   const W = { THREE, scene, cam, renderer, orbit, sky, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, furniture, nearM, near: NEAR, bean, adopt, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
-    onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
+    onAction: null, frozen: false, paused: false, talkDirector: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
   W.move = { tune: MOVE, kid: KID, speed: () => vMove }; // T9: ?tune and docs/speed/check.cjs
   return W;
 }
