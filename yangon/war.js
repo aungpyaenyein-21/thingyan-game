@@ -578,7 +578,7 @@ function nextRound() { // everyone back to the start line, full cans, full grit
   ai.reset(); W.snapCam(); $('end').hidden = true; playing = true; W.frozen = false; window.war.result = null; scored = ''; score(); roundLabel();
   say(`ပွဲ ${MY(round)} — စ!`, 2);
 }
-const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
+const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : '') + (P.has('goggles') ? '&goggles=' + P.get('goggles') : ''); }; // T8: ?goggles survives picking a side
 $('home').onclick = () => go('home'); $('away').onclick = () => go('away');
 $('alley').onclick = () => { location.search = '?map=' + (ALLEY ? 'lot' : 'alley') + (AUTO ? '&auto' : ''); };
 $('alley').textContent = ALLEY ? 'မြေပုံ: လမ်းကြား → ကွက်လပ်' : 'မြေပုံ: ကွက်လပ် → လမ်းကြား';
