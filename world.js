@@ -663,7 +663,7 @@ float nearBayer(vec2 p) { ivec2 i = ivec2(mod(p, 4.0)); int k = i.x + i.y * 4;
       tf.add(TALK, 'glide', 0, 1, .05); tf.add(TALK, 'back', .3, 3, .05).name('ots back (m)'); tf.add(TALK, 'third', 0, .6, .01).name('ots ⅓ offset'); tf.add(TALK, 'edge', 0, 1, .05).name('ots listener edge');
       tf.add(TALK, 'otsElev', -.1, .6, .01); tf.add(TALK, 'otsMax', 2, 8, .5); tf.add(TALK, 'otsMin', 0, 1, .05); tf.add(TALK, 'twoMin', 2, 8, .1); tf.add(TALK, 'twoK', 1, 3, .05); tf.add(TALK, 'twoElev', 0, .8, .01); tf.add(TALK, 'twoYaw', 0, 1.2, .05);
       tf.add(TALK, 'closeDist', 1, 4, .1); tf.add(TALK, 'closeElev', -.1, .5, .01); tf.add(TALK, 'closeYaw', 0, 1.2, .05); tf.add(TALK, 'wideElev', .1, 1, .01); tf.add(TALK, 'wideYaw', 0, 1.5, .05); tf.add(TALK, 'widePad', 0, 3, .1); tf.add(TALK, 'wideMin', 2, 12, .5);
-      tf.add(TALK, 'pullMax', 0, 1, .05); tf.add(TALK, 'roomSpan', 20, 90, 5);
+      tf.add(TALK, 'pullMax', 0, 1, .05); tf.add(TALK, 'roomSpan', 20, 90, 5); tf.add(TALK, 'boxLift', 0, .6, .02);
       tf.add({ JSON: () => { const j = JSON.stringify(TALK); console.log('talk tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
       const mf = gui.addFolder('လှုပ်ရှား'); // T9: the player's legs (MOVE) and the kids' gait (chibi.js KID) — docs/plans/T9.md
       mf.add(MOVE, 'walkBand', .1, .9, .05); mf.add(MOVE, 'runBand', .3, 1, .05); mf.add(MOVE, 'accel', 0, .5, .01); mf.add(MOVE, 'stop', 0, .5, .01); mf.add(MOVE, 'turn', .02, .5, .01);

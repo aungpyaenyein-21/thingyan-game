@@ -60,6 +60,53 @@ const results = {};
     await p.context().close();
   }
 
+  // ---------- 2. walls: every day-1 talker where they talk, the listener at the 8 snapped azimuths, ots / two / wide ----------
+  if (want('walls')) {
+    log('2. walls');
+    const p = await open('new&day=1&step=1-3');
+    const r = await p.evaluate(async () => {
+      const { OZ, OX } = await import('./yangon/set.js?v=22'), z = zone, W = z.W, V = (x, zz) => new W.THREE.Vector3(x, 0, zz), P = z.people;
+      const lift = c => c.ch.head.getWorldPosition(new W.THREE.Vector3()).y - c.g.position.y; // head height over the feet
+      const room = n => { const b = z.rooms[n].bounds; return { open: Math.PI / 4, x0: b.x0, z0: b.z0 }; };
+      const H = z.rooms.home, T = z.rooms.tea, B = z.rooms.barber, C = z.rooms.clothes;
+      // where each line of day 1 is said (main.js / story.js: stage(), the cues, FRONT, LOT …) — voice lines (Mum at 1-7, the ④ kid) aren't shot
+      const spots = [
+        ['mom', '1-1 home', P.mom, V(H.mom.x, H.mom.z), room('home')],
+        ['bwabwa', '1-6 mandat', P.bwabwa, V(3.6, 3.45), null], ['bwabwa', '1-8 home', P.bwabwa, V(H.chair.x, H.chair.z), room('home')],
+        ['ngazwe', '1-2 lane', P.ngazwe, V(-3.3, -2.3), null], ['ngazwe', '1-7 front', P.ngazwe, V(3.4, 4.0), null],
+        ['maythu', '1-2 lane', P.maythu, V(-2.6, -3.0), null], ['maythu', '1-7 front', P.maythu, V(4.2, 4.4), null],
+        ['phoekyaw', '1-7 front', P.phoekyaw, V(5.9, 3.8), null],
+        ['chocho', '1-2 peek', P.chocho, V(-3.95, -3.35 + OZ), null], ['chocho', '1-4 amp', P.chocho, V(-3.3, .3), null], ['chocho', '1-7 front', P.chocho, V(6.5, 3.2), null],
+        ['sayagyi', '1-6 front', P.sayagyi, V(5.2, 4.3), null], ['kozaw', '1-5 table', P.kozaw, V(-.5, 3.3), null],
+        ['vendor', 'shop: corner', P.mom, V(-2.0, -.3), null], ['teaboss', 'shop: tea', P.mom, V(T.boss.x, T.boss.z + 1.2), room('tea')],
+        ['barber', 'shop: barber', P.mom, V(B.boss.x, B.boss.z), room('barber')], ['tailor', 'shop: clothes', P.mom, V(C.boss.x, C.boss.z), room('clothes')],
+      ];
+      const rows = [], hl = lift(z.hero);
+      for (const [id, where, c, at, rm] of spots) {
+        const S = at.clone().setY((rm ? .05 : W.ground(at.x, at.z)) + lift(c));
+        for (let k = 0; k < 8; k++) {
+          const a = k * Math.PI / 4, lx = at.x + Math.sin(a) * 1.6, lz = at.z + Math.cos(a) * 1.6, L = V(lx, lz).setY((rm ? .05 : W.ground(lx, lz)) + hl);
+          for (const kind of ['ots', 'two', 'wide']) {
+            const s = W.orbit.talkShot(S, L, kind, { room: rm, dry: true });
+            rows.push({ id, where, az: k * 45, want: kind, got: s.kind, pull0: +s.pull0.toFixed(2), pull: +s.pull.toFixed(2), fallback: s.fallback });
+          }
+        }
+      }
+      return rows;
+    });
+    const by = {}, sum = { shots: r.length, blocked0: 0, fallback: 0, blocked: 0 };
+    for (const x of r) {
+      const k = `${x.id} (${x.where})`, o = by[k] ??= { shots: 0, blocked0: 0, fallback: 0, blocked: 0, kinds: {} };
+      o.shots++; o.kinds[x.want + '→' + x.got] = (o.kinds[x.want + '→' + x.got] ?? 0) + 1;
+      if (x.pull0 > .3) { o.blocked0++; sum.blocked0++; } if (x.fallback > 0) { o.fallback++; sum.fallback++; } if (x.pull > .3) { o.blocked++; sum.blocked++; }
+    }
+    for (const [k, o] of Object.entries(by)) log('  ', k.padEnd(26), `shots ${o.shots} · first choice in a wall ${o.blocked0} · fallback ${o.fallback} · still in a wall ${o.blocked}`, JSON.stringify(o.kinds));
+    log('   total', JSON.stringify(sum));
+    for (const want of ['ots', 'two', 'wide']) { const xs = r.filter(x => x.want === want); log(`   ${want}: ${xs.length} shots · first choice > 30 % pulled in ${xs.filter(x => x.pull0 > .3).length} · fallback ${xs.filter(x => x.fallback > 0).length} · after fallback > 30 % ${xs.filter(x => x.pull > .3).length}`); }
+    results.walls = { sum, by, rows: r };
+    await p.context().close();
+  }
+
   await b.close();
   log('console errors:', errs.length, errs.slice(0, 5));
   require('fs').writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 1));

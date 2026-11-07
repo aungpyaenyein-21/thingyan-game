@@ -16,12 +16,15 @@ export const TUNE = { followK: 3.2, azK: 9, distOutK: 2, distInK: 4, base: 11, r
   lookWalk: 1.2, lookJog: 1.6, lookRun: 2, lookRide: 2.5, lookK: .5, elevMin: .22, elevMax: .85, fade: .25, autoRotate: false };
 export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) * Math.pow(clamp((d - 5) / 19, 0, 1), .8); // close in = low and level (sky shows), far out = looking down
 // T10 talk shots (CAMERA.md §၆-ခ) — ?tune 「စကားပြော」. ots: behind the listener's shoulder (back m behind them, the side offset solved
-// so the speaker sits on the ⅓ line and the listener's head near the frame's edge), single over otsMax m apart · two: side-on to
-// the pair · close: the speaker's face · wide: the group, fitted (+ widePad m). dist / elev per kind; pullMax: a camCollide pull-in
-// past this share of the distance counts as "in a wall" → the other shoulder → two → wide; roomSpan: in a room, az within ± this of the open side
+// per FOV so the speaker sits on the ⅓ line (third) and the listener's head towards the frame's edge (edge)); over otsMax m apart a
+// close single instead, and a two when they stand too close for it (the listener would get under otsMin of the way out) · two: side-on
+// to the pair (twoYaw towards the speaker's face) · close: the speaker's face · wide: the group, fitted + widePad m (wideYaw towards
+// the speaker's face). pullMax: a camCollide pull-in past this share of the distance = "in a wall" → the other shoulder → two →
+// wide → close; roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
+// share of the half-frame (the dialogue box covers the bottom); glide: seconds per cut; headDrop: the target under the head (m)
 export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .7, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
   twoMin: 3.2, twoK: 1.9, twoPad: 1.4, twoElev: .25, twoYaw: .35, closeDist: 2.0, closeElev: .08, closeYaw: .45, wideElev: .55, wideYaw: .8, widePad: 1, wideMin: 4.5,
-  pullMax: .3, roomSpan: 60 };
+  pullMax: .3, roomSpan: 60, boxLift: .22 };
 const PRI = { run: 1, ride: 2, war: 3, talk: 4, room: 5 }; // scene (6) sits above them all (CAMERA.md §၂)
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -89,6 +92,10 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     const d = Math.max(TALK.twoMin, SL * TALK.twoK, (SL + TALK.twoPad) / (2 * th));
     return { kind: 'two', target: flat(S).add(flat(L)).multiplyScalar(.5).setY((S.y + L.y) / 2 - .3), az: toward(Math.atan2(n.x, n.z), TALK.twoYaw), dist: d, elev: TALK.twoElev };
   };
+  const raise = sh => { // tilt down a little (the camera stays put): the faces sit above the dialogue box, which covers the bottom of the frame
+    const { target: T, az: a, dist: d, elev: e } = sh, C = T.clone().add(new THREE.Vector3(Math.sin(a) * Math.cos(e) * d, Math.sin(e) * d, Math.cos(a) * Math.cos(e) * d));
+    T.y -= d * halfTan().v * TALK.boxLift; sh.dist = C.distanceTo(T); sh.elev = Math.asin(clamp((C.y - T.y) / sh.dist, -1, 1)); return sh;
+  };
   const pullOf = (sh, room) => { // the share of the distance a wall would take off (0 = clear, 1 = not allowed)
     const { target: T, az: a, dist: d, elev: e } = sh, dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
     let p = 0;
@@ -112,12 +119,13 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
       const near = sh => Math.abs(wrap(sh.az - (room ? room.open : s.az)));
       n = pa < pb - .05 || (Math.abs(pa - pb) <= .05 && near(a) <= near(b)) ? n0 : n0.clone().negate();
     }
-    const other = n.clone().negate(), tries = kind === 'wide' ? [['wide', n], ['wide', other]] : kind === 'two' ? [['two', n], ['two', other], ['wide', n]]
-      : [[kind, n], [kind, other], ['two', n], ['two', other], ['wide', n]]; // the other shoulder, then side-on, then the group
+    const other = n.clone().negate(), tries = kind === 'wide' ? [['wide', n], ['wide', other], ['two', n], ['two', other], ['close', n]]
+      : kind === 'two' ? [['two', n], ['two', other], ['wide', n], ['close', n], ['close', other]]
+      : [[kind, n], [kind, other], ['two', n], ['two', other], ['wide', n], ['close', n], ['close', other]]; // the other shoulder, then side-on, then the group, last a single (short: rarely blocked)
     let best = null, pull0 = null;
     for (let i = 0; i < tries.length; i++) {
       const sh = shotOf(tries[i][0], S, L, tries[i][1], group, face);
-      fit(sh, room); const p = pullOf(sh, room); if (pull0 === null) pull0 = p;
+      raise(fit(sh, room)); const p = pullOf(sh, room); if (pull0 === null) pull0 = p;
       if (!best || p < best.pull - 1e-3) best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n };
       if (p <= TALK.pullMax) { best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n }; break; }
     }
