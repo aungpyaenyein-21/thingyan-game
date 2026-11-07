@@ -108,7 +108,12 @@ const results = {};
   }
 
   // a made-up scene (docs only, never in the game): injected into story.js's SCENES and played through main.js's story.play
-  const inject = (p, id, lines) => p.evaluate(([id, lines]) => { zone.story.SCENES[id] = { lines }; const h = zone.hero, c = zone.people; h.g.position.set(1.6, 0, 1.2); h.g.rotation.y = Math.PI; zone.W.snapCam(); }, [id, lines]);
+  // the gang stood round you on the lot, 1.5–2 m apart, once the day's title card has gone
+  const inject = (p, id, lines) => p.evaluate(async ([id, lines]) => { const z = zone; z.story.SCENES[id] = { lines };
+    await new Promise(r => { const t = z.W.time(); z.W.tick(() => { if (z.W.time() > t + 2.5) r(); }); });
+    const at = { hero: [1.6, 1.2, Math.PI], ngazwe: [.1, .9, 1.4], maythu: [1.9, -.4, -.3], chocho: [3.1, .8, -1.6], phoekyaw: [2.0, 2.8, 2.9] };
+    for (const [k, [x, zz, ry]] of Object.entries(at)) { const c = z.people[k]; c.g.position.set(x, z.W.ground(x, zz), zz); c.g.rotation.y = ry; c.g.visible = true; c.anim.setLoop('idle'); }
+    z.W.snapCam(); }, [id, lines]);
   const LONG = 'မဏ္ဍပ် ငါ စီမံမယ်၊ မင်းတို့ ပစ္စည်း သယ်ခဲ့';
 
   // ---------- 3. tap-through: 20 lines at 10 taps / s ----------
@@ -166,5 +171,6 @@ const results = {};
 
   await b.close();
   log('console errors:', errs.length, errs.slice(0, 5));
-  require('fs').writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 1));
+  const fs = require('fs'), RJ = path.join(OUT, 'results.json'); let all = {}; try { all = JSON.parse(fs.readFileSync(RJ, 'utf8')); } catch {}
+  fs.writeFileSync(RJ, JSON.stringify({ ...all, ...results, errors: errs }, null, 1)); // the parts run this time replace theirs
 })().catch(e => { console.error(e); process.exit(1); });
