@@ -174,7 +174,9 @@ ChibiAnimator.prototype._loopPose = function (name) { if (!EXTRA_LOOPS[name]) re
 const bell = (t, a, b, r = .3) => ease(clamp01((t - a) / .3)) * (1 - ease(clamp01((t - b) / r))); // 0 → 1 after a, back to 0 after b
 const moveTo = (m, parent, x, y, z, rx = 0, ry = 0, rz = 0) => { parent.add(m); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); };
 const moveHome = (m, h) => { h.parent.add(m); m.position.copy(h.pos); m.rotation.copy(h.rot); };
-Object.assign(ONESHOT, { bow: 2.4, lift: 2.6, note: 2.2, lob: 1.5, whistle: 1.6, towel: 2.0, goggles: .9, shrug: 1.6, scold: 1.6, ring: 1.4 });
+Object.assign(ONESHOT, { bow: 2.4, lift: 2.6, note: 2.2, lob: 1.5, whistle: 1.6, towel: 2.0, goggles: .9, shrug: 1.6, scold: 1.6, ring: 1.4,
+  point: 1.3, hips: 1.4, scratch: 1.4, nod: 1.0 }); // T10 talk gestures (yangon/talk.js): pose only, no props, anyone can play them
+export const GESTURES = ['point', 'hips', 'scratch', 'nod'];
 Object.assign(ChibiAnimator.prototype, {
   // scolded: head drops, shoulders slump, both hands clasped low in front, and it holds
   _bow(p, t) { const k = bell(t, 0, 2.0, .35); Object.assign(p, { headRx: .7 * k, spineRx: .18 * k, armLx: -.3 * k, armRx: -.3 * k, armLz: -.22 * k, armRz: .22 * k, elbowL: -.55 * k, elbowR: -.55 * k, handLz: .5 * k, handRz: -.5 * k, sy: 1 - .03 * k, expr: 'normal', mouth: 'smile' }); return p; },
@@ -201,9 +203,28 @@ Object.assign(ChibiAnimator.prototype, {
   _shrug(p, t) { const k = bell(t, 0, 1.2, .35); if (this.ch.pump) this.ch.pump.visible = t > 1.5; Object.assign(p, { armLx: -.4 * k, armRx: -.4 * k, armLz: 1.0 * k, armRz: -1.0 * k, elbowL: -1.7 * k, elbowR: -1.7 * k, handLz: -1.1 * k, handRz: 1.1 * k, sy: 1 + .035 * k, headRz: .22 * k, spineRz: -.04 * k, expr: 'happy', mouth: 'open' }); return p; },
   // 「ကလင်」: the bell comes up in front of the chest and the thumb flicks it, twice
   _ring(p, t) { const k = bell(t, 0, 1.0, .3), fl = k > .8 ? Math.max(0, Math.sin(t * 22)) : 0; Object.assign(p, { armRx: -1.25 * k, elbowR: -1.5 * k, armRz: -.2 * k, handRz: .5 * fl, headRz: .1 * k, expr: 'happy', mouth: 'smile' }); if (!this.thrown && t > .45) { this.thrown = true; this.emote('note', 1); } return p; },
+  // T10 talk gestures — short (≤ 1.4 s), pose only, the mouth left to the talker's flap
+  // point: the right arm comes up straight at whoever you face (the director turns the speaker to the listener first), a little lean in
+  _point(p, t) { const k = bell(t, .05, .95, .3), j = k > .9 ? .05 * Math.sin(t * 18) : 0; Object.assign(p, { armRx: -1.45 * k + j, armRz: -.12 * k, elbowR: -.08 * k, handRz: 0, spineRx: .07 * k, headRx: -.05 * k, spineRy: -.08 * k }); return p; },
+  // hips: both hands to the hips, elbows out, weight onto one leg, head tilted — 「ဟုတ်လား」
+  _hips(p, t) { const k = bell(t, 0, 1.05, .3); Object.assign(p, { armLx: .35 * k, armRx: .35 * k, armLz: .75 * k, armRz: -.75 * k, elbowL: -1.5 * k, elbowR: -1.5 * k, handLz: .3 * k, handRz: -.3 * k, hipsRz: .07 * k, spineRz: -.07 * k, x: .03 * k, kneeL: .12 * k, headRz: .1 * k, spineRx: -.04 * k }); return p; },
+  // scratch: a hand to the back of the head, rubbing, head tipped down and over — not sure
+  _scratch(p, t) { const k = bell(t, 0, 1.05, .3), r = k > .8 ? Math.sin(t * 19) : 0; Object.assign(p, { armRx: -2.55 * k, armRz: -.55 * k, elbowR: -2.2 * k, handRz: (.3 + .35 * r) * k, headRx: .14 * k, headRz: -.14 * k, spineRz: .04 * k }); return p; },
+  // nod: two quick dips of the head
+  _nod(p, t) { const ph = clamp01(t / .9) * 2, d = Math.sin(Math.PI * (ph % 1)) ** 2 * (t < .9 ? 1 : 0); Object.assign(p, { headRx: p.headRx + .28 * d, spineRx: p.spineRx + .04 * d }); return p; },
   // 「ဟဲ့!」: a step forward, hand on the hip, the other arm pointing straight at you, chin out
   _scold(p, t) { const k = bell(t, 0, 1.2, .3); Object.assign(p, { armRx: -1.35 * k, armRz: -.55 * k, elbowR: -.05, handRz: 0, armLx: -.35 * k, armLz: .65 * k, elbowL: -1.9 * k, handLz: -.4 * k, spineRx: .12 * k, headRx: -.06 * k, legRx: -.3 * k, kneeL: .15 * k, expr: 'normal', mouth: t > .3 && t < .9 ? 'open' : 'smile' }); if (!this.thrown && t > .2) { this.thrown = true; this.emote('bang', 1.2); } return p; },
 });
+
+// a one-shot ended early (anim.skip: off screen, or the talk director's tap-through): the props its pose carried go home, so nothing
+// stays in a hand (the book, the pencil, the whistle, the towel) or hidden (the pump a shrug tucks away) or shown (the balloon a lob winds up)
+const skip0 = ChibiAnimator.prototype.skip;
+ChibiAnimator.prototype.skip = function (dt) {
+  const was = this.one; skip0.call(this, dt); if (!was || this.one) return;
+  const c = this.ch;
+  for (const k of ['book', 'pencil', 'whistle', 'towel']) { const m = c[k], h = c[k + 'Home']; if (m && h && m.parent !== h.parent) moveHome(m, h); }
+  if (was === 'shrug' && c.pump) c.pump.visible = true; if (was === 'lob' && c.balloon) c.balloon.visible = false; this.thrown = false;
+};
 
 export function makeCast(id, emit) {
   const def = CAST.find(c => c.id === id);
