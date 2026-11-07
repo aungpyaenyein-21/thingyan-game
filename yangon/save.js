@@ -1,6 +1,6 @@
 // yangon/save.js — the story save (SCENARIO v6): which day, which scene, what's up on the mandat, what you said at night.
 // One key per story version: the v4 "nine favours" save (thingyan.day1.v2) is wiped the first time this loads.
-import { LOOK0 } from './wardrobe.js?v=5';
+import { LOOK0 } from './wardrobe.js?v=6';
 
 const KEY = 'thingyan.v6', OLD = ['thingyan.day1.v2'];
 // day: 1–4 · step: the scene you're in ('1-1' … '1-8'; 'done' once the day card is up) — saved after every scene
