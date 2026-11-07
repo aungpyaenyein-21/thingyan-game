@@ -393,7 +393,7 @@ export function makeChibi(opts = {}) {
   // age: kids are small with a bigger head, elders a little shorter and hunched
   const scale = o.size ?? (o.age === 'kid' ? .72 : o.age === 'elder' ? .9 : 1); // size: cast sizes (.60 small kid, .82 big kid …)
   root.scale.setScalar(scale);
-  const hunch = o.hunch ?? (o.age === 'elder' ? .3 : 0), gait = o.age === 'elder' ? .7 : o.age === 'kid' ? 1.15 : 1; // elders: bent + slow steps, kids: quick
+  const hunch = o.hunch ?? (o.age === 'elder' ? .3 : 0), gait = o.age === 'elder' ? .7 : 1; // elders: bent + slow steps · kids: quick, from KID (read live by the animator, so ?tune moves them at once)
 
   // carry sockets (T4): empty pivots on the rig — whatever is parented here rides the animation. No meshes, so skin() leaves them be
   const sockets = { handR: arms[1].hand, handL: arms[0].hand, chest: pivot(spine, 0, .14, .3), back: pivot(spine, 0, .12, -.22),
@@ -492,11 +492,19 @@ const clamp01 = t => Math.min(1, Math.max(0, t));
 // one-shots: jump | splash (bucket throw) | squirt (water gun) | shake | wave | kadaw | kick (chinlone) | laugh | call (vendor beckon)
 //            | sitdown | standup
 // anim.chat = 'speak' | 'listen' | null: an upper-body layer over idle / sit / eat / vend for people talking in a group
-export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 },
+export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, jog: { f: 2.0, A: .63, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 },
   eat: { f: 0, A: 0, speed: 0 }, vend: { f: 0, A: 0, speed: 0 }, squat: { f: 0, A: 0, speed: 0 }, ready: { f: 0, A: 0, speed: 0 },
   push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 }, coast: { f: 0, A: 0, speed: 0 } };
 const LEG = UP + LO;
-for (const k of ['walk', 'run', 'push', 'carry']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
+for (const k of ['walk', 'jog', 'run', 'push', 'carry']) LOOPS[k].speed = LEG * LOOPS[k].A * LOOPS[k].f * Math.PI * 2 * .92; // ground speed that keeps the stance foot planted
+// T9 (docs/plans/T9.md) kids move quick and nimble. On walk / jog / run a kid's cadence and ground speed are × KID.gait (both, so the
+// stance foot stays planted) and the leg swing × KID.stride (pose and speed together); every other loop keeps the old kid gait 1.15.
+// At size .72 (legK .8): walk 1.59 · jog 2.62 · run 3.81 m/s. lean: forward, × ground speed / 3.8. hop: the hop-skip on the run,
+// pose only (never the speed or the heading), kids only; anim.hopGap = seconds between hops ([min, max] or one number for the player).
+// world.js ?tune 「လှုပ်ရှား」 edits these live.
+export const KID_GAIT = 1.6;
+export const KID = { gait: KID_GAIT, stride: 1, lean: .1, hop: true, oldGait: 1.15 };
+const MOVES = ['walk', 'jog', 'run'];
 export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6, pick: .55, bigthrow: .75 };
 const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup', 'pick', 'bigthrow']; // one-shots you can't walk through
 const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle', 'coast'];
@@ -531,6 +539,7 @@ export class ChibiAnimator {
     this.from = base(); this.out = base(); this.blendT = 1;
     this.tailA = 0; this.tailV = 0; this.lastStance = 0; this.seed = Math.random() * 10; this.chat = null;
     this.load = null; this.reach = { L: null, R: null }; // T4 carry: load = 'hand' | 'front' | 'head' (upper-body layer) · reach.L/R = { target: Object3D | world Vector3, w: 0..1 } (arm IK)
+    this.kid = ch.opts?.age === 'kid'; this.hopGap = [3, 5]; this.hopOK = true; this.hopT = null; this.hopK = -1; // T9 hop-skip (no Math.random here: cast.html's regression replays a seeded sequence)
   }
   _chat(p, sat) { // talking in a group: the speaker's hands go, the others nod along
     const T = this.T + this.seed;
@@ -543,7 +552,9 @@ export class ChibiAnimator {
       if (!sat) { p.armLx = p.armRx = -.5; p.armLz = -.3; p.armRz = .3; p.elbowL = p.elbowR = -1.45; } // arms folded
     }
   }
-  setCharacter(ch) { this.ch = ch; }
+  setCharacter(ch) { this.ch = ch; this.kid = ch.opts?.age === 'kid'; }
+  gaitOf(loop) { return this.ch.gait * (!this.kid ? 1 : MOVES.includes(loop) ? KID.gait : KID.oldGait); } // T9: kids' walk / jog / run are quicker
+  strideOf(loop) { return this.kid && MOVES.includes(loop) ? KID.stride : 1; }
   setLoop(name) { if (name === this.loop && !this.one) return; this.loop = name; this.one = null; this._xfade(); }
   play(name) {
     if (name === 'splash' && this.ch.tool === 'gun' && this.ch.gun) name = 'squirt'; // whatever's in your hands
@@ -557,19 +568,20 @@ export class ChibiAnimator {
     if (!c.bubble) { c.bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: emoteTex(kind), depthWrite: false })); c.bubble.renderOrder = 10; c.root.add(c.bubble); }
     c.bubble.material.map = emoteTex(kind); c.bubble.visible = true; this.emT = 0; this.emDur = dur;
   }
-  get speed() { return STILL.includes(this.one) ? 0 : LOOPS[this.loop].speed * this.ch.scale * this.ch.legK * this.ch.gait; } // ground speed (units/s)
+  get speed() { return STILL.includes(this.one) ? 0 : LOOPS[this.loop].speed * this.ch.scale * this.ch.legK * this.gaitOf(this.loop) * this.strideOf(this.loop); } // ground speed (units/s)
   _xfade() { this.from = { ...this.out }; this.blendT = 0; }
 
   update(dt) {
     this.T += dt; this.blendT += dt;
     const L = LOOPS[this.loop];
-    this.freq += ((L.f || 0) * this.ch.gait - this.freq) * clamp01(dt * 6);
-    this.phi += this.freq * Math.PI * 2 * dt;
+    this.freq += ((L.f || 0) * this.gaitOf(this.loop) - this.freq) * clamp01(dt * 6);
+    const phi0 = this.phi; this.phi += this.freq * Math.PI * 2 * dt;
     let pose = this._loopPose(this.loop);
-    const c = this.ch, sat = SEATED.includes(this.loop), walking = ['idle', 'walk', 'run'].includes(this.loop);
+    if (this.kid && MOVES.includes(this.loop)) this._nimble(pose, phi0, dt);
+    const c = this.ch, sat = SEATED.includes(this.loop), walking = ['idle', 'walk', 'jog', 'run'].includes(this.loop);
     if (c.cane && walking) { pose.armRx = pose.armRx * .3 - .3; pose.armRz = -.1; pose.elbowR = -.5; } // cane hand held forward
     if ((c.tool === 'bucket' || c.hang) && walking) { pose.armLx *= .3; pose.armLz = Math.max(pose.armLz, .3); pose.elbowL = -.06; } // a heavy bucket / basket: arm straight, out from the leg
-    if (this.chat && !['walk', 'run', 'push', 'carry', 'cycle'].includes(this.loop)) this._chat(pose, sat);
+    if (this.chat && !['walk', 'jog', 'run', 'push', 'carry', 'cycle'].includes(this.loop)) this._chat(pose, sat);
     if (this.load && walking) this._loadPose(pose);
     if (this.one) {
       this.oneT += dt; const d = ONESHOT[this.one];
@@ -589,8 +601,8 @@ export class ChibiAnimator {
     if (name === 'idle') {
       const b = Math.sin(T * 2.2);
       p.sy = 1 + .012 * b; p.spineRx = .02 * b; p.armLz = .14 + .03 * b; p.armRz = -.14 - .03 * b; p.elbowL = p.elbowR = -.15; p.headRz = .05 * Math.sin(T * .9);
-    } else if (name === 'walk' || name === 'run' || name === 'push' || name === 'carry') {
-      const run = name === 'run', A = LOOPS[name].A, f = this.phi, s = Math.sin(f), c = Math.cos(f);
+    } else if (name === 'walk' || name === 'jog' || name === 'run' || name === 'push' || name === 'carry') {
+      const run = name === 'run', A = LOOPS[name].A * this.strideOf(name), f = this.phi, s = Math.sin(f), c = Math.cos(f);
       const thL = A * s, thR = -thL;
       p.legLx = -thL; p.legRx = -thR;
       const swL = Math.max(0, c), swR = Math.max(0, -c); // swing phase of each leg (leg moving forward)
@@ -610,6 +622,16 @@ export class ChibiAnimator {
         p.elbowL = -1.5 - .3 * Math.max(0, -s); p.elbowR = -1.5 - .3 * Math.max(0, s);
         p.handLz = .3; p.handRz = -.3;
         if (this.ch.longSkirt) { p.hold = 1; p.armRx = -.65 + .18 * s; p.armRz = .08; p.elbowR = -.75; } // one hand keeps the longyi hitched, still bobs
+      } else if (name === 'jog') { // T9: between walk and run — knees a bit higher, arms bent, a little bounce, no real flight
+        const kL = Math.max(0, Math.cos(f + .35)), kR = Math.max(0, Math.cos(f + Math.PI + .35));
+        p.kneeL = 1.15 * kL ** 1.4 + .3 * swR * swR; p.kneeR = 1.15 * kR ** 1.4 + .3 * swL * swL;
+        p.footL = -(p.legLx + p.kneeL) * (1 - swL * .6) - .35 * swL; p.footR = -(p.legRx + p.kneeR) * (1 - swR * .6) - .35 * swR;
+        p.y = -.03 + .05 * s * s; p.sy = 1 - .025 * c * c + .012 * s * s;
+        p.hipsRy = .18 * s; p.spineRy = -p.hipsRy * .8; p.hipsRz = .04 * c;
+        p.spineRx = .15 + .02 * Math.cos(2 * f); p.headRx = -.1 + .03 * Math.cos(2 * f);
+        p.armLx = .75 * s - .2; p.armRx = -.75 * s - .2; p.armLz = .16; p.armRz = -.16;
+        p.elbowL = -1.1 - .2 * Math.max(0, -s); p.elbowR = -1.1 - .2 * Math.max(0, s); p.handLz = .15; p.handRz = -.15;
+        if (this.ch.longSkirt) { p.hold = 1; p.armRx = -.6 + .15 * s; p.armRz = .08; p.elbowR = -.7; }
       } else {
         p.kneeL = .75 * swL ** 1.3; p.kneeR = .75 * swR ** 1.3;
         p.footL = -(p.legLx + p.kneeL) * (1 - swL * .6) - .25 * swL; p.footR = -(p.legRx + p.kneeR) * (1 - swR * .6) - .25 * swR;
@@ -660,6 +682,26 @@ export class ChibiAnimator {
       p.handLz = .6 * Math.sin(2 * b); p.handRz = -.6 * Math.sin(2 * b + .5); p.expr = 'happy';
     }
     return p;
+  }
+
+  // ---- T9 kids: a lean that grows with speed, and now and then a hop-skip on the run (pose only) ----
+  _nimble(p, phi0, dt) {
+    const lean = KID.lean * this.speed / 3.8; p.spineRx += lean; p.headRx -= lean * .7;
+    const strike = Math.cos(phi0) > 0 !== Math.cos(this.phi) > 0; // a foot just came down
+    if (this.loop !== 'run' || this.one || !KID.hop) { this.hopK = -1; this.hopT = null; return; }
+    const g = this.hopGap, gap = () => Array.isArray(g) ? g[0] + (g[1] - g[0]) * ((this.seed * .37 + this.T * .61) % 1) : g;
+    if (this.hopT === null) this.hopT = gap();
+    if (this.hopK < 0) { this.hopT -= dt; if (this.hopT <= 0 && strike && this.hopOK) { this.hopK = 0; this.hopPhi = this.phi; } else return; }
+    const u = (this.phi - this.hopPhi) / Math.PI; // one step long
+    if (u >= 1) { this.hopK = -1; this.hopT = gap(); return; }
+    const k = Math.sin(Math.PI * u), L = Math.cos(this.hopPhi) > 0; // L: the left leg swings through, the right one hops
+    this.hopK = u;
+    p.y += .1 * k; p.sy += .04 * k;
+    if (L) { p.kneeR *= 1 - .6 * k; p.legLx -= .55 * k; p.kneeL += .9 * k; p.footR = p.footR * (1 - k) - .4 * k; }
+    else { p.kneeL *= 1 - .6 * k; p.legRx -= .55 * k; p.kneeR += .9 * k; p.footL = p.footL * (1 - k) - .4 * k; }
+    p.armLx += (-1.7 - p.armLx) * .8 * k; p.armLz += .45 * k; p.elbowL += (-.35 - p.elbowL) * k;
+    if (!this.ch.longSkirt) { p.armRx += (-1.7 - p.armRx) * .8 * k; p.armRz -= .45 * k; p.elbowR += (-.35 - p.elbowR) * k; } // a hitched longyi keeps its hand
+    p.spineRx -= .15 * k; p.headRx -= .05 * k; p.hipsRy *= 1 - k; p.spineRy *= 1 - k; p.expr = k > .3 ? 'happy' : p.expr;
   }
 
   // ---- T4 carry ----

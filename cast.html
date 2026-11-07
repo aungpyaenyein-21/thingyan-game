@@ -35,7 +35,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CAST, makeCast } from './cast.js?v=10';
+import { CAST, makeCast } from './cast.js?v=12';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -67,7 +67,7 @@ function burst(at) { const d = new THREE.Mesh(new THREE.CircleGeometry(.3, 20), 
 const castBar = document.getElementById('cast');
 const btn = (parent, label, on, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = on; document.getElementById(parent).appendChild(b); return b; };
 const castBtns = [btn('cast', 'အားလုံး', () => select(null))].concat(all.map(c => btn('cast', c.def.name, () => select(c), 's' + c.def.side)));
-const LOOPS = [['idle', 'ရပ်'], ['walk', 'လမ်းလျှောက်'], ['run', 'ပြေး'], ['dance', 'ယိမ်းက'], ['sit', 'ထိုင်']], ONES = [['jump', 'ခုန်'], ['splash', 'ရေပက်'], ['wave', 'လက်ပြ'], ['kadaw', 'ကန်တော့'], ['shake', 'ခါ'], ['laugh', 'ရယ်']];
+const LOOPS = [['idle', 'ရပ်'], ['walk', 'လမ်းလျှောက်'], ['jog', 'ခပ်သွက်သွက်'], ['run', 'ပြေး'], ['dance', 'ယိမ်းက'], ['sit', 'ထိုင်']], ONES = [['jump', 'ခုန်'], ['splash', 'ရေပက်'], ['wave', 'လက်ပြ'], ['kadaw', 'ကန်တော့'], ['shake', 'ခါ'], ['laugh', 'ရယ်']];
 const targets = () => sel ? [sel] : all;
 const loopBtns = LOOPS.map(([k, l]) => btn('loops', l, () => { targets().forEach(c => c.anim.setLoop(k)); loopBtns.forEach(b => b.classList.toggle('on', b.textContent === l)); }));
 ONES.forEach(([k, l]) => btn('ones', l, () => targets().forEach(c => c.anim.play(k))));

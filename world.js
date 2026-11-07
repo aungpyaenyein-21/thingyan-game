@@ -11,10 +11,10 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS } from './chibi.js?v=31';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=6';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=32';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=7';
 import { PAL as TONE } from './palette.js?v=1';
-import { createOrbit } from './camera.js?v=2';
+import { createOrbit } from './camera.js?v=3';
 import { createSky, createSurround } from './sky.js?v=4';
 
 export { THREE };
@@ -374,8 +374,12 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     if (m) { act(m); e.preventDefault(); }
   });
   addEventListener('keyup', e => keys[e.code] = false);
-  // touch: a thumb on the left half is the joystick — it appears under the thumb; a little push walks, all the way out runs.
+  // touch: a thumb on the left half is the joystick — it appears under the thumb; a light push walks, the middle jogs, all the way out runs.
   // Two fingers anywhere else pinch-zoom (a second finger landing before the stick has moved turns it into a pinch too).
+  // T9 MOVE (?tune 「လှုပ်ရှား」): stick bands (share of STICK) · accel / stop: seconds to full speed / to a halt (the speed eases, the
+  // position still moves one collide()d step a frame) · turn: seconds to face the stick · carryWalk: carrying, the jog band walks · hopEvery: the player's hop-skip gap
+  const MOVE = { walkBand: .45, runBand: .85, accel: .1, stop: .08, turn: .08, carryWalk: true, hopEvery: 6 };
+  let vMove = 0, vTop = 0; const lastP = new THREE.Vector3(); // the eased ground speed, the last gear's top speed, where the player ended last frame
   const STICK = 52; let touch = null; const fingers = new Map(); let pinch = 0;
   const stick = document.createElement('div'), knob = document.createElement('i'); stick.id = 'stick'; stick.appendChild(knob);
   Object.assign(stick.style, { position: 'fixed', zIndex: 3, width: '128px', height: '128px', marginLeft: '-64px', marginBottom: '-64px', borderRadius: '50%', pointerEvents: 'none',
@@ -385,7 +389,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const home = () => { stick.style.left = 'calc(84px + env(safe-area-inset-left, 0px))'; stick.style.bottom = 'calc(84px + env(safe-area-inset-bottom, 0px))'; stick.style.opacity = .55; knob.style.transform = ''; knob.style.background = 'rgba(255,246,234,.95)'; };
   const drawStick = () => {
     const dx = touch.x - touch.x0, dy = touch.y - touch.y0, l = Math.hypot(dx, dy), k = l > STICK ? STICK / l : 1;
-    knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; knob.style.background = l > STICK * .8 ? '#f2a65a' : 'rgba(255,246,234,.95)'; // orange = running
+    knob.style.transform = `translate(${dx * k}px,${dy * k}px)`; knob.style.background = l > STICK * MOVE.runBand ? '#f2a65a' : 'rgba(255,246,234,.95)'; // orange = running
   };
   home();
   const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
@@ -514,21 +518,31 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     // player
     let ix = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
     let iy = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
-    let farDrag = false;
-    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 10) { ix = dx / l; iy = dy / l; farDrag = l > STICK * .8; } }
+    let push = 0; // the stick: how far out, 0..1 (0 = keyboard)
+    if (touch) { const dx = touch.x - touch.x0, dy = touch.y0 - touch.y, l = Math.hypot(dx, dy); if (l > 10) { ix = dx / l; iy = dy / l; push = Math.min(1, l / STICK); } }
     if (W.frozen) ix = iy = 0;
     if (ORBIT) { orbit.right(oR); orbit.forward(oF); } // the angle on screen right now (mid-turn too), so a turn never knocks you sideways
     const mv = v3.set(0, 0, 0).addScaledVector(ORBIT ? oR : RIGHT, ix).addScaledVector(ORBIT ? oF : UP, iy);
     const moving = mv.lengthSq() > .01;
     if (moving) oMove.copy(mv).normalize();
-    const loop = moving ? (keys.ShiftLeft || keys.ShiftRight || farDrag ? 'run' : 'walk') : 'idle';
+    // T9: light push walks, the middle jogs (the default: keyboard alone too), far out / Shift runs; talking or carrying walks instead of jogging
+    let loop = !moving ? 'idle' : keys.ShiftLeft || keys.ShiftRight ? 'run' : !push ? 'jog' : push < MOVE.walkBand ? 'walk' : push < MOVE.runBand ? 'jog' : 'run';
+    if (loop === 'jog' && (W.talkWith || (MOVE.carryWalk && pa.load))) loop = 'walk';
     if ((!['dance', 'sit'].includes(pa.loop) || moving) && loop !== pa.loop) pa.setLoop(loop); // dancing / sitting last until you move; setLoop() drops any one-shot, so only on a real change
-    if (moving && pa.speed > 0) {
-      mv.normalize();
-      player.g.position.addScaledVector(mv, pa.speed * dt); collide(player.g.position);
-      const want = Math.atan2(mv.x, mv.z); let d = want - player.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
-      player.g.rotation.y += d * Math.min(1, dt * 12);
+    // the speed eases (full in MOVE.accel s, a halt in MOVE.stop s); the position still takes one collide()d step a frame
+    const top = moving ? pa.speed : 0, gear = ['walk', 'jog', 'run'].includes(pa.loop);
+    if ((moving && !top) || (!moving && !gear && pa.loop !== 'idle') || W.frozen || Math.hypot(player.g.position.x - lastP.x, player.g.position.z - lastP.z) > 1) vMove = 0; // a one-shot that plants you, a seat, a cutscene, a teleport: no glide
+    else if (top > vMove) vMove = Math.min(top, vMove + dt * top / MOVE.accel);
+    else vMove = Math.max(top, vMove - dt * Math.max(vTop, top) / MOVE.stop);
+    if (top) vTop = top;
+    if (vMove > 0) { player.g.position.addScaledVector(oMove, vMove * dt); collide(player.g.position); }
+    let turnLeft = 0;
+    if (moving && top) { // face the stick: ~95% of the way in MOVE.turn s
+      let d = Math.atan2(oMove.x, oMove.z) - player.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+      player.g.rotation.y += d * Math.min(1, dt * 3 / MOVE.turn); turnLeft = Math.abs(d) * Math.max(0, 1 - dt * 3 / MOVE.turn);
     }
+    pa.hopGap = MOVE.hopEvery; pa.hopOK = turnLeft < .15; // the hop-skip: rarer for the player, never mid-turn
+    lastP.copy(player.g.position);
     player.g.position.y = ground(player.g.position.x, player.g.position.z) + W.lift; // lift: a zone raising you (up a tree …)
 
     // npcs in W.idlers do a little something now and then; zone code drives everyone else
@@ -598,7 +612,7 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
     else { v3.x = THREE.MathUtils.clamp(v3.x * .6, -camClamp, camClamp); v3.z = THREE.MathUtils.clamp(v3.z * .6, -camClamp, camClamp); }
     if (ORBIT) {
       orbit.context('talk', !!(W.frozen && W.talkWith), W.talkWith?.g.getWorldPosition(new THREE.Vector3())); // a conversation: frame the two of you (main.js talk() sets W.talkWith)
-      v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3, moving && !W.frozen ? { dir: oMove, kind: pa.loop === 'run' ? 'run' : 'walk' } : null); camTarget.copy(orbit.state.target).setY(0);
+      v3.y = ground(v3.x, v3.z) + .5 + W.lift; orbit.update(dt, v3, moving && !W.frozen ? { dir: oMove, kind: pa.loop === 'run' || pa.loop === 'jog' ? pa.loop : 'walk' } : null); camTarget.copy(orbit.state.target).setY(0);
     } // only the target is clamped to camBounds, never the camera: turning at the edge doesn't jump
     else { camTarget.lerp(v3, Math.min(1, dt * 3)); cam.position.copy(camTarget).add(ISO); cam.lookAt(camTarget); }
     sun.position.copy(camTarget).add(SUN); sun.target.position.copy(camTarget);
@@ -619,9 +633,13 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
       const gui = new GUI({ title: 'ကင်မရာ (?tune)' }), t = orbit.tune;
       const f1 = gui.addFolder('follow'); f1.add(t, 'followK', .5, 10, .1); f1.add(t, 'azK', 1, 20, .5); f1.add(t, 'distOutK', .3, 8, .1); f1.add(t, 'distInK', .3, 8, .1);
       const f2 = gui.addFolder('zoom (dist)'); f2.add(t, 'base', 6, 20, .5); for (const k of ['run', 'ride', 'war', 'talk']) f2.add(t, k, -8, 8, .5); f2.add(t, 'room', 3, 12, .5);
-      const f3 = gui.addFolder('look-ahead'); f3.add(t, 'lookWalk', 0, 4, .1); f3.add(t, 'lookRun', 0, 5, .1); f3.add(t, 'lookRide', 0, 6, .1); f3.add(t, 'lookK', .1, 3, .05);
+      const f3 = gui.addFolder('look-ahead'); f3.add(t, 'lookWalk', 0, 4, .1); f3.add(t, 'lookJog', 0, 4, .1); f3.add(t, 'lookRun', 0, 5, .1); f3.add(t, 'lookRide', 0, 6, .1); f3.add(t, 'lookK', .1, 3, .05);
       const f4 = gui.addFolder('elevation · fade'); f4.add(t, 'elevMin', .05, .6, .01); f4.add(t, 'elevMax', .4, 1.4, .01); f4.add(t, 'fade', 0, 1, .05); f4.add(t, 'autoRotate');
       gui.add({ JSON: () => { const j = JSON.stringify(t); console.log('camera tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
+      const mf = gui.addFolder('လှုပ်ရှား'); // T9: the player's legs (MOVE) and the kids' gait (chibi.js KID) — docs/plans/T9.md
+      mf.add(MOVE, 'walkBand', .1, .9, .05); mf.add(MOVE, 'runBand', .3, 1, .05); mf.add(MOVE, 'accel', 0, .5, .01); mf.add(MOVE, 'stop', 0, .5, .01); mf.add(MOVE, 'turn', .02, .5, .01);
+      mf.add(MOVE, 'carryWalk'); mf.add(MOVE, 'hopEvery', 1, 20, .5); mf.add(KID, 'gait', .8, 2.2, .05); mf.add(KID, 'stride', .7, 1.3, .02); mf.add(KID, 'lean', 0, .4, .01); mf.add(KID, 'hop');
+      mf.add({ JSON: () => { const j = JSON.stringify({ MOVE, KID }); console.log('move tune', j); navigator.clipboard?.writeText(j).catch(() => {}); } }, 'JSON');
     } catch (e) { console.warn('?tune: lil-gui did not load', e.message); }
   }
   function start() { // call once the zone has built its set: flowers + petals need the trees
@@ -761,5 +779,6 @@ export function createWorld({ half = 9, bounds, ground = () => .01, paintSky, ca
   const W = { THREE, scene, cam, renderer, orbit, sky, half, bounds: B, rnd, pick, M, mesh, box, cyl, textTex, stripeTex, bubbleTex, solids, solid, collide, ground,
     padauk, flowerSpots, sag, bean, adopt, chars, swapTool, quality: () => AQ.lvl, setGfx, speak, setPlayer, player: null, idlers: [], addPet, pets, spawn, splash, keys, act,
     onAction: null, frozen: false, paused: false, camFocus: null, watch: null, lift: 0, tick: f => ticks.push(f), start, time: () => T, setTime, dusk: () => dusk, night: () => night, keep, occluder, hero, bake, removeChar, offLimits: null, setRoom, snapCam };
+  W.move = { tune: MOVE, kid: KID, speed: () => vMove }; // T9: ?tune and docs/speed/check.cjs
   return W;
 }
