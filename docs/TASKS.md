@@ -22,7 +22,7 @@
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 | T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | 🔁 fixes ✅ — rebase on main (version strings vs #42) → Fable merges | other model · branch `claude/goggles` |
 | T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ✅ 2026-11-07 (PR #39 · plan + 1 review · merged) | other model |
-| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ⏳ spec ✅ (after T5 + T9 merge) | other model · branch `claude/talk` |
+| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ⏳ spec ✅ + review 2 (2026-11-07) — **start now** | other model · branch `claude/talk` |
 | T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | ⏳ spec ✅ (after T8 merge — same war.js) | other model · branch `claude/rally` |
 
 အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → T5 ✅ → T9 ✅ → T12 ✅ → **now: T10 ∥ T5b (T10 preferred first) · T8 (rebase → merge)** · T11 (after T8) → **T5b (after T12; T10 preferred)** → T6 → T3b → T6.5 → T7။ Files: T12 = set.js/life.js/world.js fade hook + main.js anchors · T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move (world.js: T9 touches the player move only, T12 the material hook — different functions, rebase whoever lands second) · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5b = yangon/* story + cast.js gear toggles (after T12 and T10 — both touch main.js/cast.js). Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
@@ -475,6 +475,14 @@ Spec: [#35](https://github.com/aungpyaenyein-21/thingyan-game/issues/35).
 - Listener: head/eyes on the speaker, nod every ~3 s, emote on `{ react: 'bang' | 'drop' | 'heart' | 'note' }`.
 - Skippable; after a fast tap-through the camera and poses must be sane (acceptance item).
 - Branch `claude/talk`, after T5 and T9 merge. Owns camera.js (talkShot), hud.js (onLine / typing), cast.js gestures, chibi.js mouth, a talk director module (`yangon/talk.js`), and the one scene wiring in main.js.
+
+**Review 2 (2026-11-07, issue comment — T5/T9/T12 merged, story v6.1)**
+- Line object = story.js's `{ face, act, cue, voice }` **+ `shot`, `react`** (and optional `to`). `voice` → no cut; the line after a `cue` defaults to `wide` once.
+- Listener rule: the last other speaker in the scene (first line: the nearest cast member); the player's own lines frame the player.
+- Lines auto-advance (`hold()` 2.4–4.5 s): cut + text together, mouth ≤ hold, gestures ≤ 1.6 s (not `bow`/`lift`); under `zone.fast` no glide, no gesture.
+- Acceptance scenes = **today's** 1-1 (Bwa Bwa, indoors — the home is a two-wall room, shots only in the open half) and 1-2; T5b's Scenes A/B (9 + 22 lines) are the real test after. The home lane is 3 m: `ots` along the lane, `two` fallback across it.
+- Non-story `talk()` (shops, tea shop) gets the director too: speaker = `W.talkWith` unless the name is the player's.
+- Order: **T10 → T6.5 (chibi.js) · T10 → T5b (main.js)**; T8's one cast.js export line rebases.
 
 ## T11 Home rally (issue #36)
 
