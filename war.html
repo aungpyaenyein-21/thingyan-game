@@ -38,6 +38,7 @@
   #weps button{-webkit-tap-highlight-color:transparent;font:inherit;font-size:12px;width:54px;height:54px;border:0;border-radius:50%;color:var(--ink);background:var(--paper);box-shadow:0 3px 0 rgba(0,0,0,.2);touch-action:none;opacity:.7;line-height:1.1}
   #weps button.on{opacity:1;background:#bfe6ff;box-shadow:0 0 0 3px #2f8fd6,0 3px 0 rgba(0,0,0,.2)}
   #weps svg{display:block;width:22px;height:22px;margin:0 auto 1px}
+  #gog{margin-left:6px} #gog svg .cups{transform:translateY(-5px);transition:transform .2s} #gog.down{opacity:1;background:#ffe9c9;box-shadow:0 0 0 3px #ffb347,0 3px 0 rgba(0,0,0,.2)} #gog.down svg .cups{transform:none} #gog.busy{opacity:.45} /* T8: swim goggles — up on the forehead / down over the eyes */
   #water.low>b{background:#e04a3a;animation:blink .8s steps(2) infinite}
   #turn{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(200px + env(safe-area-inset-bottom,0px));display:flex;gap:8px}
   #turn button{width:44px;height:44px;border-radius:50%;border:0;background:var(--paper);color:var(--ink);font:inherit;font-size:22px;line-height:1;box-shadow:0 3px 0 rgba(0,0,0,.2);touch-action:manipulation}
@@ -91,6 +92,7 @@
   <button type="button" data-w="pump"><svg viewBox="0 0 24 24"><path d="M3 13h13M16 11v4M18 13h3" stroke="#3b2a3a" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="22" cy="13" r="1.4" fill="#3fd3e0"/></svg>ပြွတ်<span class="kb">1</span></button>
   <button type="button" data-w="balloon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="10" rx="6.5" ry="7.5" fill="#ff7aa8"/><path d="M12 17.5l-1.5 2h3z" fill="#ff7aa8"/><ellipse cx="9.5" cy="7.5" rx="1.6" ry="2.2" fill="#fff" opacity=".6"/></svg>ပူဖောင်း<span class="kb">2</span></button>
   <button type="button" data-w="bucket"><svg viewBox="0 0 24 24"><path d="M5 9h14l-2 11H7z" fill="#2f8fd6"/><path d="M5 9a7 6 0 0 1 14 0" stroke="#3b2a3a" stroke-width="1.6" fill="none"/><ellipse cx="12" cy="9" rx="7" ry="1.6" fill="#3fd3e0"/></svg>ပုံး<span class="kb">3</span></button>
+  <button type="button" id="gog" hidden aria-label="ရေကူးမျက်မှန် ချ/တင်"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8" fill="#e8c9a8"/><path d="M4 12h16" stroke="#2e3a59" stroke-width="1.6"/><g class="cups"><circle cx="8.6" cy="12.5" r="3" fill="#ffb347" stroke="#2e3a59" stroke-width="1.4"/><circle cx="15.4" cy="12.5" r="3" fill="#ffb347" stroke="#2e3a59" stroke-width="1.4"/></g></svg>မျက်မှန်<span class="kb">G</span></button>
 </div>
 <div id="pads">
   <button id="wipe" type="button">သုတ်<span class="kb">F</span></button>
@@ -117,6 +119,6 @@
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
   "three.quarks":"https://cdn.jsdelivr.net/npm/three.quarks@0.16.0/dist/three.quarks.esm.js","quarks.core":"https://cdn.jsdelivr.net/npm/quarks.core@0.16.0/dist/quarks.core.esm.js",
   "yuka":"https://cdn.jsdelivr.net/npm/yuka@0.7.8/build/yuka.module.js"}}</script>
-<script type="module" src="./yangon/war.js?v=12"></script>
+<script type="module" src="./yangon/war.js?v=14"></script>
 </body>
 </html>
