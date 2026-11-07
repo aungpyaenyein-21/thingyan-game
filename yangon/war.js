@@ -10,9 +10,12 @@ import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=2';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
 import { createAI } from './ai.js?v=2';
+import { goggles as strapGoggles } from '../cast.js?v=12'; // T8: the swim goggles (and, by importing cast.js, its `goggles` one-shot on every kid's ChibiAnimator)
 
 const P = new URLSearchParams(location.search);
 const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked
+// T8: do you own swim goggles? T6 sells them and keeps S.goggles in the story save (save.js KEY 'thingyan.v6'); ?goggles gives you a pair, ?goggles=0 takes it away
+const OWN_GOGGLES = P.has('goggles') ? P.get('goggles') !== '0' : (() => { try { return !!JSON.parse(localStorage.getItem('thingyan.v6') || '{}').goggles; } catch { return false; } })();
 const B = ALLEY ? { x0: -18, x1: 18, z0: -12, z1: 12 } : { x0: -14, x1: 14, z0: -9, z1: 9 };
 const W = createWorld({ bounds: B, ground: () => .01, camBounds: ALLEY ? { x0: -16.5, x1: 16.5, z0: -10.5, z1: 10.5 } : { x0: -8, x1: 8, z0: -4.5, z1: 4.5 }, view: ALLEY ? 15 : innerWidth < innerHeight ? 11.5 : 15, camera: 'orbit' }); // T2's orbit camera (turn 45°: Z / C, the ⟲⟳ pads, a sideways drag)
 W.orbit?.context('war', true); // CAMERA.md: a fight pulls the view out a little
@@ -24,7 +27,8 @@ const STATS = { shots: 0, hits: 0, face: 0, fouls: 0 }; // gravity as the town's
 
 // ---------- T3: three weapons that feel different, the beat of a hit, water you can see, the unwritten rules ----------
 // TUNE and WEAPONS are what ?tune edits (lil-gui) — copy the JSON back here once they feel right
-const TUNE = { hitStop: .04, bucketStop: .06, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 1.5, soakCap: .5, blurMax: 1.2, chunk: .3 }; // chunk: a loss this big reads as a chunk off the bar // soakCap / blurMax: the most the soak overlay may cover the screen
+const TUNE = { hitStop: .04, bucketStop: .06, outStop: .12, shakeT: .15, shake: 6, squash: .85, vibrate: 30, faceK: 1.5, soakCap: .5, blurMax: 1.2, chunk: .3,
+  goggleFaceK: 1, goggleSoakK: .4, thuraK: .8 }; // T8 swim goggles: a face hit with them down counts like a body hit · your sting/drown overlay ×.4 with them down · Thura takes ×.8 of everything // chunk: a loss this big reads as a chunk off the bar // soakCap / blurMax: the most the soak overlay may cover the screen
 const WEAPONS = { // cost = share of a full can · grit = what a full hit takes off — the creator (2026-11-01): the three must differ clearly
   pump: { name: 'ပြွတ်', range: 6, cost: .1, every: .4, grit: .08, speed: 11 }, // a stroke every .4 s while held (10% of the can a second) · −.08 a stroke if all of it lands: chips off the bar
   balloon: { name: 'ပူဖောင်း', min: 3, range: 9, cost: .15, grit: .35, ring: .8 }, // hold = how far; it goes over walls and round corners
@@ -111,16 +115,38 @@ function gear(ch, canColor) { // the pump in the right hand, the jerry can on th
 function makeKid(team, i, me) {
   const s = SIDE[team], home = team === HOME;
   const n = SIZE[team], back = ALLEY ? 16.4 : 11.5, span = ALLEY ? 17 : 12, x = s * (back + (i % 2) * .6), z = -span / 2 + i * span / (n - 1); // both gangs start at the back of their own side
-  const goggles = team === 'B' && i === 1;
-  const c = W.bean({ age: 'kid', tools: ['none'], tool: 'none', topStyle: pick(['tee', 'stripe', 'tank']), shirt: TEAM[team].top, hat: goggles ? 'goggles' : TEAM[team].hat, x, z, ry: -s * Math.PI / 2 });
+  const thura = team === 'B' && i === 0, gk = team === 'B' && i === 1; // ④: Thura (ROLES.B[0]) and the kid in swim goggles both fight with them down (T8)
+  const c = W.bean({ age: 'kid', tools: ['none'], tool: 'none', topStyle: pick(['tee', 'stripe', 'tank']), shirt: TEAM[team].top, hat: TEAM[team].hat, x, z, ry: -s * Math.PI / 2 });
   gear(c.ch, TEAM[team].can); c.dry = true;
   const disc = new THREE.Mesh(new THREE.CircleGeometry(.42, 18).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: team === 'A' ? '#2f8fd6' : '#e0574f', transparent: true, opacity: .55, depthWrite: false }));
   disc.position.y = .02; disc.scale.setScalar(1 / c.g.scale.x); if (!me) c.g.add(disc); // which gang, at a glance (you have your own ring) // our own water does the hitting (the town's only hits what's on screen)
   const emit = c.anim.emit; c.anim.emit = (t, o) => { if (t === 'throw') release(k); else if (t === 'splash') dump(k); else if (t !== 'squirt' && t !== 'squirtStart') emit(t, o); }; // our own water from game logic, not the town's
-  const k = { c, team, me, i, disc, lane: 0, outs: 0, lim: 0, tap: null, waiting: false, filling: false, grit: 1, water: CAN, state: 'fight', out: false, cool: 1 + rnd() * 1.5, think: 0, target: null, hitT: 9, dryT: 0, wipeT: 0, stuck: 0, side: 1, sideT: 0, navT: 0, wp: [0, 0], goal: [0, 0], faceAim: rnd() < .45, name: goggles ? 'ရေကူးမျက်မှန်' : '',
+  const k = { c, team, me, i, disc, lane: 0, outs: 0, lim: 0, tap: null, waiting: false, filling: false, grit: 1, water: CAN, state: 'fight', out: false, cool: 1 + rnd() * 1.5, think: 0, target: null, hitT: 9, dryT: 0, wipeT: 0, stuck: 0, side: 1, sideT: 0, navT: 0, wp: [0, 0], goal: [0, 0], faceAim: rnd() < .45, name: gk ? 'ရေကူးမျက်မှန်' : '', goggles: null, gog: null,
     id: team + i, weapon: !me && i === 2 ? 'balloon' : 'pump', base: c.g.scale.x, sq: 0, kb: null, pend: null, bal: null, fillT: 0, fillFrom: 0, emoT: 0, burst: 0, pumpT: 0 };
-  k.start = [x, z, -s * Math.PI / 2]; kids.push(k); return k;
+  k.start = [x, z, -s * Math.PI / 2]; kids.push(k);
+  if (me ? OWN_GOGGLES : thura || gk) giveGoggles(k, me ? 'up' : 'down'); // yours start up on your forehead: G (or the pad) pulls them down
+  if (thura) Object.defineProperty(k, 'toughK', { get: () => TUNE.thuraK, enumerable: true }); // the toughest kid (CHARACTERS §8) — live from ?tune
+  return k;
 }
+// ---------- T8: swim goggles — down, a face hit counts like a body hit; no drawback of any kind ----------
+// k.goggles: 'down' | 'up' | null (none). cast.js goggles(): a strap + two cups on a hinge, set(up). Flipping them plays cast.js's
+// `goggles` one-shot (.9 s): you stand still and can't fire, the cups swing at its beat (t .32) and k.goggles follows.
+const GOG_T = .9, GOG_BEAT = .34, LENS = .4;
+function giveGoggles(k, state) {
+  const ch = k.c.ch, g = ch.goggles = strapGoggles(ch); g.lens = [];
+  g.hinge.traverse(o => { if (o.isMesh && o.geometry.type === 'CircleGeometry') g.lens.push(o.material); }); // the two lenses (each cup has its own material) — they flash on a face hit
+  ch.gogglesUp = state === 'up'; g.set(ch.gogglesUp); k.goggles = state;
+  const an = k.c.anim, sp = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(an), 'speed').get;
+  Object.defineProperty(an, 'speed', { get() { return this.one === 'goggles' ? 0 : sp.call(this); }, configurable: true }); // the swing is a STILL one-shot for this kid (chibi.js's STILL list isn't ours to touch)
+}
+function setGoggles(k, state) { const ch = k.c.ch, up = state === 'up'; if (ch.gogglesUp !== up) { ch.gogglesUp = up; ch.goggles.set(up); } k.goggles = state; }
+function flipGoggles(k) { if (!k.goggles || k.gog) return false; k.gog = { to: k.goggles === 'down' ? 'up' : 'down', t: 0, done: false }; k.c.anim.play('goggles'); return true; }
+function stepGoggles(k, dt) { // the beat: cast.js's _goggles swings the cups at t > .32 — off screen (no pose) or cut short, we do it ourselves
+  const g = k.gog; if (!g) return; g.t += dt; const an = k.c.anim, on = an.one === 'goggles';
+  if (!g.done && (g.t >= GOG_BEAT || !on)) { g.done = true; setGoggles(k, g.to); if (on) an.thrown = true; }
+  if (g.t >= GOG_T || !on) k.gog = null;
+}
+function flash(k) { const g = k.c.ch.goggles; if (!g) return; for (const m of g.lens) m.emissiveIntensity = 2.6; k.flashT = .15; } // the water hits the lenses
 const SIZE = { A: HOME === 'A' ? 5 : 6, B: HOME === 'B' ? 5 : 6 };
 const me = makeKid('A', 0, true);
 for (let i = 1; i < SIZE.A; i++) makeKid('A', i, false);
@@ -269,7 +295,9 @@ const kick = (a, t = TUNE.shakeT) => { if (a < shakeA * Math.max(0, shakeT) / TU
 const buzz = () => { if (W.time() > buzzT && navigator.userActivation?.hasBeenActive) { buzzT = W.time() + .25; try { navigator.vibrate?.(TUNE.vibrate); } catch {} } }; // Android: a 30 ms buzz — only after the player has touched the page (Chrome logs an error otherwise)
 // one hit, whatever it came from: grit off, a squash, the drop emote, the burst, the sound, the beat of stillness
 function soak(k, o) {
-  const g = o.grit * (o.face ? TUNE.faceK : 1); STATS.hits++; if (o.face) STATS.face++;
+  const shield = o.face && k.goggles === 'down', face = o.face && !shield; // T8: swim goggles down — the face hit lands like a body hit (word, sound, jolt, beat)
+  const g = o.grit * (o.face ? (shield ? TUNE.goggleFaceK : TUNE.faceK) : 1) * (k.toughK ?? 1); STATS.hits++; if (o.face) STATS.face++;
+  k.took = +((k.took ?? 0) + g).toFixed(4); k.hitN = (k.hitN ?? 0) + 1; if (shield) flash(k); // what each kid has taken, hit by hit (docs/water/check.cjs)
   if (o.from?.me) { const t = STATS.dealt ??= {}; t[o.kind] = +((t[o.kind] ?? 0) + g).toFixed(3); } // what your own hits took off, by weapon (checks)
   k.grit = Math.max(0, k.grit - g); k.hitT = 0; k.c.anim.soak(o.kind === 'bucket' ? 1 : o.big ? .6 : .25); if (k.wipeT > 0) k.wipeT = 0; // a bucket soaks you through
   k.trailHold = .35; if (g >= TUNE.chunk) k.chunkT = .35; // the bar: a red trail shows what you just lost, and a chunk shakes it
@@ -280,12 +308,13 @@ function soak(k, o) {
   if (k.emoT < W.time()) { k.emoT = W.time() + 1.5; k.c.anim.emote('drop', 1); }
   if (W.time() - (k.fxT ?? -1) > .12) { k.fxT = W.time(); fx.burst(o.at.clone ? o.at.clone() : o.at); }
   for (let j = 0; j < (o.big ? 5 : 2); j++) W.spawn(o.at.clone(), new THREE.Vector3(-o.push.x * .5 + (rnd() - .5) * 2.4, 1.2 + rnd() * 1.6, -o.push.z * .5 + (rnd() - .5) * 2.4), { spray: true, s: .7, life: .5 });
-  if (hitSnd <= 0) { sound.fx(o.face || o.big ? 'splash' : 'hit', p); hitSnd = .12; }
-  if (k.me) { kick(o.big ? 8 : o.face ? 6 : 3); buzz(); drown = Math.min(1, drown + (o.big ? .25 : o.face ? .07 : .03)); if (o.face || o.big) sting = Math.min(1, sting + (o.big ? .35 : .2)); }
+  if (hitSnd <= 0) { sound.fx(face || o.big ? 'splash' : 'hit', p); hitSnd = .12; }
+  if (k.me) { const gd = k.goggles === 'down', sk = gd ? TUNE.goggleSoakK : 1, eyes = o.face && !gd; // goggles down: no water in the eyes (a face drop stings like a body drop: not at all) and the overlay builds ×.4
+    kick(o.big ? 8 : face ? 6 : 3); buzz(); drown = Math.min(1, drown + (o.big ? .25 : eyes ? .07 : .03) * sk); if (eyes || o.big) sting = Math.min(1, sting + (o.big ? .35 : .2) * sk); }
   const mine = o.from?.me;
   if (mine && ((k.popT ?? 0) < W.time() || o.big)) { k.popT = W.time() + .5; // the word says which weapon: a pump chips, a balloon bursts, a bucket drenches
-    if (o.kind === 'bucket') pop(k, 'ရွှဲ!!', '#ffe36b', 34); else if (o.kind === 'balloon') pop(k, 'ဖောင်း!', '#ffd0e4', 26); else pop(k, o.face ? 'မျက်နှာ!' : 'ဖျန်း', o.face ? '#ffe36b' : '#fff', o.face ? 20 : 16); if (o.big) buzz(); }
-  if ((mine || k.me) && (o.big || o.face || o.first)) stop = Math.max(stop, o.kind === 'bucket' ? TUNE.bucketStop : TUNE.hitStop);
+    if (o.kind === 'bucket') pop(k, 'ရွှဲ!!', '#ffe36b', 34); else if (o.kind === 'balloon') pop(k, 'ဖောင်း!', '#ffd0e4', 26); else pop(k, face ? 'မျက်နှာ!' : 'ဖျန်း', face ? '#ffe36b' : '#fff', face ? 20 : 16); if (o.big) buzz(); } // into the goggles: the flat 「ဖျန်း」
+  if ((mine || k.me) && (o.big || face || o.first)) stop = Math.max(stop, o.kind === 'bucket' ? TUNE.bucketStop : TUNE.hitStop);
   if (k.grit <= 0) { goOut(k); if (mine) { pop(k, 'OUT!', '#ff8a7a'); stop = Math.max(stop, TUNE.outStop); kick(7); } }
 }
 // someone splashed a kid who's OUT (rule 3): it costs them grit, and the kid lets them know
@@ -378,7 +407,7 @@ function teams(dt) {
   }
 }
 function shootAt(k, dt) { // at whoever's nearest and in sight — a few pump strokes, a balloon over the wall, the bucket up close
-  if (k.pend) return;
+  if (k.pend || k.gog) return; // not while the goggles swing
   if (k.burst > 0) { if ((k.pumpT -= dt) <= 0) { k.pumpT = WEAPONS.pump.every; k.burst--; if (!k.target || k.target.out || !stroke(k, k.target)) k.burst = 0; } return; }
   if ((k.cool -= dt) > 0 || k.c.anim.one) return;
   const p = pos(k);
@@ -419,7 +448,7 @@ let pumpT = 0;
 const empty = () => say(me.weapon === 'bucket' && me.water >= .05 ? 'ပုံးအတွက် ရေ မလောက် (၃၀% လို)' : 'ရေကုန်ပြီ — ပိုက်ခေါင်း/ရေစည်ဆီ သွားဖြည့်', 2);
 const pumpNow = () => { const d = aimNow(), t = targetNow(); if (!stroke(me, t, t ? null : d) && !me.pend) empty(); };
 const press = on => {
-  if (!playing || me.out || me.state === 'wipe') return;
+  if (!playing || me.out || me.state === 'wipe' || me.gog) return; // no firing while the goggles swing
   const w = me.weapon;
   if (on) { holding = true; $('fire').classList.add('on'); if (w === 'pump') { pumpT = WEAPONS.pump.every; pumpNow(); } else if (w === 'balloon' && me.water >= WEAPONS.balloon.cost * CAN && !me.pend) balloonIn(me); }
   else if (holding) {
@@ -431,13 +460,13 @@ const press = on => {
 };
 function setWeapon(w) {
   if (holding) { holding = false; charge = 0; $('fire').classList.remove('on'); } if (me.weapon === 'balloon' && !me.pend) dropBalloon(me);
-  me.weapon = w; for (const b of document.querySelectorAll('#weps button')) b.classList.toggle('on', b.dataset.w === w);
+  me.weapon = w; for (const b of document.querySelectorAll('#weps button[data-w]')) b.classList.toggle('on', b.dataset.w === w);
   $('fire').dataset.w = w;
 }
 const nextWeapon = () => setWeapon(ORDER[(ORDER.indexOf(me.weapon) + 1) % ORDER.length]);
-for (const b of document.querySelectorAll('#weps button')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); setWeapon(b.dataset.w); });
+for (const b of document.querySelectorAll('#weps button[data-w]')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); setWeapon(b.dataset.w); });
 setWeapon('pump');
-const wipe = () => { if (!playing || me.out || me.state === 'wipe') return; drown = 0; sting = Math.min(sting, .15); me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
+const wipe = () => { if (!playing || me.out || me.state === 'wipe' || me.gog) return; drown = 0; sting = Math.min(sting, .15); me.state = 'wipe'; me.wipeT = 1.2; holding = false; charge = 0; W.frozen = true; $('wipe').classList.add('on'); };
 $('fire').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); dragFrom = [e.clientX, e.clientY, e.pointerId]; aimDir = null; try { $('fire').setPointerCapture(e.pointerId); } catch {} press(true); });
 $('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !== dragFrom[2]) return; const dx = e.clientX - dragFrom[0], dy = dragFrom[1] - e.clientY;
   if (W.orbit) { W.orbit.right(RIGHT); W.orbit.forward(UP); } else { RIGHT.set(1, 0, -1).normalize(); UP.set(-1, 0, -1).normalize(); }
@@ -445,7 +474,15 @@ $('fire').addEventListener('pointermove', e => { if (!dragFrom || e.pointerId !=
 $('fire').addEventListener('pointerup', e => { e.stopPropagation(); press(false); });
 $('fire').addEventListener('pointercancel', () => press(false));
 $('wipe').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); wipe(); });
-addEventListener('keydown', e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'KeyJ') { mouseAim = null; press(true); e.preventDefault(); } if (e.code === 'KeyF') wipe(); if (e.code === 'KeyR') nextWeapon(); const n = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (n >= 0) setWeapon(ORDER[n]); }, true);
+// T8: G / the 「မျက်မှန်」 pad — only there once you own goggles; does nothing while OUT, wiping or filling at a tap
+const gogPad = $('gog'); gogPad.hidden = !me.goggles;
+const gogKey = () => {
+  if (!me.goggles || !playing || me.out || me.filling || me.state === 'wipe' || me.gog || me.pend) return;
+  if (holding) { holding = false; charge = 0; aimDir = null; dragFrom = null; $('fire').classList.remove('on'); if (me.weapon === 'balloon') dropBalloon(me); } // let go of the pad: it's a hand to the forehead
+  flipGoggles(me);
+};
+gogPad.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); gogKey(); });
+addEventListener('keydown', e => { if (e.repeat) return; if (e.code === 'Space' || e.code === 'KeyJ') { mouseAim = null; press(true); e.preventDefault(); } if (e.code === 'KeyF') wipe(); if (e.code === 'KeyG') gogKey(); if (e.code === 'KeyR') nextWeapon(); const n = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code); if (n >= 0) setWeapon(ORDER[n]); }, true);
 addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'KeyJ') press(false); });
 const ray = new THREE.Raycaster(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), mv2 = new THREE.Vector2();
 const cursorGround = e => { mv2.set(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1); ray.setFromCamera(mv2, W.cam); return ray.ray.intersectPlane(groundPlane, new THREE.Vector3()); };
@@ -535,12 +572,13 @@ function nextRound() { // everyone back to the start line, full cans, full grit
     dropBalloon(k); Object.assign(k, { pend: null, kb: null, burst: 0, grit: 1, water: CAN, out: false, state: 'fight', tap: null, waiting: false, wipeT: 0, stuck: 0, navT: 0, cool: 1 + rnd() * 1.5, target: null });
     if (k.disc?.userData.m) k.disc.material = k.disc.userData.m;
     k.c.g.position.set(k.start[0], 0, k.start[1]); k.c.g.rotation.y = k.start[2]; k.c.anim.setLoop('idle');
+    k.gog = null; if (k.goggles && k.ai) setGoggles(k, 'down'); // the kids' goggles back down for the new round (yours stay as you left them)
   }
   holding = false; charge = 0; drown = 0; sting = 0; $('wipe').classList.remove('on');
   ai.reset(); W.snapCam(); $('end').hidden = true; playing = true; W.frozen = false; window.war.result = null; scored = ''; score(); roundLabel();
   say(`ပွဲ ${MY(round)} — စ!`, 2);
 }
-const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : ''); };
+const go = mode => { location.search = '?mode=' + mode + (ALLEY ? '&map=alley' : '') + (AUTO ? '&auto' : '') + (P.has('debug') ? '&debug' : '') + (P.get('dt') ? '&dt=' + P.get('dt') : '') + (P.get('q') ? '&q=' + P.get('q') : '') + (P.has('goggles') ? '&goggles=' + P.get('goggles') : ''); }; // T8: ?goggles survives picking a side
 $('home').onclick = () => go('home'); $('away').onclick = () => go('away');
 $('alley').onclick = () => { location.search = '?map=' + (ALLEY ? 'lot' : 'alley') + (AUTO ? '&auto' : ''); };
 $('alley').textContent = ALLEY ? 'မြေပုံ: လမ်းကြား → ကွက်လပ်' : 'မြေပုံ: ကွက်လပ် → လမ်းကြား';
@@ -590,12 +628,18 @@ W.tick(dt => {
     for (const k of kids) { k.hitT += dt; if (atRest(k) && k.grit < 1) { k.grit = Math.min(1, k.grit + REST_RATE * dt); if (k.out && k.grit >= 1) comeBack(k); } }
     if (!AUTO) mine(dt);
     ai.update(dt); // everyone else (and you, on ?auto): yangon/ai.js
+    for (const k of kids) { // T8: the kids push their goggles up while they rest / sit OUT, and pull them down again for the fight
+      if (!k.goggles || !k.ai || k.gog || k.c.anim.one || k.pend || k.burst > 0 || W.time() < (k.gogNext ?? 0)) continue;
+      const want = k.out || k.state === 'rest' ? 'up' : 'down'; if (want !== k.goggles) { k.gogNext = W.time() + 2; flipGoggles(k); }
+    }
     for (const r of REFILL) { if (r.user && (r.user.out || Math.hypot(pos(r.user).x - r.x, pos(r.user).z - r.z) > 1.3)) r.user = null; r.stream.visible = !!r.user && r.user.filling; }
     score();
     if (!ended && (clock -= dt) <= 0) { clock = 0; timeUp(); }
     $('clock').textContent = `${Math.floor(clock / 60)}:${String(Math.floor(clock % 60)).padStart(2, '0')}`;
   }
+  for (const k of kids) stepGoggles(k, dt);
   stepDrops(dt); stepBalloons(dt); showAim(); tags(); feel(dt); fx.update(dt);
+  if (me.goggles) { gogPad.classList.toggle('down', me.goggles === 'down'); gogPad.classList.toggle('busy', !!me.gog); }
   REST.A.ring.material.opacity = me.out ? .55 + Math.sin(W.time() * 6) * .35 : .45;
   const shake = !W.orbit && shakeT > 0 ? shakeA * shakeT / TUNE.shakeT * TUNE.shake / 6 : 0; shakeT -= dt; // iso: shake the canvas; orbit shakes the camera (kick)
   drown = Math.max(0, drown - dt * .3);
@@ -621,6 +665,7 @@ function feel(dt) {
     if ((k.trailHold -= dt) <= 0) k.trail = Math.max(k.grit, (k.trail ?? 1) - dt * .7); if (k.grit > k.trail) k.trail = k.grit; k.chunkT = (k.chunkT ?? 0) - dt; // the red trail drains after a beat
     if (k.kb) { const p = pos(k); p.addScaledVector(k.kb.v, Math.min(dt, k.kb.t)); W.collide(p); if ((k.kb.t -= dt) <= 0) k.kb = null; }
     if (k.pend && (k.pend.t -= dt) <= 0) (k.pend.kind === 'balloon' ? release : dump)(k);
+    if (k.flashT > 0 && (k.flashT -= dt) <= 0) for (const m of k.c.ch.goggles.lens) m.emissiveIntensity = LENS;
   }
   if ((dripT -= dt) <= 0) { dripT = .3; // one dripping can at a time, round-robin
     for (let j = 0; j < kids.length; j++) { const k = kids[(dripI + j) % kids.length]; if (k.out || k.filling || k.water >= LOW_W * CAN) continue;
@@ -631,10 +676,11 @@ function feel(dt) {
 if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-gui.esm.min.js').then(({ GUI }) => {
   const gui = new GUI({ title: 'ရေပက် tune (T3)' }), f = gui.addFolder('ထိတဲ့ခဏ');
   f.add(TUNE, 'hitStop', 0, .15, .005); f.add(TUNE, 'bucketStop', 0, .2, .005); f.add(TUNE, 'chunk', 0, 1, .05); f.add(TUNE, 'outStop', 0, .3, .01); f.add(TUNE, 'shakeT', 0, .5, .01); f.add(TUNE, 'shake', 0, 20, .5); f.add(TUNE, 'squash', .6, 1, .01); f.add(TUNE, 'vibrate', 0, 80, 5); f.add(TUNE, 'faceK', 1, 3, .1); f.add(TUNE, 'soakCap', 0, 1, .05); f.add(TUNE, 'blurMax', 0, 3, .1);
+  const gf = gui.addFolder('မျက်မှန်'); gf.add(TUNE, 'goggleFaceK', 1, 2, .05); gf.add(TUNE, 'goggleSoakK', 0, 1, .05); gf.add(TUNE, 'thuraK', .4, 1, .05); // T8 swim goggles
   for (const w of Object.values(WEAPONS)) { const g = gui.addFolder(w.name); for (const [key, v] of Object.entries(w)) if (typeof v === 'number') g.add(w, key, 0, Math.max(1, v * 3), .01); g.close(); }
   const pf = gui.addFolder('particles (total = live · the rest on reload)'); for (const n of Object.keys(fx.budget)) pf.add(fx.budget, n, 0, fx.budget[n] * 2, 1); pf.close();
   gui.add({ copy: () => { const j = JSON.stringify({ TUNE, WEAPONS, BUDGET: fx.budget }, null, 1); navigator.clipboard?.writeText(j); console.log(j); } }, 'copy').name('JSON copy');
 });
 
 W.start();
-window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit }), result: null, W, STATS };
+window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, flipGoggles, gogKey, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit, drown, sting }), result: null, W, STATS };
