@@ -309,8 +309,8 @@ function soak(k, o) {
   if (W.time() - (k.fxT ?? -1) > .12) { k.fxT = W.time(); fx.burst(o.at.clone ? o.at.clone() : o.at); }
   for (let j = 0; j < (o.big ? 5 : 2); j++) W.spawn(o.at.clone(), new THREE.Vector3(-o.push.x * .5 + (rnd() - .5) * 2.4, 1.2 + rnd() * 1.6, -o.push.z * .5 + (rnd() - .5) * 2.4), { spray: true, s: .7, life: .5 });
   if (hitSnd <= 0) { sound.fx(face || o.big ? 'splash' : 'hit', p); hitSnd = .12; }
-  if (k.me) { const sk = k.goggles === 'down' ? TUNE.goggleSoakK : 1; // goggles down: the water-up-your-nose overlay builds ×.4
-    kick(o.big ? 8 : face ? 6 : 3); buzz(); drown = Math.min(1, drown + (o.big ? .25 : o.face ? .07 : .03) * sk); if (o.face || o.big) sting = Math.min(1, sting + (o.big ? .35 : .2) * sk); }
+  if (k.me) { const gd = k.goggles === 'down', sk = gd ? TUNE.goggleSoakK : 1, eyes = o.face && !gd; // goggles down: no water in the eyes (a face drop stings like a body drop: not at all) and the overlay builds ×.4
+    kick(o.big ? 8 : face ? 6 : 3); buzz(); drown = Math.min(1, drown + (o.big ? .25 : eyes ? .07 : .03) * sk); if (eyes || o.big) sting = Math.min(1, sting + (o.big ? .35 : .2) * sk); }
   const mine = o.from?.me;
   if (mine && ((k.popT ?? 0) < W.time() || o.big)) { k.popT = W.time() + .5; // the word says which weapon: a pump chips, a balloon bursts, a bucket drenches
     if (o.kind === 'bucket') pop(k, 'ရွှဲ!!', '#ffe36b', 34); else if (o.kind === 'balloon') pop(k, 'ဖောင်း!', '#ffd0e4', 26); else pop(k, face ? 'မျက်နှာ!' : 'ဖျန်း', face ? '#ffe36b' : '#fff', face ? 20 : 16); if (o.big) buzz(); } // into the goggles: the flat 「ဖျန်း」
