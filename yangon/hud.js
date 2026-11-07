@@ -15,16 +15,37 @@ export function createHud(W) {
   if ($('jump')) $('jump').innerHTML = '<b>⏫</b>ခုန်';
 
   // ---------- dialogue ----------
-  const waiting = []; // a conversation that starts while another is open waits its turn instead of cutting in
+  // lines: [who, text, opts?] — opts reach onLine() listeners (T10: the talk director; story.js passes { face, act, cue, voice, shot,
+  // react, to, who: cast id }). The text types itself in (TYPE clusters/s — a stacked Burmese syllable is one); a tap first finishes
+  // the line, the next tap moves on. Moving on never waits for the typing (story.js's hold() runs from when the line opens).
+  const waiting = [], lineFns = []; // a conversation that starts while another is open waits its turn instead of cutting in
+  let typing = null; const TYPE = 28;
   function talk(lines, done) { if (talking) { waiting.push([lines, done]); return; } talking = { lines, i: -1, done }; sync(); next(); }
   function next() {
-    const t = talking; t.i++;
-    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); t.done?.(); if (!talking && waiting.length) talk(...waiting.shift()); return; }
-    const [who, text] = t.lines[t.i];
-    $('dname').textContent = who || ''; $('dtext').textContent = text; $('dlg').classList.toggle('say', !who); $('dlg').hidden = false;
+    const t = talking; t.i++; typing = null;
+    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); for (const f of lineFns) f(null); t.done?.(); if (!talking && waiting.length) talk(...waiting.shift()); return; }
+    const [who, text, opts = {}] = t.lines[t.i];
+    $('dname').textContent = who || ''; $('dlg').classList.toggle('say', !who); $('dlg').hidden = false;
+    typeIn(text ?? '');
+    for (const f of lineFns) f(who, text, opts);
   }
+  // the box keeps the whole line's size from the start (the rest sits there invisible), so it never grows while it types
+  const shown = document.createElement('span'), rest = document.createElement('span'); rest.style.opacity = '0';
+  function typeIn(text) {
+    const ends = clusters(text); $('dtext').replaceChildren(shown, rest);
+    if (ends.length < 2) { shown.textContent = text; rest.textContent = ''; return; }
+    typing = { text, ends, k: 0, acc: 0 }; shown.textContent = ''; rest.textContent = text;
+  }
+  function finish() { if (!typing) return false; shown.textContent = typing.text; rest.textContent = ''; typing = null; return true; } // a tap mid-line: the whole line at once
+  W.tick(dt => {
+    if (!typing) return;
+    const ty = typing; ty.acc += dt * TYPE; const k = Math.min(ty.ends.length, Math.floor(ty.acc));
+    if (k !== ty.k) { ty.k = k; const at = ty.ends[k - 1] ?? 0; shown.textContent = ty.text.slice(0, at); rest.textContent = ty.text.slice(at); }
+    if (k >= ty.ends.length) typing = null;
+  });
   const say = lines => new Promise(r => talk(lines, r));
-  $('dlg').addEventListener('pointerdown', e => { e.stopPropagation(); if (talking) next(); });
+  const tap = () => { if (talking && !finish()) next(); };
+  $('dlg').addEventListener('pointerdown', e => { e.stopPropagation(); tap(); });
 
   // ---------- toast + area banner ----------
   let toastT = 0, areaT = 0;
@@ -88,7 +109,7 @@ export function createHud(W) {
 
   // E / the round button: whatever is open gets it first
   function action() {
-    if (talking) { next(); return true; }
+    if (talking) { tap(); return true; }
     if (mini) { snap(); return true; }
     if (menuOpen) return true; // menus take clicks / taps
     if (scene) return true;
@@ -129,7 +150,7 @@ export function createHud(W) {
 
   const tool = t => { $('tool').innerHTML = t === 'gun' ? '<i>🔫</i><b>ရေသေနတ်</b><small>R · ပြောင်း</small>' : t === 'balloon' ? '<i>🎈</i><b>ပူဖောင်း</b><small>R · ပြောင်း</small>' : '<i>🪣</i><b>ရေပုံး</b><small>R · ပြောင်း</small>'; $('tool').classList.toggle('gun', t === 'gun' || t === 'balloon'); };
   tool(W.player?.ch.tool ?? 'bucket');
-  return { talk, say, next, toast, area, menu, closeMenu, timing, power, release: p => mini?.power && snap(p), fade, cinematic, action, initMap, tool,
+  return { talk, say, next, finish, typing: () => !!typing, onLine: f => lineFns.push(f), toast, area, menu, closeMenu, timing, power, release: p => mini?.power && snap(p), fade, cinematic, action, initMap, tool,
     map: (p, goals, T, dt) => { if ((mapT -= dt) <= 0 && mapBase) { mapT = .1; drawMap(p, goals, T); } },
     talking: () => !!talking, menuOpen: () => !!menuOpen, mini: () => mini, busy: () => !!(talking || menuOpen || mini || scene) };
 }
@@ -156,5 +177,17 @@ export function play(W, hud, { spots, goals, areaAt, mapAt }) { // mapAt: where 
     if (a && a.name !== lastArea) { if (lastArea) hud.area(a.name); lastArea = a.name; }
   });
   return { here: () => here?.label() };
+}
+// where a typewriter may stop: after each cluster — a base letter with its vowel signs, medials, asat and tone marks, and a
+// consonant stacked under a virama (U+1039) or a kinzi riding on top. Not Unicode's grapheme rules, which split Burmese syllables
+export function clusters(text) {
+  const ends = [], mark = c => (c >= 0x102B && c <= 0x103E) || (c >= 0x1056 && c <= 0x1059) || (c >= 0x105E && c <= 0x1060) || (c >= 0x1062 && c <= 0x1064) || (c >= 0x1067 && c <= 0x106D) || (c >= 0x1071 && c <= 0x1074) || (c >= 0x1082 && c <= 0x108D) || c === 0x108F || (c >= 0x109A && c <= 0x109D) || c === 0x200C || c === 0x200D || (c >= 0xFE00 && c <= 0xFE0F);
+  let prev = 0;
+  for (let i = 0; i < text.length;) {
+    const c = text.codePointAt(i), n = c > 0xFFFF ? 2 : 1;
+    if (i > 0 && !mark(c) && prev !== 0x1039) ends.push(i); // (a kinzi — င ် ္ — joins the consonant after it through the ္)
+    prev = c; i += n;
+  }
+  ends.push(text.length); return ends;
 }
 export const mm = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);

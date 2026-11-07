@@ -110,7 +110,7 @@ export function createStory({ W, hud, who, cue = () => {}, name = () => '', fast
       if (p && o.act) p.act ? p.act(o.act) : p.anim.play(o.act);
       face(p, o.face);
       lineT = fast() ? .3 : hold(text); lineN++;
-      await hud.say([[fill(NAMES[k] ?? ''), fill(text)]]);
+      await hud.say([[fill(NAMES[k] ?? ''), fill(text), { ...o, who: k }]]); // T10: the line's options + the cast id reach the talk director (hud.onLine)
     }
     W.talkWith = null; hud.cinematic(false);
   }
