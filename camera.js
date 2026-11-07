@@ -23,7 +23,7 @@ export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) 
 // wide → close; roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
 // share of the half-frame (the dialogue box covers the bottom); glide: seconds per cut; headDrop: the target under the head (m)
 export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .7, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
-  twoMin: 3.2, twoK: 1.9, twoPad: 1.4, twoElev: .25, twoYaw: .35, closeDist: 2.0, closeElev: .08, closeYaw: .45, wideElev: .55, wideYaw: .8, widePad: 1, wideMin: 4.5,
+  twoMin: 3.2, twoK: 1.9, twoPad: 1.4, twoElev: .25, twoYaw: .35, closeDist: 2.0, closeElev: .08, closeYaw: .45, wideElev: .55, wideYaw: .8, wideSpeaker: .35, widePad: 1, wideMin: 4.5, wideMax: 10,
   pullMax: .3, roomSpan: 60, boxLift: .22 };
 const PRI = { run: 1, ride: 2, war: 3, talk: 4, room: 5 }; // scene (6) sits above them all (CAMERA.md §၂)
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -83,9 +83,9 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
       return { kind, target: S.clone().setY(S.y - TALK.headDrop * .5), az: Math.atan2(dir.x, dir.z), dist: TALK.closeDist, elev: TALK.closeElev };
     }
     if (kind === 'wide') {
-      const all = [S, L, ...group], c = new THREE.Vector3(); let y = 0; for (const p of all) { c.add(flat(p)); y += p.y; } c.divideScalar(all.length); y /= all.length;
+      const all = [S, L, ...group], c = new THREE.Vector3(); let y = 0; for (const p of all) { c.add(flat(p)); y += p.y; } c.divideScalar(all.length).lerp(flat(S), TALK.wideSpeaker); y /= all.length; // centred a little towards the speaker
       let R = 0; for (const p of all) R = Math.max(R, flat(p).distanceTo(c)); R += TALK.widePad;
-      const d = Math.max(TALK.wideMin, R / th, R * .8 / tv) * 1.05;
+      const d = Math.min(TALK.wideMax, Math.max(TALK.wideMin, R / th, R * .8 / tv) * 1.05);
       return { kind, target: c.setY(y - .35), az: toward(Math.atan2(n.x, n.z), TALK.wideYaw), dist: d, elev: TALK.wideElev };
     }
     // two: side-on to the pair, both in frame

@@ -107,6 +107,63 @@ const results = {};
     await p.context().close();
   }
 
+  // a made-up scene (docs only, never in the game): injected into story.js's SCENES and played through main.js's story.play
+  const inject = (p, id, lines) => p.evaluate(([id, lines]) => { zone.story.SCENES[id] = { lines }; const h = zone.hero, c = zone.people; h.g.position.set(1.6, 0, 1.2); h.g.rotation.y = Math.PI; zone.W.snapCam(); }, [id, lines]);
+  const LONG = 'မဏ္ဍပ် ငါ စီမံမယ်၊ မင်းတို့ ပစ္စည်း သယ်ခဲ့';
+
+  // ---------- 3. tap-through: 20 lines at 10 taps / s ----------
+  if (want('tap')) {
+    log('3. tap-through');
+    const LINES = [['ngazwe', LONG], ['maythu', LONG, { act: 'note' }], ['phoekyaw', 'ရတယ် ရတယ်', { act: 'shrug' }], ['chocho', LONG + '?'], ['hero', LONG],
+      [null, null, { cue: 'none' }], ['ngazwe', LONG + '!', { react: 'bang' }], ['ngazwe', LONG], ['maythu', LONG, { shot: 'two' }], ['chocho', LONG, { shot: 'close' }],
+      ['phoekyaw', LONG, { shot: 'wide' }], ['maythu', LONG, { to: 'chocho' }], ['chocho', LONG + '?'], ['ngazwe', LONG + '!'], ['hero', LONG], ['maythu', LONG, { voice: true }],
+      ['phoekyaw', LONG, { act: 'ring' }], ['chocho', LONG, { face: 'sly' }], ['ngazwe', LONG, { act: 'scold' }], ['maythu', LONG + '?'], ['phoekyaw', LONG, { act: 'shrug' }]];
+    const check = p => p.evaluate(() => window.__check());
+    const defCheck = p => p.evaluate(() => { window.__check = () => { const z = zone, o = z.W.orbit, P = Object.entries(z.people);
+      return { talking: P.filter(([, c]) => c.anim.talking).map(([k]) => k), oneShots: P.filter(([, c]) => c.anim.one).map(([k, c]) => k + ':' + c.anim.one), chat: P.filter(([, c]) => c.anim.chat).map(([k]) => k),
+        camScene: o.talking, locked: o.state.locked, talkCtx: o.state.ctx.has('talk'), talkWith: !!z.W.talkWith, hudTalking: z.hud.talking(), director: !!z.director?.scene, busy: z.hud.busy() }; }; });
+    const run = async (q, how) => {
+      const p = await open(q); await inject(p, 'tap', LINES); await defCheck(p);
+      const r = await p.evaluate(async how => {
+        const z = zone, dlg = document.getElementById('dlg'), tap = () => dlg.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        let taps = 0, ctxSeen = false, lines = 0, gestures = new Set(); z.hud.onLine((n, t, o) => { if (!o?.closed) lines++; });
+        const off = how === 'tick' ? (() => { let on = true; z.W.tick(() => { if (!on) return; ctxSeen ||= z.W.orbit.state.ctx.has('talk'); for (const c of Object.values(z.people)) if (c.anim.one) gestures.add(c.anim.one); if (z.hud.talking()) { tap(); taps++; } }); return () => { on = false; }; })()
+          : (() => { const id = setInterval(() => { ctxSeen ||= z.W.orbit.state.ctx.has('talk'); if (z.hud.talking()) { tap(); taps++; } }, 100); return () => clearInterval(id); })();
+        const t0 = z.W.time(); await z.story.play('tap'); off(); const after = window.__check(); // the moment the scene is over (no frame in between)
+        return { taps, lines, gameSecs: +(z.W.time() - t0).toFixed(1), ctxSeen, gestures: [...gestures], shots: z.director?.log.length ?? 0, after };
+      }, how);
+      const after = r.after;
+      await p.evaluate(() => new Promise(r => { const t = zone.W.time(); zone.W.tick(() => { if (zone.W.time() > t + 1.5) r(); }); }));
+      const later = await check(p);
+      await p.context().close();
+      return { ...r, after, later };
+    };
+    results.tap = {};
+    for (const [name, q, how] of [['director, a tap every frame (10/s game time)', 'new&day=1&step=1-3', 'tick'], ['director, 10 taps/s wall clock (~10 per frame)', 'new&day=1&step=1-3', 'wall'], ['?talk=0 (old talk context)', 'new&day=1&step=1-3&talk=0', 'tick']]) {
+      const r = await run(q, how); results.tap[name] = r;
+      const a = r.after, ok = !a.talking.length && !a.oneShots.length && !a.camScene && !a.locked && !a.talkCtx && !a.talkWith && !a.hudTalking && !a.director;
+      log(`   ${name}: ${r.lines} lines, ${r.taps} taps, ${r.gameSecs} s game, ${r.shots} shots, gestures seen ${r.gestures.join(' ') || '-'} · talk context seen during: ${r.ctxSeen}`);
+      log(`     right after: ${ok ? 'OK' : 'NOT OK'} ${JSON.stringify(a)}`);
+      log(`     1.5 s later: ${JSON.stringify(r.later)}`);
+    }
+  }
+
+  // ---------- 4. phone 375×667: one screenshot per shot kind ----------
+  if (want('phone')) {
+    log('4. phone');
+    const p = await open('new&day=1&step=1-3', { width: 375, height: 667 }); await hook(p);
+    await inject(p, 'phone', [['ngazwe', LONG, { shot: 'ots', to: 'maythu' }], ['maythu', LONG, { shot: 'two', to: 'ngazwe' }], ['chocho', LONG, { shot: 'close', to: 'maythu' }], ['phoekyaw', LONG, { shot: 'wide', to: 'maythu' }]]);
+    await p.evaluate(() => { window.__done = false; zone.story.play('phone').then(() => { window.__done = true; }); });
+    const kinds = ['ots', 'two', 'close', 'wide'], got = []; let i = 0;
+    for (const t0 = Date.now(); Date.now() - t0 < 900e3;) {
+      const s = await p.evaluate(() => ({ q: window.__q.splice(0), done: window.__done }));
+      for (const L of s.q) { const k = kinds[i++] ?? 'x' + i; await shot(p, 'phone-' + k); await p.evaluate(() => { zone.W.paused = false; }); got.push({ file: `phone-${k}.jpg`, shot: L.shot, mouth: L.mouth, one: L.one }); log('  ', `phone-${k}.jpg`, JSON.stringify(L.shot), 'mouth', L.mouth); }
+      if (s.done) break; await p.waitForTimeout(600);
+    }
+    results.phone = got;
+    await p.context().close();
+  }
+
   await b.close();
   log('console errors:', errs.length, errs.slice(0, 5));
   require('fs').writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 1));

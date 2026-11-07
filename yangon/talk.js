@@ -65,7 +65,7 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
     if (orbit && !same) {
       const hs = head(S), hl = L ? head(L) : hs.clone().add(new THREE.Vector3(Math.sin(S.g.rotation.y) * 1.6, 0, Math.cos(S.g.rotation.y) * 1.6)); // talking to nobody near: as if to someone in front
       const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, face: S.g.rotation.y, t: fast() ? 0 : TALK.glide });
-      sc.side = r.side; sc.camAz = r.az; log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), fallback: r.fallback });
+      sc.side = r.side; sc.camAz = r.az; log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), fallback: r.fallback, dist: +r.dist.toFixed(2), elev: +r.elev.toFixed(2) });
     }
     // acting: the speaker faces the listener; the rest face the speaker and listen
     turn(S, speakerYaw(S, L, orbit?.talking ? sc.camAz : null));
