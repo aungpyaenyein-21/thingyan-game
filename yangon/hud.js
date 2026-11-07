@@ -15,7 +15,7 @@ export function createHud(W) {
   if ($('jump')) $('jump').innerHTML = '<b>⏫</b>ခုန်';
 
   // ---------- dialogue ----------
-  // lines: [who, text, opts?] — opts reach onLine() listeners (T10: the talk director; story.js passes { face, act, cue, voice, shot,
+  // lines: [who, text, opts?] — opts reach onLine() listeners (and the box shutting calls them with (null, null, { closed: true })) (T10: the talk director; story.js passes { face, act, cue, voice, shot,
   // react, to, who: cast id }). The text types itself in (TYPE clusters/s — a stacked Burmese syllable is one); a tap first finishes
   // the line, the next tap moves on. Moving on never waits for the typing (story.js's hold() runs from when the line opens).
   const waiting = [], lineFns = []; // a conversation that starts while another is open waits its turn instead of cutting in
@@ -23,7 +23,7 @@ export function createHud(W) {
   function talk(lines, done) { if (talking) { waiting.push([lines, done]); return; } talking = { lines, i: -1, done }; sync(); next(); }
   function next() {
     const t = talking; t.i++; typing = null;
-    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); for (const f of lineFns) f(null); t.done?.(); if (!talking && waiting.length) talk(...waiting.shift()); return; }
+    if (t.i >= t.lines.length) { $('dlg').hidden = true; talking = null; sync(); for (const f of lineFns) f(null, null, { closed: true }); t.done?.(); if (!talking && waiting.length) talk(...waiting.shift()); return; }
     const [who, text, opts = {}] = t.lines[t.i];
     $('dname').textContent = who || ''; $('dlg').classList.toggle('say', !who); $('dlg').hidden = false;
     typeIn(text ?? '');
