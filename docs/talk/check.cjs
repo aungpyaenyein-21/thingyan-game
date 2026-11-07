@@ -148,8 +148,8 @@ const results = {};
       const r = await run(q, how); results.tap[name] = r;
       const a = r.after, ok = !a.talking.length && !a.oneShots.length && !a.camScene && !a.locked && !a.talkCtx && !a.talkWith && !a.hudTalking && !a.director;
       log(`   ${name}: ${r.lines} lines, ${r.taps} taps, ${r.gameSecs} s game, ${r.shots} shots, gestures seen ${r.gestures.join(' ') || '-'} · talk context seen during: ${r.ctxSeen}`);
-      log(`     right after: ${ok ? 'OK' : 'NOT OK'} ${JSON.stringify(a)}`);
-      log(`     1.5 s later: ${JSON.stringify(r.later)}`);
+      log(`     right after: ${q.includes('talk=0') ? '(no director: old behaviour — the talk context drops a frame later, story acts run their course)' : ok ? 'OK' : 'NOT OK'} ${JSON.stringify(a)}`);
+      log(`     1.5 s later (1-3's own splashes / hops may be on): ${JSON.stringify(r.later)}`);
     }
   }
 
