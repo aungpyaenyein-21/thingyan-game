@@ -29,9 +29,18 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
   const member = c => { if (c && !sc.members.has(c)) sc.members.set(c, { chat: c.anim.chat }); return c; };
   const nearest = (c, max = 9) => { let best = null, bd = max; for (const o of cast()) if (o !== c && here(o) && dist(o, c) < bd) { bd = dist(o, c); best = o; } return best; };
   const group = (S, L) => { const g = [S]; if (L && L !== S) g.push(L); for (const o of cast()) if (here(o) && !g.includes(o) && dist(o, S) < 4.5) g.push(o); return g; };
-  const turn = (c, to) => { if (!c || !to || c === to || !TURNS.includes(c.anim.loop)) return; const a = Math.atan2(to.g.position.x - c.g.position.x, to.g.position.z - c.g.position.z); if (fast()) c.g.rotation.y = a; else turns.set(c, a); };
+  const yawTo = (c, to) => Math.atan2(to.g.position.x - c.g.position.x, to.g.position.z - c.g.position.z);
+  const turn = (c, a) => { if (!c || a === null || !TURNS.includes(c.anim.loop)) return; if (fast()) c.g.rotation.y = a; else turns.set(c, a); };
+  // the speaker faces the listener — "cheated" round towards the camera when it would see less than a three-quarter face (a two
+  // or a wide side-on, a room's open side behind them), at most CHEAT off the listener
+  const CHEAT = 1.3, FACE = .9;
+  const speakerYaw = (S, L, camAz) => {
+    const a = L ? yawTo(S, L) : S.g.rotation.y; if (camAz === null) return a;
+    const d = wrap(camAz - a); if (Math.abs(d) <= FACE) return a;
+    return a + Math.sign(d) * Math.min(CHEAT, Math.abs(d) - FACE);
+  };
 
-  function begin(explicit = true) { end(); sc = { explicit, side: null, last: null, prev: null, n: 0, afterCue: false, members: new Map(), started: new Set(), speaker: null, gesture: null }; }
+  function begin(explicit = true) { end(); sc = { explicit, side: null, camAz: null, last: null, prev: null, n: 0, afterCue: false, members: new Map(), started: new Set(), speaker: null, gesture: null }; }
   function cue() { if (sc) sc.afterCue = true; }
   function line(name, text, o = {}) {
     if (!sc) begin(false);
@@ -55,12 +64,12 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
     sc.afterCue = false;
     if (orbit && !same) {
       const hs = head(S), hl = L ? head(L) : hs.clone().add(new THREE.Vector3(Math.sin(S.g.rotation.y) * 1.6, 0, Math.cos(S.g.rotation.y) * 1.6)); // talking to nobody near: as if to someone in front
-      const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, t: fast() ? 0 : TALK.glide });
-      sc.side = r.side; log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), fallback: r.fallback });
+      const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, face: S.g.rotation.y, t: fast() ? 0 : TALK.glide });
+      sc.side = r.side; sc.camAz = r.az; log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), fallback: r.fallback });
     }
     // acting: the speaker faces the listener; the rest face the speaker and listen
-    turn(S, L);
-    for (const c of g) if (c !== S) { turn(c, S); if (LISTEN.includes(c.anim.loop)) c.anim.chat = 'listen'; }
+    turn(S, speakerYaw(S, L, orbit?.talking ? sc.camAz : null));
+    for (const c of g) if (c !== S) { turn(c, yawTo(c, S)); if (LISTEN.includes(c.anim.loop)) c.anim.chat = 'listen'; }
     S.anim.chat = null;
     if (o.act && !o.act.startsWith('loop:')) sc.started.add(S); // story.js plays it
     else if (!o.act && !fast() && sc.n % 3 === 2 && !S.anim.one) { // one gesture every third line, from a small pool by the line's mood
