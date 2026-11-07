@@ -12,7 +12,7 @@ const clamp = THREE.MathUtils.clamp;
 export const STEP = Math.PI / 4;
 // CAMERA.md §၈ — the numbers lil-gui (?tune) edits; copy the JSON back into the doc when they feel right
 export const TUNE = { followK: 3.2, azK: 9, distOutK: 2, distInK: 4, base: 11, run: 3, ride: 5, war: 2, talk: -4, room: 6,
-  lookWalk: 1.2, lookRun: 2, lookRide: 2.5, lookK: .5, elevMin: .22, elevMax: .85, fade: .25, autoRotate: false };
+  lookWalk: 1.2, lookJog: 1.6, lookRun: 2, lookRide: 2.5, lookK: .5, elevMin: .22, elevMax: .85, fade: .25, autoRotate: false };
 export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) * Math.pow(clamp((d - 5) / 19, 0, 1), .8); // close in = low and level (sky shows), far out = looking down
 const PRI = { run: 1, ride: 2, war: 3, talk: 4, room: 5 }; // scene (6) sits above them all (CAMERA.md §၂)
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
@@ -69,14 +69,14 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     shake(amp = .12, sec = .15) { sh = { amp, t: sec, d: sec }; },
     release() { const wasLocked = scene?.lock; scene = null; if (wasLocked && !ctx.has('room')) s.locked = false; }, // the player has it back; the previous context comes back by itself
     snap(focus) { if (focus) s.target.copy(focus); s.az = s.azGoal + s.drag; s.dist = goal(); place(); },
-    // motion: { dir (ground, normalised, or null), kind: 'walk' | 'run' | 'ride' }
+    // motion: { dir (ground, normalised, or null), kind: 'walk' | 'jog' | 'run' | 'ride' }
     update(dt, focus, motion = null) {
       clock += dt;
       // run: on after .3 s of running, off after 1 s of not (CAMERA.md §၂)
       if (motion?.kind === 'run' && motion.dir) { runT += dt; stillT = 0; if (runT > .3) ctx.add('run'); }
       else { runT = 0; stillT += dt; if (stillT > 1) ctx.delete('run'); }
       // look-ahead: a little of the way you're heading, slowly (≈ 2 s)
-      const L = !motion?.dir ? 0 : motion.kind === 'ride' ? t.lookRide : motion.kind === 'run' ? t.lookRun : t.lookWalk;
+      const L = !motion?.dir ? 0 : motion.kind === 'ride' ? t.lookRide : motion.kind === 'run' ? t.lookRun : motion.kind === 'jog' ? t.lookJog : t.lookWalk;
       aim.set(0, 0, 0); if (L) aim.copy(motion.dir).multiplyScalar(L);
       look.lerp(aim, 1 - Math.exp(-dt * t.lookK));
       // where to look: a scene's subject, the two of you in a talk, else you (+ look-ahead)

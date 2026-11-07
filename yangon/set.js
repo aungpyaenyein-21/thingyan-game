@@ -4,7 +4,7 @@
 // Everything here is scenery: it is baked into a few meshes at start (world.bake). People and what they do live in main.js / story.js.
 // T5 (v6 day 1): the lot is cleared for the mandat (mandat.js), U Ba Tin's amplifier + the zinc lean-to (M2), ④'s fence (1-7).
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PAL } from '../world.js?v=16';
+import { PAL } from '../world.js?v=17';
 
 export const MM = n => String(n).replace(/\d/g, d => '၀၁၂၃၄၅၆၇၈၉'[d]);
 // T12 (issue #41 §2): ① lanes ×1.5. The lot side stays put (the back lane's south edge, the side lane's east edge, the east
