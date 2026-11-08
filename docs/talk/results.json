@@ -6,7 +6,7 @@
    "byWall": 6,
    "byRoom": 12,
    "byPeople": 14,
-   "fallback": 28,
+   "fallback": 31,
    "blocked": 6
   },
   "by": {
@@ -185,15 +185,16 @@
    "teaboss (shop: tea)": {
     "shots": 24,
     "blocked0": 10,
-    "fallback": 7,
+    "fallback": 10,
     "blocked": 3,
     "kinds": {
      "ots→two": 5,
      "two→two": 7,
-     "wide→wide": 7,
+     "wide→wide": 6,
      "ots→ots": 3,
      "two→close": 1,
-     "wide→close": 1
+     "wide→close": 1,
+     "wide→two": 1
     },
     "people": 9,
     "room": 1
@@ -4519,8 +4520,8 @@
     "pull0": 1,
     "why0": "people",
     "pull": 1,
-    "why": "people",
-    "fallback": 0
+    "why": "room",
+    "fallback": 1
    },
    {
     "id": "teaboss",
@@ -4532,19 +4533,19 @@
     "why0": "people",
     "pull": 1,
     "why": "people",
-    "fallback": 0
+    "fallback": 1
    },
    {
     "id": "teaboss",
     "where": "shop: tea",
     "az": 315,
     "want": "wide",
-    "got": "wide",
+    "got": "two",
     "pull0": 1,
     "why0": "people",
     "pull": 1,
     "why": "people",
-    "fallback": 0
+    "fallback": 3
    },
    {
     "id": "barber",
@@ -5128,7 +5129,7 @@
   "director, a tap every frame (10/s game time)": {
    "taps": 40,
    "lines": 20,
-   "gameSecs": 3.1,
+   "gameSecs": 3.7,
    "ctxSeen": false,
    "gestures": [
     "note",
@@ -5171,7 +5172,7 @@
   "director, 10 taps/s wall clock (~10 per frame)": {
    "taps": 40,
    "lines": 20,
-   "gameSecs": 1,
+   "gameSecs": 0.2,
    "ctxSeen": false,
    "gestures": [],
    "shots": 18,
@@ -5190,7 +5191,7 @@
    "later": {
     "talking": [],
     "oneShots": [
-     "maythu:jump"
+     "maythu:splash"
     ],
     "chat": [],
     "camScene": false,
@@ -5261,7 +5262,7 @@
     "dist": 3,
     "elev": 0.36
    },
-   "mouth": "o",
+   "mouth": "open",
    "one": null
   },
   {
@@ -5279,7 +5280,7 @@
     "dist": 6.79,
     "elev": 0.35
    },
-   "mouth": "open",
+   "mouth": "o",
    "one": null
   },
   {
@@ -5297,7 +5298,7 @@
     "dist": 2.03,
     "elev": 0.19
    },
-   "mouth": "open",
+   "mouth": "o",
    "one": "nod"
   },
   {
@@ -5307,13 +5308,13 @@
     "who": "phoekyaw",
     "to": "maythu",
     "want": "wide",
-    "kind": "ots",
+    "kind": "two",
     "pull0": 1,
     "pull": 1,
     "why0": "people",
-    "fallback": 0,
-    "dist": 4.51,
-    "elev": 0.36
+    "fallback": 3,
+    "dist": 8.67,
+    "elev": 0.35
    },
    "mouth": "open",
    "one": null
@@ -5321,14 +5322,14 @@
  ],
  "scenes": [
   {
-   "t": 0.5975,
+   "t": 0.1,
    "name": "အမေ",
    "text": "ဒီနေ့ လမ်းထဲကပဲ။ ၅ နာရီ အိမ်ပြန်",
    "who": "mom",
    "voice": false,
    "scene": "1-1",
    "done": true,
-   "mouth": "open",
+   "mouth": "o",
    "talking": true,
    "typing": true,
    "one": "scold",
@@ -5342,14 +5343,14 @@
     "pull": 0,
     "why0": null,
     "fallback": 0,
-    "dist": 7.3,
+    "dist": 7.33,
     "elev": 0.62
    },
-   "age": 0.43,
+   "age": 0.41,
    "file": "1-1-01.jpg"
   },
   {
-   "t": 4.471100000000093,
+   "t": 3.984400000000011,
    "name": "ငဇွဲ",
    "text": "နောက်ကျတယ်",
    "who": "ngazwe",
@@ -5377,7 +5378,7 @@
    "file": "1-2-01.jpg"
   },
   {
-   "t": 19.735000000000483,
+   "t": 19.100399999999954,
    "name": "မေသူ",
    "text": "မဏ္ဍပ် ငါ စီမံမယ်",
    "who": "maythu",
@@ -5401,18 +5402,18 @@
     "dist": 4.93,
     "elev": 0.62
    },
-   "age": 0.32,
+   "age": 0.34,
    "file": "1-2-02.jpg"
   },
   {
-   "t": 22.20960000000013,
+   "t": 21.58749999999995,
    "name": "ချိုချို",
    "text": "ချိုချို သိတယ်၊ ဆရာကြီးက မဏ္ဍပ် ဆောက်ခွင့် ပေးထားတာ",
    "who": "chocho",
    "voice": false,
    "scene": "1-2",
    "done": true,
-   "mouth": "o",
+   "mouth": "open",
    "talking": true,
    "typing": true,
    "one": "nod",
@@ -5429,11 +5430,11 @@
     "dist": 6.43,
     "elev": 0.62
    },
-   "age": 0.42,
+   "age": 0.4,
    "file": "1-2-03.jpg"
   },
   {
-   "t": 31.92570000000082,
+   "t": 31.206000000000078,
    "name": "မေသူ",
    "text": "မင်း ပစ်တာ ကောင်းတယ်၊ ပူဖောင်း ယူ",
    "who": "maythu",
@@ -5457,7 +5458,7 @@
     "dist": 3.57,
     "elev": 0.34
    },
-   "age": 0.4,
+   "age": 0.54,
    "file": "1-2-04.jpg"
   }
  ],
