@@ -207,7 +207,7 @@ addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(
 setTool(S.ball ? S.tool : 'bucket');
 
 // ---------- the story runner + the day's beats ----------
-const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(); return CUES[k]?.(id); } });
+const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
 // T10: the talk director — a shot per line, mouths, gestures, listeners (yangon/talk.js); ?talk=0 = the old two-shot talk context
 const director = new URLSearchParams(location.search).get('talk') === '0' || !W.orbit ? null : createDirector({ W, hud, who: k => PEOPLE[k] ?? null, cast: () => Object.values(PEOPLE),
   room: () => inside ? { open: Math.PI / 4, x0: ROOMS[inside].bounds.x0, z0: ROOMS[inside].bounds.z0 } : null, // rooms.js: the back (−z) and left (−x) walls, open towards +x +z

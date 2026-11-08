@@ -84,23 +84,25 @@ const results = {};
       const rows = [], hl = lift(z.hero);
       for (const [id, where, c, at, rm] of spots) {
         const S = at.clone().setY((rm ? .05 : W.ground(at.x, at.z)) + lift(c));
+        // people: everyone else standing about (as staged for 1-3, life.js's extras too) within 16 m — not the stand-ins for this pair
+        const others = W.chars.filter(o => o !== c && o !== z.hero && o.g.visible && o.g.parent && Math.hypot(o.g.position.x - at.x, o.g.position.z - at.z) < 16).map(o => o.ch.head.getWorldPosition(new W.THREE.Vector3()));
         for (let k = 0; k < 8; k++) {
           const a = k * Math.PI / 4, lx = at.x + Math.sin(a) * 1.6, lz = at.z + Math.cos(a) * 1.6, L = V(lx, lz).setY((rm ? .05 : W.ground(lx, lz)) + hl);
           for (const kind of ['ots', 'two', 'wide']) {
-            const s = W.orbit.talkShot(S, L, kind, { room: rm, dry: true });
-            rows.push({ id, where, az: k * 45, want: kind, got: s.kind, pull0: +s.pull0.toFixed(2), pull: +s.pull.toFixed(2), fallback: s.fallback });
+            const s = W.orbit.talkShot(S, L, kind, { room: rm, others, dry: true });
+            rows.push({ id, where, az: k * 45, want: kind, got: s.kind, pull0: +s.pull0.toFixed(2), why0: s.why0, pull: +s.pull.toFixed(2), why: s.why ?? null, fallback: s.fallback });
           }
         }
       }
       return rows;
     });
-    const by = {}, sum = { shots: r.length, blocked0: 0, fallback: 0, blocked: 0 };
+    const by = {}, sum = { shots: r.length, blocked0: 0, byWall: 0, byRoom: 0, byPeople: 0, fallback: 0, blocked: 0 };
     for (const x of r) {
       const k = `${x.id} (${x.where})`, o = by[k] ??= { shots: 0, blocked0: 0, fallback: 0, blocked: 0, kinds: {} };
       o.shots++; o.kinds[x.want + '→' + x.got] = (o.kinds[x.want + '→' + x.got] ?? 0) + 1;
-      if (x.pull0 > .3) { o.blocked0++; sum.blocked0++; } if (x.fallback > 0) { o.fallback++; sum.fallback++; } if (x.pull > .3) { o.blocked++; sum.blocked++; }
+      if (x.pull0 > .3) { o.blocked0++; sum.blocked0++; sum[{ wall: 'byWall', room: 'byRoom', people: 'byPeople' }[x.why0] ?? 'byWall']++; o[x.why0] = (o[x.why0] ?? 0) + 1; } if (x.fallback > 0) { o.fallback++; sum.fallback++; } if (x.pull > .3) { o.blocked++; sum.blocked++; }
     }
-    for (const [k, o] of Object.entries(by)) log('  ', k.padEnd(26), `shots ${o.shots} · first choice in a wall ${o.blocked0} · fallback ${o.fallback} · still in a wall ${o.blocked}`, JSON.stringify(o.kinds));
+    for (const [k, o] of Object.entries(by)) log('  ', k.padEnd(26), `shots ${o.shots} · first choice blocked ${o.blocked0} (wall ${o.wall ?? 0}, room ${o.room ?? 0}, people ${o.people ?? 0}) · fallback ${o.fallback} · still blocked ${o.blocked}`, JSON.stringify(o.kinds));
     log('   total', JSON.stringify(sum));
     for (const want of ['ots', 'two', 'wide']) { const xs = r.filter(x => x.want === want); log(`   ${want}: ${xs.length} shots · first choice > 30 % pulled in ${xs.filter(x => x.pull0 > .3).length} · fallback ${xs.filter(x => x.fallback > 0).length} · after fallback > 30 % ${xs.filter(x => x.pull > .3).length}`); }
     results.walls = { sum, by, rows: r };

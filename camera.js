@@ -6,7 +6,7 @@
 //   context(name, on, data?)  run | ride | war | talk (data = NPC position) | room (data = { az }, cut)
 //   focus(obj | Vector3, { dist, az, elev, t }) · lock(az) · shake(amp, sec) · release()   ← ဇာတ်လမ်း scene
 //   forward() / right() · tune (lil-gui ?tune — CAMERA.md §၈)
-//   talkShot(speaker, listener, kind, { group, room, side, face, t, dry }) · releaseTalk() ← T10 talk director (CAMERA.md §၆-ခ, yangon/talk.js)
+//   talkShot(speaker, listener, kind, { group, room, side, face, others, t, dry }) · releaseTalk() ← T10 talk director (CAMERA.md §၆-ခ, yangon/talk.js)
 import * as THREE from 'three';
 
 const clamp = THREE.MathUtils.clamp;
@@ -19,12 +19,15 @@ export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) 
 // per FOV so the speaker sits on the ⅓ line (third) and the listener's head towards the frame's edge (edge)); over otsMax m apart a
 // close single instead, and a two when they stand too close for it (the listener would get under otsMin of the way out) · two: side-on
 // to the pair (twoYaw towards the speaker's face) · close: the speaker's face · wide: the group, fitted + widePad m (wideYaw towards
-// the speaker's face). pullMax: a camCollide pull-in past this share of the distance = "in a wall" → the other shoulder → two →
-// wide → close; roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
+// the speaker's face); a wide that would need more than wideMax isn't one: an ots on the speaker instead. pullMax: a camCollide
+// pull-in past this share of the distance = "in a wall" — and anyone's head within peopleR m of the first peopleK of the camera →
+// target line blocks it outright — → the other shoulder → two → wide → close; thirdPortrait / edgePortrait: the ots on a phone held
+// upright; cheat / face: the director turns the speaker up to `cheat` rad towards the camera when it sees them more than `face` rad
+// off their front (yangon/talk.js); roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
 // share of the half-frame (the dialogue box covers the bottom); glide: seconds per cut; headDrop: the target under the head (m)
-export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .7, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
+export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .7, thirdPortrait: .36, edgePortrait: .6, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
   twoMin: 3.2, twoK: 1.9, twoPad: 1.4, twoElev: .25, twoYaw: .35, closeDist: 2.0, closeElev: .08, closeYaw: .45, wideElev: .55, wideYaw: .8, wideSpeaker: .5, widePad: 1, wideMin: 4.5, wideMax: 10,
-  pullMax: .3, roomSpan: 60, boxLift: .22 };
+  pullMax: .3, peopleR: .7, peopleK: .4, roomSpan: 60, boxLift: .22, cheat: 1.3, face: .9 };
 const PRI = { run: 1, ride: 2, war: 3, talk: 4, room: 5 }; // scene (6) sits above them all (CAMERA.md §၂)
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -69,11 +72,12 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     const { h: th, v: tv } = halfTan(), u = flat(S).sub(flat(L)), SL = Math.max(.3, u.length()); u.divideScalar(SL);
     if (kind === 'ots' && SL > TALK.otsMax) kind = 'close'; // too far apart for one frame: a single on the speaker
     if (kind === 'ots') {
-      const b = TALK.back, want = Math.atan(th * TALK.third) + Math.atan(th * TALK.edge), sep = x => Math.atan(x / b) - Math.atan(x / (b + SL));
+      const up = cam.aspect < 1, third = up ? TALK.thirdPortrait : TALK.third, edge = up ? TALK.edgePortrait : TALK.edge;
+      const b = TALK.back, want = Math.atan(th * third) + Math.atan(th * edge), sep = x => Math.atan(x / b) - Math.atan(x / (b + SL));
       let hi = Math.sqrt(b * (b + SL)), lo = 0; if (sep(hi) > want) for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (sep(m) < want) lo = m; else hi = m; }
       if (sep(hi) < want * TALK.otsMin) return shotOf('two', S, L, n, group, face); // standing too close for one over the other's shoulder (the big heads would cover each other)
       const C = flat(L).addScaledVector(u, -b).addScaledVector(n, hi), dS = flat(S).sub(C), D = dS.length(); dS.divideScalar(D);
-      const np = n.clone().addScaledVector(dS, -n.dot(dS)).normalize(), a = Math.atan(th * TALK.third);
+      const np = n.clone().addScaledVector(dS, -n.dot(dS)).normalize(), a = Math.atan(th * third);
       const axis = dS.clone().multiplyScalar(Math.cos(a)).addScaledVector(np, -Math.sin(a)); // the speaker on the ⅓ line, the listener's shoulder at the other edge
       const target = C.clone().addScaledVector(axis, D).setY(S.y - TALK.headDrop);
       return { kind, target, az: Math.atan2(-axis.x, -axis.z), dist: D / Math.cos(TALK.otsElev), elev: TALK.otsElev };
@@ -85,7 +89,8 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     if (kind === 'wide') {
       const all = [S, L, ...group], c = new THREE.Vector3(); let y = 0; for (const p of all) { c.add(flat(p)); y += p.y; } c.divideScalar(all.length).lerp(flat(S), TALK.wideSpeaker); y /= all.length; // centred a little towards the speaker
       let R = 0; for (const p of all) R = Math.max(R, flat(p).distanceTo(c)); R += TALK.widePad;
-      const d = Math.min(TALK.wideMax, Math.max(TALK.wideMin, R / th, R * .8 / tv) * 1.05);
+      const d = Math.max(TALK.wideMin, R / th, R * .8 / tv) * 1.05;
+      if (d > TALK.wideMax) return shotOf('ots', S, L, n, group, face); // too spread out for one frame: not a wide, an ots on the speaker
       return { kind, target: c.setY(y - .35), az: toward(Math.atan2(n.x, n.z), TALK.wideYaw), dist: d, elev: TALK.wideElev };
     }
     // two: side-on to the pair, both in frame
@@ -96,13 +101,16 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     const { target: T, az: a, dist: d, elev: e } = sh, C = T.clone().add(new THREE.Vector3(Math.sin(a) * Math.cos(e) * d, Math.sin(e) * d, Math.cos(a) * Math.cos(e) * d));
     T.y -= d * halfTan().v * TALK.boxLift; sh.dist = C.distanceTo(T); sh.elev = Math.asin(clamp((C.y - T.y) / sh.dist, -1, 1)); return sh;
   };
-  const pullOf = (sh, room) => { // the share of the distance a wall would take off (0 = clear, 1 = not allowed)
+  const seg = new THREE.Line3(), near = new THREE.Vector3();
+  const pullOf = (sh, room, heads = []) => { // the share of the distance a wall would take off (0 = clear, 1 = not allowed); why: wall | room | people
     const { target: T, az: a, dist: d, elev: e } = sh, dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
-    let p = 0;
-    if (collide) { const hit = collide(T, T.clone().addScaledVector(dir, d)); if (hit !== null && hit < d) p = Math.max(p, 1 - Math.max(0, hit - .3) / d); }
+    let p = 0; sh.why = null;
+    const C = T.clone().addScaledVector(dir, d); seg.set(C, C.clone().lerp(T, TALK.peopleK)); // someone standing in the near part of the view hides the shot
+    for (const h of heads) if (seg.closestPointToPoint(h, true, near).distanceTo(h) < TALK.peopleR) { sh.why = 'people'; return 1; }
+    if (collide) { const hit = collide(T, C); if (hit !== null && hit < d) { p = Math.max(p, 1 - Math.max(0, hit - .3) / d); sh.why = 'wall'; } }
     if (room) { // a cut-away room (rooms.js): walls at x0 and z0 only; the camera stays in front of them and on the open half
-      if (Math.abs(wrap(a - room.open)) > THREE.MathUtils.degToRad(TALK.roomSpan) + 1e-6) return 1;
-      for (const [k, w] of [['x', room.x0], ['z', room.z0]]) if (dir[k] < 0) { const reach = (T[k] - w - .25) / -dir[k]; if (reach < d) p = Math.max(p, 1 - Math.max(0, reach) / d); }
+      if (Math.abs(wrap(a - room.open)) > THREE.MathUtils.degToRad(TALK.roomSpan) + 1e-6) { sh.why = 'room'; return 1; }
+      for (const [k, w] of [['x', room.x0], ['z', room.z0]]) if (dir[k] < 0) { const reach = (T[k] - w - .25) / -dir[k]; if (reach < d) { const q = 1 - Math.max(0, reach) / d; if (q > p) { p = q; sh.why = 'room'; } } }
     }
     return p;
   };
@@ -111,25 +119,28 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     return sh;
   };
   const sideOf = (S, L) => { const u = flat(S).sub(flat(L)).normalize(); return new THREE.Vector3(-u.z, 0, u.x); };
-  function talkPlan(S, L, kind, group, room, side, face) {
+  function talkPlan(S, L, kind, group, room, side, face, others) {
     const n0 = sideOf(S, L); let n = n0;
+    const heads = sh => sh.kind === 'ots' ? others : [...others, L]; // (an ots has the listener's shoulder in front on purpose)
+    const pull = sh => pullOf(sh, room, heads(sh));
     if (side) { if (n.dot(side) < 0) n = n0.clone().negate(); }
-    else { // a new scene: the side that is clear (in a room: nearer the open side), else the one nearer where the camera is now
-      const a = fit(shotOf(kind, S, L, n0, group, face), room), b = fit(shotOf(kind, S, L, n0.clone().negate(), group, face), room), pa = pullOf(a, room), pb = pullOf(b, room);
-      const near = sh => Math.abs(wrap(sh.az - (room ? room.open : s.az)));
-      n = pa < pb - .05 || (Math.abs(pa - pb) <= .05 && near(a) <= near(b)) ? n0 : n0.clone().negate();
+    else { // a new scene: the clearer side; equally clear → the one that sees the speaker's face, then the one nearer the open side (a room) / where the camera is now
+      const a = raise(fit(shotOf(kind, S, L, n0, group, face), room)), b = raise(fit(shotOf(kind, S, L, n0.clone().negate(), group, face), room)), pa = pull(a), pb = pull(b);
+      const sees = sh => face === null ? 0 : Math.abs(wrap(face - sh.az)), near = sh => Math.abs(wrap(sh.az - (room ? room.open : s.az)));
+      const pickA = Math.abs(pa - pb) > .05 ? pa < pb : Math.abs(sees(a) - sees(b)) > .1 ? sees(a) < sees(b) : near(a) <= near(b);
+      n = pickA ? n0 : n0.clone().negate();
     }
     const other = n.clone().negate(), tries = kind === 'wide' ? [['wide', n], ['wide', other], ['two', n], ['two', other], ['close', n]]
       : kind === 'two' ? [['two', n], ['two', other], ['wide', n], ['close', n], ['close', other]]
       : [[kind, n], [kind, other], ['two', n], ['two', other], ['wide', n], ['close', n], ['close', other]]; // the other shoulder, then side-on, then the group, last a single (short: rarely blocked)
-    let best = null, pull0 = null;
+    let best = null, pull0 = null, why0 = null;
     for (let i = 0; i < tries.length; i++) {
       const sh = shotOf(tries[i][0], S, L, tries[i][1], group, face);
-      raise(fit(sh, room)); const p = pullOf(sh, room); if (pull0 === null) pull0 = p;
+      raise(fit(sh, room)); const p = pull(sh); if (pull0 === null) { pull0 = p; why0 = sh.why; }
       if (!best || p < best.pull - 1e-3) best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n };
       if (p <= TALK.pullMax) { best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n }; break; }
     }
-    return { ...best, side: n, pull0 };
+    return { ...best, side: n, pull0, why0 };
   }
   const o = {
     state: s, tune: t,
@@ -155,10 +166,10 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     // (a cut-away room: walls only at x0 and z0, the camera stays on the open side); side = the scene's side of the line of action
     // (a ground Vector3, kept for the whole scene — the 180° rule), null = pick the clearer one. t = glide seconds (0 = a cut).
     // Returns { kind, side, pull0 (the first choice's pull-in), pull, fallback, az, dist, elev, target }; dry = only measure.
-    talkShot(S, L, kind = 'ots', { group = [], room = null, side = null, face = null, t: gt = TALK.glide, dry = false } = {}) {
-      const r = talkPlan(S, L, kind, group, room, side, face);
+    talkShot(S, L, kind = 'ots', { group = [], room = null, side = null, face = null, others = [], t: gt = TALK.glide, dry = false } = {}) {
+      const r = talkPlan(S, L, kind, group, room, side, face, others);
       if (dry) return r;
-      if (!scene?.talk) talkFrom = s.azGoal; // where the follow camera was: back there after the scene
+      if (!scene?.talk) talkFrom = { az: s.azGoal, scene, locked: s.locked }; // what the camera was doing (a story focus() too): back to it after the talk
       const goalAz = s.az + wrap(r.az - s.az);
       scene = { obj: r.target, dist: r.dist, elev: r.elev, k: 3 / Math.max(.05, gt), lock: true, talk: true, glide: gt > 0 };
       s.locked = true; s.drag = 0; s.azGoal = goalAz;
@@ -169,9 +180,10 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     releaseTalk({ t: rt = .5 } = {}) { // the director is done: back to the follow camera (or the room's view) in ~rt s
       if (!scene?.talk) return;
       scene = null; relT = rt;
-      if (ctx.has('room')) { const a = data.room?.az ?? 0; s.locked = true; s.azGoal = s.az + wrap(a - s.az); }
-      else { s.locked = false; if (talkFrom !== null) s.azGoal = s.az + wrap(talkFrom - s.az); }
-      talkFrom = null;
+      const f = talkFrom; talkFrom = null;
+      if (f?.scene) { scene = f.scene; s.locked = f.locked; s.azGoal = s.az + wrap(f.az - s.az); } // a story shot was on when the talk began: it comes back
+      else if (ctx.has('room')) { const a = data.room?.az ?? 0; s.locked = true; s.azGoal = s.az + wrap(a - s.az); }
+      else { s.locked = false; if (f) s.azGoal = s.az + wrap(f.az - s.az); }
     },
     get talking() { return !!scene?.talk; },
     // motion: { dir (ground, normalised, or null), kind: 'walk' | 'jog' | 'run' | 'ride' }

@@ -6,21 +6,24 @@
 // Fed by hud.onLine(name, text, opts) — story.js lines carry the cast id (opts.who) and { face, act, cue, voice, shot, react, to };
 // a shop's talk() has no id: the speaker is W.talkWith unless the line's name is yours.
 //   begin() / end()  a story scene (main.js wraps story.play); a talk outside the story begins and ends by itself
-//   cue()            a story cue ran (main.js): the next line is a `wide` once
-// Shots: `shot` if the line says, else: the line after a cue → wide (once) · a scene's first line with 3+ people → wide · else ots.
+//   cue(k)           a story cue ran (main.js): one that moves people (MOVES) makes the next line a `wide` once
+// Shots: `shot` if the line says, else: the line after a cue that moved people → wide (once) · a scene's first line with 3+ people → wide · else ots.
 // Same speaker again (and the camera still ours) → hold. voice (off screen) → no cut. Listener: `to` · the last other speaker ·
 // the nearest cast member. Your own lines frame you. The scene's side of the line of action is picked at its first shot and kept.
+// A wide too spread out for wideMax is an ots instead (camera.js). The mouth flaps while the line types, and at least .6 s.
 // zone.fast: cuts, no glide, no gestures, turns at once.
 import { TALK } from '../camera.js?v=4';
 
 const TURNS = ['idle', 'shoulder', 'handsback', 'munch']; // loops a body may turn in (not sitting, peeking, walking, on a bike)
 const LISTEN = ['idle', 'sit']; // loops the chat 'listen' layer suits (it folds the arms of a standing one)
+const MOVES = ['bike', 'maythu', 'peek', 'home', 'back', 'lift', 'polish']; // main.js cues that bring people on / move them / move the camera: the next line re-establishes
+const FLAP = .6, LOG = 200; // the mouth flaps at least this long (s) · the shot log keeps the last LOG
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 
 // who(k) → person { g, ch, anim } · cast() → the people who may be in a scene (incl. you) · room() → null | { open, x0, z0 }
 export function createDirector({ W, hud, who, cast, room = () => null, fast = () => false, playerName = () => '' }) {
   const { THREE } = W, orbit = W.orbit;
-  let sc = null, open = false, closedAt = null;
+  let sc = null, open = false, closedAt = null, lineAt = 0;
   const turns = new Map(), log = [];
   const head = c => c.ch?.head ? c.ch.head.getWorldPosition(new THREE.Vector3()) : c.g.position.clone().setY(c.g.position.y + 1.2);
   const here = c => c && c.g.visible && c.g.parent;
@@ -33,18 +36,17 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
   const turn = (c, a) => { if (!c || a === null || !TURNS.includes(c.anim.loop)) return; if (fast()) c.g.rotation.y = a; else turns.set(c, a); };
   // the speaker faces the listener — "cheated" round towards the camera when it would see less than a three-quarter face (a two
   // or a wide side-on, a room's open side behind them), at most CHEAT off the listener
-  const CHEAT = 1.3, FACE = .9;
-  const speakerYaw = (S, L, camAz) => {
+  const speakerYaw = (S, L, camAz) => { // TALK.cheat / TALK.face (?tune 「စကားပြော」)
     const a = L ? yawTo(S, L) : S.g.rotation.y; if (camAz === null) return a;
-    const d = wrap(camAz - a); if (Math.abs(d) <= FACE) return a;
-    return a + Math.sign(d) * Math.min(CHEAT, Math.abs(d) - FACE);
+    const d = wrap(camAz - a); if (Math.abs(d) <= TALK.face) return a;
+    return a + Math.sign(d) * Math.min(TALK.cheat, Math.abs(d) - TALK.face);
   };
 
   function begin(explicit = true) { end(); sc = { explicit, side: null, camAz: null, last: null, prev: null, n: 0, afterCue: false, members: new Map(), started: new Set(), speaker: null, gesture: null }; }
-  function cue() { if (sc) sc.afterCue = true; }
+  function cue(k) { if (sc && MOVES.includes(k)) sc.afterCue = true; }
   function line(name, text, o = {}) {
     if (!sc) begin(false);
-    open = true; closedAt = null;
+    open = true; closedAt = null; lineAt = W.time();
     for (const c of sc.members.keys()) c.anim.talking = false;
     if (sc.gesture && sc.gesture.c.anim.one === sc.gesture.name) sc.gesture.c.anim.skip(99); // a tap-through: the last line's gesture goes
     sc.gesture = null;
@@ -64,8 +66,9 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
     sc.afterCue = false;
     if (orbit && !same) {
       const hs = head(S), hl = L ? head(L) : hs.clone().add(new THREE.Vector3(Math.sin(S.g.rotation.y) * 1.6, 0, Math.cos(S.g.rotation.y) * 1.6)); // talking to nobody near: as if to someone in front
-      const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, face: S.g.rotation.y, t: fast() ? 0 : TALK.glide });
-      sc.side = r.side; sc.camAz = r.az; log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), fallback: r.fallback, dist: +r.dist.toFixed(2), elev: +r.elev.toFixed(2) });
+      const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, face: S.g.rotation.y,
+        others: W.chars.filter(c => c !== S && c !== L && here(c) && dist(c, S) < 16).map(head), t: fast() ? 0 : TALK.glide });
+      sc.side = r.side; sc.camAz = r.az; if (log.length >= LOG) log.shift(); log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), why0: r.why0, fallback: r.fallback, dist: +r.dist.toFixed(2), elev: +r.elev.toFixed(2) });
     }
     // acting: the speaker faces the listener; the rest face the speaker and listen
     turn(S, speakerYaw(S, L, orbit?.talking ? sc.camAz : null));
@@ -91,7 +94,7 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
   hud.onLine((name, text, o) => o?.closed ? closed() : line(name, text, o));
   W.tick(dt => {
     for (const [c, a] of turns) { const d = wrap(a - c.g.rotation.y); if (Math.abs(d) < .01 || !TURNS.includes(c.anim.loop)) { turns.delete(c); continue; } c.g.rotation.y += d * (1 - Math.exp(-dt * 12)); } // ≈ .25 s
-    if (sc?.speaker) sc.speaker.anim.talking = open && hud.typing();
+    if (sc?.speaker) sc.speaker.anim.talking = open && (hud.typing() || W.time() - lineAt < FLAP);
     if (sc && !open && closedAt !== null && W.time() > closedAt) { // the box has stayed shut a frame: a cue is playing, or the talk is over
       closedAt = null;
       if (sc.explicit) { if (orbit?.talking) orbit.releaseTalk({ t: fast() ? 0 : .5 }); sc.prev = null; } else end();
