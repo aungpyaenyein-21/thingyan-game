@@ -2,12 +2,12 @@
  "walls": {
   "sum": {
    "shots": 408,
-   "blocked0": 25,
-   "byWall": 4,
-   "byRoom": 14,
-   "byPeople": 7,
-   "fallback": 24,
-   "blocked": 3
+   "blocked0": 32,
+   "byWall": 6,
+   "byRoom": 12,
+   "byPeople": 14,
+   "fallback": 28,
+   "blocked": 6
   },
   "by": {
    "mom (1-1 home)": {
@@ -119,16 +119,19 @@
    },
    "chocho (1-4 amp)": {
     "shots": 24,
-    "blocked0": 2,
-    "fallback": 2,
+    "blocked0": 4,
+    "fallback": 4,
     "blocked": 0,
     "kinds": {
      "ots→ots": 7,
      "two→two": 7,
-     "wide→wide": 8,
+     "wide→two": 1,
+     "wide→wide": 6,
      "ots→two": 1,
-     "two→close": 1
+     "two→close": 1,
+     "wide→close": 1
     },
+    "wall": 2,
     "people": 2
    },
    "chocho (1-7 front)": {
@@ -155,40 +158,45 @@
    },
    "kozaw (1-5 table)": {
     "shots": 24,
-    "blocked0": 0,
-    "fallback": 0,
+    "blocked0": 1,
+    "fallback": 1,
     "blocked": 0,
     "kinds": {
-     "ots→ots": 8,
+     "ots→ots": 7,
      "two→two": 8,
-     "wide→wide": 8
-    }
+     "wide→wide": 8,
+     "ots→two": 1
+    },
+    "people": 1
    },
    "vendor (shop: corner)": {
     "shots": 24,
-    "blocked0": 0,
-    "fallback": 0,
+    "blocked0": 1,
+    "fallback": 1,
     "blocked": 0,
     "kinds": {
-     "ots→ots": 8,
+     "ots→two": 1,
      "two→two": 8,
-     "wide→wide": 8
-    }
+     "wide→wide": 8,
+     "ots→ots": 7
+    },
+    "people": 1
    },
    "teaboss (shop: tea)": {
     "shots": 24,
-    "blocked0": 7,
+    "blocked0": 10,
     "fallback": 7,
-    "blocked": 0,
+    "blocked": 3,
     "kinds": {
-     "ots→two": 6,
+     "ots→two": 5,
      "two→two": 7,
-     "wide→wide": 8,
-     "ots→ots": 2,
-     "two→wide": 1
+     "wide→wide": 7,
+     "ots→ots": 3,
+     "two→close": 1,
+     "wide→close": 1
     },
-    "people": 4,
-    "room": 3
+    "people": 9,
+    "room": 1
    },
    "barber (shop: barber)": {
     "shots": 24,
@@ -1364,10 +1372,10 @@
     "az": 315,
     "want": "wide",
     "got": "wide",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
+    "pull0": 0.22,
+    "why0": "wall",
+    "pull": 0.22,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -2839,12 +2847,12 @@
     "where": "1-4 amp",
     "az": 0,
     "want": "wide",
-    "got": "wide",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
-    "fallback": 0
+    "got": "two",
+    "pull0": 0.4,
+    "why0": "wall",
+    "pull": 0.17,
+    "why": "wall",
+    "fallback": 2
    },
    {
     "id": "chocho",
@@ -2983,12 +2991,12 @@
     "where": "1-4 amp",
     "az": 180,
     "want": "wide",
-    "got": "wide",
-    "pull0": 0,
-    "why0": null,
+    "got": "close",
+    "pull0": 0.4,
+    "why0": "wall",
     "pull": 0,
     "why": null,
-    "fallback": 0
+    "fallback": 4
    },
    {
     "id": "chocho",
@@ -3823,12 +3831,12 @@
     "where": "1-5 table",
     "az": 180,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
-    "why0": null,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
     "why": null,
-    "fallback": 0
+    "fallback": 2
    },
    {
     "id": "kozaw",
@@ -3967,12 +3975,12 @@
     "where": "shop: corner",
     "az": 0,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
-    "why0": null,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
     "why": null,
-    "fallback": 0
+    "fallback": 3
    },
    {
     "id": "vendor",
@@ -3992,10 +4000,10 @@
     "az": 0,
     "want": "wide",
     "got": "wide",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
+    "pull0": 0.1,
+    "why0": "wall",
+    "pull": 0.1,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -4375,24 +4383,24 @@
     "where": "shop: tea",
     "az": 135,
     "want": "two",
-    "got": "wide",
+    "got": "close",
     "pull0": 1,
     "why0": "people",
     "pull": 0,
     "why": null,
-    "fallback": 2
+    "fallback": 3
    },
    {
     "id": "teaboss",
     "where": "shop: tea",
     "az": 135,
     "want": "wide",
-    "got": "wide",
-    "pull0": 0,
-    "why0": null,
+    "got": "close",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
     "why": null,
-    "fallback": 0
+    "fallback": 4
    },
    {
     "id": "teaboss",
@@ -4401,7 +4409,7 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
-    "why0": "room",
+    "why0": "people",
     "pull": 0,
     "why": null,
     "fallback": 2
@@ -4437,7 +4445,7 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
-    "why0": "room",
+    "why0": "people",
     "pull": 0.27,
     "why": "room",
     "fallback": 2
@@ -4460,10 +4468,10 @@
     "az": 225,
     "want": "wide",
     "got": "wide",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
+    "pull0": 0.23,
+    "why0": "room",
+    "pull": 0.23,
+    "why": "room",
     "fallback": 0
    },
    {
@@ -4507,12 +4515,12 @@
     "where": "shop: tea",
     "az": 315,
     "want": "ots",
-    "got": "two",
+    "got": "ots",
     "pull0": 1,
     "why0": "people",
-    "pull": 0,
-    "why": null,
-    "fallback": 3
+    "pull": 1,
+    "why": "people",
+    "fallback": 0
    },
    {
     "id": "teaboss",
@@ -4520,10 +4528,10 @@
     "az": 315,
     "want": "two",
     "got": "two",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
+    "pull0": 1,
+    "why0": "people",
+    "pull": 1,
+    "why": "people",
     "fallback": 0
    },
    {
@@ -4532,10 +4540,10 @@
     "az": 315,
     "want": "wide",
     "got": "wide",
-    "pull0": 0,
-    "why0": null,
-    "pull": 0,
-    "why": null,
+    "pull0": 1,
+    "why0": "people",
+    "pull": 1,
+    "why": "people",
     "fallback": 0
    },
    {
@@ -5253,7 +5261,7 @@
     "dist": 3,
     "elev": 0.36
    },
-   "mouth": "open",
+   "mouth": "o",
    "one": null
   },
   {
@@ -5264,14 +5272,14 @@
     "to": "ngazwe",
     "want": "two",
     "kind": "two",
-    "pull0": 0,
+    "pull0": 1,
     "pull": 0,
-    "why0": null,
-    "fallback": 0,
+    "why0": "people",
+    "fallback": 1,
     "dist": 6.79,
     "elev": 0.35
    },
-   "mouth": "o",
+   "mouth": "open",
    "one": null
   },
   {
@@ -5289,7 +5297,7 @@
     "dist": 2.03,
     "elev": 0.19
    },
-   "mouth": "o",
+   "mouth": "open",
    "one": "nod"
   },
   {
@@ -5300,27 +5308,27 @@
     "to": "maythu",
     "want": "wide",
     "kind": "ots",
-    "pull0": 0,
-    "pull": 0,
-    "why0": null,
+    "pull0": 1,
+    "pull": 1,
+    "why0": "people",
     "fallback": 0,
     "dist": 4.51,
     "elev": 0.36
    },
-   "mouth": "o",
+   "mouth": "open",
    "one": null
   }
  ],
  "scenes": [
   {
-   "t": 0.5030000000000002,
+   "t": 0.5975,
    "name": "အမေ",
    "text": "ဒီနေ့ လမ်းထဲကပဲ။ ၅ နာရီ အိမ်ပြန်",
    "who": "mom",
    "voice": false,
    "scene": "1-1",
    "done": true,
-   "mouth": "o",
+   "mouth": "open",
    "talking": true,
    "typing": true,
    "one": "scold",
@@ -5337,11 +5345,11 @@
     "dist": 7.3,
     "elev": 0.62
    },
-   "age": 0.41,
+   "age": 0.43,
    "file": "1-1-01.jpg"
   },
   {
-   "t": 4.502899999999908,
+   "t": 4.471100000000093,
    "name": "ငဇွဲ",
    "text": "နောက်ကျတယ်",
    "who": "ngazwe",
@@ -5369,7 +5377,7 @@
    "file": "1-2-01.jpg"
   },
   {
-   "t": 19.515099999999638,
+   "t": 19.735000000000483,
    "name": "မေသူ",
    "text": "မဏ္ဍပ် ငါ စီမံမယ်",
    "who": "maythu",
@@ -5393,11 +5401,11 @@
     "dist": 4.93,
     "elev": 0.62
    },
-   "age": 0.33,
+   "age": 0.32,
    "file": "1-2-02.jpg"
   },
   {
-   "t": 21.979699999999756,
+   "t": 22.20960000000013,
    "name": "ချိုချို",
    "text": "ချိုချို သိတယ်၊ ဆရာကြီးက မဏ္ဍပ် ဆောက်ခွင့် ပေးထားတာ",
    "who": "chocho",
@@ -5418,14 +5426,14 @@
     "pull": 0,
     "why0": null,
     "fallback": 0,
-    "dist": 6.42,
+    "dist": 6.43,
     "elev": 0.62
    },
-   "age": 0.6,
+   "age": 0.42,
    "file": "1-2-03.jpg"
   },
   {
-   "t": 31.641599999999773,
+   "t": 31.92570000000082,
    "name": "မေသူ",
    "text": "မင်း ပစ်တာ ကောင်းတယ်၊ ပူဖောင်း ယူ",
    "who": "maythu",
@@ -5449,7 +5457,7 @@
     "dist": 3.57,
     "elev": 0.34
    },
-   "age": 0.43,
+   "age": 0.4,
    "file": "1-2-04.jpg"
   }
  ],

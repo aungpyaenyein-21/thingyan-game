@@ -107,7 +107,9 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     let p = 0; sh.why = null;
     const C = T.clone().addScaledVector(dir, d); seg.set(C, T); // someone's head near the line of view, in its near part (peopleK) or in front of the people talking, hides the shot
     let front = d; for (const q of subjects) front = Math.min(front, -q.clone().sub(C).dot(dir)); // how far the nearest of them is, along the view
-    for (const h of heads) { const t = seg.closestPointToPointParameter(h, true); if (seg.at(t, near).distanceTo(h) < TALK.peopleR && (t < TALK.peopleK || t * d < front - .4)) { sh.why = 'people'; return 1; } }
+    sh.clear = Infinity; // (blocked by people everywhere: the try whose blocker stands furthest off the line wins)
+    for (const h of heads) { const t = seg.closestPointToPointParameter(h, true), r = seg.at(t, near).distanceTo(h); if (r < TALK.peopleR && (t < TALK.peopleK || t * d < front - .4)) { sh.why = 'people'; sh.clear = Math.min(sh.clear, r); } }
+    if (sh.why === 'people') return 1;
     if (collide) { const hit = collide(T, C); if (hit !== null && hit < d) { p = Math.max(p, 1 - Math.max(0, hit - .3) / d); sh.why = 'wall'; } }
     if (room) { // a cut-away room (rooms.js): walls at x0 and z0 only; the camera stays in front of them and on the open half
       if (Math.abs(wrap(a - room.open)) > THREE.MathUtils.degToRad(TALK.roomSpan) + 1e-6) { sh.why = 'room'; return 1; }
@@ -138,7 +140,7 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     for (let i = 0; i < tries.length; i++) {
       const sh = shotOf(tries[i][0], S, L, tries[i][1], group, face);
       raise(fit(sh, room)); const p = pull(sh); if (pull0 === null) { pull0 = p; why0 = sh.why; }
-      if (!best || p < best.pull - 1e-3) best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n };
+      if (!best || p < best.pull - 1e-3 || p - best.pull < 1e-3 && sh.clear > best.clear) best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n };
       if (p <= TALK.pullMax) { best = { ...sh, pull: p, fallback: i, flip: tries[i][1] !== n }; break; }
     }
     return { ...best, side: n, pull0, why0 };
