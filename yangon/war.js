@@ -9,7 +9,7 @@ import { createWorld } from '../world.js?v=17';
 import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=2';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
-import { createAI } from './ai.js?v=2';
+import { createAI } from './ai.js?v=3';
 import { goggles as strapGoggles } from '../cast.js?v=12'; // T8: the swim goggles (and, by importing cast.js, its `goggles` one-shot on every kid's ChibiAnimator)
 
 const P = new URLSearchParams(location.search);
@@ -23,7 +23,7 @@ const { THREE, scene, box, mesh, rnd, pick } = W;
 const sound = createSound(W);
 const $ = id => document.getElementById(id);
 const GRAV = -11, CAN = 3.5;
-const STATS = { shots: 0, hits: 0, face: 0, fouls: 0 }; // gravity as the town's water uses it; litres in a jerry can
+const STATS = { shots: 0, hits: 0, face: 0, fouls: 0, rally: [], rallyThrown: 0, rallyHits: 0, rallyHome: 0, rallyBursts: [], adultHits: 0 }; // gravity as the town's water uses it; litres in a jerry can
 
 // ---------- T3: three weapons that feel different, the beat of a hit, water you can see, the unwritten rules ----------
 // TUNE and WEAPONS are what ?tune edits (lil-gui) — copy the JSON back here once they feel right
@@ -34,6 +34,12 @@ const WEAPONS = { // cost = share of a full can · grit = what a full hit takes 
   balloon: { name: 'ပူဖောင်း', min: 3, range: 9, cost: .15, grit: .35, ring: .8 }, // hold = how far; it goes over walls and round corners
   bucket: { name: 'ပုံး', range: 1.5, cone: 90, cost: 1, grit: .7, push: 1.2, need: .4 }, // the whole can at once, close up (needs 40%): −.7, a shove, soaked through
 };
+// T11 home rally (docs/plans/T11.md): once a round, when the home side is behind, the ward's grown-ups come out and rain balloons on
+// the visitors — adults × dur / balloons = each one's throw interval · range: how far a grown-up throws · grit / floor: what a hit takes, and
+// never below that (canOut false: never OUT from an adult) · warn: the landing ring shows this long before · the trigger: homeLeft / awayLeft
+// kids still in, outGap OUTs behind, or behind at all in the lastSec of the round — never before minRoundT s in, at most perRound a round
+const RALLY = { adults: [3, 4], balloons: 28, dur: 7, range: 16, grit: .25, floor: .1, canOut: false, warn: .6, spread: .8, perRound: 1, minRoundT: 30, homeLeft: 2, awayLeft: 4, outGap: 3, lastSec: 45 };
+const FORCE = P.get('rally') === 'force'; // testing: the rally fires 5 s into every round
 const ORDER = Object.keys(WEAPONS), LOW_W = .2; // under 20% the pump goes weak and the can drips
 const fx = createFx(W, { low: P.get('q') === 'lite' });
 const rules = createRules({ onBreak: (why, from) => ruleLine(why, from) });
@@ -70,7 +76,7 @@ for (const s of [-1, 1]) for (const [x, z, w, d] of [[12.5, -8.5, 5, 5], [5, -8.
 
 // ---------- modes: whose ward we fight in ----------
 // home: ① (us) defends the west side, taps by our houses; ④ comes over with six. away: we go over to ④ with six.
-const HOME = MODE === 'away' ? 'B' : 'A', SIDE = { A: -1, B: 1 };
+const HOME = MODE === 'away' ? 'B' : 'A', AWAY = HOME === 'A' ? 'B' : 'A', SIDE = { A: -1, B: 1 };
 const REFILL = [];
 { const s = SIDE[HOME], a = HOME === 'A' ? 'B' : 'A';
   const taps = ALLEY ? [[8.6, -4.6], [15.6, 4.4], [8.6, 4.6], [2.4, -5]] : [[12, -5], [12, 5], [8, 0], [5, -7.6]];
@@ -158,6 +164,7 @@ const NJ = 700, jetMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(
 jetMesh.frustumCulled = false; jetMesh.count = 0; scene.add(W.keep(jetMesh));
 const drops = [], tm = new THREE.Matrix4(), tq = new THREE.Quaternion(), ts = new THREE.Vector3(), tv = new THREE.Vector3();
 const pos = k => k.c.g.position, H = k => 1.45 * k.c.g.scale.x;
+const onBody = (k, p) => { const q = pos(k), r = .34 * k.c.g.scale.x; return Math.abs(p.x - q.x) < r && Math.abs(p.z - q.z) < r && p.y < q.y + H(k) && p.y > q.y; };
 const sideOf = x => !ALLEY ? Math.sign(x) : (x < -1.3 ? -1 : x > 1.3 ? 1 : 0);
 function blocked(x, y, z) { for (const h of HOUSES) if (x > h.x0 && x < h.x1 && z > h.z0 && z < h.z1 && y < h.h + .25) return true; for (const h of LOW) if (x > h.x0 && x < h.x1 && z > h.z0 && z < h.z1 && y < h.h) return true; return false; }
 function clear(a, b) { // line of sight between two kids, chest high
@@ -211,14 +218,17 @@ function dropBalloon(k) { if (k.bal) { k.bal.removeFromParent(); k.bal.material.
 function release(k) { // the bigthrow lets go (its 'throw' beat, or the fallback timer)
   const b = k.pend; if (!b || b.kind !== 'balloon') return; k.pend = null;
   const m = balloonIn(k); k.bal = null; scene.attach(m); m.scale.set(1, 1.15, 1);
-  const { t, v } = lobPath(m.position, b.at); balloons.push({ m, own: k, v, life: t + 1 });
+  const { t, v } = lobPath(m.position, b.at), bb = { m, own: k, v, life: t + 1 }; balloons.push(bb);
+  if (k.adult) { Object.assign(bb, { rally: true, at: b.at, tLand: W.time() + t, ring: ringGet(b.at) }); sound.fx('squirt', m.position); return; } // T11: a grown-up's balloon (no step into the throw)
   const f = fwd(k), p = pos(k); p.addScaledVector(f, .15); W.collide(p); // a step into the throw
   sound.fx('squirt', p);
 }
 function stepBalloons(dt) {
   for (let i = balloons.length - 1; i >= 0; i--) {
     const b = balloons[i], p = b.m.position; b.v.y += GRAV * dt; p.addScaledVector(b.v, dt); b.m.rotation.x += dt * 7; b.life -= dt;
-    let on = null; for (const k of kids) { if (k.team === b.own.team) continue; const q = pos(k), r = .34 * k.c.g.scale.x; if (Math.abs(p.x - q.x) < r && Math.abs(p.z - q.z) < r && p.y < q.y + H(k) && p.y > q.y) { on = k; break; } }
+    let on = null; if (!b.rally || p.x * SIDE[AWAY] > 0) for (const k of kids) { if (k.team === b.own.team) continue; if (onBody(k, p)) { on = k; break; } } // T11: a grown-up's balloon goes high over the home ground
+    if (!on && !b.rally) for (const a of RL.adults) if (!a.gone && onBody(a, p)) { on = a; wetAdult(a, p); break; } // T11: the grown-ups can be hit — they just get wet
+    if (b.ring) { const left = b.tLand - W.time(), r = b.ring; r.visible = left <= RALLY.warn; if (r.visible) { const k = Math.max(0, left / RALLY.warn); r.scale.setScalar(1 + k * .45); r.material.opacity = .95 - k * .45; } } // the landing ring, RALLY.warn s ahead
     if (on || p.y < .1 || blocked(p.x, p.y, p.z) || b.life < 0) { balloons.splice(i, 1); burst(b); }
   }
 }
@@ -226,6 +236,7 @@ function burst(b) { // splat: a ring of water .8 m across where it came down
   const Wb = WEAPONS.balloon, p = b.m.position.clone(); p.y = Math.max(.12, p.y); b.m.removeFromParent(); b.m.material.dispose();
   fx.burst(p); fx.splat(p.x, p.z, Wb.ring); wallDecal(p, .45, true); sound.fx('splash', p);
   STATS.lastBurst = [+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2)];
+  if (b.rally) { ringPut(b.ring); b.ring = null; rallyBurst(b, p); return; } // T11: the grown-ups' rules
   for (const k of kids) {
     if (k.team === b.own.team) continue; const q = pos(k);
     if (Math.hypot(q.x - p.x, q.z - p.z) > Wb.ring + .2 * k.c.g.scale.x || p.y > q.y + H(k) + .4) continue;
@@ -275,6 +286,7 @@ function moveDrops(dt) {
       if (Math.abs(d.p.x - p.x) > r || Math.abs(d.p.z - p.z) > r || d.p.y > p.y + H(k) || d.p.y < p.y) continue;
       dead = true; if (k.out) foul(d.own, k); else { soak(k, { grit: d.dmg, face: (d.p.y - p.y) / H(k) > .66, push: d.push, from: d.own, at: d.p, first: !d.st.landed, kind: 'pump' }); d.st.landed = true; } break;
     }
+    if (!dead) for (const a of RL.adults) if (!a.gone && onBody(a, d.p)) { dead = true; wetAdult(a, d.p); break; } // T11: a grown-up in the way: the drop stops, they get wet, nothing else
     if (dead && d.p.y < .1 && rnd() < .3) fx.splat(d.p.x, d.p.z, .3); else if (dead && d.p.y >= .1 && rnd() < .25) wallDecal(d.p, .25);
     if (dead) { if (d.p.y < .1 || rnd() < .3) W.spawn(d.p.clone().setY(Math.max(.1, d.p.y)), new THREE.Vector3((rnd() - .5) * 1.5, 1 + rnd(), (rnd() - .5) * 1.5), { spray: true, s: .5, life: .4 }); continue; }
     drops[n++] = d;
@@ -405,6 +417,7 @@ function teams(dt) {
     const f = kids.filter(k => k.team === t && !k.out).sort((p, q) => pos(p).z - pos(q).z);
     f.forEach((k, i) => { const z = -LANE + (i + .5) * 2 * LANE / f.length; k.lane = ALLEY ? LANES_ALLEY.reduce((b, l) => Math.abs(l - (i - (f.length - 1) / 2) * 5) < Math.abs(b - (i - (f.length - 1) / 2) * 5) ? l : b) : z; });
   }
+  rallyCheck(); // T11
 }
 function shootAt(k, dt) { // at whoever's nearest and in sight — a few pump strokes, a balloon over the wall, the bucket up close
   if (k.pend || k.gog) return; // not while the goggles swing
@@ -421,10 +434,131 @@ function shootAt(k, dt) { // at whoever's nearest and in sight — a few pump st
   k.burst = 1 + Math.floor(rnd() * 3); k.pumpT = 0; k.cool = .7 + rnd() * .8;
 }
 
+// ---------- T11: home rally — the ward's grown-ups rain balloons on the visitors (issue #36 · docs/plans/T11.md) ----------
+// Once a round, when the home side is behind: a grown-up's shout, the bell, a look from the camera; 3–4 of them walk out to the
+// home side's start line and lob RALLY.balloons at the visitors over RALLY.dur s (a ring marks each landing RALLY.warn s ahead),
+// then a laugh or a wave and back the way they came. They're not kids (not in `kids`: nobody targets them, they're no one's
+// score) and immune: water stops on them and wets them, nothing else. Their balloons take RALLY.grit off a visitor but never
+// below RALLY.floor (never OUT), only splash a home kid for show, and leave anyone who's OUT alone (no foul).
+const RL = { phase: 'idle', n: 0, t: 0, left: 0, every: 1, adults: [], focusT: 0, shoutT: 0, deadline: 0 };
+const ringGeo = new THREE.RingGeometry(WEAPONS.balloon.ring - .12, WEAPONS.balloon.ring, 32).rotateX(-Math.PI / 2), RINGS = [];
+for (let i = 0; i < 16; i++) { const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: '#ffe26b', transparent: true, opacity: .9, depthWrite: false })); r.visible = false; r.userData.used = false; scene.add(W.keep(r)); RINGS.push(r); } // pooled
+function ringGet(at) { const r = RINGS.find(o => !o.userData.used); if (!r) return null; r.userData.used = true; r.visible = false; r.position.set(at.x, .035, at.z); return r; }
+function ringPut(r) { if (r) { r.visible = false; r.userData.used = false; } }
+const ADULTS = [0, 1, 2, 3].map(i => { // aunties in htamein, uncles in longyi, empty-handed — made once, out of the scene until they're called
+  const fem = i % 2 === 0, c = W.bean({ age: 'adult', hair: fem ? pick(['bun', 'long']) : pick(['short', 'buzz']), bottom: fem ? 'htamein' : 'longyi', prop: 'none', tools: ['none'], tool: 'none', hat: 'none' });
+  c.dry = true; W.removeChar(c); // the town's own water leaves them be
+  const a = { c, id: 'adult' + i, adult: true, team: HOME, base: c.g.scale.x, bal: null, pend: null, gone: true, fxT: -1 };
+  const emit = c.anim.emit; c.anim.emit = (t, o) => { if (t === 'throw') release(a); else emit(t, o); }; // the bigthrow's beat lets go of our balloon
+  return a;
+});
+const shout = W.speak(new THREE.Sprite(new THREE.SpriteMaterial({ map: W.bubbleTex('ဟေ့ … ကူမယ် ကူမယ်!'), depthWrite: false }))); // a world bubble over whoever shouts (the life.js pattern)
+shout.scale.set(2.6, shout.material.map.userData.tall ? 1.24 : .82, 1); shout.userData.talk = true; shout.visible = false; // talk: shown however far you are
+function wetAdult(a, at) { a.c.anim.soak(.25); STATS.adultHits++; if (W.time() - a.fxT > .12) { a.fxT = W.time(); fx.burst(at.clone()); } } // immune: wet, and that's all
+function entryPath(i, n) { // where each one comes from and stands: the kids' start line on their own side, never past the chalk line
+  const s = SIDE[HOME];
+  if (!ALLEY) { const z = (n >= 4 ? [-3.3, -1.1, 1.1, 3.3] : [-2.4, -.75, 1.8])[i]; return [[s * (B.x1 + 1), z * 1.15], [s * 11.5, z]]; } // the lot: off the back edge behind the water-pot stand
+  // the alleys: out of a home house's front door into the alley in front of it (from the back line at 16.4 a 16 m throw can't clear the creek)
+  const door = i % 2 ? [12.5, 2.8, 1.9] : [12.5, -5.7, -6.6], to = [[10.5, -5.2], [10.5, 3.4], [10.5, -3.4], [10.5, 5.2]][i];
+  return [[s * door[0], door[2]], [s * door[0], door[1]], [s * to[0], to[1]]];
+}
+function rallyCheck() { // from teams(), every .5 s: does the ward step in? STATS.rally keeps when and why
+  if (RL.phase !== 'idle' || RL.n >= RALLY.perRound || ended) return;
+  const hl = active(HOME), al = active(AWAY), el = ROUND - clock, gap = OUTS[HOME] - OUTS[AWAY];
+  if (!al || clock < 8) return; // decided: the visitors are all OUT, or it's nearly the bell
+  const why = FORCE ? (el >= 5 ? 'force' : null) : el < RALLY.minRoundT ? null
+    : hl <= RALLY.homeLeft && al >= RALLY.awayLeft ? 'left' : gap >= RALLY.outGap ? 'outs' : clock <= RALLY.lastSec && gap > 0 ? 'late' : null;
+  if (why) rallyStart(why, { homeLeft: hl, awayLeft: al, outs: { ...OUTS } });
+}
+function rallyStart(why, v) {
+  const [lo, hi] = RALLY.adults, n = Math.max(1, Math.min(ADULTS.length, Math.round(lo + Math.floor(rnd() * (hi - lo + 1)))));
+  RL.n++; RL.phase = 'call'; RL.t = 0; RL.left = Math.round(RALLY.balloons); RL.every = n * RALLY.dur / RL.left; RL.deadline = W.time() + 1.5 + 6 + RALLY.dur + 4;
+  STATS.rally.push({ round, clock: +clock.toFixed(1), why, ...v, adults: n, t: +W.time().toFixed(1) });
+  RL.adults = ADULTS.slice(0, n).map((a, i) => {
+    const path = entryPath(i, n), g = a.c.g; g.position.set(path[0][0], 0, path[0][1]); g.rotation.y = Math.atan2(path[1][0] - path[0][0], path[1][1] - path[0][1]);
+    scene.add(g); W.chars.push(a.c); a.c.anim.setLoop('walk');
+    Object.assign(a, { path, pi: 1, gone: false, arrived: false, leaving: false, bye: false, pend: null, next: i * RL.every / n, tLeave: RL.deadline, speed: Math.max(1.1, a.c.anim.speed || 1.3) });
+    return a;
+  });
+  const caller = RL.adults[0]; shout.position.set(0, 2.3 / caller.c.g.scale.x, 0); caller.c.g.add(shout); shout.visible = true; RL.shoutT = 2.4; caller.c.anim.emote('bang', 1.2);
+  say('ရပ်ကွက်က လူကြီးတွေ ဝင်ကူပြီ!', 3); sound.fx('bell', pos(caller));
+  if (W.orbit) { W.orbit.focus(caller.c.g, { dist: 9, t: .4 }); RL.focusT = 1; } // a look at them, then the view is yours again (any input cuts it short)
+}
+const skipLook = () => { if (RL.focusT > 0) { RL.focusT = 0; W.orbit?.release(); } };
+addEventListener('keydown', skipLook, true); addEventListener('pointerdown', skipLook, true);
+function walkAlong(a, dt) { // a plain walk along the path (they're not Yuka's); true once at its end
+  if (a.pi >= a.path.length) return true;
+  const p = pos(a), [tx, tz] = a.path[a.pi], dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), step = a.speed * dt;
+  if (!a.c.anim.one && a.c.anim.loop !== 'walk') a.c.anim.setLoop('walk');
+  if (d > .01) a.c.g.rotation.y = Math.atan2(dx, dz);
+  if (d <= step) { p.x = tx; p.z = tz; a.pi++; return a.pi >= a.path.length; }
+  p.x += dx / d * step; p.z += dz / d * step; return false;
+}
+function rallyThrow(a) { // at a visitor — the one with the most mates round them — ± spread, over the chalk line, at most RALLY.range away
+  const sa = SIDE[AWAY], p = pos(a), MINX = ALLEY ? 2.2 : 1.5, vis = kids.filter(k => k.team === AWAY && !k.out);
+  let best = null, bs = -1e9;
+  for (const k of vis) { const q = pos(k), n = vis.filter(o => pos(o).distanceTo(q) < 2).length, d = Math.hypot(q.x - p.x, q.z - p.z);
+    const sc = n + rnd() * .9 - (d > RALLY.range ? 2 : 0) - (q.x * sa < MINX ? 3 : 0); if (sc > bs) { bs = sc; best = k; } }
+  if (!best) return false;
+  const q = pos(best), r = Math.sqrt(rnd()) * RALLY.spread, an = rnd() * Math.PI * 2, at = new THREE.Vector3(q.x + Math.cos(an) * r, 0, q.z + Math.sin(an) * r);
+  if (at.x * sa < MINX) at.x = sa * MINX;
+  let dx = at.x - p.x, dz = at.z - p.z, d = Math.hypot(dx, dz);
+  if (d > RALLY.range) { at.x = p.x + dx / d * RALLY.range; at.z = p.z + dz / d * RALLY.range; }
+  if (at.x * sa < MINX) { at.x = sa * MINX; dx = at.x - p.x; const m = Math.sqrt(Math.max(0, RALLY.range ** 2 - dx * dx)); at.z = p.z + Math.max(-m, Math.min(m, dz)); } // too far off to the side: keep it over the line
+  at.z = Math.max(B.z0 + .6, Math.min(B.z1 - .6, at.z));
+  a.c.g.rotation.y = Math.atan2(at.x - p.x, at.z - p.z); balloonIn(a); a.pend = { kind: 'balloon', at, t: .5 }; a.c.anim.play('bigthrow');
+  RL.left--; STATS.rallyThrown++; return true;
+}
+function rallyStep(dt) {
+  if (RL.phase === 'idle') return;
+  RL.t += dt;
+  if (RL.focusT > 0 && (RL.focusT -= dt) <= 0) W.orbit?.release();
+  if (RL.shoutT > 0 && (RL.shoutT -= dt) <= 0) { shout.visible = false; shout.removeFromParent(); }
+  if (RL.phase === 'call' && RL.t >= 1.5) RL.phase = 'out';
+  const flying = balloons.some(b => b.rally);
+  if (RL.phase === 'barrage' && ((!RL.left && !flying && !RL.adults.some(a => a.pend)) || W.time() > RL.deadline)) { RL.phase = 'back'; RL.left = 0; }
+  for (const a of RL.adults) {
+    if (a.pend && (a.pend.t -= dt) <= 0) release(a); // off screen there's no pose to fire the beat
+    if (a.gone) continue;
+    const there = walkAlong(a, dt);
+    if (a.leaving) { if (there) { a.gone = true; dropBalloon(a); W.removeChar(a.c); } continue; }
+    if (there && !a.arrived) { a.arrived = true; a.c.anim.setLoop('idle'); a.c.g.rotation.y = SIDE[AWAY] > 0 ? Math.PI / 2 : -Math.PI / 2; if (RL.phase === 'call' || RL.phase === 'out') RL.phase = 'barrage'; } // the first one there starts it
+    if (RL.phase === 'back' || W.time() > a.tLeave) { // all thrown: a laugh or a wave, then home
+      if (!a.bye) { a.bye = true; a.pend = null; dropBalloon(a); a.c.anim.play(rnd() < .5 ? 'laugh' : 'wave'); }
+      else if (!a.c.anim.one) { a.leaving = true; a.path = [...a.path].reverse(); a.pi = 1; }
+      continue;
+    }
+    if (a.arrived && RL.phase === 'barrage' && RL.left > 0 && (a.next -= dt) <= 0 && !a.c.anim.one && !a.pend) { if (rallyThrow(a)) a.next += RL.every; else a.next = .3; }
+  }
+  if (RL.phase === 'back' && RL.adults.every(a => a.gone)) { RL.phase = 'idle'; RL.adults = []; }
+}
+function rallyBurst(b, p) { // where a grown-up's balloon lands (burst()'s rally branch) — STATS.rallyBursts keeps each one for docs/water/rally.cjs
+  const Wb = WEAPONS.balloon, e = { x: +p.x.toFixed(2), z: +p.z.toFixed(2), side: +(p.x * SIDE[AWAY]).toFixed(2), outs: OUTS[AWAY], fouls: STATS.fouls, hits: [] };
+  for (const k of kids) {
+    const q = pos(k); if (Math.hypot(q.x - p.x, q.z - p.z) > Wb.ring + .2 * k.c.g.scale.x || p.y > q.y + H(k) + .4) continue;
+    if (k.out) { e.hits.push({ id: k.id, out: true, grit: k.grit }); continue; } // OUT: not touched, and nobody's foul
+    const before = k.grit;
+    if (k.team === HOME) { k.c.anim.soak(.25); fx.burst(q.clone().setY(H(k) * .8)); STATS.rallyHome++; e.hits.push({ id: k.id, home: true, before, after: k.grit }); continue; } // an oops: wet, nothing else
+    const tough = k.toughK ?? 1, room = RALLY.canOut ? before : Math.max(0, before - Math.min(before, RALLY.floor)); // never below the floor
+    soak(k, { grit: Math.min(RALLY.grit * tough, room) / tough, face: false, push: new THREE.Vector3(q.x - p.x, 0, q.z - p.z).normalize(), from: b.own, at: p, big: true, kind: 'balloon', rally: true });
+    if (!RALLY.canOut && !k.out) k.grit = Math.max(k.grit, Math.min(before, RALLY.floor));
+    STATS.rallyHits++; e.hits.push({ id: k.id, before: +before.toFixed(4), after: +k.grit.toFixed(4), out: k.out });
+  }
+  e.outsAfter = OUTS[AWAY]; e.foulsAfter = STATS.fouls; STATS.rallyBursts.push(e);
+}
+function rallyClear() { // the round's over mid-rally: no balloons, no rings, nobody left standing out there
+  for (let i = balloons.length - 1; i >= 0; i--) { const b = balloons[i]; if (!b.rally) continue; b.m.removeFromParent(); b.m.material.dispose(); balloons.splice(i, 1); }
+  for (const r of RINGS) ringPut(r);
+  for (const a of RL.adults) { a.pend = null; dropBalloon(a); if (!a.gone) W.removeChar(a.c); a.gone = true; }
+  if (RL.focusT > 0) W.orbit?.release(); RL.focusT = RL.shoutT = 0; shout.visible = false; shout.removeFromParent();
+  RL.adults = []; RL.phase = 'idle'; RL.left = 0;
+}
+
 // the heads and legs: Yuka steering + a state machine per kid, roles from SCENARIO (yangon/ai.js)
 const ai = createAI({ kids, me, auto: AUTO, B, alley: ALLEY, homeTeam: HOME, CAN, weapons: WEAPONS, rnd, pos, free, obstacles: OBST, collide: p => W.collide(p),
   side: t => SIDE[t], stance: t => STANCE[t], lane: k => k.lane, rest: t => REST[t], enemies, nearest, clear, pickRefill, fillAt, atRest, shootAt,
-  onSupply: (k, to) => { pop(to, '+ရေ', '#9fe3ff'); } });
+  onSupply: (k, to) => { pop(to, '+ရေ', '#9fe3ff'); },
+  rally: () => RL.phase === 'call' || RL.phase === 'out' || RL.phase === 'barrage' ? balloons.filter(b => b.rally).map(b => ({ at: b.at, tLand: b.tLand, in: b.tLand - W.time() })) : null, ringR: WEAPONS.balloon.ring }); // T11: the visitors duck
 
 // ---------- you ----------
 // The pad, by weapon (R or the three small pads switch): pump — tap = one stroke at the nearest kid you can see, hold = a
@@ -539,7 +673,7 @@ function score() {
 }
 const roundLabel = () => { $('rnd').textContent = `ပွဲ ${MY(round)}/၃ · ${MY(wins.A)}–${MY(wins.B)}`; };
 function roundOver(winner, why) { // winner: 'A', 'B' or null (a draw)
-  if (ended) return; ended = true; rules.stop(); if (winner) wins[winner]++; rounds.push(winner); roundLabel();
+  if (ended) return; ended = true; rules.stop(); rallyClear(); // T11 if (winner) wins[winner]++; rounds.push(winner); roundLabel();
   setTimeout(() => {
     if (winner === 'A') { $('big').textContent = 'ဟေး!'; $('big').hidden = false; for (const k of kids) if (k.team === 'A' && !k.out) { k.c.anim.play('jump'); k.c.anim.emote('heart'); } }
     setTimeout(() => {
@@ -566,7 +700,7 @@ function timeUp() { // the bell: fewer OUTs takes the round
 function end(title, text, btn) { $('etitle').textContent = title; $('etext').innerText = text; $('again').textContent = btn; $('end').hidden = false; playing = false; W.frozen = true; window.war.result = title; window.war.round = round; }
 function nextRound() { // everyone back to the start line, full cans, full grit
   if (round >= 3 || $('end').hidden) return;
-  round++; clock = ROUND; ended = false; hinted = false; drops.length = 0; for (const b of balloons) b.m.removeFromParent(); balloons.length = 0; rules.start(); OUTS.A = OUTS.B = 0; STANCE.A = STANCE.B = ''; teamT = 0;
+  round++; clock = ROUND; ended = false; hinted = false; rallyClear(); RL.n = 0; drops.length = 0; for (const b of balloons) b.m.removeFromParent(); balloons.length = 0; rules.start(); OUTS.A = OUTS.B = 0; STANCE.A = STANCE.B = ''; teamT = 0;
   for (const r of REFILL) r.user = null;
   for (const k of kids) {
     dropBalloon(k); Object.assign(k, { pend: null, kb: null, burst: 0, grit: 1, water: CAN, out: false, state: 'fight', tap: null, waiting: false, wipeT: 0, stuck: 0, navT: 0, cool: 1 + rnd() * 1.5, target: null });
@@ -628,6 +762,7 @@ W.tick(dt => {
     for (const k of kids) { k.hitT += dt; if (atRest(k) && k.grit < 1) { k.grit = Math.min(1, k.grit + REST_RATE * dt); if (k.out && k.grit >= 1) comeBack(k); } }
     if (!AUTO) mine(dt);
     ai.update(dt); // everyone else (and you, on ?auto): yangon/ai.js
+    rallyStep(dt); // T11: the grown-ups, if they're out
     for (const k of kids) { // T8: the kids push their goggles up while they rest / sit OUT, and pull them down again for the fight
       if (!k.goggles || !k.ai || k.gog || k.c.anim.one || k.pend || k.burst > 0 || W.time() < (k.gogNext ?? 0)) continue;
       const want = k.out || k.state === 'rest' ? 'up' : 'down'; if (want !== k.goggles) { k.gogNext = W.time() + 2; flipGoggles(k); }
@@ -679,8 +814,11 @@ if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-
   const gf = gui.addFolder('မျက်မှန်'); gf.add(TUNE, 'goggleFaceK', 1, 2, .05); gf.add(TUNE, 'goggleSoakK', 0, 1, .05); gf.add(TUNE, 'thuraK', .4, 1, .05); // T8 swim goggles
   for (const w of Object.values(WEAPONS)) { const g = gui.addFolder(w.name); for (const [key, v] of Object.entries(w)) if (typeof v === 'number') g.add(w, key, 0, Math.max(1, v * 3), .01); g.close(); }
   const pf = gui.addFolder('particles (total = live · the rest on reload)'); for (const n of Object.keys(fx.budget)) pf.add(fx.budget, n, 0, fx.budget[n] * 2, 1); pf.close();
-  gui.add({ copy: () => { const j = JSON.stringify({ TUNE, WEAPONS, BUDGET: fx.budget }, null, 1); navigator.clipboard?.writeText(j); console.log(j); } }, 'copy').name('JSON copy');
+  const rf = gui.addFolder('ရပ်ကွက် လူကြီး (T11)'); rf.add(RALLY.adults, '0', 1, 4, 1).name('adults min'); rf.add(RALLY.adults, '1', 1, 4, 1).name('adults max'); rf.add(RALLY, 'canOut');
+  for (const [key, v] of Object.entries(RALLY)) if (typeof v === 'number') rf.add(RALLY, key, 0, Math.max(1, v * 3), Number.isInteger(v) ? 1 : .01); rf.close();
+  gui.add({ copy: () => { const j = JSON.stringify({ TUNE, WEAPONS, RALLY, BUDGET: fx.budget }, null, 1); navigator.clipboard?.writeText(j); console.log(j); } }, 'copy').name('JSON copy');
 });
 
 W.start();
-window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, flipGoggles, gogKey, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit, drown, sting }), result: null, W, STATS };
+window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, flipGoggles, gogKey, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit, drown, sting }), result: null, W, STATS,
+  RALLY, adults: ADULTS, get rally() { return { phase: RL.phase, left: RL.left, n: RL.n, adults: RL.adults.length, flying: balloons.filter(b => b.rally).length }; } }; // T11

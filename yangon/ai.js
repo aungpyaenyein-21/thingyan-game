@@ -1,7 +1,7 @@
 // yangon/ai.js — the kids' heads in a water fight (T3 · TASKS.md T3 §F). Yuka does the legs, a small state machine the heads.
 //   legs:  grid A* over the lot/alleys (our own — T1 review #3) → waypoints ≥ 1 m apart → Yuka FollowPath
 //          + ObstacleAvoidance (drums, wall stubs, taps; weak near a waypoint so the two don't fight) + Separation (no bunching)
-//   heads: Yuka StateMachine per kid — advance · hold · flank · ambush · lob · hide · supply · refill · rest · out
+//   heads: Yuka StateMachine per kid — advance · hold · flank · ambush · lob · hide · supply · refill · rest · out · duck (T11)
 //          the role picks the fighting state; the gang's stance (war.js teams(): attack / defend) bends it
 //   roles: ① ငဇွဲ advance · မေသူ lob (balloons from the back) · ဖိုးကျော် supply (carries water to whoever's dry) · ချိုချို hide
 //          ④ သူရ ambush (waits on a real corner, goes for the face) · the rest advance / flank / hold / lob
@@ -55,7 +55,8 @@ export function createGrid(B, free, cell = .5) {
 
 // ---------- the heads ----------
 // G (from war.js): kids, me, pos, side(team), stance(team), lane(k), rest(team), enemies(k), nearest(k, list), clear(a, b),
-//   pickRefill(k), fillAt(k, r, dt), atRest(k), shootAt(k, dt), weapons, CAN, rnd, B, free(x, z), obstacles [{ x, z, r }], auto
+//   pickRefill(k), fillAt(k, r, dt), atRest(k), shootAt(k, dt), weapons, CAN, rnd, B, free(x, z), obstacles [{ x, z, r }], auto,
+//   rally() — T11: while the home side's grown-ups are out, the balloons in flight [{ at, tLand, in }] (else null) · ringR
 export function createAI(G) {
   const grid = createGrid(G.B, G.free), em = new EntityManager(), obstacles = G.obstacles.map(o => { const e = new GameEntity(); e.position.set(o.x, 0, o.z); e.boundingRadius = o.r; return e; });
   const pos = G.pos, R = G.rnd;
@@ -122,6 +123,20 @@ export function createAI(G) {
         else goTo(k, pos(dry).x, pos(dry).z, true); return; }
       if (k.water < G.CAN * .9 && (!t || d > 5)) { v.sm.changeTo('refill'); return; }
       const s = G.side(k.team); if (t && d < 4) { const [x, z] = engage(k, t); goTo(k, x, z, false); } else goTo(k, s * 6.5, G.lane(k) * .5, false); } });
+  // T11: the grown-ups are throwing — the visitors get out of where a balloon is about to land (read from the balloons in
+  // flight, 1.3–2.4 s ahead), else into a corner whose wall faces the home side; they only shoot at a home kid right on them
+  state('duck', {
+    enter(v) { v.kid.ai.cover = null; v.kid.ai.coverT = 0; },
+    execute(v) { const k = v.kid, a = k.ai, p = pos(k), list = G.rally?.() ?? [], R0 = (G.ringR ?? .8) + .4, [t, d] = nearestFoe(k); k.target = t; a.duckShoot = !!t && d < 3;
+      const hot = list.filter(b => b.in < 1.2 && Math.hypot(b.at.x - p.x, b.at.z - p.z) < R0);
+      if (hot.length) { // out of the ring: straight away from the middle of the nearest, to a spot no other ring covers
+        const b = hot.reduce((m, o) => dist(o.at, p) < dist(m.at, p) ? o : m), ang = dist(b.at, p) > .05 ? Math.atan2(p.x - b.at.x, p.z - b.at.z) : R() * 6.28;
+        let to = null; for (const da of [0, .6, -.6, 1.2, -1.2, 1.9, -1.9, Math.PI]) { const x = b.at.x + Math.sin(ang + da) * (R0 + .4), z = b.at.z + Math.cos(ang + da) * (R0 + .4);
+          if (grid.ok(x, z) && !list.some(o => o.in < 1.8 && Math.hypot(o.at.x - x, o.at.z - z) < R0)) { to = [x, z]; break; } }
+        to ??= [b.at.x + Math.sin(ang) * (R0 + .4), b.at.z + Math.cos(ang) * (R0 + .4)];
+        a.cover = null; goTo(k, to[0], to[1], true); return; }
+      if (!a.cover || (a.coverT -= .4) < 0 || list.some(b => Math.hypot(b.at.x - a.cover[0], b.at.z - a.cover[1]) < R0)) { a.cover = pickCover(k, list, R0); a.coverT = 5; }
+      if (dist(p, { x: a.cover[0], z: a.cover[1] }) > .4) goTo(k, a.cover[0], a.cover[1], true); else { stop(k); if (t) face(k, t); } } });
   // the needs
   state('refill', {
     enter(v) { v.kid.tap = null; v.kid.state = 'refill'; }, exit(v) { if (v.kid.state === 'refill') v.kid.state = 'fight'; },
@@ -138,6 +153,7 @@ export function createAI(G) {
     execute(v) { const k = v.kid, Rs = G.rest(k.team); if (!G.atRest(k)) goTo(k, Rs.gx, Rs.z + (k.i - 2.5) * .35, true); else stop(k); if (!k.out) back(v); } });
   // which fighting state, now: the role, bent by the gang's stance
   function fight(k) {
+    if (k.team !== G.homeTeam && G.rally?.()) return 'duck'; // T11: the home side's grown-ups are out (refill / rest still come first: update())
     const st = G.stance(k.team), role = k.role;
     if (role === 'lob' || role === 'ambush' || role === 'supply' || role === 'hide') return role;
     if (st === 'defend') return 'hold';
@@ -145,6 +161,13 @@ export function createAI(G) {
     return role;
   }
   const back = v => v.sm.changeTo(fight(v.kid));
+  const covers = {}; // T11: corners with a wall on the home side, per gang
+  function pickCover(k, list, R0) { // the nearest such corner within 6 m nobody else has taken and no ring covers; else back out of the grown-ups' reach
+    const s = G.side(k.team), p = pos(k), cs = covers[k.team] ??= grid.corners(-s);
+    let best = null, bd = 6;
+    for (const c of cs) { const d = Math.hypot(c[0] - p.x, c[1] - p.z); if (d >= bd || list.some(b => Math.hypot(b.at.x - c[0], b.at.z - c[1]) < R0) || mine.some(o => o !== k && o.ai.cover === c)) continue; bd = d; best = c; }
+    return best ?? grid.snap(s * (G.alley ? 13 : 9.5), G.lane(k));
+  }
   function pickCorner(k) { // a corner on the way the other gang comes, near our lane, in the middle third
     const s = G.side(k.team), list = grid.corners(-s).filter(([x]) => x * s > -6 && x * s < 6);
     let best = null, bs = 1e9; for (const c of list) { const sc = Math.abs(c[1] - G.lane(k)) + Math.abs(c[0] - s * 1.5) * .6 + R() * 2.5; if (sc < bs) { bs = sc; best = c; } }
@@ -210,7 +233,7 @@ export function createAI(G) {
       const sp = Math.hypot(v.velocity.x, v.velocity.z);
       if (sp > .15) { const want = Math.atan2(v.velocity.x, v.velocity.z); let d = want - c.g.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); c.g.rotation.y += d * Math.min(1, dt * 10); }
       if (!c.anim.one) { const loop = sp > .15 ? (a.run && sp > (a.walkSpeed ?? 1) * 1.1 ? 'run' : 'walk') : 'idle'; if (c.anim.loop !== loop) c.anim.setLoop(loop); }
-      if (!k.out && k.state !== 'wipe' && k.state !== 'rest' || (k.state === 'rest' && k.target && dist(pos(k.target), p) < 4 && k.water >= .4)) G.shootAt(k, dt);
+      if ((v.sm.currentState?.name !== 'duck' || a.duckShoot) && (!k.out && k.state !== 'wipe' && k.state !== 'rest' || (k.state === 'rest' && k.target && dist(pos(k.target), p) < 4 && k.water >= .4))) G.shootAt(k, dt); // T11: ducking, only at a home kid within 3 m
     }
   }
   function speedOf(k, loop) { const an = k.c.anim, l = an.loop, one = an.one; an.loop = loop; an.one = null; const s = an.speed; an.loop = l; an.one = one; return s || 2; }
