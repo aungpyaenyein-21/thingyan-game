@@ -5,8 +5,9 @@
 //     chalk line, are not in `kids`, and are gone afterwards · screenshots rally-call / rally-barrage / rally-exit
 //   ② ?mode=away&rally=force — the same, against you (① are the visitors) · screenshot rally-away (the rings)
 //   ③ ?mode=home&rally=force — the player's pump splashes a grown-up: wet, STATS.adultHits up, STATS.fouls and the adult's tLeave untouched
-// node docs/water/rally.cjs [port=8800]
-const { chromium } = require('playwright'); const OUT = __dirname + '/'; const port = process.argv[2] || 8800;
+//   ④ (with `alley`) ?map=alley&mode=home&auto&rally=force — ① again in the alleys (out of the house doors) · screenshot rally-alley
+// node docs/water/rally.cjs [port=8800] [alley]
+const { chromium } = require('playwright'); const OUT = __dirname + '/'; const port = process.argv[2] || 8800, ALLEY = process.argv[3] === 'alley';
 const fails = []; const ok = (name, cond, info = '') => { console.log((cond ? 'PASS ' : 'FAIL ') + name + (info !== '' ? ' — ' + (typeof info === 'string' ? info : JSON.stringify(info)) : '')); if (!cond) fails.push(name); };
 async function open(b, q) {
   const p = await b.newPage({ viewport: { width: 900, height: 560 } }); const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()));
@@ -45,11 +46,20 @@ const grab = p => p.evaluate(() => ({ home: RW.home, phases: RW.phases, minX: RW
   RALLY: war.RALLY, outs1: war.state().outs[RW.home === 'A' ? 'B' : 'A'], left: war.adults.filter(a => a.c.g.parent).length, hits: war.STATS.rallyHits, homeHits: war.STATS.rallyHome, adultHits: war.STATS.adultHits }));
 (async () => {
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] }); const errs = [];
+  if (ALLEY) { // ④ the alleys only
+    const { p, errs: e, until } = await open(b, 'map=alley&mode=home&auto&rally=force&clock=180');
+    await until(() => war.rally.phase === 'call'); const outs0 = await p.evaluate(() => war.state().outs.B);
+    await until(() => war.rally.phase === 'barrage' && RW.rings > 0); await until(() => war.STATS.rallyThrown >= 10); await shot(p, 'rally-alley.jpg');
+    await until(() => war.rally.phase === 'idle' && war.rally.n === 1);
+    const r = await grab(p); r.outs0 = outs0; check('alley', r); errs.push(...e); await p.close();
+    ok('console errors 0', errs.length === 0, errs.slice(0, 5)); console.log(fails.length ? `${fails.length} FAILED: ${fails.join(' · ')}` : 'ALL PASS'); await b.close(); process.exit(fails.length ? 1 : 0);
+  }
   { // ① home, everyone on AI
-    const { p, errs: e, until } = await open(b, 'mode=home&auto&rally=force&clock=180');
+    const { p, errs: e, until, game } = await open(b, 'mode=home&auto&rally=force&clock=180');
     await until(() => war.rally.phase === 'call'); const outs0 = await p.evaluate(() => war.state().outs.B); await shot(p, 'rally-call.jpg');
     await until(() => war.rally.phase === 'barrage' && RW.rings > 0); await until(() => war.STATS.rallyThrown >= 12); await shot(p, 'rally-barrage.jpg');
-    await until(() => war.rally.phase === 'back'); await until(() => war.adults.some(a => a.leaving && !a.gone)); await shot(p, 'rally-exit.jpg');
+    await until(() => war.rally.phase === 'back'); await until(() => war.adults.some(a => a.leaving && !a.gone));
+    await p.evaluate(() => war.W.orbit?.focus(war.adults.find(a => a.leaving && !a.gone).c.g, { dist: 9, t: .1 })); await game(.6); await shot(p, 'rally-exit.jpg'); await p.evaluate(() => war.W.orbit?.release()); // the camera on them walking off
     await until(() => war.rally.phase === 'idle' && war.rally.n === 1);
     const r = await grab(p); r.outs0 = outs0; check('home', r); console.log('home: visitor hits', r.hits, '· home kids splashed', r.homeHits, '· adults hit by kids', r.adultHits); errs.push(...e); await p.close();
   }
@@ -75,6 +85,21 @@ const grab = p => p.evaluate(() => ({ home: RW.home, phases: RW.phases, minX: RW
     ok('splash: STATS.fouls untouched', after.fouls === before.fouls, `${before.fouls} → ${after.fouls}`);
     ok('splash: the adult\'s tLeave untouched', after.tLeave === before.tLeave, `${before.tLeave} → ${after.tLeave}`);
     ok('splash: the adult is not a kid', !after.inKids);
+    // ③b staged, so the home / OUT / floor rules aren't left to chance: a home kid, an OUT visitor and a visitor on .2 grit under a landing balloon
+    await until(() => war.balloons.some(b => b.rally && b.tLand - war.W.time() > .7 && b.at.x > 1.5));
+    const st = await p.evaluate(() => { const b = war.balloons.find(o => o.rally && o.tLand - war.W.time() > .7 && o.at.x > 1.5), K = id => war.kids.find(k => k.id === id);
+      const h = K('A1'), o = K('B2'), v = K('B3'); window.STAGE = { h, o, v, n: war.STATS.rallyBursts.length, fouls: war.STATS.fouls, outsB: war.state().outs.B };
+      war.goOut(o); for (const k of [h, o, v]) { k.state = 'wipe'; k.wipeT = 999; } v.grit = .2; h.grit = .9;
+      h.c.g.position.set(b.at.x - .3, 0, b.at.z); o.c.g.position.set(b.at.x + .3, 0, b.at.z); v.c.g.position.set(b.at.x, 0, b.at.z + .25);
+      return { at: [+b.at.x.toFixed(2), +b.at.z.toFixed(2)], outsB: STAGE.outsB }; });
+    await until(() => war.STATS.rallyBursts.length > STAGE.n && war.STATS.rallyBursts.slice(STAGE.n).some(e => e.hits.length >= 3));
+    const sr = await p.evaluate(() => { const e = war.STATS.rallyBursts.slice(STAGE.n).find(x => x.hits.length >= 3); return { burst: e, h: STAGE.h.grit, o: STAGE.o.grit, oOut: STAGE.o.out, v: +STAGE.v.grit.toFixed(4), vOut: STAGE.v.out, fouls: war.STATS.fouls, fouls0: STAGE.fouls, outsB: war.state().outs.B }; });
+    console.log('staged', JSON.stringify(st), JSON.stringify(sr));
+    const hh = sr.burst.hits.find(x => x.id === 'A1'), oh = sr.burst.hits.find(x => x.id === 'B2'), vh = sr.burst.hits.find(x => x.id === 'B3');
+    ok('staged: the home kid in the ring keeps its grit', hh?.home && hh.before === hh.after && sr.h === .9, hh);
+    ok('staged: the OUT visitor in the ring is left alone — no foul, no grit change', oh?.out && oh.before === undefined && sr.fouls === sr.fouls0 && sr.oOut, oh);
+    ok('staged: the visitor on .2 stops at the floor (.1), not OUT', vh && vh.before === .2 && vh.after === .1 && !sr.vOut && sr.v === .1, vh);
+    ok('staged: OUTS[B] only counts the goOut we did', sr.outsB === st.outsB + 1 && sr.burst.outs === sr.burst.outsAfter, `${st.outsB} → ${sr.outsB}`);
     errs.push(...e); await p.close();
   }
   ok('console errors 0', errs.length === 0, errs.slice(0, 5));
