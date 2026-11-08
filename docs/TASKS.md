@@ -22,10 +22,10 @@
 | T7 | ဇာတ်ကောင် အကျင့် ဂိမ်းထဲ (CHARACTERS §၁၃) + Prologue/နိဂုံး — T6.5 editor နဲ့ ချိန် | ⏳ | — |
 | T8 | [Swim goggles = grit vs face hits](#t8-swim-goggles-issue-33) — issue #33 · war.js side now, the stall in T6 | ✅ 2026-11-07 (PR #38 · plan + 2 reviews · merged) | other model |
 | T9 | [Kids move quick and nimble](#t9-kids-move-quick-and-nimble-issue-34) — issue #34 · chibi.js gait + jog loop + snappy world.js movement | ✅ 2026-11-07 (PR #39 · plan + 1 review · merged) | other model |
-| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | 👀 code review 1 (2026-11-08, PR #43: 2 fixes — people in the pull test · fewer wides, no capped wide; Q1 yes .6 s · Q2 yes · Q3 OK) → fix → merge | other model · branch `claude/talk` |
-| T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | 👀 plan ✅ (2026-11-08, PR #44 · 2 reviews: rate from totals · `lobPath` direct, 16 m · bubble + `#msg` · adults outside `kids` · `fight()` → `duck` · dodge from the in-flight list) → code | other model · branch `claude/rally` |
+| T10 | [Talk director](#t10-talk-director-issue-35) — issue #35 · camera cuts to the speaker, mouth + gesture + listener, `{ face, act, shot }` line data | ✅ 2026-11-08 (PR #43 · plan + 2 code reviews · merged) | other model · branch `claude/talk` |
+| T11 | [Home rally](#t11-home-rally-issue-36) — issue #36 · the ward's grown-ups rain balloons on the visitors once a round | 👀 code review 1 (2026-11-08, PR #44: adults stand in the void on the lot → ground strip · call look from the lot · merge main) → Sonnet fix → merge | Sonnet · branch `claude/rally` |
 
-အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → T5 ✅ → T9 ✅ → T12 ✅ → T8 ✅ → **now: T10 (code review 1 → fix) ∥ T11 (plan ✅ → code) · T5b after T10** · T11 (after T8) → **T5b (after T12; T10 preferred)** → T6 → T3b → T6.5 → T7။ Files: T12 = set.js/life.js/world.js fade hook + main.js anchors · T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move (world.js: T9 touches the player move only, T12 the material hook — different functions, rebase whoever lands second) · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5b = yangon/* story + cast.js gear toggles (after T12 and T10 — both touch main.js/cast.js). Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
+အစဉ်: T1 ✅ → T4 ✅ → T2 ✅ → T3 ✅ → T5 ✅ → T9 ✅ → T12 ✅ → T8 ✅ → T10 ✅ → **now: T11 (code review 1 → fix) · T5b (spec ✅, 💭 lines from the creator)** · T11 (after T8) → **T5b (after T12; T10 preferred)** → T6 → T3b → T6.5 → T7။ Files: T12 = set.js/life.js/world.js fade hook + main.js anchors · T8/T11 = war.js/ai.js/rules.js (serial) · T9 = chibi.js LOOPS + world.js player move (world.js: T9 touches the player move only, T12 the material hook — different functions, rebase whoever lands second) · T10 = camera.js/hud.js/cast.js/chibi.js mouth (after T9) · T5b = yangon/* story + cast.js gear toggles (after T12 and T10 — both touch main.js/cast.js). Library ဆုံးဖြတ်ချက် (2026-10-31): Yuka ✅ · CCDIKSolver ✅ · GSAP ✕ · Mixamo/VRoid/Cascadeur ✕ (chibi ပုံစံ ပျက်) · KayKit/Kenney/Quaternius CC0 pack = အဆောက်အအုံ/ကား/ပစ္စည်း အတွက်ပဲ (T2)၊ ဇာတ်ကောင် ✕။ · **lil-gui** ✅ (three addons — `?tune` param နဲ့ပဲ ပေါ်၊ ချိန်ပြီး JSON သိမ်း: T2 ကင်မရာ lag/elevation၊ T3 hit-stop/လက်နက် ဂဏန်း) · **Noto Sans Myanmar woff2 self-host** ✅ (`fonts/` — Android/Windows မှာ ဗမာစာ ပျက်မှာ ကာကွယ်၊ sw.js cache ထဲ ထည့် — T2 မှာ ဂိမ်းအစစ်ထဲ) · **three `PositionalAudio`** ✅ (ကင်မရာ လှည့်ရင် အသံ ဘက် — T3 ရေပက်သံ၊ sound.js ပေါ် ထပ်ဆင့်) · three-mesh-bvh / postprocessing = တိုင်းပြီး နှေးမှ · ink/Yarn/nipplejs/Howler/theatre.js ✕။ Spec ကို အရှေ့ task ရဲ့ review ပြီးမှ ရေး (ရလဒ်ပေါ် မူတည်လို့)။
 
 ## T2 ဂိမ်းအစစ် ကင်မရာ ပြောင်း + PALETTE
 
@@ -490,6 +490,11 @@ Spec: [#35](https://github.com/aungpyaenyein-21/thingyan-game/issues/35).
 - Non-story `talk()` (shops, tea shop) gets the director too: speaker = `W.talkWith` unless the name is the player's.
 - Order: **T10 → T6.5 (chibi.js) · T10 → T5b (main.js)**; T8's one cast.js export line rebases.
 
+### ✅ Result (2026-11-08, PR #43)
+- `yangon/talk.js` director + camera.js `talkShot / releaseTalk` (`ots / two / close / wide`, 180° side per scene, wall + room + **people** pull test, fallback chain), hud.js typewriter (28 clusters/s inside `hold()`), chibi.js mouth flap (≥ .6 s), cast.js gestures `point / hips / scratch / nod`, `?tune` 「စကားပြော」, `?talk=0` = the old two-shot.
+- Review 1 fixes: people block a shot; wides only after cues that move people (`bike maythu peek home back lift polish`) and never past `wideMax` (→ ots).
+- Open: portrait ots `.36 / .6` until a real-phone check (CAMERA.md §7, design session) · 6 / 408 wall-test shots still blocked (Cho Cho's peek 225°, tea-shop boss 315°) · 1-1 title card overlaps Mum's first line (→ T5b) · gesture lost in 1-2-02 after life.js's walker reset (fast path).
+
 ## T11 Home rally (issue #36)
 
 Spec: [#36](https://github.com/aungpyaenyein-21/thingyan-game/issues/36). Fits DIRECTION's "adults 20%": a cameo event, not a system.
@@ -570,25 +575,30 @@ Story / flow changes · fade options B, C, D · `camera.js` collide changes · c
 - Near-lens fade (option A): `W.furniture()` / `W.nearM()` dithered discard, own `near` vertex-colour family in bake() (16 m squares), re-hooked on occluder/hero clones; bulbs/glow and shop-front boards not hooked; faded poles still cast shadows. Defaults **`nearIn 2.5 / nearOut 5`** (`?tune` 「ကင်မရာ အနီး」, CAMERA.md §5).
 - Measured in the pane: fps at the lane ≥ main, console 0, 375 px fine. `docs/ward/check.cjs`, `docs/ward/*.jpg`, day-1 `check.cjs` passes unchanged.
 
-## Task တစ်ခုရဲ့ သွားပုံ (task တိုင်း တူ)
+## Task တစ်ခုရဲ့ သွားပုံ (task တိုင်း တူ · 2026-11-08 ကစ)
 
 ```
-spec (Fable, TASKS.md) → plan (အခြား model, docs/plans/T<n>.md) → plan review (Fable) → code (branch claude/<task>) → PR → review (Fable) → merge (Fable, ပြဿနာ မရှိရင်)
+spec (design, TASKS.md) → design session က Sonnet session ဖွင့် → plan (docs/plans/T<n>.md, PR) → plan review → code (branch claude/<task>, PR တစ်ခုတည်း) → code review → merge (design, ပြဿနာ မရှိရင်)
 ```
 
-**Plan အရင်၊ code နောက်** — code မရေးခင် `docs/plans/T<n>.md` (½ စာမျက်နှာ၊ ဗမာလို) ရေး: ဘယ်ဖိုင် အသစ်/ပြင်၊ library ဘယ်လို ချိတ်၊ အဆင့် ၅–၈ ခု၊ မသေချာတာ/မေးစရာ။ Fable က plan ကို ကြည့်ပြီး OK ပေးမှ code စ (code review ထက် plan review က ပေါ့လို့ — လမ်းမှားရင် ဒီမှာ တားမယ်)။ Plan ကို branch ထဲ commit ပြီး PR ထဲ ပါစေ။
+- **Model** — design / review = **Opus** (design session)၊ implementation = **Sonnet** (task တစ်ခု = session တစ်ခု၊ worktree သီးသန့်)။
+- **အလိုလို ဆက်သွားပုံ** — design session က Sonnet session ကို ကိုယ်တိုင် ဖွင့်တယ်။ Sonnet က PR push ပြီး turn ဆုံးတာနဲ့ app က design session ကို နှိုးတယ် → review → ပြင်စရာကို အဲဒီ session ဆီ message ပို့ → Sonnet ပြင် → ထပ် review → merge။ ဖန်တီးသူ 「review」 ပြောစရာ မလိုတော့ဘူး။
+- **ရပ်တဲ့နေရာ** — PR တစ်ခုမှာ review ၂ ကြိမ် ကျော်ရင်၊ ဖန်တီးသူ ဆုံးဖြတ်ရမယ့်ဟာ (💭 စကား၊ ဒီဇိုင်း ရွေးချယ်ချက်) ပေါ်ရင် ရပ်ပြီး ဖန်တီးသူကို မေး။
+- **Sonnet session စည်းကမ်း** — plan အရင်၊ plan OK ရမှ code · `docs/TASKS.md` မပြင် (design session ပိုင်) · PR ထဲ Results + assert ပါတဲ့ check script + screenshot · push = `gh auth switch --user aungpyaenyein-21` → push → `gh auth switch --user Aung-Pyae-Nyein` · merge မလုပ်။
 
-## Review လုပ်ပုံ (Fable)
+**Plan အရင်၊ code နောက်** — code မရေးခင် `docs/plans/T<n>.md` (½ စာမျက်နှာ) ရေး: ဘယ်ဖိုင် အသစ်/ပြင်၊ library ဘယ်လို ချိတ်၊ အဆင့် ၅–၈ ခု၊ မသေချာတာ/မေးစရာ။ Plan review က code review ထက် ပေါ့တယ် — လမ်းမှားရင် ဒီမှာ တားမယ်။ Plan ကို branch ထဲ commit ပြီး PR ထဲ ပါစေ။
 
-PR: base `main` ← head `claude/<task>`။ Plan ပြီးရင် 「plan review」၊ PR ဖွင့်ပြီးရင် 「review」 လို့ ပြောရုံ။
+## Review လုပ်ပုံ (design session)
 
-1. **Code ဖတ်** — `gh pr diff` နဲ့ diff တစ်ခုလုံး။ `docs/plans/T<n>.md` နဲ့ ကိုက်မကိုက်။ TASKS.md ရဲ့ spec အပိုင်းတိုင်း ရှိ/မရှိ၊ 「မလုပ်ရ」 စာရင်း မထိဘူး ဆိုတာ
-2. **ကိုယ်တိုင် run** — branch ကို worktree ထဲ checkout (`git worktree add ../<task> claude/<task>`)၊ preview ဖွင့်ပြီး in-app Browser pane မှာ စမ်း။ Console error၊ FPS၊ 375px layout
-3. **ဒီဇိုင်းနဲ့ တိုက်** — SCENARIO v6 / CHARACTERS / DIRECTION နဲ့ ကိုက်မကိုက်၊ နောက် task တွေ ဒီအပေါ် ဆောက်လို့ ရမရ
-4. **Review ရေး** — `gh pr review` နဲ့ PR ပေါ် comment (line အလိုက်)။ TASKS.md ထဲ အခြေအနေ 👀 → ✅ ဒါမှမဟုတ် ပြင်ရန် စာရင်း
-5. ပြင်စရာ ရှိရင် အခြား model က **အဲဒီ branch မှာပဲ** ပြင် → Fable ထပ်စစ် → OK မှ **Fable** squash merge (`gh pr merge --squash`) → Pages live
+PR: base `main` ← head `claude/<task>`။
 
-Fable က code မရေး — review comment၊ merge (OK ရင်)၊ TASKS.md အခြေအနေ၊ နောက် task ရဲ့ spec ပဲ။
+1. **Code ဖတ်** — `gh pr diff` နဲ့ diff တစ်ခုလုံး။ `docs/plans/T<n>.md` နဲ့ ကိုက်မကိုက်။ TASKS.md spec အပိုင်းတိုင်း ရှိ/မရှိ၊ 「မလုပ်ရ」 စာရင်း မထိဘူး ဆိုတာ
+2. **ကိုယ်တိုင် run** — branch ကို worktree ထဲ checkout၊ preview ဖွင့်ပြီး in-app Browser pane မှာ စမ်း (pane ကို ရှေ့ထုတ်)။ Console error၊ FPS၊ 375px layout
+3. **ဒီဇိုင်းနဲ့ တိုက်** — SCENARIO / CHARACTERS / DIRECTION / CAMERA နဲ့ ကိုက်မကိုက်၊ နောက် task တွေ ဒီအပေါ် ဆောက်လို့ ရမရ
+4. **Review ရေး** — `gh pr review` (Aung-Pyae-Nyein)။ TASKS.md အခြေအနေ ပြင်
+5. ပြင်စရာ ရှိရင် Sonnet session ဆီ message → **အဲဒီ branch မှာပဲ** ပြင် → ထပ်စစ် → OK မှ squash merge → Pages live
+
+Design session က code မရေး — review၊ merge (OK ရင်)၊ TASKS.md အခြေအနေ၊ နောက် task spec ပဲ။
 
 ---
 
@@ -747,28 +757,6 @@ life.js စက်ဘီး + 🆕 နောက် rack socket (item ၁ ခု *
 5. **ချိန်ပစ်** — ကင်မရာ လှည့်ရင်း reticle၊ ထောင့်ချိုး ကျော် ပူဖောင်း arc ပြ
 
 **စစ်ဆေးပုံ** — ဖုန်း (375px) မှာ ၁၀ ယောက် တစ်ပြိုင်နက် ပက်ရင် 30fps အောက် မကျ · ကစားသူ ၂ မိနစ် ပက်ပြီး 「ထပ်ပက်ချင်သေးလား」 — ဒါ ဖန်တီးသူ ကိုယ်တိုင် ဆုံးဖြတ်။
-
----
-
-## Task တစ်ခုရဲ့ သွားပုံ (task တိုင်း တူ)
-
-```
-spec (Fable, TASKS.md) → plan (အခြား model, docs/plans/T<n>.md) → plan review (Fable) → code (branch claude/<task>) → PR → review (Fable) → merge (ဖန်တီးသူ)
-```
-
-**Plan အရင်၊ code နောက်** — code မရေးခင် `docs/plans/T<n>.md` (½ စာမျက်နှာ၊ ဗမာလို) ရေး: ဘယ်ဖိုင် အသစ်/ပြင်၊ library ဘယ်လို ချိတ်၊ အဆင့် ၅–၈ ခု၊ မသေချာတာ/မေးစရာ။ Fable က plan ကို ကြည့်ပြီး OK ပေးမှ code စ (code review ထက် plan review က ပေါ့လို့ — လမ်းမှားရင် ဒီမှာ တားမယ်)။ Plan ကို branch ထဲ commit ပြီး PR ထဲ ပါစေ။
-
-## Review လုပ်ပုံ (Fable)
-
-PR: base `main` ← head `claude/<task>`။ Plan ပြီးရင် 「plan review」၊ PR ဖွင့်ပြီးရင် 「review」 လို့ ပြောရုံ။
-
-1. **Code ဖတ်** — `gh pr diff` နဲ့ diff တစ်ခုလုံး။ `docs/plans/T<n>.md` နဲ့ ကိုက်မကိုက်။ TASKS.md ရဲ့ spec အပိုင်းတိုင်း ရှိ/မရှိ၊ 「မလုပ်ရ」 စာရင်း မထိဘူး ဆိုတာ
-2. **ကိုယ်တိုင် run** — branch ကို worktree ထဲ checkout (`git worktree add ../<task> claude/<task>`)၊ preview ဖွင့်ပြီး in-app Browser pane မှာ စမ်း။ Console error၊ FPS၊ 375px layout
-3. **ဒီဇိုင်းနဲ့ တိုက်** — SCENARIO v6 / CHARACTERS / DIRECTION နဲ့ ကိုက်မကိုက်၊ နောက် task တွေ ဒီအပေါ် ဆောက်လို့ ရမရ
-4. **Review ရေး** — `gh pr review` နဲ့ PR ပေါ် comment (line အလိုက်)။ TASKS.md ထဲ အခြေအနေ 👀 → ✅ ဒါမှမဟုတ် ပြင်ရန် စာရင်း
-5. ပြင်စရာ ရှိရင် အခြား model က **အဲဒီ branch မှာပဲ** ပြင် → Fable ထပ်စစ် → OK မှ **ဖန်တီးသူ** merge (squash) → Pages live
-
-Fable က code မရေး၊ merge မလုပ် — review comment နဲ့ TASKS.md အခြေအနေ၊ နောက် task ရဲ့ spec ပဲ။
 
 ---
 
