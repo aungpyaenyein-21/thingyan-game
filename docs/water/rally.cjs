@@ -57,7 +57,10 @@ const grab = p => p.evaluate(() => ({ home: RW.home, phases: RW.phases, minX: RW
   { // ① home, everyone on AI
     const { p, errs: e, until, game } = await open(b, 'mode=home&auto&rally=force&clock=180');
     await until(() => war.rally.phase === 'call'); const outs0 = await p.evaluate(() => war.state().outs.B); await shot(p, 'rally-call.jpg');
-    await until(() => war.rally.phase === 'barrage' && RW.rings > 0); await until(() => war.STATS.rallyThrown >= 12); await shot(p, 'rally-barrage.jpg');
+    await until(() => war.rally.phase === 'barrage' && RW.rings > 0); await until(() => war.STATS.rallyThrown >= 8);
+    await p.evaluate(() => { const v = war.kids.filter(k => k.team === 'B' && !k.out).sort((a, b) => Math.abs(a.c.g.position.x) - Math.abs(b.c.g.position.x))[0]; war.W.orbit?.focus(v.c.g, { dist: 9, t: .1 }); }); // the camera over where they land
+    await p.waitForFunction(() => { const W = war.W; W.cam.updateMatrixWorld(); return W.scene.children.some(o => { if (!(o.isMesh && o.visible && o.geometry?.type === 'RingGeometry' && o.material.color?.getHexString() === 'ffe26b')) return false; const v = o.position.clone().project(W.cam); return Math.abs(v.x) < .7 && Math.abs(v.y) < .6; }); }, null, { timeout: 240000, polling: 100 }).catch(() => console.log('(no ring in frame in time)'));
+    await shot(p, 'rally-barrage.jpg'); await p.evaluate(() => war.W.orbit?.release());
     await until(() => war.rally.phase === 'back'); await until(() => war.adults.some(a => a.leaving && !a.gone));
     await p.evaluate(() => war.W.orbit?.focus(war.adults.find(a => a.leaving && !a.gone).c.g, { dist: 9, t: .1 })); await game(.6); await shot(p, 'rally-exit.jpg'); await p.evaluate(() => war.W.orbit?.release()); // the camera on them walking off
     await until(() => war.rally.phase === 'idle' && war.rally.n === 1);
