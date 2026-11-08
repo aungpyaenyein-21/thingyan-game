@@ -114,7 +114,8 @@ export function createAI(G) {
     execute(v) { const k = v.kid, s = G.side(k.team), [t, d] = nearestFoe(k); k.target = t;
       const mate = G.nearest(k, G.kids.filter(o => o.team === k.team && !o.out && o !== k && !o.me))[0] ?? G.me;
       if (t && d < 3) { const [x, z] = engage(k, t); goTo(k, x, z, false); return; }
-      const m = pos(mate), away = t ? Math.atan2(m.x - pos(t).x, m.z - pos(t).z) : Math.atan2(s, 0); goTo(k, m.x + Math.sin(away) * 1.3, m.z + Math.cos(away) * 1.3, d < 6); } });
+      const m = pos(mate), away = t ? Math.atan2(m.x - pos(t).x, m.z - pos(t).z) : Math.atan2(s, 0), hx = m.x + Math.sin(away) * 1.3, hz = m.z + Math.cos(away) * 1.3;
+      if (dist(pos(k), { x: hx, z: hz }) < .9) { stop(k); if (t) face(k, t); } else goTo(k, hx, hz, d < 6); } }); // T11 check: close enough — behind a mate at the water-pot stand the exact spot sits in the stand's avoidance ring (a 5 s snag)
   state('supply', { // carries water to whoever's running dry (on foot until the bike rack — T4)
     execute(v) { const k = v.kid, [t, d] = nearestFoe(k); k.target = t;
       const dry = G.kids.filter(o => o.team === k.team && !o.out && o !== k && o.water < G.CAN * .3).sort((a, b) => a.water - b.water)[0];

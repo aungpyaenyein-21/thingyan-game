@@ -14,14 +14,14 @@ const port = process.argv[2] || 8792, clock = process.argv[3] || 40, out = __dir
   await p.evaluate(() => { // in-page watcher: a kid who wants to walk but hasn't moved 0.3 m in 5 game seconds is snagged
     window.SNAG = { n: 0, who: [] }; window.ROUNDS = []; const last = new Map(); let res = null;
     war.W.tick(() => { if (war.result !== res) { res = war.result; if (res) ROUNDS.push({ round: war.round, result: res, outs: war.state().outs, fouls: war.STATS.fouls, shots: war.STATS.shots, hits: war.STATS.hits,
-      rally: war.STATS.rally.filter(r => r.round === war.round), rallyThrown: war.STATS.rallyThrown, paths: war.ai.STATS.paths, noPath: war.ai.STATS.noPath, stuckEvents: war.ai.STATS.stuck, snags: SNAG.n, gameT: +war.W.time().toFixed(0),
+      rally: (war.STATS.rally ?? []).filter(r => r.round === war.round), rallyThrown: war.STATS.rallyThrown, paths: war.ai.STATS.paths, noPath: war.ai.STATS.noPath, stuckEvents: war.ai.STATS.stuck, snags: SNAG.n, gameT: +war.W.time().toFixed(0),
       kids: war.kids.map(k => `${k.id} ${k.goggles ?? '-'} outs ${k.outs} hits ${k.hitN ?? 0} took ${(k.took ?? 0).toFixed(2)} per ${((k.took ?? 0) / (k.hitN || 1)).toFixed(4)}`) }); } }); // T8: per kid, so far (Thura B0 takes ×.8, goggles face ×1)
     war.W.tick(() => { const t = war.W.time(); for (const k of war.ai.kids) { const p = k.c.g.position, l = last.get(k);
       if (!l || !k.ai.want || k.out || k.state === 'wipe' || k.filling || k.waiting || k.c.anim.one) { last.set(k, { x: p.x, z: p.z, t }); continue; }
-      if (Math.hypot(p.x - l.x, p.z - l.z) > .3) last.set(k, { x: p.x, z: p.z, t }); else if (t - l.t > 5) { SNAG.n++; SNAG.who.push(`${k.team}${k.i}@${p.x.toFixed(1)},${p.z.toFixed(1)} ${war.ai.state(k)}`); last.set(k, { x: p.x, z: p.z, t }); } } });
+      if (Math.hypot(p.x - l.x, p.z - l.z) > .3) last.set(k, { x: p.x, z: p.z, t }); else if (t - l.t > 5) { SNAG.n++; SNAG.who.push(`${k.team}${k.i}@${p.x.toFixed(1)},${p.z.toFixed(1)} ${war.ai.state(k)} t${t.toFixed(0)} rally:${war.rally?.phase ?? '-'}`); last.set(k, { x: p.x, z: p.z, t }); } } });
   });
   const rounds = [];
-  for (let i = 0; i < 600; i++) {
+  for (let i = 0; i < 3000; i++) { // T11: up to 100 min — 3 rounds of 120 s run ~35 min on swiftshader
     await p.waitForTimeout(2000);
     const r = await p.evaluate(() => ({ rounds: ROUNDS, final: !!war.final }));
     while (rounds.length < r.rounds.length) { const x = r.rounds[rounds.length]; rounds.push(x); console.log('round', JSON.stringify(x)); await p.screenshot({ path: path.join(out, `round${x.round}.jpg`), quality: 70 }); }
@@ -31,7 +31,7 @@ const port = process.argv[2] || 8792, clock = process.argv[3] || 40, out = __dir
   const per = await p.evaluate(() => war.kids.map(k => ({ id: k.id, name: k.name, goggles: k.goggles, toughK: k.toughK ?? 1, outs: k.outs, hits: k.hitN ?? 0, took: +(k.took ?? 0).toFixed(3), perHit: +((k.took ?? 0) / (k.hitN || 1)).toFixed(4) })));
   console.table(per); const B = per.filter(k => k.id[0] === 'B'), th = B.find(k => k.id === 'B0');
   console.log('T8 Thura: least per hit on ④', B.every(k => k === th || th.perHit <= k.perHit), '· fewest OUTs on ④', B.every(k => k === th || th.outs <= k.outs));
-  const fired = await p.evaluate(() => war.STATS.rally), R = await p.evaluate(() => war.RALLY); // T11
+  const fired = await p.evaluate(() => war.STATS.rally ?? []), R = await p.evaluate(() => war.RALLY ?? {}); // T11
   console.log('T11 rally fired', fired.length, 'time(s):', JSON.stringify(fired));
   console.log('T11 at most once a round', [1, 2, 3].every(n => fired.filter(f => f.round === n).length <= R.perRound),
     '· only with the home side behind', fired.every(f => (f.why === 'left' && f.homeLeft <= R.homeLeft && f.awayLeft >= R.awayLeft) || (f.why === 'outs' && f.outs.A - f.outs.B >= R.outGap) || (f.why === 'late' && f.clock <= R.lastSec && f.outs.A > f.outs.B)),
