@@ -2,9 +2,12 @@
  "walls": {
   "sum": {
    "shots": 408,
-   "blocked0": 19,
-   "fallback": 19,
-   "blocked": 0
+   "blocked0": 25,
+   "byWall": 4,
+   "byRoom": 14,
+   "byPeople": 7,
+   "fallback": 24,
+   "blocked": 3
   },
   "by": {
    "mom (1-1 home)": {
@@ -17,7 +20,9 @@
      "two→two": 8,
      "wide→wide": 8,
      "ots→two": 3
-    }
+    },
+    "people": 1,
+    "room": 2
    },
    "bwabwa (1-6 mandat)": {
     "shots": 24,
@@ -40,7 +45,8 @@
      "two→two": 8,
      "wide→wide": 8,
      "ots→two": 3
-    }
+    },
+    "room": 3
    },
    "ngazwe (1-2 lane)": {
     "shots": 24,
@@ -100,28 +106,30 @@
    "chocho (1-2 peek)": {
     "shots": 24,
     "blocked0": 4,
-    "fallback": 4,
-    "blocked": 0,
+    "fallback": 3,
+    "blocked": 3,
     "kinds": {
      "ots→ots": 6,
-     "two→two": 7,
+     "two→two": 8,
      "wide→wide": 7,
-     "ots→two": 1,
-     "ots→close": 1,
-     "two→close": 1,
-     "wide→close": 1
-    }
+     "ots→two": 2,
+     "wide→two": 1
+    },
+    "wall": 4
    },
    "chocho (1-4 amp)": {
     "shots": 24,
-    "blocked0": 0,
-    "fallback": 0,
+    "blocked0": 2,
+    "fallback": 2,
     "blocked": 0,
     "kinds": {
-     "ots→ots": 8,
-     "two→two": 8,
-     "wide→wide": 8
-    }
+     "ots→ots": 7,
+     "two→two": 7,
+     "wide→wide": 8,
+     "ots→two": 1,
+     "two→close": 1
+    },
+    "people": 2
    },
    "chocho (1-7 front)": {
     "shots": 24,
@@ -169,15 +177,18 @@
    },
    "teaboss (shop: tea)": {
     "shots": 24,
-    "blocked0": 3,
-    "fallback": 3,
+    "blocked0": 7,
+    "fallback": 7,
     "blocked": 0,
     "kinds": {
-     "ots→ots": 5,
-     "two→two": 8,
+     "ots→two": 6,
+     "two→two": 7,
      "wide→wide": 8,
-     "ots→two": 3
-    }
+     "ots→ots": 2,
+     "two→wide": 1
+    },
+    "people": 4,
+    "room": 3
    },
    "barber (shop: barber)": {
     "shots": 24,
@@ -189,7 +200,8 @@
      "two→two": 8,
      "wide→wide": 8,
      "ots→two": 3
-    }
+    },
+    "room": 3
    },
    "tailor (shop: clothes)": {
     "shots": 24,
@@ -201,7 +213,8 @@
      "two→two": 8,
      "wide→wide": 8,
      "ots→two": 3
-    }
+    },
+    "room": 3
    }
   },
   "rows": [
@@ -212,7 +225,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -222,7 +237,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -232,7 +249,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -242,7 +261,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -252,7 +273,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -262,7 +285,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -272,7 +297,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -282,7 +309,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -292,7 +321,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -302,7 +333,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -312,7 +345,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -322,7 +357,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -332,7 +369,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "people",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -342,7 +381,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -352,7 +393,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -362,7 +405,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -372,7 +417,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -382,7 +429,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -392,7 +441,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -402,7 +453,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -412,7 +465,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -422,7 +477,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -432,7 +489,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -442,7 +501,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -452,7 +513,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -462,7 +525,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -472,7 +537,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -482,7 +549,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -492,7 +561,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -502,7 +573,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -512,7 +585,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -522,7 +597,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -532,7 +609,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -542,7 +621,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -552,7 +633,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -562,7 +645,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -572,7 +657,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -582,7 +669,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -592,7 +681,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -602,7 +693,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -612,7 +705,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -622,7 +717,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -632,7 +729,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -642,7 +741,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -652,7 +753,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -662,7 +765,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -672,7 +777,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -682,7 +789,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -692,7 +801,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -702,7 +813,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -712,7 +825,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -722,7 +837,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -732,7 +849,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -742,7 +861,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -752,7 +873,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -762,7 +885,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -772,7 +897,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -782,7 +909,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -792,7 +921,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -802,7 +933,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -812,7 +945,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -822,7 +957,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -832,7 +969,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -842,7 +981,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -852,7 +993,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -862,7 +1005,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -872,7 +1017,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -882,7 +1029,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -892,7 +1041,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -902,7 +1053,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -912,7 +1065,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -922,7 +1077,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -932,7 +1089,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -942,7 +1101,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -952,7 +1113,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -962,7 +1125,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -972,7 +1137,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -982,7 +1149,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -992,7 +1161,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1002,7 +1173,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1012,7 +1185,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1022,7 +1197,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1032,7 +1209,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1042,7 +1221,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1052,7 +1233,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1062,7 +1245,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1072,7 +1257,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1082,7 +1269,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1092,7 +1281,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1102,7 +1293,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0.12,
+    "why0": "wall",
     "pull": 0.12,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -1112,7 +1305,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1122,7 +1317,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1132,7 +1329,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1142,7 +1341,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1152,7 +1353,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1162,7 +1365,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1172,7 +1377,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1182,7 +1389,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1192,7 +1401,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1202,7 +1413,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1212,7 +1425,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1222,7 +1437,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1232,7 +1449,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1242,7 +1461,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1252,7 +1473,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1262,7 +1485,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1272,7 +1497,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1282,7 +1509,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1292,7 +1521,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1302,7 +1533,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1312,7 +1545,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1322,7 +1557,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1332,7 +1569,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1342,7 +1581,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1352,7 +1593,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1362,7 +1605,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1372,7 +1617,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1382,7 +1629,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1392,7 +1641,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1402,7 +1653,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1412,7 +1665,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1422,7 +1677,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1432,7 +1689,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1442,7 +1701,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1452,7 +1713,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1462,7 +1725,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1472,7 +1737,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1481,8 +1748,10 @@
     "az": 90,
     "want": "two",
     "got": "two",
-    "pull0": 0,
-    "pull": 0,
+    "pull0": 0.3,
+    "why0": "wall",
+    "pull": 0.3,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -1492,7 +1761,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1502,7 +1773,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1512,7 +1785,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1522,7 +1797,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1532,7 +1809,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0.16,
+    "why0": "wall",
     "pull": 0.16,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -1542,7 +1821,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1552,7 +1833,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1562,7 +1845,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1572,7 +1857,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1582,7 +1869,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1592,7 +1881,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1602,7 +1893,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1612,7 +1905,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1622,7 +1917,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1632,7 +1929,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1642,7 +1941,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1652,7 +1953,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1662,7 +1965,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1672,7 +1977,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1682,7 +1989,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1692,7 +2001,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1702,7 +2013,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1712,7 +2025,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1722,7 +2037,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1732,7 +2049,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1742,7 +2061,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1752,7 +2073,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1762,7 +2085,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1772,7 +2097,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1782,7 +2109,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1792,7 +2121,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1802,7 +2133,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1812,7 +2145,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1822,7 +2157,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1832,7 +2169,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1842,7 +2181,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1852,7 +2193,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1862,7 +2205,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1872,7 +2217,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1882,7 +2229,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1892,7 +2241,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1902,7 +2253,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1912,7 +2265,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1922,7 +2277,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1932,7 +2289,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1942,7 +2301,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1952,7 +2313,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1962,7 +2325,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1972,7 +2337,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1982,7 +2349,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -1992,7 +2361,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2002,7 +2373,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2012,7 +2385,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2022,7 +2397,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2032,7 +2409,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2042,7 +2421,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2052,7 +2433,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2062,7 +2445,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2072,7 +2457,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2082,7 +2469,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2092,7 +2481,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2102,7 +2493,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2112,7 +2505,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2122,7 +2517,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2132,7 +2529,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2142,7 +2541,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2152,7 +2553,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2162,7 +2565,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2172,7 +2577,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2182,7 +2589,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0.24,
+    "why0": "wall",
     "pull": 0.24,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -2192,7 +2601,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2202,7 +2613,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2212,7 +2625,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2222,7 +2637,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2232,7 +2649,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2242,7 +2661,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2252,7 +2673,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 0.76,
+    "why0": "wall",
     "pull": 0,
+    "why": null,
     "fallback": 3
    },
    {
@@ -2262,7 +2685,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2272,7 +2697,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2280,30 +2707,36 @@
     "where": "1-2 peek",
     "az": 225,
     "want": "ots",
-    "got": "close",
+    "got": "two",
     "pull0": 0.35,
-    "pull": 0,
-    "fallback": 5
+    "why0": "wall",
+    "pull": 0.35,
+    "why": "wall",
+    "fallback": 2
    },
    {
     "id": "chocho",
     "where": "1-2 peek",
     "az": 225,
     "want": "two",
-    "got": "close",
+    "got": "two",
     "pull0": 0.35,
-    "pull": 0,
-    "fallback": 3
+    "why0": "wall",
+    "pull": 0.35,
+    "why": "wall",
+    "fallback": 0
    },
    {
     "id": "chocho",
     "where": "1-2 peek",
     "az": 225,
     "want": "wide",
-    "got": "close",
+    "got": "two",
     "pull0": 0.43,
-    "pull": 0,
-    "fallback": 4
+    "why0": "wall",
+    "pull": 0.35,
+    "why": "wall",
+    "fallback": 2
    },
    {
     "id": "chocho",
@@ -2312,7 +2745,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0.27,
+    "why0": "wall",
     "pull": 0.27,
+    "why": "wall",
     "fallback": 0
    },
    {
@@ -2322,7 +2757,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2332,7 +2769,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2342,7 +2781,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2352,7 +2793,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2362,7 +2805,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2372,7 +2817,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2382,7 +2829,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2392,7 +2841,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2402,7 +2853,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2412,7 +2865,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2422,7 +2877,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2430,10 +2887,12 @@
     "where": "1-4 amp",
     "az": 90,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 2
    },
    {
     "id": "chocho",
@@ -2442,7 +2901,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2452,7 +2913,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2462,7 +2925,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2472,7 +2937,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2482,7 +2949,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2492,7 +2961,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2500,10 +2971,12 @@
     "where": "1-4 amp",
     "az": 180,
     "want": "two",
-    "got": "two",
-    "pull0": 0,
+    "got": "close",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 3
    },
    {
     "id": "chocho",
@@ -2512,7 +2985,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2522,7 +2997,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2532,7 +3009,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2542,7 +3021,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2552,7 +3033,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2562,7 +3045,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2572,7 +3057,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2582,7 +3069,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2592,7 +3081,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2602,7 +3093,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2612,7 +3105,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2622,7 +3117,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2632,7 +3129,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2642,7 +3141,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2652,7 +3153,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2662,7 +3165,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2672,7 +3177,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2682,7 +3189,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2692,7 +3201,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2702,7 +3213,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2712,7 +3225,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2722,7 +3237,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2732,7 +3249,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2742,7 +3261,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2752,7 +3273,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2762,7 +3285,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2772,7 +3297,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2782,7 +3309,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2792,7 +3321,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2802,7 +3333,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2812,7 +3345,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2822,7 +3357,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2832,7 +3369,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2842,7 +3381,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2852,7 +3393,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2862,7 +3405,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2872,7 +3417,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2882,7 +3429,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2892,7 +3441,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2902,7 +3453,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2912,7 +3465,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2922,7 +3477,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2932,7 +3489,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2942,7 +3501,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2952,7 +3513,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2962,7 +3525,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2972,7 +3537,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2982,7 +3549,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -2992,7 +3561,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3002,7 +3573,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3012,7 +3585,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3022,7 +3597,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3032,7 +3609,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3042,7 +3621,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3052,7 +3633,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3062,7 +3645,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3072,7 +3657,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3082,7 +3669,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3092,7 +3681,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3102,7 +3693,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3112,7 +3705,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3122,7 +3717,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3132,7 +3729,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3142,7 +3741,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3152,7 +3753,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3162,7 +3765,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3172,7 +3777,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3182,7 +3789,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3192,7 +3801,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3202,7 +3813,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3212,7 +3825,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3222,7 +3837,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3232,7 +3849,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3242,7 +3861,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3252,7 +3873,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3262,7 +3885,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3272,7 +3897,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3282,7 +3909,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3292,7 +3921,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3302,7 +3933,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3312,7 +3945,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3322,7 +3957,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3332,7 +3969,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3342,7 +3981,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3352,7 +3993,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3362,7 +4005,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3372,7 +4017,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3382,7 +4029,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3392,7 +4041,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3402,7 +4053,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3412,7 +4065,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3422,7 +4077,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3432,7 +4089,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3442,7 +4101,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3452,7 +4113,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3462,7 +4125,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3472,7 +4137,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3482,7 +4149,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3492,7 +4161,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3502,7 +4173,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3512,7 +4185,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3522,7 +4197,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3532,7 +4209,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3542,7 +4221,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3552,7 +4233,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3562,7 +4245,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3570,10 +4255,12 @@
     "where": "shop: tea",
     "az": 0,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 2
    },
    {
     "id": "teaboss",
@@ -3582,7 +4269,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3592,7 +4281,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3602,7 +4293,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3612,7 +4305,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3622,7 +4317,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3630,10 +4327,12 @@
     "where": "shop: tea",
     "az": 90,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 3
    },
    {
     "id": "teaboss",
@@ -3642,7 +4341,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3652,7 +4353,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3662,7 +4365,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3670,10 +4375,12 @@
     "where": "shop: tea",
     "az": 135,
     "want": "two",
-    "got": "two",
-    "pull0": 0,
+    "got": "wide",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 2
    },
    {
     "id": "teaboss",
@@ -3682,7 +4389,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3692,7 +4401,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -3702,7 +4413,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3712,7 +4425,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3722,7 +4437,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0.27,
+    "why": "room",
     "fallback": 2
    },
    {
@@ -3731,8 +4448,10 @@
     "az": 225,
     "want": "two",
     "got": "two",
-    "pull0": 0,
-    "pull": 0,
+    "pull0": 0.27,
+    "why0": "room",
+    "pull": 0.27,
+    "why": "room",
     "fallback": 0
    },
    {
@@ -3742,7 +4461,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3752,8 +4473,10 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
-    "fallback": 2
+    "why": null,
+    "fallback": 3
    },
    {
     "id": "teaboss",
@@ -3762,7 +4485,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3772,7 +4497,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3780,10 +4507,12 @@
     "where": "shop: tea",
     "az": 315,
     "want": "ots",
-    "got": "ots",
-    "pull0": 0,
+    "got": "two",
+    "pull0": 1,
+    "why0": "people",
     "pull": 0,
-    "fallback": 0
+    "why": null,
+    "fallback": 3
    },
    {
     "id": "teaboss",
@@ -3792,7 +4521,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3802,7 +4533,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3812,7 +4545,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3822,7 +4557,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3832,7 +4569,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3842,7 +4581,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3852,7 +4593,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3862,7 +4605,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3872,7 +4617,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3882,7 +4629,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3892,7 +4641,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3902,7 +4653,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3912,7 +4665,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3922,7 +4677,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3932,7 +4689,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -3942,7 +4701,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3952,7 +4713,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3962,7 +4725,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -3972,7 +4737,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3982,7 +4749,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -3992,7 +4761,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -4002,7 +4773,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4012,7 +4785,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4022,7 +4797,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4032,7 +4809,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4042,7 +4821,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4052,7 +4833,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4062,7 +4845,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4072,7 +4857,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4082,7 +4869,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4092,7 +4881,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4102,7 +4893,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4112,7 +4905,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4122,7 +4917,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4132,7 +4929,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4142,7 +4941,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4152,7 +4953,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4162,7 +4965,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4172,7 +4977,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -4182,7 +4989,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4192,7 +5001,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4202,7 +5013,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -4212,7 +5025,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4222,7 +5037,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4232,7 +5049,9 @@
     "want": "ots",
     "got": "two",
     "pull0": 1,
+    "why0": "room",
     "pull": 0,
+    "why": null,
     "fallback": 2
    },
    {
@@ -4242,7 +5061,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4252,7 +5073,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4262,7 +5085,9 @@
     "want": "ots",
     "got": "ots",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4272,7 +5097,9 @@
     "want": "two",
     "got": "two",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    },
    {
@@ -4282,7 +5109,9 @@
     "want": "wide",
     "got": "wide",
     "pull0": 0,
+    "why0": null,
     "pull": 0,
+    "why": null,
     "fallback": 0
    }
   ]
@@ -4419,8 +5248,9 @@
     "kind": "ots",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
-    "dist": 3.01,
+    "dist": 3,
     "elev": 0.36
    },
    "mouth": "open",
@@ -4436,6 +5266,7 @@
     "kind": "two",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
     "dist": 6.79,
     "elev": 0.35
@@ -4453,11 +5284,12 @@
     "kind": "close",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
     "dist": 2.03,
     "elev": 0.19
    },
-   "mouth": "open",
+   "mouth": "o",
    "one": "nod"
   },
   {
@@ -4467,12 +5299,13 @@
     "who": "phoekyaw",
     "to": "maythu",
     "want": "wide",
-    "kind": "wide",
+    "kind": "ots",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
-    "dist": 10.6,
-    "elev": 0.64
+    "dist": 4.51,
+    "elev": 0.36
    },
    "mouth": "o",
    "one": null
@@ -4480,14 +5313,14 @@
  ],
  "scenes": [
   {
-   "t": 0.1,
+   "t": 0.5030000000000002,
    "name": "အမေ",
    "text": "ဒီနေ့ လမ်းထဲကပဲ။ ၅ နာရီ အိမ်ပြန်",
    "who": "mom",
    "voice": false,
    "scene": "1-1",
    "done": true,
-   "mouth": "open",
+   "mouth": "o",
    "talking": true,
    "typing": true,
    "one": "scold",
@@ -4499,15 +5332,16 @@
     "kind": "wide",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
-    "dist": 7.33,
+    "dist": 7.3,
     "elev": 0.62
    },
-   "age": 0.6,
+   "age": 0.41,
    "file": "1-1-01.jpg"
   },
   {
-   "t": 4.2952999999998145,
+   "t": 4.502899999999908,
    "name": "ငဇွဲ",
    "text": "နောက်ကျတယ်",
    "who": "ngazwe",
@@ -4515,7 +5349,7 @@
    "scene": "1-2",
    "done": true,
    "mouth": "smile",
-   "talking": false,
+   "talking": true,
    "typing": false,
    "one": null,
    "shot": {
@@ -4526,24 +5360,25 @@
     "kind": "two",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
     "dist": 3.27,
     "elev": 0.33
    },
-   "age": 0.21,
+   "age": 0.22,
    "file": "1-2-01.jpg"
   },
   {
-   "t": 19.482999999999084,
+   "t": 19.515099999999638,
    "name": "မေသူ",
    "text": "မဏ္ဍပ် ငါ စီမံမယ်",
    "who": "maythu",
    "voice": false,
    "scene": "1-2",
    "done": true,
-   "mouth": "o",
-   "talking": false,
-   "typing": false,
+   "mouth": "open",
+   "talking": true,
+   "typing": true,
    "one": null,
    "shot": {
     "n": 1,
@@ -4553,22 +5388,23 @@
     "kind": "wide",
     "pull0": 0.2,
     "pull": 0.2,
+    "why0": "wall",
     "fallback": 0,
     "dist": 4.93,
     "elev": 0.62
    },
-   "age": 0.4,
+   "age": 0.33,
    "file": "1-2-02.jpg"
   },
   {
-   "t": 21.909099999999196,
+   "t": 21.979699999999756,
    "name": "ချိုချို",
    "text": "ချိုချို သိတယ်၊ ဆရာကြီးက မဏ္ဍပ် ဆောက်ခွင့် ပေးထားတာ",
    "who": "chocho",
    "voice": false,
    "scene": "1-2",
    "done": true,
-   "mouth": "open",
+   "mouth": "o",
    "talking": true,
    "typing": true,
    "one": "nod",
@@ -4580,22 +5416,23 @@
     "kind": "wide",
     "pull0": 0,
     "pull": 0,
+    "why0": null,
     "fallback": 0,
     "dist": 6.42,
     "elev": 0.62
    },
-   "age": 0.41,
+   "age": 0.6,
    "file": "1-2-03.jpg"
   },
   {
-   "t": 31.67750000000016,
+   "t": 31.641599999999773,
    "name": "မေသူ",
    "text": "မင်း ပစ်တာ ကောင်းတယ်၊ ပူဖောင်း ယူ",
    "who": "maythu",
    "voice": false,
    "scene": "1-2",
    "done": true,
-   "mouth": "open",
+   "mouth": "o",
    "talking": true,
    "typing": true,
    "one": "wave",
@@ -4603,15 +5440,16 @@
     "n": 3,
     "who": "maythu",
     "to": "chocho",
-    "want": "wide",
-    "kind": "wide",
-    "pull0": 0,
+    "want": "ots",
+    "kind": "ots",
+    "pull0": 0.32,
     "pull": 0,
-    "fallback": 0,
-    "dist": 6.9,
-    "elev": 0.62
+    "why0": "wall",
+    "fallback": 1,
+    "dist": 3.57,
+    "elev": 0.34
    },
-   "age": 0.36,
+   "age": 0.43,
    "file": "1-2-04.jpg"
   }
  ],

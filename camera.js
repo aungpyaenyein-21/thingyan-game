@@ -20,8 +20,8 @@ export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) 
 // close single instead, and a two when they stand too close for it (the listener would get under otsMin of the way out) · two: side-on
 // to the pair (twoYaw towards the speaker's face) · close: the speaker's face · wide: the group, fitted + widePad m (wideYaw towards
 // the speaker's face); a wide that would need more than wideMax isn't one: an ots on the speaker instead. pullMax: a camCollide
-// pull-in past this share of the distance = "in a wall" — and anyone's head within peopleR m of the first peopleK of the camera →
-// target line blocks it outright — → the other shoulder → two → wide → close; thirdPortrait / edgePortrait: the ots on a phone held
+// pull-in past this share of the distance = "in a wall" — and anyone's head within peopleR m of the camera → target line, in its
+// first peopleK or anywhere in front of the people talking, blocks it outright — → the other shoulder → two → wide → close; thirdPortrait / edgePortrait: the ots on a phone held
 // upright; cheat / face: the director turns the speaker up to `cheat` rad towards the camera when it sees them more than `face` rad
 // off their front (yangon/talk.js); roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
 // share of the half-frame (the dialogue box covers the bottom); glide: seconds per cut; headDrop: the target under the head (m)
@@ -102,11 +102,12 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     T.y -= d * halfTan().v * TALK.boxLift; sh.dist = C.distanceTo(T); sh.elev = Math.asin(clamp((C.y - T.y) / sh.dist, -1, 1)); return sh;
   };
   const seg = new THREE.Line3(), near = new THREE.Vector3();
-  const pullOf = (sh, room, heads = []) => { // the share of the distance a wall would take off (0 = clear, 1 = not allowed); why: wall | room | people
+  const pullOf = (sh, room, heads = [], subjects = []) => { // the share of the distance a wall would take off (0 = clear, 1 = not allowed); why: wall | room | people
     const { target: T, az: a, dist: d, elev: e } = sh, dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
     let p = 0; sh.why = null;
-    const C = T.clone().addScaledVector(dir, d); seg.set(C, C.clone().lerp(T, TALK.peopleK)); // someone standing in the near part of the view hides the shot
-    for (const h of heads) if (seg.closestPointToPoint(h, true, near).distanceTo(h) < TALK.peopleR) { sh.why = 'people'; return 1; }
+    const C = T.clone().addScaledVector(dir, d); seg.set(C, T); // someone's head near the line of view, in its near part (peopleK) or in front of the people talking, hides the shot
+    let front = d; for (const q of subjects) front = Math.min(front, -q.clone().sub(C).dot(dir)); // how far the nearest of them is, along the view
+    for (const h of heads) { const t = seg.closestPointToPointParameter(h, true); if (seg.at(t, near).distanceTo(h) < TALK.peopleR && (t < TALK.peopleK || t * d < front - .4)) { sh.why = 'people'; return 1; } }
     if (collide) { const hit = collide(T, C); if (hit !== null && hit < d) { p = Math.max(p, 1 - Math.max(0, hit - .3) / d); sh.why = 'wall'; } }
     if (room) { // a cut-away room (rooms.js): walls at x0 and z0 only; the camera stays in front of them and on the open half
       if (Math.abs(wrap(a - room.open)) > THREE.MathUtils.degToRad(TALK.roomSpan) + 1e-6) { sh.why = 'room'; return 1; }
@@ -122,7 +123,7 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
   function talkPlan(S, L, kind, group, room, side, face, others) {
     const n0 = sideOf(S, L); let n = n0;
     const heads = sh => sh.kind === 'ots' ? others : [...others, L]; // (an ots has the listener's shoulder in front on purpose)
-    const pull = sh => pullOf(sh, room, heads(sh));
+    const pull = sh => pullOf(sh, room, heads(sh), sh.kind === 'ots' ? [S] : [S, L]);
     if (side) { if (n.dot(side) < 0) n = n0.clone().negate(); }
     else { // a new scene: the clearer side; equally clear → the one that sees the speaker's face, then the one nearer the open side (a room) / where the camera is now
       const a = raise(fit(shotOf(kind, S, L, n0, group, face), room)), b = raise(fit(shotOf(kind, S, L, n0.clone().negate(), group, face), room)), pa = pull(a), pb = pull(b);
