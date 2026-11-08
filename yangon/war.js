@@ -52,6 +52,7 @@ const GROUNDS = [], ground = (geo, c, x, y, z) => { const m = W.keep(mesh(geo, n
 const BRIDGES = ALLEY ? [{ z0: -1.6, z1: 1.6 }, { z0: 7, z1: 8.2 }] : [];
 if (!ALLEY) {
   ground(new THREE.PlaneGeometry(B.x1 - B.x0, B.z1 - B.z0).rotateX(-Math.PI / 2), '#d6c7ad', 0, 0, 0);
+  for (const s of [-1, 1]) ground(new THREE.PlaneGeometry(3, B.z1 - B.z0).rotateX(-Math.PI / 2), '#d9cfbf', s * (B.x1 + 1.5), 0, 0); // the street behind each back edge: the ward's adults walk in from here
   mesh(new THREE.PlaneGeometry(.12, B.z1 - B.z0 - 1).rotateX(-Math.PI / 2), '#efe6d6', 0, .012, 0, { cast: false }); // a chalk line down the middle
   for (const s of [-1, 1]) box(B.x1 - B.x0, 1.1, .3, '#c9b79a', 0, 0, s * (B.z1 + .2)); // the compound walls along the sides
   for (const [x, z, w, d] of [[-6, -4.5, 3, .4], [-6, 4, .4, 2.6], [6, 4.5, 3, .4], [6, -4, .4, 2.6], [-2.6, 0, .4, 2.2], [2.6, 0, .4, 2.2], [-10, 6.5, 2.2, .4], [10, -6.5, 2.2, .4]]) {
@@ -481,10 +482,15 @@ function rallyStart(why, v) {
     return a;
   });
   const caller = RL.adults[0]; shout.position.set(0, 2.3 / caller.c.g.scale.x, 0); caller.c.g.add(shout); shout.visible = true; RL.shoutT = 2.4; caller.c.anim.emote('bang', 1.2);
-  say('ရပ်ကွက်က လူကြီးတွေ ဝင်ကူပြီ!', 3); sound.fx('bell', pos(caller));
-  if (W.orbit) { W.orbit.focus(caller.c.g, { dist: 9, t: .4 }); RL.focusT = 1; } // a look at them, then the view is yours again (any input cuts it short)
+  sound.fx('bell', pos(caller));
+  if (W.orbit) { // a look from the lot towards their back edge — faces to the camera, at where they walk in — then the view is yours again (any input cuts it short)
+    const to = RL.adults.reduce((m, a) => m.add(new THREE.Vector3(a.path.at(-1)[0], 0, a.path.at(-1)[1])), new THREE.Vector3()).divideScalar(RL.adults.length);
+    W.orbit.focus(to, { dist: 9, az: Math.atan2(-SIDE[HOME], 0), t: .4 }); RL.focusT = 1;
+  } else say(RALLY_MSG, 3);
 }
-const skipLook = () => { if (RL.focusT > 0) { RL.focusT = 0; W.orbit?.release(); } };
+const RALLY_MSG = 'ရပ်ကွက်က လူကြီးတွေ ဝင်ကူပြီ!'; // shown once the look lets go, or it sits on the shout bubble
+const endLook = () => { RL.focusT = 0; W.orbit?.release(); if (RL.phase !== 'idle') say(RALLY_MSG, 3); };
+const skipLook = () => { if (RL.focusT > 0) endLook(); };
 addEventListener('keydown', skipLook, true); addEventListener('pointerdown', skipLook, true);
 function walkAlong(a, dt) { // a plain walk along the path (they're not Yuka's); true once at its end
   if (a.pi >= a.path.length) return true;
@@ -512,7 +518,7 @@ function rallyThrow(a) { // at a visitor — the one with the most mates round t
 function rallyStep(dt) {
   if (RL.phase === 'idle') return;
   RL.t += dt;
-  if (RL.focusT > 0 && (RL.focusT -= dt) <= 0) W.orbit?.release();
+  if (RL.focusT > 0 && (RL.focusT -= dt) <= 0) endLook();
   if (RL.shoutT > 0 && (RL.shoutT -= dt) <= 0) { shout.visible = false; shout.removeFromParent(); }
   if (RL.phase === 'call' && RL.t >= 1.5) RL.phase = 'out';
   const flying = balloons.some(b => b.rally);
@@ -821,4 +827,4 @@ if (P.has('tune')) import('https://cdn.jsdelivr.net/npm/lil-gui@0.19.2/dist/lil-
 
 W.start();
 window.war = { ai, fx, rules, WEAPONS, TUNE, setWeapon, stroke, lob, heave, dump, soak, goOut, balloons, drops, kids, me, flipGoggles, gogKey, state: () => ({ playing, ended, A: active('A'), B: active('B'), outs: { ...OUTS }, stance: { ...STANCE }, clock: +clock.toFixed(0), water: me.water, grit: me.grit, drown, sting }), result: null, W, STATS,
-  RALLY, adults: ADULTS, get rally() { return { phase: RL.phase, left: RL.left, n: RL.n, adults: RL.adults.length, flying: balloons.filter(b => b.rally).length }; } }; // T11
+  RALLY, adults: ADULTS, get rally() { return { phase: RL.phase, look: RL.focusT, left: RL.left, n: RL.n, adults: RL.adults.length, flying: balloons.filter(b => b.rally).length }; } }; // T11

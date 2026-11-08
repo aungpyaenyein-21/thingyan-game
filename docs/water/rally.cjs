@@ -23,6 +23,10 @@ async function open(b, q) {
   const until = async (f, arg, s = 600000) => p.waitForFunction(f, arg, { timeout: s, polling: 300 });
   return { p, errs, game, until };
 }
+async function lookShot(p, name) { // mid-look (the camera has turned to the lot's back edge, the view is still held): pause inside the frame loop (the game runs far faster than the page's polling), shoot, go on
+  await p.evaluate(() => { let armed = true; war.W.tick(() => { if (armed && war.rally.look > 0 && war.rally.look < .4) { armed = false; war.W.paused = true; } }); });
+  await p.waitForFunction(() => war.W.paused, null, { timeout: 120000, polling: 50 }); await p.waitForTimeout(800); await shot(p, name); await p.evaluate(() => { war.W.paused = false; });
+}
 const shot = (p, name) => p.screenshot({ path: OUT + name, quality: 72, type: 'jpeg', timeout: 180000 });
 function check(tag, r) { // the numbers from one rally
   const away = r.home === 'A' ? 'B' : 'A';
@@ -56,7 +60,7 @@ const grab = p => p.evaluate(() => ({ home: RW.home, phases: RW.phases, minX: RW
   }
   { // ① home, everyone on AI
     const { p, errs: e, until, game } = await open(b, 'mode=home&auto&rally=force&clock=180');
-    await until(() => war.rally.phase === 'call'); const outs0 = await p.evaluate(() => war.state().outs.B); await shot(p, 'rally-call.jpg');
+    await until(() => war.rally.phase === 'call'); const outs0 = await p.evaluate(() => war.state().outs.B); await lookShot(p, 'rally-call.jpg'); // the look (az towards their back edge) has arrived, still held
     await until(() => war.rally.phase === 'barrage' && RW.rings > 0); await until(() => war.STATS.rallyThrown >= 8);
     await p.evaluate(() => { const v = war.kids.filter(k => k.team === 'B' && !k.out).sort((a, b) => Math.abs(a.c.g.position.x) - Math.abs(b.c.g.position.x))[0]; war.W.orbit?.focus(v.c.g, { dist: 9, t: .1 }); }); // the camera over where they land
     await p.waitForFunction(() => { const W = war.W; W.cam.updateMatrixWorld(); return W.scene.children.some(o => { if (!(o.isMesh && o.visible && o.geometry?.type === 'RingGeometry' && o.material.color?.getHexString() === 'ffe26b')) return false; const v = o.position.clone().project(W.cam); return Math.abs(v.x) < .7 && Math.abs(v.y) < .6; }); }, null, { timeout: 240000, polling: 100 }).catch(() => console.log('(no ring in frame in time)'));
@@ -67,11 +71,11 @@ const grab = p => p.evaluate(() => ({ home: RW.home, phases: RW.phases, minX: RW
     const r = await grab(p); r.outs0 = outs0; check('home', r); console.log('home: visitor hits', r.hits, '· home kids splashed', r.homeHits, '· adults hit by kids', r.adultHits); errs.push(...e); await p.close();
   }
   { // ② away: the rally is against you
-    const { p, errs: e, until } = await open(b, 'mode=away&rally=force&clock=180');
-    await until(() => war.rally.phase === 'out'); const outs0 = await p.evaluate(() => war.state().outs.A);
+    const { p, errs: e, until, game } = await open(b, 'mode=away&rally=force&clock=180');
+    await until(() => war.rally.phase === 'call'); await lookShot(p, 'rally-away.jpg'); // the look from the lot at the ward's adults walking in (the far houses are off screen when you play away)
+    await until(() => ['out', 'barrage'].includes(war.rally.phase)); const outs0 = await p.evaluate(() => war.state().outs.A);
     await p.evaluate(() => { war.me.c.g.position.set(-2.6, 0, 1.2); war.W.snapCam(); }); // you, up near the line where they'll land
     await until(() => war.rally.phase === 'barrage' && RW.rings > 0 && war.W.scene.children.some(o => o.isMesh && o.visible && o.geometry?.type === 'RingGeometry' && o.material.color?.getHexString() === 'ffe26b' && o.position.distanceTo(war.me.c.g.position) < 6));
-    await shot(p, 'rally-away.jpg');
     await until(() => war.rally.phase === 'idle' && war.rally.n === 1);
     const r = await grab(p); r.outs0 = outs0; check('away', r); errs.push(...e); await p.close();
   }
