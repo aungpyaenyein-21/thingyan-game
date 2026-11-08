@@ -139,12 +139,13 @@ function faceTex(o, eye, mouth) {
     g.restore();
   }
   g.fillStyle = g.strokeStyle = '#7a2e3a'; g.lineWidth = 6;
-  const lips = mouth === 'smile' ? o.lips : 'open';
+  const lips = mouth === 'smile' ? o.lips : mouth === 'o' ? 'o' : 'open'; // 'o': the small round mouth of a talker's flap (T10)
   if (lips === 'smile') { g.beginPath(); g.moveTo(162, 192); g.quadraticCurveTo(192, 196, 222, 192); g.quadraticCurveTo(218, 232, 192, 234); g.quadraticCurveTo(166, 232, 162, 192); g.fill(); }
   if (lips === 'grin') { g.beginPath(); g.moveTo(148, 188); g.quadraticCurveTo(192, 196, 236, 188); g.quadraticCurveTo(230, 238, 192, 240); g.quadraticCurveTo(154, 238, 148, 188); g.fill(); }
   if (lips === 'small') { g.beginPath(); g.arc(192, 180, 22, Math.PI * .22, Math.PI * .78); g.stroke(); }
   if (lips === 'cat') { g.beginPath(); g.arc(178, 194, 14, 0, Math.PI); g.moveTo(220, 194); g.arc(206, 194, 14, 0, Math.PI); g.stroke(); } // ω
   if (lips === 'open') { g.beginPath(); g.ellipse(192, 208, 17, 22, 0, 0, 7); g.fill(); }
+  if (lips === 'o') { g.beginPath(); g.ellipse(192, 204, 10, 12, 0, 0, 7); g.fill(); }
   if (lips === 'smile' || lips === 'grin' || lips === 'open') { g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, lips === 'open' ? 220 : lips === 'grin' ? 228 : 224, 15, 8, 0, 0, 7); g.fill(); } // tongue
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return faceCache[key] = t;
 }
@@ -492,6 +493,7 @@ const clamp01 = t => Math.min(1, Math.max(0, t));
 // one-shots: jump | splash (bucket throw) | squirt (water gun) | shake | wave | kadaw | kick (chinlone) | laugh | call (vendor beckon)
 //            | sitdown | standup
 // anim.chat = 'speak' | 'listen' | null: an upper-body layer over idle / sit / eat / vend for people talking in a group
+// anim.talking = true: the mouth flaps (open / o / smile, ~7 Hz with a little jitter) over whatever the pose says (T10 talk director)
 export const LOOPS = { idle: { f: 0, A: 0, speed: 0 }, walk: { f: 1.7, A: .45, speed: 0 }, jog: { f: 2.0, A: .63, speed: 0 }, run: { f: 2.35, A: .78, speed: 0 }, dance: { f: 0, A: 0, speed: 0 }, sit: { f: 0, A: 0, speed: 0 },
   eat: { f: 0, A: 0, speed: 0 }, vend: { f: 0, A: 0, speed: 0 }, squat: { f: 0, A: 0, speed: 0 }, ready: { f: 0, A: 0, speed: 0 },
   push: { f: 1.45, A: .36, speed: 0 }, carry: { f: 1.5, A: .38, speed: 0 }, cycle: { f: 1.1, A: 0, speed: 0 }, coast: { f: 0, A: 0, speed: 0 } };
@@ -507,6 +509,7 @@ export const KID = { gait: KID_GAIT, stride: 1, lean: .1, hop: true, oldGait: 1.
 const MOVES = ['walk', 'jog', 'run'];
 export const ONESHOT = { jump: .98, splash: .95, squirt: .85, shake: 1.0, wave: 1.5, kadaw: 2.6, kick: .55, laugh: 1.1, call: 1.2, sitdown: .5, standup: .6, pick: .55, bigthrow: .75 };
 const STILL = ['kadaw', 'shake', 'splash', 'squirt', 'wave', 'kick', 'laugh', 'call', 'sitdown', 'standup', 'pick', 'bigthrow']; // one-shots you can't walk through
+const FLAP = ['open', 'smile', 'o'];
 const SEATED = ['sit', 'eat', 'vend', 'squat', 'cycle', 'coast'];
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(); const _ikq = new THREE.Quaternion();
 function sitPose(p, T) {
@@ -537,7 +540,7 @@ export class ChibiAnimator {
     this.ch = ch; this.emit = emit;
     this.loop = 'idle'; this.one = null; this.oneT = 0; this.T = 0; this.phi = 0; this.freq = 0;
     this.from = base(); this.out = base(); this.blendT = 1;
-    this.tailA = 0; this.tailV = 0; this.lastStance = 0; this.seed = Math.random() * 10; this.chat = null;
+    this.tailA = 0; this.tailV = 0; this.lastStance = 0; this.seed = Math.random() * 10; this.chat = null; this.talking = false; this.flapT = 0; this.flapI = 0;
     this.load = null; this.reach = { L: null, R: null }; // T4 carry: load = 'hand' | 'front' | 'head' (upper-body layer) · reach.L/R = { target: Object3D | world Vector3, w: 0..1 } (arm IK)
     this.kid = ch.opts?.age === 'kid'; this.hopGap = [3, 5]; this.hopOK = true; this.hopT = null; this.hopK = -1; // T9 hop-skip (no Math.random here: cast.html's regression replays a seeded sequence)
   }
@@ -551,6 +554,11 @@ export class ChibiAnimator {
       p.headRx = .14 * Math.max(0, Math.sin(T * 2.6)) ** 2; p.headRz = .06 * Math.sin(T * .7);
       if (!sat) { p.armLx = p.armRx = -.5; p.armLz = -.3; p.armRz = .3; p.elbowL = p.elbowR = -1.45; } // arms folded
     }
+  }
+  _flap(dt) { // T10: a talker's mouth — the next shape every ~.14 s (± jitter from a hash, no Math.random: cast.html replays seeded)
+    if ((this.flapT -= dt) <= 0) { const r = (Math.sin((this.T + this.seed) * 91.7) * 43758.55) % 1, j = Math.abs(r);
+      this.flapT = .09 + .1 * j; this.flapI = (this.flapI + (j > .72 ? 2 : 1)) % 3; }
+    return FLAP[this.flapI];
   }
   setCharacter(ch) { this.ch = ch; this.kid = ch.opts?.age === 'kid'; }
   gaitOf(loop) { return this.ch.gait * (!this.kid ? 1 : MOVES.includes(loop) ? KID.gait : KID.oldGait); } // T9: kids' walk / jog / run are quicker
@@ -590,7 +598,7 @@ export class ChibiAnimator {
     }
     const w = ease(clamp01(this.blendT / .25));
     for (const k of KEYS) this.out[k] = this.from[k] + (pose[k] - this.from[k]) * w;
-    this.out.expr = pose.expr; this.out.mouth = pose.mouth;
+    this.out.expr = pose.expr; this.out.mouth = this.talking ? this._flap(dt) : pose.mouth;
     this.hitT = (this.hitT || 0) - dt;
     if (this.loop === 'dance' && !this.ch.bubble?.visible && Math.random() < dt * .2) this.emote('note', 1.4);
     this._apply(this.out, dt);

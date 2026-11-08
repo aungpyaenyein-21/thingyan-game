@@ -4,23 +4,24 @@
 // Mum's range, goal line, cards), story.js holds the lines, mandat.js the mandat, carry.js the bowl and what you hold.
 // The v4 "nine favours + Mandalay bus + Phoe Tha" flow is gone (git history / docs/archive); the shops, the tea shop's
 // people and the street life stay — on day 1 they're out of Mum's range.
-import { createWorld, PAL, SKINS } from '../world.js?v=17';
-import { CAT_COATS } from '../critters.js?v=7';
-import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=21';
-import { createHud, play } from './hud.js?v=5';
-import { openBarber, openClothes, redress } from './wardrobe.js?v=6';
-import { buildRooms } from './rooms.js?v=12';
+import { createWorld, PAL, SKINS } from '../world.js?v=18';
+import { CAT_COATS } from '../critters.js?v=8';
+import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=22';
+import { createHud, play } from './hud.js?v=6';
+import { openBarber, openClothes, redress } from './wardrobe.js?v=7';
+import { buildRooms } from './rooms.js?v=13';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=19';
+import { startLife } from './life.js?v=20';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
-import { makeCast, earBlush } from '../cast.js?v=12';
+import { makeCast, earBlush } from '../cast.js?v=13';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
-import { load as loadSave, save as store, wipe } from './save.js?v=8';
-import { createDay, debugStart, PHASE_OF } from './day.js?v=3';
-import { createStory, GOALS, NIGHT } from './story.js?v=2';
+import { load as loadSave, save as store, wipe } from './save.js?v=9';
+import { createDay, debugStart, PHASE_OF } from './day.js?v=4';
+import { createStory, GOALS, NIGHT } from './story.js?v=3';
 import { createMandat } from './mandat.js?v=1';
+import { createDirector } from './talk.js?v=1';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -4, x1: 27, z0: -5, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
   { x0: -150, x1: BOUNDS.x0, z0: 6.6, z1: 12.2, c: PAL.road }, { x0: 34, x1: 150, z0: 6.6, z1: 12.2, c: PAL.road },
@@ -206,10 +207,15 @@ addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(
 setTool(S.ball ? S.tool : 'bucket');
 
 // ---------- the story runner + the day's beats ----------
-const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => CUES[k]?.(id) });
+const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
+// T10: the talk director — a shot per line, mouths, gestures, listeners (yangon/talk.js); ?talk=0 = the old two-shot talk context
+const director = new URLSearchParams(location.search).get('talk') === '0' || !W.orbit ? null : createDirector({ W, hud, who: k => PEOPLE[k] ?? null, cast: () => Object.values(PEOPLE),
+  room: () => inside ? { open: Math.PI / 4, x0: ROOMS[inside].bounds.x0, z0: ROOMS[inside].bounds.z0 } : null, // rooms.js: the back (−z) and left (−x) walls, open towards +x +z
+  fast: () => !!window.zone?.fast, playerName: () => S.name });
+W.talkDirector = !!director;
 { // T12: a scene clears the stage — extras within 10 m walk off and stay off till a little after it (life.clearFor); story.js untouched
-  const play0 = story.play; let on = 0;
-  story.play = (id, beat) => { on++; life.clearFor(600); return play0(id, beat).finally(() => { if (--on === 0) life.clearFor(8, null); }); };
+  const play0 = story.play; let on = 0; // T10: a scene is also one take for the director (begin … end, skip-safe)
+  story.play = (id, beat) => { if (on++ === 0) director?.begin(); life.clearFor(600); return play0(id, beat).finally(() => { if (--on === 0) { life.clearFor(8, null); director?.end(); } }); };
 }
 const wait = s => life.wait(window.zone?.fast ? Math.min(s, .2) : s);
 const walk = (c, pts, loop = 'walk', max = 9) => { const gen = c.walkGen = (c.walkGen ?? 0) + 1; // a newer walk cancels this one's "arrive anyway"
@@ -387,7 +393,7 @@ function order(t, st) { // pick a drink and something to eat from the picture me
     return true;
   } })) });
   function serve(k, n, k2, n2) { setTimeout(() => { if (k !== 'greentea') cup(t, teaColor(k), st.x < t.x ? -.2 : .2); if (k2 !== 'none') plate(t, st.x < t.x ? -.15 : .15); teaBoss.anim.play('wave');
-    talk([['လက်ဖက်ရည်ဆိုင် ဆရာ', `${n}${n2 ? ' နဲ့ ' + n2 : ''} ရပါပြီ~`]]); }, 700); }
+    talk([['လက်ဖက်ရည်ဆိုင် ဆရာ', `${n}${n2 ? ' နဲ့ ' + n2 : ''} ရပါပြီ~`]], null, teaBoss); }, 700); } // (teaBoss: who's talking, for the camera)
 }
 const dress = () => { redress(W, S); save(); };
 function sitBarber() { const ch = ROOMS.barber.chairs[0]; sitAt(ch, ch.lift); talk([['ဆံပင်ညှပ်ဆရာ', 'ထိုင် ထိုင်… ပုံတွေ ကြည့်ပြီး ရွေး။']], () => openBarber({ W, hud, S, dress, onClose: () => { stand(); barber.anim.play('wave'); } }), barber); }
@@ -677,7 +683,7 @@ $('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); locati
 // ---------- go ----------
 stage(S.step); save();
 W.start();
-if (DEBUG) window.zone = { W, S: () => S, day, story, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
+if (DEBUG) window.zone = { W, S: () => S, day, story, director, rooms: ROOMS, inside: () => inside, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
   bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
   // tests: do what the goal points at — go there and press E (an auto spot just needs you there)
   next() {
