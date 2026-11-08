@@ -673,7 +673,7 @@ function score() {
 }
 const roundLabel = () => { $('rnd').textContent = `ပွဲ ${MY(round)}/၃ · ${MY(wins.A)}–${MY(wins.B)}`; };
 function roundOver(winner, why) { // winner: 'A', 'B' or null (a draw)
-  if (ended) return; ended = true; rules.stop(); rallyClear(); // T11 if (winner) wins[winner]++; rounds.push(winner); roundLabel();
+  if (ended) return; ended = true; rules.stop(); rallyClear(); if (winner) wins[winner]++; rounds.push(winner); roundLabel(); /* T11: rallyClear */
   setTimeout(() => {
     if (winner === 'A') { $('big').textContent = 'ဟေး!'; $('big').hidden = false; for (const k of kids) if (k.team === 'A' && !k.out) { k.c.anim.play('jump'); k.c.anim.emote('heart'); } }
     setTimeout(() => {
