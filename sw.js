@@ -1,11 +1,11 @@
 // sw.js — keeps the Yangon day on the phone so it opens without a connection. Everything the game loads is fetched once
 // when this installs, then served from the cache. Bump VERSION with every push that changes a game file: the new
 // worker downloads the new set, waits, and pwa.js offers a reload (never mid-play on its own).
-const VERSION = 'y25';
+const VERSION = 'y26';
 const CACHE = 'thingyan-' + VERSION;
 const THREE = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const CORE = [
-  'yangon.html', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg',
+  'yangon.html', 'index.html', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg',
   'world.js', 'chibi.js', 'critters.js', 'sound.js', 'palette.js', 'camera.js', 'sky.js', // T2: the orbit camera, the sky, the palette
   'faces.json', 'tics/index.json', 'tics/bow.json', 'tics/note.json', 'tics/lob.json', // T6.5: the face table + the JSON tics cast.js loads at start
   'cast.js', 'carry.js', 'bike.js', 'rules.js', // T5: the named cast, carrying (the bowl), Phoe Kyaw's bike, the water-fight rules
@@ -36,7 +36,7 @@ self.addEventListener('message', e => { if (e.data === 'skip') self.skipWaiting(
 
 self.addEventListener('fetch', e => {
   const r = e.request;
-  if (r.method !== 'GET' || !KEEP.has(key(r.url))) return; // the old Phaser pages, sound-test etc. go straight to the network
+  if (r.method !== 'GET' || !KEEP.has(key(r.url))) return; // the labs, war.html, sound-test etc. go straight to the network
   e.respondWith(caches.open(CACHE).then(c => c.match(r, { ignoreSearch: true }).then(hit => hit || fetch(r).then(res => {
     if (res.ok) c.put(r, res.clone());
     return res;
