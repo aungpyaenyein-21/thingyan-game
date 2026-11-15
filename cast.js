@@ -1,7 +1,7 @@
 // cast.js — the named characters of the story (CHARACTERS.md), built on chibi.js: fixed looks, their props, and the
 // animation tics that belong to each of them. makeCast(id) → { ch, anim, acts } where acts = this character's own buttons.
 import * as THREE from 'three';
-import { makeChibi, ChibiAnimator, LOOPS, ONESHOT, SKINS, HAIRS, HAIR_GREY, IRIS } from './chibi.js?v=33';
+import { makeChibi, ChibiAnimator, LOOPS, ONESHOT, SKINS, HAIRS, HAIR_GREY, IRIS, registerTic, setFaces } from './chibi.js?v=34';
 
 const BLUE = '#2f8fd6', RED = '#e0574f', YELLOW = '#ffc83d';
 const mat = {}; const M = c => mat[c] ??= new THREE.MeshLambertMaterial({ color: c });
@@ -85,8 +85,8 @@ function goggles(ch, lens = '#ffb347') { // ရေကူးမျက်မှန
   mesh(new THREE.SphereGeometry(R * 1.12, 28, 3, 0, Math.PI * 2, .85, .2), '#2e3a59', ch.head);
   const hinge = new THREE.Group(); hinge.position.set(0, .14, .02); ch.head.add(hinge); // cups hang at eye level; swung up they sit on the hair above the forehead
   for (const s of [-1, 1]) { const g = new THREE.Group(); g.position.set(s * .1, -.12, .3); g.rotation.x = -.2; hinge.add(g); mesh(new THREE.TorusGeometry(.056, .02, 8, 18), '#2e3a59', g); mesh(new THREE.CircleGeometry(.05, 18), new THREE.MeshLambertMaterial({ color: lens, emissive: lens, emissiveIntensity: .4 }), g, 0, 0, .012); }
-  const set = up => { hinge.rotation.x = up ? -1.1 : 0; }; set(true);
-  return { hinge, set };
+  const g = { hinge, up: true, set: up => { g.up = up; hinge.rotation.x = up ? -1.1 : 0; } }; g.set(true); // g.up: the face painter (chibi.js) hides Thura's eyes while the cups are down
+  return g;
 }
 export { goggles }; // T8: war.js straps them on its kids (Thura, the ④ goggles kid, you once you own a pair)
 function wall(ch) { // a corner of brick wall, in front and to her right, that she leans out past
@@ -228,7 +228,7 @@ ChibiAnimator.prototype.skip = function (dt) {
 
 export function makeCast(id, emit) {
   const def = CAST.find(c => c.id === id);
-  const ch = makeChibi(def.opts); def.build(ch); ch.gogglesUp = true;
+  const ch = makeChibi(def.opts); def.build(ch); ch.gogglesUp = true; ch.faceId = def.id; // faceId: the per-character overrides in chibi.js FACE_OV
   const anim = new ChibiAnimator(ch, emit);
   const act = (k) => { // what this character's own buttons do
     if (k.startsWith('loop:')) {
@@ -245,3 +245,14 @@ export function makeCast(id, emit) {
   };
   return { def, ch, anim, act };
 }
+
+// T6.5: faces.json (the FACE table) and tics/*.json (listed in tics/index.json) load at start. A JSON tic whose name a code tic already has is
+// skipped (the code one wins) unless the page has ?jsontics. Nothing here is awaited by the game: it works on the built-in defaults first.
+const here = new URL('./', import.meta.url);
+const getJSON = async p => { const r = await fetch(new URL(p, here), { cache: 'no-cache' }); if (!r.ok) throw new Error(p + ' ' + r.status); return r.json(); };
+export const ticsReady = (async () => {
+  try { setFaces(await getJSON('faces.json')); } catch (e) { console.warn('faces.json:', e.message); }
+  const loaded = [];
+  try { for (const n of (await getJSON('tics/index.json')).tics) { try { if (registerTic(await getJSON('tics/' + n + '.json'))) loaded.push(n); } catch (e) { console.warn('tic ' + n + ':', e.message); } } } catch (e) { console.warn('tics/index.json:', e.message); }
+  return loaded;
+})();

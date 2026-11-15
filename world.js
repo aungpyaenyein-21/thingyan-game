@@ -11,8 +11,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=33';
-import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=8';
+import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=34';
+import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=9';
 import { PAL as TONE } from './palette.js?v=1';
 import { createOrbit, TALK } from './camera.js?v=4';
 import { createSky, createSurround } from './sky.js?v=4';
