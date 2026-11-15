@@ -60,14 +60,14 @@ const SHOTS = { 3: 'line03-hero-sad', 9: 'line09-hero-pout', 19: 'line19-phoekya
         cur.sampled = true; const S = P[cur.who], T = cur.to && P[cur.to];
         if (S && T && !cur.voice) {
           const loop = S.anim.loop, turns = TURNS.includes(loop), want0 = yawTo(S, T);
-          const dl = z.director?.log.at(-1); cur.cam = dl && { kind: dl.kind, want: dl.want, fb: dl.fallback, pull: dl.pull }; cur.speaker = { loop, turns, body: deg(wrap(want0 - bodyYaw(S))), head: deg(wrap(want0 - headYaw(S))) };
+          cur.members = [...(z.director?.scene?.members.keys() ?? [])].map(m => m.id); const dl = z.director?.log.at(-1); cur.cam = dl && { kind: dl.kind, want: dl.want, fb: dl.fallback, pull: dl.pull }; cur.speaker = { loop, turns, body: deg(wrap(want0 - bodyYaw(S))), head: deg(wrap(want0 - headYaw(S))) };
           const cam = W.cam.position; cur.camErr = Math.abs(wrap(bodyYaw(S) - Math.atan2(cam.x - S.g.position.x, cam.z - S.g.position.z)));
           cur.listeners = Object.entries(P).filter(([k, c]) => c !== S && here(c) && flat(c, S) < 8).map(([k, c]) => ({ id: k, loop: c.anim.loop, turns: TURNS.includes(c.anim.loop), body: deg(wrap(yawTo(c, S) - bodyYaw(c))), gz: +(c.anim.gaze || 0).toFixed(2), gv: +(c.anim.gazeV || 0).toFixed(2), hr: +c.ch.head.rotation.y.toFixed(2), sp: +c.ch.spine.rotation.y.toFixed(2), hp: +c.ch.hips.rotation.y.toFixed(2), one: c.anim.one, age: +(W.time() - cur.t).toFixed(2), ry: +c.g.rotation.y.toFixed(2), by: +bodyYaw(c).toFixed(2), hy: +headYaw(c).toFixed(2), want: +yawTo(c, S).toFixed(2), head: deg(wrap(yawTo(c, S) - headYaw(c))) }));
         }
       }
       if (cur && cur.shot && cur.sampled && !cur.queued && !W.paused && W.time() - cur.t >= 1.1) { cur.queued = true; window.__q.push(cur.shot); W.paused = true; }
       for (const [k, c] of Object.entries(P)) { // the painted face against the table (idle / sitting, no overlay, not wet, past the blink-cut, a moment after the line opened)
-        const a = c.anim; if (!here(c) || a.fx || a.hitT > 0 || a.cutT > 0 || a.one || !['idle', 'sit'].includes(a.loop) || (cur && W.time() - cur.t < .6 && cur.n === lastN) || !c.ch.faceKey) continue;
+        const a = c.anim; if (!here(c) || a.fx || a.hitT > 0 || a.cutT > 0 || (a.fn == null && a.moodName) /* first frame after arriving */ || a.one || !['idle', 'sit'].includes(a.loop) || (cur && W.time() - cur.t < .6 && cur.n === lastN) || !c.ch.faceKey) continue;
         const exp = z.FACE?.[want(k, lastN)]; if (!exp) continue;
         const [e, br, m, x] = c.ch.faceKey.split('|'); R.mood.checks++;
         const good = (e === 'blink' || (exp.eyes === 'normal' ? ['normal', 'happy'].includes(e) : e === exp.eyes)) && br === String(exp.brows) && (m === exp.mouth || ['open', 'o'].includes(m) /* a talker's flap */) && x === (exp.extra || '');
@@ -93,8 +93,8 @@ const SHOTS = { 3: 'line03-hero-sad', 9: 'line09-hero-pout', 19: 'line19-phoekya
     const lh = Math.max(...ls.map(x => x.head)), lb = Math.max(0, ...ls.filter(x => x.turns).map(x => x.body)), worst = ls.reduce((a, x) => x.head > a.head ? x : a, ls[0]);
     log(`   listeners (${ls.length} samples): worst head ${lh.toFixed(1)}° (${worst.id} at line ${worst.n}) · worst body ${lb.toFixed(1)}° · fewest listeners ${Math.min(...sp.map(l => l.listeners.length))}`);
     ok(lh <= 30 && lb <= 30, 'every visible cast member within 8 m looks at the speaker (head ≤ 30°, body ≤ 30°)');
-    const p19 = R.lines.filter(l => l.n >= 19 && l.listeners).every(l => l.listeners.some(x => x.id === 'phoekyaw') || l.who === 'phoekyaw');
-    ok(p19, 'Phoe Kyaw is among the listeners from line 19 on');
+    const p19 = R.lines.filter(l => l.n >= 19 && l.members).every(l => l.members.includes('phoekyaw'));
+    ok(p19, 'Phoe Kyaw is in the director\'s group (a listener) at every line from 19 on');
     const ce = Math.max(...sp.map(l => l.camErr)), cn = sp.filter(l => l.camErr > .9).length;
     for (const l of sp) { if (l.speaker.head > 25 || l.camErr > .9 || l.listeners.some(x => x.head > 30)) log('   line', l.n, l.who, '→', l.to, 'speaker', JSON.stringify({ loop: l.speaker.loop, body: +l.speaker.body.toFixed(0), head: +l.speaker.head.toFixed(0) }), 'cam', l.camErr.toFixed(2), JSON.stringify(l.cam), 'bad listeners', JSON.stringify(l.listeners.filter(x => x.head > 30).map(x => [x.id, x.loop, +x.body.toFixed(0), +x.head.toFixed(0), 'gz', x.gz, 'gv', x.gv, 'hr', x.hr, 'sp', x.sp, 'hp', x.hp, 'one', x.one, 'age', x.age, 'ry', x.ry, 'by', x.by, 'hy', x.hy, 'want', x.want]))); }
     log(`   camera: worst ${ce.toFixed(2)} rad off the speaker's front · ${cn} lines beyond TALK.face .9`);
