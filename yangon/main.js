@@ -17,8 +17,8 @@ import { createSound } from '../sound.js?v=3';
 import { makeCast, earBlush } from '../cast.js?v=16';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
-import { load as loadSave, save as store, wipe } from './save.js?v=12';
-import { createDay, debugStart, PHASE_OF } from './day.js?v=7';
+import { load as loadSave, save as store, fresh } from './save.js?v=12';
+import { createDay, debugStart, PHASE_OF, STEPS, STEP_LABELS } from './day.js?v=8';
 import { createStory, GOALS, NIGHT } from './story.js?v=4';
 import { createMandat } from './mandat.js?v=1';
 import { createDirector } from './talk.js?v=1';
@@ -735,7 +735,30 @@ W.tick((dt, T) => {
   for (const f of TR.spin) f.rotation.y += dt * 9;
 });
 $('goal').addEventListener('click', () => $('goal').classList.toggle('open'));
-$('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); location.search = '?new'; });
+/* T13: restart = the story starts over, the hero stays (name, look, girl); the URL keeps girl / name / tune / debug / dt, never ?new (that would wipe the hero too) */
+const keep = () => { const P = new URLSearchParams(location.search); for (const k of ['new', 'day', 'step']) P.delete(k); return P; };
+function restart() {
+  const F = fresh();
+  for (const k of ['name', 'look', 'girl', 'goggles']) if (S[k] !== undefined) F[k] = S[k];
+  store(F); const P = keep(); location.search = P.size ? '?' + P : '?';
+}
+const closeOpts = () => document.body.classList.remove('opts');
+for (const id of ['confirm', 'pick']) $(id).addEventListener('pointerdown', e => e.stopPropagation());
+$('eagain').addEventListener('click', e => { e.stopPropagation(); restart(); });
+$('redo').addEventListener('click', e => { e.stopPropagation(); closeOpts(); $('pick').hidden = true; $('confirm').hidden = false; });
+$('cyes').addEventListener('click', e => { e.stopPropagation(); restart(); });
+$('cno').addEventListener('click', e => { e.stopPropagation(); $('confirm').hidden = true; });
+$('scn').addEventListener('click', e => {
+  e.stopPropagation(); closeOpts(); $('confirm').hidden = true;
+  $('phead').textContent = 'ရက် ' + S.day;
+  $('plist').replaceChildren(...(STEPS[S.day] ?? []).map(id => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.step = id; b.textContent = STEP_LABELS[id] ?? id; b.classList.toggle('on', id === S.step);
+    b.addEventListener('click', ev => { ev.stopPropagation(); const P = keep(); P.set('day', S.day); P.set('step', id); location.search = '?' + P; });
+    return b;
+  }));
+  $('pick').hidden = false;
+});
+$('pno').addEventListener('click', e => { e.stopPropagation(); $('pick').hidden = true; });
 
 // ---------- go ----------
 stage(S.step); save();

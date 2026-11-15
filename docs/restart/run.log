@@ -1,0 +1,18 @@
+restart
+  ok   confirm opens
+  ok   cancel: panel closed, save untouched
+  ok   restart → step pro
+  ok   parts/got/night empty
+  ok   name + look kept
+  ok   ?girl survives
+  ok   URL keeps girl, no ?new: ?girl=&debug=&dt=0.2&q=low
+picker + again + phone
+  ok   header + 4 steps: ရက် 1
+  ok   phone: buttons ≥ 40px, no horizontal overflow
+  ok   picker → pro (S.step=pro)
+  ok   picker → 1-1 (S.step=1-1)
+  ok   picker → 1-2 (S.step=1-2)
+  ok   picker → wip (S.step=wip)
+  ok   wip card restart: pro, hero kept
+  ok   console errors: 0
+ALL PASS
