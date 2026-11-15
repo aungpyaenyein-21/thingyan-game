@@ -1,0 +1,16 @@
+{ "faces": {
+  "ok": {"eyes": "normal", "brows": 0, "mouth": "smile", "extra": null},
+  "joy": {"eyes": "happy", "brows": "up", "mouth": "wide", "extra": null},
+  "shock": {"eyes": "wide", "brows": "up", "mouth": "o", "extra": "sweat"},
+  "worry": {"eyes": "half", "brows": "out", "mouth": "wobble", "extra": "sweat"},
+  "lie": {"eyes": "side", "brows": 0, "mouth": "line", "extra": "redEar"},
+  "mad": {"eyes": "glare", "brows": "in", "mouth": "grit", "extra": null},
+  "pout": {"eyes": "half", "brows": "in", "mouth": "pout", "extra": null},
+  "sly": {"eyes": "side", "brows": "one", "mouth": "smile", "extra": null},
+  "wet": {"eyes": "><", "brows": "out", "mouth": "open", "extra": null},
+  "cry": {"eyes": "><", "brows": "out", "mouth": "wobble", "extra": "tear"}
+ },
+ "overrides": {
+  "utinmaung": {"base": "joy"},
+  "thura": {"hideEyesWhen": "goggles"}
+ } }

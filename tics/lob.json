@@ -1,0 +1,18 @@
+{ "name": "lob", "kind": "oneshot", "duration": 1.5, "still": false,
+  "keys": [
+    {"t": 0, "pose": {"armRx": 0, "armRz": 0, "elbowR": 0, "handRz": 0, "armLx": 0, "elbowL": 0, "armLz": 0.3, "spineRx": 0, "spineRy": 0, "headRx": 0, "legLx": 0, "kneeR": 0, "legRx": 0, "x": 0}},
+    {"t": 0.25, "face": {"eyes": "normal", "mouth": "open"}},
+    {"t": 0.5, "pose": {"armRx": -3.0, "armRz": -0.25, "elbowR": -0.9, "handRz": -0.3, "armLx": -1.1, "elbowL": -0.8, "armLz": 0.3, "spineRx": -0.25, "spineRy": -0.3, "headRx": -0.15, "legLx": 0, "kneeR": 0, "legRx": 0, "x": 0}},
+    {"t": 0.55, "hold": true, "pose": {}},
+    {"t": 0.64, "face": {"eyes": "happy", "mouth": "open"}},
+    {"t": 0.73, "pose": {"armRx": -0.7, "armRz": -0.15, "elbowR": -0.4, "handRz": -0.3, "armLx": -0.4, "elbowL": -0.8, "armLz": 0.3, "spineRx": 0.2, "spineRy": 0.05, "headRx": 0, "legLx": -0.45, "kneeR": 0.35, "legRx": 0.25, "x": 0.05}},
+    {"t": 1.5, "hold": true, "pose": {}}
+  ],
+  "show": [
+    {"id": "balloon", "at": 0, "visible": true},
+    {"id": "balloon", "at": 0.62, "visible": false}
+  ],
+  "emit": [
+    {"at": 0.61, "type": "lob", "from": "handR"}
+  ]
+}

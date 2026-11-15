@@ -1,0 +1,9 @@
+{ "name": "bow", "kind": "oneshot", "duration": 2.4, "still": false,
+  "keys": [
+    {"t": 0, "pose": {"headRx": 0, "spineRx": 0, "armLx": 0, "armRx": 0, "armLz": 0, "armRz": 0, "elbowL": 0, "elbowR": 0, "handLz": 0, "handRz": 0, "sy": 1}},
+    {"t": 0.3, "pose": {"headRx": 0.7, "spineRx": 0.18, "armLx": -0.3, "armRx": -0.3, "armLz": -0.22, "armRz": 0.22, "elbowL": -0.55, "elbowR": -0.55, "handLz": 0.5, "handRz": -0.5, "sy": 0.97}},
+    {"t": 2.0, "hold": true, "pose": {}},
+    {"t": 2.35, "pose": {"headRx": 0, "spineRx": 0, "armLx": 0, "armRx": 0, "armLz": 0, "armRz": 0, "elbowL": 0, "elbowR": 0, "handLz": 0, "handRz": 0, "sy": 1}},
+    {"t": 2.4, "hold": true, "pose": {}}
+  ]
+}

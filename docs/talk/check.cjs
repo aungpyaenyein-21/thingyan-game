@@ -65,7 +65,7 @@ const results = {};
     log('2. walls');
     const p = await open('new&day=1&step=1-3');
     const r = await p.evaluate(async () => {
-      const { OZ, OX } = await import('./yangon/set.js?v=23'), z = zone, W = z.W, V = (x, zz) => new W.THREE.Vector3(x, 0, zz), P = z.people;
+      const { OZ, OX } = await import('./yangon/set.js?v=25'), z = zone, W = z.W, V = (x, zz) => new W.THREE.Vector3(x, 0, zz), P = z.people;
       const lift = c => c.ch.head.getWorldPosition(new W.THREE.Vector3()).y - c.g.position.y; // head height over the feet
       const room = n => { const b = z.rooms[n].bounds; return { open: Math.PI / 4, x0: b.x0, z0: b.z0 }; };
       const H = z.rooms.home, T = z.rooms.tea, B = z.rooms.barber, C = z.rooms.clothes;

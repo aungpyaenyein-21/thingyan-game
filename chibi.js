@@ -85,12 +85,45 @@ function stripes(a, b, plaid, border) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t;
 }
 
+// T6.5 wide / side / half / glare: drawn from the character's own eye style (round · almond tilted · sleepy squashed with a heavy lid · bead with no white),
+// in that character's iris colour, so the same face still reads as that person (CHARACTERS §11).
+// wide = big sclera, small iris + pupil · side = both irises pushed to the same edge · half = flat lid across the middle · glare = the flat lid slanted down towards the nose (angry)
+function newEye(g, x, y, s, kind, o, iris, WH, ink) {
+  const st = o.eyes, bead = st === 'bead', alm = st === 'almond', slp = st === 'sleepy';
+  const rx = bead ? 15 : alm ? 30 : 27, ry = bead ? 19 : alm ? 21 : 34, ir = alm ? [17, 20, 3] : [21, 27, 5], pr = alm ? [9, 12, 5] : [11, 15, 8];
+  const wide = kind === 'wide', k = wide ? .62 : kind === 'side' ? .88 : 1, dx = kind === 'side' ? rx - ir[0] * k + 6 : 0, lw = slp ? 8 : 5;
+  g.save(); g.translate(x, y); if (slp) { g.translate(0, 8); g.scale(1, .65); } if (alm) g.rotate(-s * .14); if (wide) g.scale(1.15, 1.2); if (bead && wide) g.scale(1.3, 1.3);
+  g.save();
+  const ly = -ry * .08, oy = -ry * .5; // half: lid y · glare: lid y at the outer end (the inner end is at the middle)
+  if (kind === 'half') { g.beginPath(); g.rect(-60, ly, 120, 120); g.clip(); }
+  if (kind === 'glare') { const ox = s * (rx + 8), nx = -s * (rx + 8); g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox, 120); g.lineTo(nx, 120); g.lineTo(nx, 0); g.closePath(); g.clip(); }
+  if (bead) {
+    if (wide || kind === 'side') { g.fillStyle = WH; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill(); g.strokeStyle = ink; g.lineWidth = 3; g.stroke(); }
+    g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(dx * .6, 4, 13 * (wide ? .6 : kind === 'side' ? .8 : 1), 17 * (wide ? .6 : kind === 'side' ? .8 : 1), 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(dx * .6 - 4, -2, 4, 0, 7); g.fill();
+  } else {
+    g.fillStyle = WH; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill(); g.save(); g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.clip();
+    g.fillStyle = iris; g.beginPath(); g.ellipse(dx, ir[2], ir[0] * k, ir[1] * k, 0, 0, 7); g.fill();
+    g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(dx, pr[2], pr[0] * k * (wide ? .8 : 1), pr[1] * k * (wide ? .8 : 1), 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(dx - 7 * k, -4, 6 * k, 0, 7); g.fill(); g.restore();
+    g.strokeStyle = ink; g.lineWidth = wide ? 4 : lw; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, wide ? 0 : Math.PI * 1.05, wide ? 7 : Math.PI * 1.95); g.stroke();
+  }
+  g.restore();
+  g.strokeStyle = ink; g.lineWidth = slp ? 9 : 7; g.beginPath();
+  if (kind === 'half') { g.moveTo(-rx - 3, ly); g.lineTo(rx + 3, ly); g.stroke(); }
+  if (kind === 'glare') { g.moveTo(s * (rx + 6), oy); g.lineTo(-s * (rx + 6), 0); g.stroke(); }
+  g.restore();
+}
+
 // ---------- face: painted on a canvas, mapped onto a patch of the head ----------
 const FW = 384, FH = 256, faceCache = {};
 // o.eyes round|almond|bead|sleepy · o.brows arc|flat|thin|bold · o.lips smile|grin|small|cat · o.marks none|blush|freckles|mole
-function faceTex(o, eye, mouth) {
+// T6.5: f = { eyes, brows, mouth, extra } (CHARACTERS §14). eyes normal|blink|happy|squint|><|wide|side|half|none · brows 0|up|in|out|one ·
+// mouth smile|open|o|wide|line|pout|wobble|grit · extra null|sweat|tear|lines (blush / redEye stay the character's own marks; redEar drives the ear props)
+export function faceTex(o, f) {
+  const eye = f.eyes, mouth = f.mouth, brow = f.brows || 0, extra = f.extra || '';
   const k = o.age === 'kid' ? 1.22 : 1, { iris, thanaka } = o;
-  const key = [iris, thanaka, o.eyes, o.brows, o.lips, o.marks, k, eye, mouth, o.redEye ? 'r' : ''].join('|'); if (faceCache[key]) return faceCache[key];
+  const key = [iris, thanaka, o.eyes, o.brows, o.lips, o.marks, k, eye, brow, mouth, extra, o.redEye ? 'r' : ''].join('|'); if (faceCache[key]) return faceCache[key];
   const c = document.createElement('canvas'); c.width = FW; c.height = FH; const g = c.getContext('2d');
   const ink = '#3a2430', WH = o.redEye ? '#ff9a9a' : '#fff'; // redEye: bloodshot whites (a face full of water all day)
   if (o.marks === 'freckles') { g.fillStyle = 'rgba(120,70,50,.6)'; for (const s of [-1, 1]) for (const [dx, dy] of [[38, 150], [54, 161], [68, 147], [47, 172]]) { g.beginPath(); g.arc(192 + s * dx, dy, 4, 0, 7); g.fill(); } }
@@ -112,10 +145,15 @@ function faceTex(o, eye, mouth) {
   for (const s of [-1, 1]) {
     const x = 192 + s * 62, y = 112;
     g.save(); g.translate(x, y); g.scale(k, k); g.translate(-x, -y);
-    g.strokeStyle = ink; g.lineWidth = { thin: 3.5, bold: 11 }[o.brows] || 6; g.beginPath(); // brow
-    if (o.brows === 'flat') { g.moveTo(x - 17, y - 74); g.lineTo(x + 17, y - 74); } else g.arc(x - s * 2, y - 62, o.brows === 'bold' ? 16 : 18, Math.PI * 1.2, Math.PI * 1.8);
-    g.stroke();
-    if (eye === 'normal' && o.eyes === 'bead') { // small shiny bead eyes
+    g.save(); // brow, moved off the character's own shape by the face's brows part (T6.5)
+    const flatBrow = o.brows === 'flat' || brow === 'in' || brow === 'out' || (brow === 'one' && s < 0); // in / out are straight bars, tipped // 'one': the right brow goes high, the left one goes flat
+    if (brow) { const by = y - 68; g.translate(x, by); const [dy, rot] = { up: [-10, 0], in: [6, -.5 * s], out: [-3, .5 * s], one: [s > 0 ? -10 : 8, s > 0 ? -.12 * s : 0] }[brow] || [0, 0]; g.translate(0, dy / k); /* px on the canvas: a kid's face is scaled k about the eye, and the brows sit near the top edge */ g.rotate(rot); g.translate(-x, -by); }
+    g.strokeStyle = ink; g.lineWidth = { thin: 3.5, bold: 11 }[o.brows] || 6; g.beginPath();
+    if (flatBrow) { g.moveTo(x - 17, y - 74); g.lineTo(x + 17, y - 74); } else g.arc(x - s * 2, y - 62, o.brows === 'bold' ? 16 : 18, Math.PI * 1.2, Math.PI * 1.8);
+    g.stroke(); g.restore();
+    if (eye === 'wide' || eye === 'side' || eye === 'half' || eye === 'glare') { newEye(g, x, y, s, eye, o, iris, WH, ink);
+    } else if (eye === 'none') { /* goggles down: the cups hide the eyes */ }
+    else if (eye === 'normal' && o.eyes === 'bead') { // small shiny bead eyes
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 4, 13, 17, 0, 0, 7); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 4, y - 3, 5, 0, 7); g.fill();
     } else if (eye === 'normal' && o.eyes === 'almond') { // narrower, outer corner lifted
@@ -139,13 +177,21 @@ function faceTex(o, eye, mouth) {
     g.restore();
   }
   g.fillStyle = g.strokeStyle = '#7a2e3a'; g.lineWidth = 6;
-  const lips = mouth === 'smile' ? o.lips : mouth === 'o' ? 'o' : 'open'; // 'o': the small round mouth of a talker's flap (T10)
+  const lips = mouth === 'smile' ? o.lips : ['o', 'wide', 'line', 'pout', 'wobble', 'grit'].includes(mouth) ? mouth : 'open'; // 'o': the small round mouth of a talker's flap (T10)
   if (lips === 'smile') { g.beginPath(); g.moveTo(162, 192); g.quadraticCurveTo(192, 196, 222, 192); g.quadraticCurveTo(218, 232, 192, 234); g.quadraticCurveTo(166, 232, 162, 192); g.fill(); }
   if (lips === 'grin') { g.beginPath(); g.moveTo(148, 188); g.quadraticCurveTo(192, 196, 236, 188); g.quadraticCurveTo(230, 238, 192, 240); g.quadraticCurveTo(154, 238, 148, 188); g.fill(); }
   if (lips === 'small') { g.beginPath(); g.arc(192, 180, 22, Math.PI * .22, Math.PI * .78); g.stroke(); }
   if (lips === 'cat') { g.beginPath(); g.arc(178, 194, 14, 0, Math.PI); g.moveTo(220, 194); g.arc(206, 194, 14, 0, Math.PI); g.stroke(); } // ω
   if (lips === 'open') { g.beginPath(); g.ellipse(192, 208, 17, 22, 0, 0, 7); g.fill(); }
   if (lips === 'o') { g.beginPath(); g.ellipse(192, 204, 10, 12, 0, 0, 7); g.fill(); }
+  if (lips === 'wide') { g.beginPath(); g.moveTo(140, 184); g.quadraticCurveTo(192, 200, 244, 184); g.quadraticCurveTo(238, 244, 192, 246); g.quadraticCurveTo(146, 244, 140, 184); g.fill(); g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, 234, 22, 9, 0, 0, 7); g.fill(); }
+  if (lips === 'line') { g.beginPath(); g.moveTo(166, 206); g.lineTo(218, 206); g.stroke(); }
+  if (lips === 'pout') { g.fillStyle = '#e8737f'; g.lineWidth = 4; g.beginPath(); g.ellipse(192, 214, 14, 9, 0, 0, 7); g.fill(); g.stroke(); g.lineWidth = 6; g.beginPath(); g.moveTo(176, 204); g.quadraticCurveTo(192, 198, 208, 204); g.stroke(); } // lips pushed forward: a small round bump under a short bar
+  if (lips === 'wobble') { g.beginPath(); g.moveTo(146, 218); for (let i = 0; i < 5; i++) g.quadraticCurveTo(146 + i * 20 + 10, i % 2 ? 246 : 192, 146 + i * 20 + 20, 218); g.stroke(); } // a wavy line, wider and deeper than a smile
+  if (lips === 'grit') { g.fillStyle = '#fff'; g.lineWidth = 5; g.beginPath(); g.roundRect(152, 192, 80, 32, 9); g.fill(); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(152, 208); g.lineTo(232, 208); for (const dx of [-26, -9, 9, 26]) { g.moveTo(192 + dx, 192); g.lineTo(192 + dx, 224); } g.stroke(); }
+  if (extra === 'sweat') { g.fillStyle = '#bfe6f6'; g.strokeStyle = '#4fa3c9'; g.lineWidth = 4; g.beginPath(); g.moveTo(306, 34); g.quadraticCurveTo(326, 66, 306, 76); g.quadraticCurveTo(284, 66, 306, 34); g.fill(); g.stroke(); }
+  if (extra === 'tear') { g.fillStyle = '#bfe6f6'; g.strokeStyle = '#4fa3c9'; g.lineWidth = 3; g.beginPath(); g.moveTo(124, 156); g.quadraticCurveTo(138, 178, 124, 186); g.quadraticCurveTo(110, 178, 124, 156); g.fill(); g.stroke(); }
+  if (extra === 'lines') { g.strokeStyle = '#5b7fd0'; g.lineWidth = 5; for (const s of [-1, 1]) for (const dx of [-12, 0, 12]) { g.beginPath(); g.moveTo(192 + s * (104 + dx), 138); g.lineTo(192 + s * (104 + dx), 178); g.stroke(); } }
   if (lips === 'smile' || lips === 'grin' || lips === 'open') { g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, lips === 'open' ? 220 : lips === 'grin' ? 228 : 224, 15, 8, 0, 0, 7); g.fill(); } // tongue
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return faceCache[key] = t;
 }
@@ -308,7 +354,7 @@ export function makeChibi(opts = {}) {
   if (o.age === 'kid') skull.scale.multiplyScalar(1.1);
   part(new THREE.SphereGeometry(HEAD_R, 32, 20), o.skin, skull);
   // painted face patch (front ~110° x 72°)
-  const ft = faceTex(o, 'normal', 'smile');
+  const ft = faceTex(o, { eyes: 'normal', brows: 0, mouth: 'smile', extra: null });
   const faceMat = new THREE.MeshLambertMaterial({ map: ft, emissive: '#ffffff', emissiveMap: ft, emissiveIntensity: .28, transparent: true, polygonOffset: true, polygonOffsetFactor: -2 }); // a little self-light keeps eye whites + thanaka bright
   const face = new THREE.Mesh(new THREE.SphereGeometry(HEAD_R * 1.004, 32, 16, Math.PI / 2 - .95, 1.9, Math.PI / 2 - .55, 1.25), faceMat); skull.add(face);
   const nose = part(new THREE.SphereGeometry(.026, 10, 8), shade(o.skin, .18), skull, 0, -.035, HEAD_R * .99, false); nose.scale.set(1.15, .85, .9);
@@ -560,6 +606,30 @@ export class ChibiAnimator {
       this.flapT = .09 + .1 * j; this.flapI = (this.flapI + (j > .72 ? 2 : 1)) % 3; }
     return FLAP[this.flapI];
   }
+  // T6.5 anim.face('worry', 1.5): that expression for 1.5 s on top of whatever the loop says, then the loop's own face again. Unknown name: false, nothing happens.
+  face(name, sec = 2) { if (!FACE[name]) { console.warn('anim.face: unknown face', name); return false; } this.fx = { name, t: sec }; return true; }
+  // the four parts to paint now. Priority: hit by water (wet) > anim.face() > the pose's face (a JSON tic key) > the character's base face (U Tin Maung: joy) > the loop's own expr / mouth.
+  _faceNow(p, dt) {
+    const c = this.ch, o = c.opts, ov = FACE_OV[c.faceId] || {}, hit = this.hitT > 0;
+    if (this.fx && (this.fx.t -= dt) <= 0) this.fx = null;
+    const inline = !this.fx && p.face && typeof p.face === 'object' ? p.face : null; // a JSON tic key with its own parts: acts like the loop's expr / mouth (no name, no blink-cut)
+    const named = this.fx ? this.fx.name : typeof p.face === 'string' && FACE[p.face] ? p.face : null;
+    let name = hit ? 'wet' : named, r = name && faceParts(name, c);
+    if (!r && !named && ov.base && p.expr === 'normal' && p.mouth === 'smile') { name = ov.base; r = faceParts(name, c); }
+    if (!r) { name = null; r = { eyes: p.expr, brows: 0, mouth: p.mouth, extra: null, ...inline }; } // the loop's own: expr normal|happy|squint|blink, mouth smile|open|o
+    else r = { ...r };
+    const sig = r.eyes + r.brows + r.mouth + r.extra;
+    if (r.eyes === 'normal') r.eyes = (o.smileEyes ?? o.age === 'elder') ? 'happy' : (this.T % 3.7) < .12 ? 'blink' : 'normal'; // elders smile with their eyes (smileEyes: false for a stern one)
+    if (this.talking && name !== 'wet') r.mouth = p.mouth; // the talker's flap (T10) replaces the mouth part only
+    if (!hit) { // blink-cut: between two different faces the eyes shut for a moment
+      if (this.fn === undefined) this.fn = name; else if (name !== this.fn) { if (sig !== this.fs) this.cutT = .06; this.fn = name; }
+      this.fs = sig; if (this.cutT > 0) { this.cutT -= dt; if (r.eyes !== 'none') r.eyes = 'blink'; }
+    }
+    if (ov.hideEyesWhen === 'goggles' && c.goggles && c.goggles.up === false) r.eyes = 'none'; // Thura: the cups cover them, brows + mouth only
+    const ear = (this.fx ? FACE[this.fx.name] : typeof p.face === 'string' ? FACE[p.face] : p.face)?.extra === 'redEar'; // 'lie': the ears give him away, for as long as the face lasts
+    if (c.blushEars && ear !== !!this.earsFx) { this.earsFx = ear; c.blushEars(ear); }
+    return r;
+  }
   setCharacter(ch) { this.ch = ch; this.kid = ch.opts?.age === 'kid'; }
   gaitOf(loop) { return this.ch.gait * (!this.kid ? 1 : MOVES.includes(loop) ? KID.gait : KID.oldGait); } // T9: kids' walk / jog / run are quicker
   strideOf(loop) { return this.kid && MOVES.includes(loop) ? KID.stride : 1; }
@@ -569,7 +639,7 @@ export class ChibiAnimator {
     this.one = name; this.oneT = 0; this._xfade(); this.thrown = false; this.sq = 0;
   }
   setTool(t) { if (this.ch.tools.includes(t)) this.ch.tool = t; }
-  skip(dt) { if (this.one && (this.oneT += dt) >= ONESHOT[this.one]) { this.one = null; this._xfade(); } } // off screen: no pose, but one-shots still end (scripts wait on them)
+  skip(dt) { if (this.fx) this.fx.t -= dt; if (this.one && (this.oneT += dt) >= ONESHOT[this.one]) { this.one = null; this._xfade(); } if (this.jt && this.one !== this.jt.name && this.loop !== this.jt.name) this._jsonEnd(); } // off screen: no pose, but one-shots still end (scripts wait on them)
   soak(k = 1) { this.ch.wet = Math.min(1, this.ch.wet + k); this.hitT = .7; } // hit by water: >_< for a moment, then dries over ~10 s
   emote(kind, dur = 1.6) {
     const c = this.ch;
@@ -598,7 +668,8 @@ export class ChibiAnimator {
     }
     const w = ease(clamp01(this.blendT / .25));
     for (const k of KEYS) this.out[k] = this.from[k] + (pose[k] - this.from[k]) * w;
-    this.out.expr = pose.expr; this.out.mouth = this.talking ? this._flap(dt) : pose.mouth;
+    if (this.jt && this.one !== this.jt.name && this.loop !== this.jt.name) this._jsonEnd(); // T6.5: a JSON tic ended (or was cut off): its props + visibility go back
+    this.out.expr = pose.expr; this.out.face = pose.face; this.out.mouth = this.talking ? this._flap(dt) : pose.mouth;
     this.hitT = (this.hitT || 0) - dt;
     if (this.loop === 'dance' && !this.ch.bubble?.visible && Math.random() < dt * .2) this.emote('note', 1.4);
     this._apply(this.out, dt);
@@ -843,9 +914,9 @@ export class ChibiAnimator {
     aL.sh.rotation.set(p.armLx, 0, p.armLz); aR.sh.rotation.set(p.armRx, 0, p.armRz);
     aL.elbow.rotation.x = p.elbowL; aR.elbow.rotation.x = p.elbowR; aL.hand.rotation.z = p.handLz; aR.hand.rotation.z = p.handRz;
     if (this.reach.L?.w > 0 || this.reach.R?.w > 0) this._reachIK(); // after the pose (one-shots included), so a reach wins over the animation by its weight
-    // face
-    const blink = (this.T % 3.7) < .12, eye = this.hitT > 0 ? 'squint' : p.expr !== 'normal' ? p.expr : (c.opts.smileEyes ?? c.opts.age === 'elder') ? 'happy' : blink ? 'blink' : 'normal'; // elders smile with their eyes (smileEyes: false for a stern one)
-    const key = eye + p.mouth; if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, eye, p.mouth); }
+    // face (T6.5: four parts, see _faceNow)
+    const fp = this._faceNow(p, dt), key = fp.eyes + '|' + fp.brows + '|' + fp.mouth + '|' + (fp.extra || '');
+    if (key !== c.faceKey) { c.faceKey = key; c.face.material.map = c.face.material.emissiveMap = faceTex(c.opts, fp); }
     // the bucket hangs from the left hand; while throwing it moves out in front between both hands (never through the body), then tips
     const B = c.bucket; B.visible = c.tool === 'bucket' || throwing;
     if (B.visible || c.hang) {
@@ -901,3 +972,124 @@ export class ChibiAnimator {
     }
   }
 }
+
+// ---------- T6.5: faces as data (CHARACTERS §14) ----------
+// The same table ships as faces.json (the face editor writes it); these are the built-in defaults, so the game works before / without the fetch.
+export const FACE = {
+  ok: { eyes: 'normal', brows: 0, mouth: 'smile', extra: null },
+  joy: { eyes: 'happy', brows: 'up', mouth: 'wide', extra: null },
+  shock: { eyes: 'wide', brows: 'up', mouth: 'o', extra: 'sweat' },
+  worry: { eyes: 'half', brows: 'out', mouth: 'wobble', extra: 'sweat' },
+  lie: { eyes: 'side', brows: 0, mouth: 'line', extra: 'redEar' },
+  mad: { eyes: 'glare', brows: 'in', mouth: 'grit', extra: null },
+  pout: { eyes: 'half', brows: 'in', mouth: 'pout', extra: null },
+  sly: { eyes: 'side', brows: 'one', mouth: 'smile', extra: null },
+  wet: { eyes: '><', brows: 'out', mouth: 'open', extra: null },
+  cry: { eyes: '><', brows: 'out', mouth: 'wobble', extra: 'tear' } };
+// per character id: base = the face shown wherever the loop would show `ok` · hideEyesWhen: 'goggles' = no eyes part while ch.goggles.up === false.
+// (Saya Gyi's no-happy-eyes is his own opts.smileEyes: false, which also keeps him off `joy`'s happy eyes.)
+export const FACE_OV = { utinmaung: { base: 'joy' }, thura: { hideEyesWhen: 'goggles' } };
+export const FACE_PARTS = { eyes: ['normal', 'blink', 'happy', 'squint', '><', 'wide', 'side', 'half', 'glare', 'none'], brows: [0, 'up', 'in', 'out', 'one'],
+  mouth: ['smile', 'open', 'o', 'wide', 'line', 'pout', 'wobble', 'grit'], extra: [null, 'sweat', 'tear', 'lines', 'redEar'] };
+export function setFaces(json) { // faces.json → the table (replaced in place, so importers keep their reference)
+  if (json.faces) { for (const k of Object.keys(FACE)) delete FACE[k]; Object.assign(FACE, json.faces); }
+  if (json.overrides) { for (const k of Object.keys(FACE_OV)) delete FACE_OV[k]; Object.assign(FACE_OV, json.overrides); }
+}
+// a named face as `ch` (anything with opts / faceId / goggles) would show it, or null for an unknown name
+export function faceParts(name, ch) {
+  const f = FACE[name]; if (!f) return null; const r = { ...f }, o = ch.opts || {};
+  if (r.eyes === 'happy' && o.smileEyes === false) r.eyes = 'normal'; // Saya Gyi: even a laugh stays in the mouth
+  return r;
+}
+
+// ---------- T6.5: JSON tics (tics/*.json, see tics/README.md) ----------
+export const POSE_KEYS = KEYS; export const neutralPose = base;
+const EASES = { linear: t => t, in: t => t * t, out: t => 1 - (1 - t) ** 2, inout: ease };
+const SOCKETS = ['handR', 'handL', 'chest', 'head', 'back', 'home'];
+const JSON_TICS = {}, JSON_LOOPS = {};
+const JSONTICS = typeof location !== 'undefined' && /[?&]jsontics\b/.test(location.search); // ?jsontics: a JSON tic replaces a code tic of the same name
+function pivotOf(ch, id) { return { handR: ch.arms[1].hand, handL: ch.arms[0].hand, chest: ch.spine, back: ch.spine, head: ch.head, root: ch.root }[id] || ch[id] || null; }
+function checkTic(j) {
+  const bad = m => { throw new Error('tic ' + (j && j.name) + ': ' + m); };
+  if (!j || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(j.name || '')) bad('name must be letters / digits / _');
+  if (j.kind !== 'loop' && j.kind !== 'oneshot') bad('kind must be loop or oneshot');
+  if (j.kind === 'loop' ? !(j.cycle > 0) : !(j.duration > 0)) bad(j.kind === 'loop' ? 'cycle must be > 0' : 'duration must be > 0');
+  if (!Array.isArray(j.keys) || !j.keys.length) bad('keys is empty');
+  let t0 = -1; for (const k of j.keys) {
+    if (typeof k.t !== 'number' || k.t < t0) bad('key times must be numbers in order'); t0 = k.t;
+    for (const [pk, v] of Object.entries(k.pose || {})) if (!KEYS.includes(pk) || typeof v !== 'number') bad('unknown / non-numeric pose key ' + pk);
+    if (k.face != null && (typeof k.face === 'string' ? !FACE[k.face] : ['eyes', 'brows', 'mouth', 'extra'].some(q => k.face[q] != null && !FACE_PARTS[q].includes(k.face[q])))) bad('unknown face ' + JSON.stringify(k.face));
+    if (k.ease != null && !EASES[k.ease]) bad('unknown ease ' + k.ease);
+  }
+  for (const r of j.props || []) { if (!r.id || typeof r.at !== 'number' || !SOCKETS.includes(r.to)) bad('prop row needs id, at, to (' + SOCKETS.join(' ') + ')'); }
+  for (const r of j.show || []) if (!r.id || typeof r.at !== 'number' || typeof r.visible !== 'boolean') bad('show row needs id, at, visible');
+  for (const r of j.emit || []) if (!r.type || typeof r.at !== 'number') bad('emit row needs type, at');
+}
+// compile: a track per channel = the keys that name it. A key with `pose: {}` is a base anchor (every channel is the base loop's value there);
+// an empty pose with `hold` keeps every channel as it was; a channel's track also starts / ends on the base at the first / last key unless a key says otherwise.
+// A segment ends on the later key's ease; a `hold` key makes its segment flat (the earlier value stays until the key's time).
+function compile(j) {
+  const ks = j.keys, chans = [...new Set(ks.flatMap(k => Object.keys(k.pose || {})))], tr = Object.fromEntries(chans.map(c => [c, []]));
+  for (const k of ks) {
+    if (!k.pose) continue; // no `pose` at all: a face-only key, the channels don't see it (`pose: {}` is the base anchor)
+    const names = Object.keys(k.pose);
+    if (!names.length) { for (const c of chans) { const a = tr[c], l = a[a.length - 1]; if (k.hold) { if (l) a.push({ t: k.t, v: l.v, hold: true }); } else a.push({ t: k.t, v: null, e: k.ease }); } }
+    else for (const c of names) tr[c].push({ t: k.t, v: k.pose[c], e: k.ease, hold: k.hold });
+  }
+  const t0 = ks[0].t, t1 = ks[ks.length - 1].t;
+  for (const c of chans) { const a = tr[c]; if (a[0].t > t0) a.unshift({ t: t0, v: null }); if (a[a.length - 1].t < t1) a.push({ t: t1, v: null }); }
+  const ev = [...(j.props || []).map(r => ({ at: r.at, kind: 'prop', r })), ...(j.show || []).map(r => ({ at: r.at, kind: 'show', r })), ...(j.emit || []).map(r => ({ at: r.at, kind: 'emit', r }))].sort((a, b) => a.at - b.at);
+  return { j, keys: ks, chans, tr, ev };
+}
+// the pose p (the base loop's) with the tic's channels and face applied at time t. A channel no key names is the base's value, so a tic layers on idle / walk.
+export function jsonSample(C, t, p) {
+  for (const c of C.chans) {
+    const a = C.tr[c]; let i = 0; while (i + 1 < a.length && a[i + 1].t <= t) i++;
+    const A = a[i], B = a[i + 1]; let v = A.v ?? p[c];
+    if (B && t > A.t) { const w = (t - A.t) / (B.t - A.t), e = B.hold ? 0 : EASES[B.e || 'inout'](w); v += ((B.v ?? p[c]) - v) * e; }
+    p[c] = v;
+  }
+  let f = null; for (const k of C.keys) if (k.t <= t && k.face) f = k.face; if (f) p.face = f;
+  return p;
+}
+function jsonPose(C, p, t, name) {
+  const ch = this.ch; let jt = this.jt;
+  if (!jt || jt.C !== C || t < jt.t) { if (jt) this._jsonEnd(); jt = this.jt = { C, name, n: 0, t, undo: new Map(), vis: new Map() }; } // a new play, or a scrub backwards: start the events again
+  jt.t = t;
+  while (jt.n < C.ev.length && C.ev[jt.n].at <= t) this._jsonEvent(C.ev[jt.n++], jt);
+  return jsonSample(C, t, p);
+}
+Object.assign(ChibiAnimator.prototype, {
+  _jsonEvent(e, jt) {
+    const ch = this.ch, r = e.r;
+    if (e.kind === 'emit') { const pv = pivotOf(ch, r.from || 'root'); if (pv) this.emit(r.type, pv); return; }
+    const m = ch[r.id]; if (!m) return; // a prop this character doesn't have: nothing to move
+    if (e.kind === 'show') { if (!jt.vis.has(m)) jt.vis.set(m, m.visible); m.visible = r.visible; return; }
+    if (!jt.undo.has(m)) jt.undo.set(m, { parent: m.parent, pos: m.position.clone(), rot: m.rotation.clone() });
+    if (r.to === 'home') { const u = jt.undo.get(m), h = ch[r.id + 'Home'] || u; h.parent.add(m); m.position.copy(h.pos); m.rotation.copy(h.rot); return; }
+    const sock = pivotOf(ch, r.to), pos = r.pos || (r.to === 'back' ? [0, .2, -.2] : [0, 0, 0]), rot = r.rot || [0, 0, 0];
+    sock.add(m); m.position.set(...pos); m.rotation.set(...rot);
+  },
+  _jsonEnd() { // the tic is over (or was cut off): every prop it moved and every visibility it changed goes back
+    const jt = this.jt; this.jt = null; if (!jt) return;
+    for (const [m, u] of jt.undo) { u.parent.add(m); m.position.copy(u.pos); m.rotation.copy(u.rot); }
+    for (const [m, v] of jt.vis) m.visible = v;
+  } });
+const loopPose0 = ChibiAnimator.prototype._loopPose;
+ChibiAnimator.prototype._loopPose = function (name) {
+  const C = JSON_LOOPS[name]; if (!C) return loopPose0.call(this, name);
+  return jsonPose.call(this, C, loopPose0.call(this, 'idle'), (this.T + this.seed) % C.j.cycle, name);
+};
+// registerTic(json) → true when registered, false when a code tic of that name wins (unless ?jsontics, or { force: true }). Throws on a malformed tic.
+export function registerTic(j, { force = JSONTICS } = {}) {
+  checkTic(j); const name = j.name, own = name in JSON_TICS;
+  if (!own && !force && (name in ONESHOT || name in LOOPS || ChibiAnimator.prototype['_' + name])) return false;
+  const C = compile(j); JSON_TICS[name] = C;
+  if (j.kind === 'loop') { delete JSON_LOOPS[name]; JSON_LOOPS[name] = C; LOOPS[name] ??= { f: 0, A: 0, speed: 0 }; }
+  else {
+    ONESHOT[name] = j.duration; const i = STILL.indexOf(name); if (j.still && i < 0) STILL.push(name); if (!j.still && i >= 0) STILL.splice(i, 1);
+    ChibiAnimator.prototype['_' + name] = function (p, t) { return jsonPose.call(this, JSON_TICS[name], p, t, name); };
+  }
+  return true;
+}
+export const jsonTics = () => Object.keys(JSON_TICS);
