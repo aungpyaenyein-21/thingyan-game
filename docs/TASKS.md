@@ -16,6 +16,7 @@
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ✅ 2026-11-02 (PR #32 · plan [plans/T5.md](plans/T5.md) · 2 reviews) — day 1 as SCENARIO v6; the story beats get reworked in T5b | အခြား model · branch `claude/day1` |
 | T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3. **T5b-1 now**: Prologue + Scene A + Scene B (lines 1–31, the creator's script so far) + day-1 kit, then a 「ဆက်ရန်」 stop · **T5b-2 later**: 1-3 … 1-9 once the creator hands in the rest of the day-1 script | ✅ T5b-1 2026-11-15 (PR #45 · plan + 2 code reviews · merged) · ⏳ T5b-2 waits for the creator's script | design Opus · build Sonnet · branch `claude/day1b` |
+| T16 | [Mood + addressee](#t16-mood--addressee-issue-50) — issue #50 · a face that stays (`sad` after the news), the speaker faces the person they talk to, every gang member listens | 🔨 2026-11-15 | design Opus · build Sonnet · branch `claude/mood` |
 | T13 | [Restart + scene picker](#t13-restart--scene-picker-creator-2026-11-15) — ⚙ menu: 「အစက ပြန်စ」 (confirm → new save → Prologue) + a scene list to jump straight to any day-1 step, for testing | ✅ 2026-11-15 (PR · plan + 2 code reviews · merged) — restart keeps name / look / girl, resets the story | design Opus · build Sonnet · branch `claude/restart` |
 | T15 | Retire the pixel game (creator 2026-11-15) — the Phaser `index.html` / `game.js` / `art.js` deleted; `index.html` now sends you to `yangon.html` (query + hash kept) | ✅ 2026-11-15 (PR · merged) | design Opus · build Sonnet · branch `claude/home` |
 | T12 | [Ward: clear, widen, near-lens fade](#t12-ward-clear-widen-near-lens-fade-issue-41) — issue #41 · life.js exclusion zone, lanes ×1.5 in set.js, dithered near-lens fade for street furniture (`?tune`) | ✅ 2026-11-07 (PR #42 · plan + 2 reviews · merged; fade defaults 2.5/5) | other model |
@@ -584,6 +585,29 @@ Spec: [#40](https://github.com/aungpyaenyein-21/thingyan-game/issues/40) + its t
 Day 2+ (T6 — the pump stall, Bwa Bwa's 2-1 look) · `world.js` `camera.js` `chibi.js` `war.js` · the talk director itself (T10) · commit unless asked
 
 ---
+
+## T16 Mood + addressee (issue #50)
+Spec: [#50](https://github.com/aungpyaenyein-21/thingyan-game/issues/50) (the creator's two notes after playing T5b-1). Branch `claude/mood`. Plan `docs/plans/T16.md` first.
+
+**Files** — `chibi.js` (a `mood` base face under `anim.face` overlays; `FACE.sad`), `faces.json` (`sad`), `yangon/story.js` (`to` + `mood` on the 31 lines), `yangon/talk.js` (speaker faces `to`; every present gang member listens; no turning the speaker toward the camera — move the camera instead), `yangon/main.js` (moods per step on stage / reload / picker). Not: `world.js` `war.js` `camera.js` (unless the shot fallback needs it — ask first).
+
+**Mood** — `anim.mood(name)` sets the base face (persists; `null` → the character's own default, e.g. U Tin Maung `joy`); `anim.face(name, sec)` overlays on top and returns to the mood; `wet` still wins on a hit. A line option `mood: { hero: 'sad', … }` applies when the line opens. `sad` = eyes `half` · brows `out` · mouth `line` · no extra.
+
+| from line | moods |
+|---|---|
+| 1 | everyone `ok` |
+| 3 | hero `sad` (line 3 overlay `worry`, 7 `pout`, 9 `pout` → back to `sad`) |
+| 10 (Scene B start) | hero, ngazwe, maythu, chocho `sad` (they know) · phoekyaw `ok` on arrival (19 cheerful) |
+| 24 | phoekyaw `sad` (after Cho Cho's line 23; 21 is a `shock` overlay) |
+| 25 | everyone `ok` (the turn: 「ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်」) — design proposal, creator may keep `sad` |
+
+**Addressee `to`** (the speaker turns body + head to face them, ≤ 25°; listeners look at the speaker):
+1 hero→mom · 2 mom→hero · 3 hero→mom · 4 mom→hero · 5 hero→mom · 6 bwabwa→hero · 7 hero→mom · 8 mom→hero · 9 hero→mom ·
+10 ngazwe→hero · 11 hero→ngazwe · 12 ngazwe→hero · 13 hero→ngazwe · 14 ngazwe→maythu · 15 maythu→ngazwe · 16 ngazwe→chocho · 17 maythu→ngazwe · 18 chocho→maythu · 19 phoekyaw→hero · 20 maythu→phoekyaw · 21 phoekyaw→maythu · 22 maythu→chocho · **23 chocho→phoekyaw** · 24 phoekyaw→hero · 25 hero→phoekyaw · 26 phoekyaw→hero · 27 ngazwe→hero · 28 hero→ngazwe · 29 ngazwe→hero · 30 maythu→ngazwe · 31 chocho→hero
+
+**Camera** — when the kept 180° side would show the speaker's back, take the other side or a `two` shot; don't rotate the speaker off the addressee (T10's ≤ 1.3 rad turn toward the camera goes away for lines with `to`).
+
+**✅ Done means** — `docs/mood/check.cjs`: at all 31 lines the speaker faces `to` (≤ 25°), every present listener faces the speaker (≤ 30°), each character's resting face (after overlays expire) matches the mood table; after a reload / `?day=1&step=1-2` the Scene B moods are right · `docs/day1b/check.cjs` still ALL PASS · console 0 · screenshots (line 3, line 9, Phoe Kyaw's arrival, line 23, line 25) · plan + Results + PR.
 
 ## T13 Restart + scene picker (creator, 2026-11-15)
 > 「僕が試すときに…途中から始まるから…リセットボタン、最初からやり直しみたいなのがあるといい」 — the save resumes mid-day; the creator wants to restart (and test a scene) without typing `?new` / `?day=&step=`.
