@@ -31,8 +31,11 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
   const hero = () => W.player;
   const member = c => { if (c && !sc.members.has(c)) sc.members.set(c, { chat: c.anim.chat }); return c; };
   const nearest = (c, max = 9) => { let best = null, bd = max; for (const o of cast()) if (o !== c && here(o) && dist(o, c) < bd) { bd = dist(o, c); best = o; } return best; };
-  const group = (S, L) => { const g = [S]; if (L && L !== S) g.push(L); for (const o of cast()) if (here(o) && !g.includes(o) && dist(o, S) < 4.5) g.push(o); return g; };
+  const group = (S, L, r = 4.5) => { const g = [S]; if (L && L !== S) g.push(L); for (const o of cast()) if (here(o) && !g.includes(o) && dist(o, S) < r) g.push(o); return g; };
   const yawTo = (c, to) => Math.atan2(to.g.position.x - c.g.position.x, to.g.position.z - c.g.position.z);
+  const gazes = new Map(); // T16: c → who the head looks at (chibi.js anim.gaze = the head's turn off the body, eased)
+  const look = (c, t) => { if (c && t) gazes.set(c, t); };
+  const unlook = c => { gazes.delete(c); if (c.anim) c.anim.gaze = 0; };
   const turn = (c, a) => { if (!c || a === null || !TURNS.includes(c.anim.loop)) return; if (fast()) c.g.rotation.y = a; else turns.set(c, a); };
   // the speaker faces the listener — "cheated" round towards the camera when it would see less than a three-quarter face (a two
   // or a wide side-on, a room's open side behind them), at most CHEAT off the listener
@@ -59,20 +62,32 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
     if (!S || o.voice || !here(S)) return; // off screen (or nobody): the camera stays where it is
     if (story) L = (o.to && who(o.to)) || (sc.last && sc.last !== S && here(sc.last) ? sc.last : null) || nearest(S);
     if (L === S) L = null; member(L);
-    const g = group(S, L); g.forEach(member);
+    const addr = story && !!o.to && !!L && L === who(o.to); // T16: a line with `to` — the speaker faces the addressee (the camera moves, not them) and everyone present listens
+    const g = group(S, L, addr ? 8 : 4.5); g.forEach(member);
     // the shot
     const same = S === sc.prev && !o.shot && !sc.afterCue && orbit?.talking;
     const kind = o.shot ?? (sc.afterCue ? 'wide' : sc.n === 0 && g.length >= 3 ? 'wide' : 'ots');
     sc.afterCue = false;
     if (orbit && !same) {
+      const fy = addr ? yawTo(S, L) : S.g.rotation.y; // (the yaw they will have, not the one they have)
       const hs = head(S), hl = L ? head(L) : hs.clone().add(new THREE.Vector3(Math.sin(S.g.rotation.y) * 1.6, 0, Math.cos(S.g.rotation.y) * 1.6)); // talking to nobody near: as if to someone in front
-      const r = orbit.talkShot(hs, hl, L ? kind : kind === 'ots' ? 'close' : kind, { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sc.side, face: S.g.rotation.y,
-        others: W.chars.filter(c => c !== S && c !== L && here(c) && dist(c, S) < 16).map(head), t: fast() ? 0 : TALK.glide });
+      let kd = L ? kind : kind === 'ots' ? 'close' : kind, sd = sc.side;
+      const base = { group: g.filter(c => c !== S && c !== L).map(head), room: room(), side: sd, face: fy,
+        others: W.chars.filter(c => c !== S && c !== L && here(c) && dist(c, S) < 16).map(head), t: fast() ? 0 : TALK.glide };
+      if (addr) { // T16: the camera has to see the speaker's face — the kept side, else the other side, else a two (never turn the speaker off the addressee)
+        const seen = x => Math.abs(wrap(x.az - fy)), a = orbit.talkShot(hs, hl, kd, { ...base, dry: true });
+        if (seen(a) > TALK.face && a.side) {
+          const tries = [[kd, a.side.clone().negate()], ['two', a.side], ['two', a.side.clone().negate()]]; let best = { k: kd, s: sd, v: seen(a) };
+          for (const [k, s2] of tries) { if (best.v <= TALK.face) break; const x = orbit.talkShot(hs, hl, k, { ...base, side: s2, dry: true }); if (seen(x) < best.v) best = { k, s: s2, v: seen(x) }; }
+          kd = best.k; sd = best.s;
+        }
+      }
+      const r = orbit.talkShot(hs, hl, kd, { ...base, side: sd });
       sc.side = r.side; sc.camAz = r.az; if (log.length >= LOG) log.shift(); log.push({ n: sc.n, who: o.who ?? name, to: L?.id ?? null, want: kind, kind: r.kind, pull0: +r.pull0.toFixed(2), pull: +r.pull.toFixed(2), why0: r.why0, fallback: r.fallback, dist: +r.dist.toFixed(2), elev: +r.elev.toFixed(2) });
     }
     // acting: the speaker faces the listener; the rest face the speaker and listen
-    turn(S, speakerYaw(S, L, orbit?.talking ? sc.camAz : null));
-    for (const c of g) if (c !== S) { turn(c, yawTo(c, S)); if (LISTEN.includes(c.anim.loop)) c.anim.chat = 'listen'; }
+    if (addr) { turn(S, yawTo(S, L)); look(S, L); } else { turn(S, speakerYaw(S, L, orbit?.talking ? sc.camAz : null)); unlook(S); }
+    for (const c of g) if (c !== S) { turn(c, yawTo(c, S)); if (addr) look(c, S); else unlook(c); if (LISTEN.includes(c.anim.loop)) c.anim.chat = 'listen'; }
     S.anim.chat = null;
     if (o.act && !o.act.startsWith('loop:')) sc.started.add(S); // story.js plays it
     else if (!o.act && !fast() && sc.n % 3 === 2 && !S.anim.one) { // one gesture every third line, from a small pool by the line's mood
@@ -87,12 +102,14 @@ export function createDirector({ W, hud, who, cast, room = () => null, fast = ()
   function end() { // skip-safe: whatever was cut short, everyone back to themselves and the camera back to you
     if (!sc) return;
     for (const [c, m] of sc.members) { c.anim.talking = false; c.anim.chat = m.chat; if (sc.started.has(c) && c.anim.one) c.anim.skip(99); }
-    turns.clear(); sc = null; open = false; closedAt = null;
+    for (const c of [...gazes.keys()]) unlook(c); turns.clear(); sc = null; open = false; closedAt = null;
     orbit?.releaseTalk({ t: fast() ? 0 : .5 });
   }
 
   hud.onLine((name, text, o) => o?.closed ? closed() : line(name, text, o));
   W.tick(dt => {
+    for (const [c, t] of gazes) { if (!here(c) || !here(t)) { unlook(c); continue; } const k = c.ch, own = k.hips.rotation.y + k.spine.rotation.y + k.head.rotation.y - (c.anim.gazeV || 0); /* what the body's own pose already turns the head by (a pose's headRy, spine / hips twist): the gaze makes up the rest */
+      c.anim.gaze = Math.max(-1.1, Math.min(1.1, wrap(yawTo(c, t) - c.g.rotation.y - own))); }
     for (const [c, a] of turns) { const d = wrap(a - c.g.rotation.y); if (Math.abs(d) < .01 || !TURNS.includes(c.anim.loop)) { turns.delete(c); continue; } c.g.rotation.y += d * (1 - Math.exp(-dt * 12)); } // ≈ .25 s
     if (sc?.speaker) sc.speaker.anim.talking = open && (hud.typing() || W.time() - lineAt < FLAP);
     if (sc && !open && closedAt !== null && W.time() > closedAt) { // the box has stayed shut a frame: a cue is playing, or the talk is over

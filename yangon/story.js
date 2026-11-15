@@ -7,9 +7,9 @@
 //   cue   — something main.js does before the line (someone arrives, the mandat goes up, a choice …); awaited
 //   voice — heard, not seen (off screen): the camera stays where it is
 // beats: lines a mission plays in the middle (1-5 the water on the lights, 1-7 after the throw). then: the next scene.
-// Each line holds for its typing time plus a reading pause (hold below) and then moves on by itself; a tap moves it on sooner.
+// Each line waits for the player (E / tap; the first press finishes the typing) — T16. ?autotalk brings back the timer: typing time plus a reading pause (hold below), then on by itself.
 
-import { clusters } from './hud.js?v=6';
+import { clusters } from './hud.js?v=7';
 
 // who → the name over the line (CHARACTERS: kids say 「ငါ/မင်း」, Cho Cho her own name — that's in the text)
 export const NAMES = { hero: '{name}', mom: 'အမေ', bwabwa: 'ဘွားဘွား', ngazwe: 'ငဇွဲ', maythu: 'မေသူ', phoekyaw: 'ဖိုးကျော်', chocho: 'ချိုချို',
@@ -23,44 +23,44 @@ export const SCENES = {
   pro: { when: 'morning', lines: [], then: '1-1' },
   // 1-1 Scene A (indoors, lines 1–9 — SCENARIO §3): Mum's rule for the day; {son} = သား / သမီး by the hero's gender
   '1-1': { when: 'morning', where: 'home', lines: [
-    ['hero', 'အမေ ဒီနှစ် လမ်းထိပ်က မဏ္ဍပ်မှာ {son} သွားကစားမယ်နော်။'],
-    ['mom', 'ဟဲ့ ဒီနှစ် လမ်းထိပ်မှာ မဏ္ဍပ် မဆောက်ဘူးတဲ့။ နင့်အမေ ဂျီးထော်တွေပဲ ရှိတယ်။', { face: 'sly', act: 'hips' }],
-    ['hero', 'ဟင်! ဟုတ်လား ဒီနှစ် ဘာလို့ မဆောက်တာလဲ။ ငဇွဲတို့နဲ့ အတူ သွားဖို့တောင် ပြောထားပြီးပြီ။', { face: 'worry' }],
-    ['mom', 'ဆရာကြီးက တာဝန်ယူပြီး မလုပ်နိုင်တော့ဘူးတဲ့။ နင်တို့ ဒုက္ခပေးလို့ နေမှာပေါ့။'],
-    ['hero', 'ဟာ အမေကလည်း {son}တို့ ဘာမှ မလုပ်ပါဘူးဗျ။'],
-    ['bwabwa', 'ဆရာကြီးလဲ အသက်ကြီးပြီလေ မြေးရဲ့။ အသက်ကြီးလာရင် စိတ်သွားတိုင်း ကိုယ်မပါတော့ဘူး။'],
-    ['hero', 'ဟာ ဒီနှစ် သင်္ကြန်တော့ သွားပါပြီ။ ပျင်းစရာကြီး။ ငဇွဲတို့နဲ့ သွားဆော့လိုက်ဦးမယ်။', { face: 'pout' }],
-    ['mom', 'ဆော့မယ်ဆို အိမ်ရှေ့မှာပဲ ဆော့။ လမ်းထိပ်မှာလဲ ဘာမှ ရှိတာ မဟုတ်ဘူး။'],
-    ['hero', 'ဟုတ်ကဲ့', { face: 'pout', act: 'nod' }],
+    ['hero', 'အမေ ဒီနှစ် လမ်းထိပ်က မဏ္ဍပ်မှာ {son} သွားကစားမယ်နော်။', { to: 'mom', mood: { all: 'ok' } }],
+    ['mom', 'ဟဲ့ ဒီနှစ် လမ်းထိပ်မှာ မဏ္ဍပ် မဆောက်ဘူးတဲ့။ နင့်အမေ ဂျီးထော်တွေပဲ ရှိတယ်။', { to: 'hero', face: 'sly', act: 'hips' }],
+    ['hero', 'ဟင်! ဟုတ်လား ဒီနှစ် ဘာလို့ မဆောက်တာလဲ။ ငဇွဲတို့နဲ့ အတူ သွားဖို့တောင် ပြောထားပြီးပြီ။', { to: 'mom', mood: { hero: 'sad' }, face: 'worry' }],
+    ['mom', 'ဆရာကြီးက တာဝန်ယူပြီး မလုပ်နိုင်တော့ဘူးတဲ့။ နင်တို့ ဒုက္ခပေးလို့ နေမှာပေါ့။', { to: 'hero' }],
+    ['hero', 'ဟာ အမေကလည်း {son}တို့ ဘာမှ မလုပ်ပါဘူးဗျ။', { to: 'mom' }],
+    ['bwabwa', 'ဆရာကြီးလဲ အသက်ကြီးပြီလေ မြေးရဲ့။ အသက်ကြီးလာရင် စိတ်သွားတိုင်း ကိုယ်မပါတော့ဘူး။', { to: 'hero' }],
+    ['hero', 'ဟာ ဒီနှစ် သင်္ကြန်တော့ သွားပါပြီ။ ပျင်းစရာကြီး။ ငဇွဲတို့နဲ့ သွားဆော့လိုက်ဦးမယ်။', { to: 'mom', face: 'pout' }],
+    ['mom', 'ဆော့မယ်ဆို အိမ်ရှေ့မှာပဲ ဆော့။ လမ်းထိပ်မှာလဲ ဘာမှ ရှိတာ မဟုတ်ဘူး။', { to: 'hero' }],
+    ['hero', 'ဟုတ်ကဲ့', { to: 'mom', face: 'pout', act: 'nod' }],
   ], then: '1-2' },
   // 1-2 Scene B (the house front, lines 10–31): the gang gathers in order — Nga Zwe → May Thu + Cho Cho → Phoe Kyaw — and Cho Cho leads off
   '1-2': { when: 'day', lines: [
     [null, null, { cue: 'ngazwe' }],
-    ['ngazwe', '{name}! ဒီနှစ် လမ်းထိပ်မှာ မဏ္ဍပ် မရှိဘူးတဲ့။'],
-    ['hero', 'ဟုတ်တယ် အမေ ပြောလို့ သိပြီးပြီ။'],
-    ['ngazwe', 'ဘာဆက်လုပ်ကြမလဲ', { act: 'scratch' }],
-    ['hero', 'တို့ကောင်တွေ လာမှ တိုင်ပင်ကြမယ်။'],
+    ['ngazwe', '{name}! ဒီနှစ် လမ်းထိပ်မှာ မဏ္ဍပ် မရှိဘူးတဲ့။', { to: 'hero', mood: { hero: 'sad', ngazwe: 'sad', maythu: 'sad', chocho: 'sad', phoekyaw: 'ok' } }],
+    ['hero', 'ဟုတ်တယ် အမေ ပြောလို့ သိပြီးပြီ။', { to: 'ngazwe' }],
+    ['ngazwe', 'ဘာဆက်လုပ်ကြမလဲ', { to: 'hero', act: 'scratch' }],
+    ['hero', 'တို့ကောင်တွေ လာမှ တိုင်ပင်ကြမယ်။', { to: 'ngazwe' }],
     [null, null, { cue: 'maythuchocho' }],
-    ['ngazwe', 'မေသူ နင် သိပြီးပြီလား။'],
-    ['maythu', 'သိပြီးပါပြီ။'],
-    ['ngazwe', 'ချိုချိုရော သိပြီးပြီလား။'],
-    ['maythu', 'ဒီရပ်ကွက်ထဲမှာ သူ မသိတာ ဘာရှိလို့လဲ၊ ငါ့တောင် သူ ပြောပြတာ။'],
-    ['chocho', 'ဟီးဟီး!', { face: 'sly' }],
+    ['ngazwe', 'မေသူ နင် သိပြီးပြီလား။', { to: 'maythu' }],
+    ['maythu', 'သိပြီးပါပြီ။', { to: 'ngazwe' }],
+    ['ngazwe', 'ချိုချိုရော သိပြီးပြီလား။', { to: 'chocho' }],
+    ['maythu', 'ဒီရပ်ကွက်ထဲမှာ သူ မသိတာ ဘာရှိလို့လဲ၊ ငါ့တောင် သူ ပြောပြတာ။', { to: 'ngazwe' }],
+    ['chocho', 'ဟီးဟီး!', { to: 'maythu', face: 'sly' }],
     [null, null, { cue: 'bike' }],
-    ['phoekyaw', 'ဘာတွေ ပြောနေကြတာလဲ၊ ငါ နောက်ကျသွားတယ်၊ အန်တီစိန် ရေမှာထားလို့ ဝင်ပို့နေတာ။ လမ်းထိပ်က မဏ္ဍပ် ဆောက်တာ သွားကြည့်ရအောင်။'],
-    ['maythu', 'သူ မသိသေးဘူး။'],
-    ['phoekyaw', 'ဘာလဲ! ဘာဖြစ်လို့လဲ!', { face: 'shock' }],
-    ['maythu', 'ချိုချို ပြောပြလိုက်။'],
-    ['chocho', 'လမ်းထိပ်က မဏ္ဍပ် မဆောက်တော့ဘူးတဲ့။ ဆရာကြီးတို့ ဒီနှစ် သင်္ကြန် အေးအေးဆေးဆေး နားချင်လို့တဲ့။ ကြီးမေ ပြောတာ ကြားခဲ့တာ။'],
-    ['phoekyaw', 'ဟုတ်လား။ ဒါဆို ဘာလုပ်ကြမှာလဲ။'],
-    ['hero', 'လမ်းထိပ်က မဏ္ဍပ် မရှိတော့လည်း ဘာဖြစ်၊ ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်။'],
+    ['phoekyaw', 'ဘာတွေ ပြောနေကြတာလဲ၊ ငါ နောက်ကျသွားတယ်၊ အန်တီစိန် ရေမှာထားလို့ ဝင်ပို့နေတာ။ လမ်းထိပ်က မဏ္ဍပ် ဆောက်တာ သွားကြည့်ရအောင်။', { to: 'hero' }],
+    ['maythu', 'သူ မသိသေးဘူး။', { to: 'phoekyaw' }],
+    ['phoekyaw', 'ဘာလဲ! ဘာဖြစ်လို့လဲ!', { to: 'maythu', face: 'shock' }],
+    ['maythu', 'ချိုချို ပြောပြလိုက်။', { to: 'chocho' }],
+    ['chocho', 'လမ်းထိပ်က မဏ္ဍပ် မဆောက်တော့ဘူးတဲ့။ ဆရာကြီးတို့ ဒီနှစ် သင်္ကြန် အေးအေးဆေးဆေး နားချင်လို့တဲ့။ ကြီးမေ ပြောတာ ကြားခဲ့တာ။', { to: 'phoekyaw' }],
+    ['phoekyaw', 'ဟုတ်လား။ ဒါဆို ဘာလုပ်ကြမှာလဲ။', { to: 'hero', mood: { phoekyaw: 'sad' } }],
+    ['hero', 'လမ်းထိပ်က မဏ္ဍပ် မရှိတော့လည်း ဘာဖြစ်၊ ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်။', { to: 'phoekyaw', mood: { all: 'ok' } }],
     [null, null, { cue: 'goal' }],
-    ['phoekyaw', 'အေး ကောင်းတယ်။'],
-    ['ngazwe', 'ဘာပစ္စည်း ရှိလို့ ဘာနဲ့ ဆောက်မှာလဲ။'],
-    ['hero', 'လိုက်ရှာမှာပေါ့။'],
-    ['ngazwe', 'လိုက်ရှာရအောင် ဘယ်သူ့ဆီမှာ ဘာရှိလဲ မင်း သိလို့လား။'],
-    ['maythu', 'အဲ့ဒါတော့ ငါတို့ ချိုချိုကို မေး။ ရပ်ကွက်ထဲ အပ်ကျတာ သူ အကုန်သိတယ်။'],
-    ['chocho', 'ဘာလိုချင်လဲ လာ လိုက်ခဲ့။'],
+    ['phoekyaw', 'အေး ကောင်းတယ်။', { to: 'hero' }],
+    ['ngazwe', 'ဘာပစ္စည်း ရှိလို့ ဘာနဲ့ ဆောက်မှာလဲ။', { to: 'hero' }],
+    ['hero', 'လိုက်ရှာမှာပေါ့။', { to: 'ngazwe' }],
+    ['ngazwe', 'လိုက်ရှာရအောင် ဘယ်သူ့ဆီမှာ ဘာရှိလဲ မင်း သိလို့လား။', { to: 'hero' }],
+    ['maythu', 'အဲ့ဒါတော့ ငါတို့ ချိုချိုကို မေး။ ရပ်ကွက်ထဲ အပ်ကျတာ သူ အကုန်သိတယ်။', { to: 'ngazwe' }],
+    ['chocho', 'ဘာလိုချင်လဲ လာ လိုက်ခဲ့။', { to: 'hero' }],
     [null, null, { cue: 'leave' }],
   ], then: 'wip' },
   // wip: the stop after line 31 (a 「ဆက်ရန်」 card, main.js) — T5b-2 carries on from here
@@ -119,10 +119,11 @@ export const NIGHT = [['yes', 'ရှိတယ်'], ['dots', '…']]; // either
 export const hold = text => { const n = clusters(text).length; return Math.min(8, n / 28 + Math.max(1.6, n * .06)); };
 export const budget = (id, beat) => { const sc = SCENES[id], ls = (beat ? sc.beats[beat] : sc.lines) ?? []; return ls.reduce((s, [, t]) => s + (t ? hold(t) : 0), 0); }; // reading time only (cues add their own)
 
+const ALL = ['hero', 'mom', 'bwabwa', 'ngazwe', 'maythu', 'chocho', 'phoekyaw']; // mood: { all: … }
 const EMOTE = { shock: 'bang', joy: 'heart', worry: 'drop', lie: 'dots', sly: 'dots', mad: 'bang', pout: 'dots', wet: 'drop', cry: 'drop' };
 
 // who(id) → { g, ch, anim, act? } or null · cue(name, sceneId) → Promise | void · name() → {နာမည်} · fast() → tests skip the reading time
-export function createStory({ W, hud, who, cue = () => {}, name = () => '', son = () => 'သား', fast = () => false }) {
+export function createStory({ W, hud, who, cue = () => {}, name = () => '', son = () => 'သား', fast = () => false, autotalk = () => false }) {
   let playing = null, lineT = 0, lineN = 0;
   W.tick(dt => { if (playing && hud.talking() && (lineT -= dt) <= 0) { lineT = 1e9; hud.next(); } }); // a line that has been read moves on
   const fill = t => t.replaceAll('{name}', name()).replaceAll('{son}', son());
@@ -138,10 +139,11 @@ export function createStory({ W, hud, who, cue = () => {}, name = () => '', son 
       if (o.cue) await cue(o.cue, id);
       if (!text) continue;
       const p = k && who(k);
-      if (p && !o.voice && p !== W.player) { W.talkWith = p; p.g.rotation.y = Math.atan2(W.player.g.position.x - p.g.position.x, W.player.g.position.z - p.g.position.z); }
+      if (o.mood) for (const [id, m] of Object.entries(o.mood)) for (const q of id === 'all' ? ALL : [id]) who(q)?.anim.mood?.(m); // T16: the base face from here on
+      if (p && !o.voice && p !== W.player) { W.talkWith = p; if (!(o.to && W.talkDirector)) p.g.rotation.y = Math.atan2(W.player.g.position.x - p.g.position.x, W.player.g.position.z - p.g.position.z); } /* a line with `to`: the talk director turns them to the addressee */
       if (p && o.act) p.act ? p.act(o.act) : p.anim.play(o.act);
       face(p, o.face);
-      lineT = fast() ? .3 : hold(fill(text)); lineN++;
+      lineT = fast() ? .3 : autotalk() ? hold(fill(text)) : 1e9; lineN++; /* T16: a line waits for the player (E / tap) unless ?autotalk (the old reading-time timer) or the tests' fast */
       await hud.say([[fill(NAMES[k] ?? ''), fill(text), { ...o, who: k }]]); // T10: the line's options + the cast id reach the talk director (hud.onLine)
     }
     W.talkWith = null; hud.cinematic(false);

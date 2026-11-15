@@ -17,7 +17,7 @@ export function createHud(W) {
   // ---------- dialogue ----------
   // lines: [who, text, opts?] — opts reach onLine() listeners (and the box shutting calls them with (null, null, { closed: true })) (T10: the talk director; story.js passes { face, act, cue, voice, shot,
   // react, to, who: cast id }). The text types itself in (TYPE clusters/s — a stacked Burmese syllable is one); a tap first finishes
-  // the line, the next tap moves on. Moving on never waits for the typing (story.js's hold() runs from when the line opens).
+  // the line, the next tap moves on. A line waits for the player (T16); story.js's hold() timer only runs with ?autotalk / zone.fast.
   const waiting = [], lineFns = []; // a conversation that starts while another is open waits its turn instead of cutting in
   let typing = null; const TYPE = 28;
   function talk(lines, done) { if (talking) { waiting.push([lines, done]); return; } talking = { lines, i: -1, done }; sync(); next(); }
@@ -38,6 +38,7 @@ export function createHud(W) {
   }
   function finish() { if (!typing) return false; shown.textContent = typing.text; rest.textContent = ''; typing = null; return true; } // a tap mid-line: the whole line at once
   W.tick(dt => {
+    $('dlg').classList.toggle('ready', !!talking && !typing); // T16: the 「▸ ဆက်」 hint pulses once the line is fully typed — the line waits for the player
     if (!typing) return;
     const ty = typing; ty.acc += dt * TYPE; const k = Math.min(ty.ends.length, Math.floor(ty.acc));
     if (k !== ty.k) { ty.k = k; const at = ty.ends[k - 1] ?? 0; shown.textContent = ty.text.slice(0, at); rest.textContent = ty.text.slice(at); }

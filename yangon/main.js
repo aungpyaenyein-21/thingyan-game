@@ -4,24 +4,24 @@
 // Mum's range, goal line, cards), story.js holds the lines, mandat.js the mandat, carry.js the bowl and what you hold.
 // The v4 "nine favours + Mandalay bus + Phoe Tha" flow is gone (git history / docs/archive); the shops, the tea shop's
 // people and the street life stay — on day 1 they're out of Mum's range.
-import { createWorld, PAL, SKINS } from '../world.js?v=19';
-import { CAT_COATS } from '../critters.js?v=9';
+import { createWorld, PAL, SKINS } from '../world.js?v=20';
+import { CAT_COATS } from '../critters.js?v=10';
 import { buildSet, MM, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=25';
-import { createHud, play } from './hud.js?v=6';
-import { openBarber, openClothes, redress } from './wardrobe.js?v=8';
+import { createHud, play } from './hud.js?v=7';
+import { openBarber, openClothes, redress } from './wardrobe.js?v=9';
 import { buildRooms } from './rooms.js?v=14';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
 import { startLife } from './life.js?v=23';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
-import { makeCast, earBlush } from '../cast.js?v=16';
+import { makeCast, earBlush } from '../cast.js?v=17';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
 import { load as loadSave, save as store, fresh } from './save.js?v=12';
 import { createDay, debugStart, PHASE_OF, STEPS, STEP_LABELS } from './day.js?v=8';
-import { createStory, GOALS, NIGHT } from './story.js?v=4';
+import { createStory, GOALS, NIGHT } from './story.js?v=5';
 import { createMandat } from './mandat.js?v=1';
-import { createDirector } from './talk.js?v=1';
+import { createDirector } from './talk.js?v=2';
 
 const W = createWorld({ bounds: BOUNDS, ground, paintSky: shwedagon, camBounds: { x0: -4, x1: 27, z0: -5, z1: 30 }, view: 16, camera: 'orbit', surround: { rects: [ // the main street and the market street carry on past the island
   { x0: -150, x1: BOUNDS.x0, z0: 6.6, z1: 12.2, c: PAL.road }, { x0: 34, x1: 150, z0: 6.6, z1: 12.2, c: PAL.road },
@@ -216,7 +216,7 @@ addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(
 setTool(S.ball ? S.tool : 'bucket');
 
 // ---------- the story runner + the day's beats ----------
-const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, son: () => S.girl ? 'သမီး' : 'သား', fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
+const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, son: () => S.girl ? 'သမီး' : 'သား', fast: () => !!window.zone?.fast, autotalk: () => new URLSearchParams(location.search).has('autotalk'), cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
 // T10: the talk director — a shot per line, mouths, gestures, listeners (yangon/talk.js); ?talk=0 = the old two-shot talk context
 const director = new URLSearchParams(location.search).get('talk') === '0' || !W.orbit ? null : createDirector({ W, hud, who: k => PEOPLE[k] ?? null, cast: () => Object.values(PEOPLE),
   room: () => inside ? { open: Math.PI / 4, x0: ROOMS[inside].bounds.x0, z0: ROOMS[inside].bounds.z0 } : null, // rooms.js: the back (−z) and left (−x) walls, open towards +x +z
@@ -337,7 +337,7 @@ const CUES = {
     await new Promise(r => { const step = dt => { t += dt * 2.6 / d; const k = Math.min(1, t); bike.g.position.lerpVectors(from, to, k); bike.roll(dt * 2.6); if (k >= 1) { r(); return true; } }; streams.push(step); });
     phoekyaw.act('ring'); W.onFx?.('bike', bike.g.position);
     await wait(.9);
-    scene.attach(phoekyaw.g); put(phoekyaw, -2.3, -2.2); phoekyaw.anim.setLoop('idle'); // (the bike stays parked at the lane corner, the buckets on its rack)
+    scene.attach(phoekyaw.g); phoekyaw.g.rotation.set(0, 0, 0); /* T16: attach left the bike's tilt in x / z, so his yaw was off the body's real heading */ put(phoekyaw, -2.3, -2.2); phoekyaw.anim.setLoop('idle'); // (the bike stays parked at the lane corner, the buckets on its rack)
     await walk(phoekyaw, [ARC.phoekyaw], 'walk', 8); face(phoekyaw, hero);
     phoekyaw.g.rotation.y = 0; phoekyaw.anim.play('splash'); await wait(1.2); face(phoekyaw, hero);
   },
@@ -481,6 +481,9 @@ function stage(step) {
   else if (inside) setOutside(HOME_OUT);
   else day.range.watch(true);
   hero.g.visible = step !== 'pro'; hero.ch.blushEars(false); $('end').hidden = true;
+  { // T16: moods per step (story.js lines change them as they play; this is where a reload / the picker / ?step= starts): Scene B opens with everyone who knows sad (Phoe Kyaw arrives knowing nothing); line 25 turns them back to ok
+    const sad = step === '1-2' ? ['hero', 'ngazwe', 'maythu', 'chocho'] : []; for (const [k, p] of Object.entries(PEOPLE)) p.anim.mood(sad.includes(k) ? 'sad' : null);
+  }
   if (DEBUG) console.log('stage', step);
 }
 
