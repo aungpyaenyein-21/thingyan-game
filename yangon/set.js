@@ -224,6 +224,13 @@ export function buildSet(W) {
     solid(X, Z, 5.5, 3.5); solid(X, Z + 2.05, 5.2, .9);
   });
   W.occluder(() => { const X = L.HOME.x, Z = L.HOME.z; for (const px of [-2.2, -1.8]) { mesh(new THREE.SphereGeometry(.2, 12, 8), M('#b8653d', { flatShading: false }), X + px, .5, Z + 2.2); cyl(.13, .13, .03, '#d9b98f', X + px, .67, Z + 2.2, 10); } }); // the water pots on the porch
+  { // T5b: the bamboo bench by the door, east of it and out of the lane (x 5.05…6.35, z −4.9…−4.5; the home lane is z −4.4…−1.4) — the silver bowl sits on it
+    const X = 5.7, Z = -4.7, Y = .51, BAMBOO = '#c9a45c', o = {};
+    for (const dx of [-.52, .52]) for (const dz of [-.14, .14]) cyl(.035, .035, .47, '#a8844a', X + dx, .02, Z + dz, 6, o);
+    box(1.3, .07, .42, BAMBOO, X, .44, Z, o); for (const dx of [-.45, 0, .45]) box(.04, .035, .44, '#b8924a', X + dx, .5, Z, { ...o, cast: false });
+    box(1.1, .04, .05, '#a8844a', X, .24, Z + .14, o); solid(X, Z, 1.3, .42);
+    L.BENCH = { at: new THREE.Vector3(X, 0, Z), top: Y };
+  }
   // the empty lot where the kids' mandat goes up (T5: cleared — weeds only along its rim, the middle is the mandat's (mandat.js), the haul pile's and the throw's)
   box(8, .03, 5.4, '#c99a6b', 2.6, 0, 2.1, { cast: false });
   for (let i = 0; i < 26; i++) { const x = -1.2 + rnd() * 7.6, z = -.4 + rnd() * 5; if (Math.abs(x - 2.6) > 3.3 || Math.abs(z - 1.9) > 2.3) mesh(new THREE.ConeGeometry(.09, .22, 4), pick([PAL.leaf, PAL.leafLight]), x, .12, z, { cast: false }); }

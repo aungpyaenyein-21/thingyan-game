@@ -6,20 +6,20 @@
 // people and the street life stay — on day 1 they're out of Mum's range.
 import { createWorld, PAL, SKINS } from '../world.js?v=19';
 import { CAT_COATS } from '../critters.js?v=9';
-import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=24';
+import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=25';
 import { createHud, play } from './hud.js?v=6';
 import { openBarber, openClothes, redress } from './wardrobe.js?v=8';
 import { buildRooms } from './rooms.js?v=14';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=22';
+import { startLife } from './life.js?v=23';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
-import { makeCast, earBlush } from '../cast.js?v=15';
+import { makeCast, earBlush } from '../cast.js?v=16';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
-import { load as loadSave, save as store, wipe } from './save.js?v=11';
-import { createDay, debugStart, PHASE_OF } from './day.js?v=6';
-import { createStory, GOALS, NIGHT } from './story.js?v=3';
+import { load as loadSave, save as store, wipe } from './save.js?v=12';
+import { createDay, debugStart, PHASE_OF } from './day.js?v=7';
+import { createStory, GOALS, NIGHT } from './story.js?v=4';
 import { createMandat } from './mandat.js?v=1';
 import { createDirector } from './talk.js?v=1';
 
@@ -32,6 +32,7 @@ const { THREE, scene, mesh, box, cyl, stripeTex, bubbleTex, bean, rnd, pick } = 
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's off the street; home on the lane
 const hud = createHud(W);
+{ const cin = hud.cinematic; hud.cinematic = on => { cin(on); document.body.classList.toggle('cine', !!on); }; } // T5b: a cinematic (the Prologue, every story line) hides the HUD on every screen, not only phones (yangon.html body.cine)
 const sound = createSound(W); W.onFx = (n, p) => sound.fx(n, p); // ambience + effects, no music yet
 const V = (x, z, y = 0) => new THREE.Vector3(x, y, z), v = new THREE.Vector3(), $ = id => document.getElementById(id);
 const DEBUG = new URLSearchParams(location.search).has('debug');
@@ -53,7 +54,7 @@ const put = (c, x, z, ry, y) => { c.g.position.set(x, y ?? (x > 100 ? .05 : grou
 const hide = c => { c.g.visible = false; };
 const balloons = [];
 function person(id, x, z, ry = 0) {
-  const p = makeCast(id, (t, o) => { if ((t === 'lob' || t === 'throw') && o) onThrowFx(c, t, o); });
+  const p = makeCast(id, (t, o) => { if ((t === 'lob' || t === 'throw') && o) onThrowFx(c, t, o); }, { kit: S.day === 1 ? 'day1' : undefined }); // T5b: day 1 = nobody has a pump yet
   const c = W.adopt({ g: p.ch.root, ch: p.ch, anim: p.anim, act: p.act, def: p.def, id });
   put(c, x, z, ry); return c;
 }
@@ -68,6 +69,14 @@ const GANG = [ngazwe, maythu, phoekyaw, chocho];
 const kozaw = npc({ age: 'adult', hair: 'spiky', topStyle: 'jacket', bottom: 'pants', hat: 'none', x: -.5, z: 3.4, ry: Math.PI }); // Ko Zaw brings his string of lights to the lot (M3)
 const PEOPLE = { hero, mom, bwabwa, ngazwe, maythu, phoekyaw, chocho, sayagyi, kozaw };
 const bowl = cw.item('bowl', 0, 0); // ငွေဖလား — Bwa Bwa's silver bowl
+// T5b: the bamboo bench by the door (set.js L.BENCH) is a carry target like the mandat's seat — the bowl sits on it all of T5b-1, and T5b-2's 「ဖလား ယူ」 lifts it from here
+const benchSock = new THREE.Object3D(); benchSock.position.set(L.BENCH.at.x, L.BENCH.top, L.BENCH.at.z); scene.add(benchSock);
+const bench = cw.target(benchSock, 'ခုံ', { accepts: it => it?.kind === 'bowl' });
+function bowlOnBench() {
+  if (bowl.by) { bowl.by.release(true); bowl.by = null; } if (bowl.at) { bowl.at.item = null; bowl.at = null; }
+  scene.attach(bowl.g); benchSock.add(bowl.g); bowl.g.position.set(0, 0, 0); bowl.g.scale.setScalar(1); bowl.g.rotation.set(0, 0, 0);
+  bowl.state = 'placed'; bowl.at = bench; bench.item = bowl; bowl.g.visible = true;
+}
 
 // ---------- the ward's grown-ups (beans) ----------
 // Auntie Sein up on her 3rd-floor balcony with the rope bucket (M1); U Ba Tin by his door on the side lane (M2)
@@ -182,7 +191,7 @@ function jet(from, to, { n = 22, t = .55, spread = .25, own = null } = {}) {
 }
 // a pump stream from someone's nozzle (Nga Zwe's ပြွတ်): a thin line of drops over a moment
 function stream(c, to, dur = .6) {
-  let t = 0; const step = dt => { t += dt; if (t > dur) return true; const n = c.ch.pump ?? c.ch.arms[1].hand; const from = n.getWorldPosition(new THREE.Vector3()); jet(from, to.isVector3 ? to : to(), { n: 2, t: .45, spread: .08, own: c.g }); };
+  let t = 0; const step = dt => { t += dt; if (t > dur) return true; const n = c.ch.pump ?? (c.ch.gun?.visible ? c.ch.gun : null) ?? c.ch.arms[1].hand; const from = n.getWorldPosition(new THREE.Vector3()); jet(from, to.isVector3 ? to : to(), { n: 2, t: .45, spread: .08, own: c.g }); };
   streams.push(step); W.onFx?.('squirt', c.g.position);
 }
 const streams = []; W.tick(dt => { for (let i = streams.length - 1; i >= 0; i--) if (streams[i](dt)) streams.splice(i, 1); });
@@ -200,14 +209,14 @@ function onThrowFx(c, t, hand) { // a 'lob' (May Thu) or a 'throw' (you, with a 
 }
 // your E with nothing to do: the bucket heave (world.js) or, once May Thu gave you one, a balloon (R swaps)
 S.tool ??= 'bucket';
-const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); save(); };
+const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); if (!S.ball) $('tool').querySelector('small')?.remove(); save(); }; // one tool = no 「R · ပြောင်း」 hint
 const swapTool = () => { if (S.ball) setTool(S.tool === 'balloon' ? 'bucket' : 'balloon'); };
 $('tool').addEventListener('pointerdown', e => { e.stopPropagation(); swapTool(); });
 addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(); });
 setTool(S.ball ? S.tool : 'bucket');
 
 // ---------- the story runner + the day's beats ----------
-const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
+const story = createStory({ W, hud, who: k => PEOPLE[k] ?? null, name: () => S.name, son: () => S.girl ? 'သမီး' : 'သား', fast: () => !!window.zone?.fast, cue: (k, id) => { director?.cue(k); return CUES[k]?.(id); } });
 // T10: the talk director — a shot per line, mouths, gestures, listeners (yangon/talk.js); ?talk=0 = the old two-shot talk context
 const director = new URLSearchParams(location.search).get('talk') === '0' || !W.orbit ? null : createDirector({ W, hud, who: k => PEOPLE[k] ?? null, cast: () => Object.values(PEOPLE),
   room: () => inside ? { open: Math.PI / 4, x0: ROOMS[inside].bounds.x0, z0: ROOMS[inside].bounds.z0 } : null, // rooms.js: the back (−z) and left (−x) walls, open towards +x +z
@@ -225,6 +234,13 @@ const advance = next => { S.step = next; save(); };
 // fixed spots on the lot and round it
 // T12: the home row moved 1 m away from the lot (OZ, set.js) — the door and Mum's spot with it; everything on the lot side stays
 const HOME_OUT = V(4.4, -3.3 + OZ), MUM_DAY = V(6.9, -3.5 + OZ), GATHER = V(-3.3, -2.3);
+// T5b-1 (Scene B): where the gang stops in front of you (a loose arc 2–2.5 m from the door, bench + bowl stay in frame to the east), where they come in from (the west end of the
+// home lane) and where they wait after Cho Cho leads off (wip)
+const ring = (deg, r) => [+(HOME_OUT.x - r * Math.cos(deg * Math.PI / 180)).toFixed(2), +(HOME_OUT.z + r * Math.sin(deg * Math.PI / 180)).toFixed(2)]; // a point r m from the hero's spot, deg° round from west (0) through south (90)
+const ARC = { ngazwe: ring(5, 2.3), maythu: ring(35, 2.1), chocho: ring(62, 2.2), phoekyaw: ring(105, 2.4) }; // a half-ring on the lane side: bench + bowl (east) stay clear
+const LANE_IN = { ngazwe: [-5.0, -2.4], maythu: [-5.1, -2.0], chocho: [-4.7, -2.7] };
+const AWAY = { chocho: [-4.2, -3.6], maythu: [-3.4, -3.3], ngazwe: [-2.4, -3.5], phoekyaw: [-1.4, -3.2] }; // where they walk off to (Cho Cho leads)
+const BIKE_PARK = V(-2.95, -1.7), WIP_BIKE = V(.8, -3.0);
 const LOT = { ngazwe: [.4, .4], maythu: [1.4, -.3], phoekyaw: [4.8, -.3], chocho: [-.2, 1.2] };
 const FRONT = { hero: [5.0, 4.3], ngazwe: [3.4, 4.0], maythu: [4.2, 4.4], phoekyaw: [5.9, 3.8], chocho: [6.5, 3.2] }; // five o'clock, at the mandat's front corner (not in line with the bus stop on the street behind)
 const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(L.AMP.at.x + 1.05, L.AMP.at.z), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
@@ -301,9 +317,19 @@ const deliver = k => { letGo(); hero.anim.play('pick'); mandat.drop(k); if (!S.g
 const MISSION = { m1: 0, catDown: false, wet: 0, puzzle: 0, told: false };
 let speaker = null, bwWalk = null; // the amplifier between you and Phoe Kyaw (M2) · Bwa Bwa on her way (1-6)
 const CUES = {
-  // 1-1: Bwa Bwa with the bowl in her lap, rubbing it bright
-  polish: () => { bwabwa.anim.emote('heart', 2); },
-  // 1-2
+  // 1-2 (T5b): Nga Zwe runs in alone and empty-handed; May Thu + Cho Cho walk up together, each shows a splash once; Phoe Kyaw last, on the bike
+  ngazwe: async () => {
+    put(ngazwe, ...LANE_IN.ngazwe, Math.PI / 2); ngazwe.anim.setLoop('idle');
+    await walk(ngazwe, [ARC.ngazwe], 'run', 7); face(ngazwe, hero); ngazwe.anim.setLoop('idle');
+  },
+  maythuchocho: async () => {
+    put(maythu, ...LANE_IN.maythu, Math.PI / 2); put(chocho, ...LANE_IN.chocho, Math.PI / 2); for (const k of [maythu, chocho]) k.anim.setLoop('idle');
+    await Promise.all([walk(maythu, [ARC.maythu], 'walk', 9), walk(chocho, [ARC.chocho], 'walk', 9)]);
+    face(maythu, hero); face(chocho, hero);
+    maythu.g.rotation.y = 0; maythu.act('lob'); await wait(1.7); // each shows theirs once, into the empty lot (no hits)
+    chocho.g.rotation.y = 0; chocho.act('squirt'); stream(chocho, V(ARC.chocho[0], ARC.chocho[1] + 3, .3), .6); await wait(1.2);
+    face(maythu, hero); face(chocho, hero);
+  },
   bike: async () => {
     bike.g.visible = true; bike.g.position.set(-2.95, 0, 5.2); bike.g.rotation.y = Math.PI / 2; seatOn(bike, phoekyaw, 'saddle'); phoekyaw.g.visible = true;
     bike.g.add(pails); pails.visible = true; pails.rotation.set(0, Math.PI / 2, 0); pails.position.set(-.42, .68, 0); // his two buckets on the rack
@@ -311,16 +337,25 @@ const CUES = {
     await new Promise(r => { const step = dt => { t += dt * 2.6 / d; const k = Math.min(1, t); bike.g.position.lerpVectors(from, to, k); bike.roll(dt * 2.6); if (k >= 1) { r(); return true; } }; streams.push(step); });
     phoekyaw.act('ring'); W.onFx?.('bike', bike.g.position);
     await wait(.9);
-    scene.attach(phoekyaw.g); put(phoekyaw, -2.3, -2.2); phoekyaw.anim.setLoop('idle'); face(phoekyaw, ngazwe);
+    scene.attach(phoekyaw.g); put(phoekyaw, -2.3, -2.2); phoekyaw.anim.setLoop('idle'); // (the bike stays parked at the lane corner, the buckets on its rack)
+    await walk(phoekyaw, [ARC.phoekyaw], 'walk', 8); face(phoekyaw, hero);
+    phoekyaw.g.rotation.y = 0; phoekyaw.anim.play('splash'); await wait(1.2); face(phoekyaw, hero);
   },
   maythu: () => { put(maythu, -5.4 + OX, 1.6); return walk(maythu, [[-4.0, 1.4], [-3.6, -1.4], [-2.6, -3.0]]).then(() => face(maythu, hero)); },
   peek: () => { put(chocho, -3.95, -3.35 + OZ, Math.PI / 2); chocho.act('loop:peek'); }, // at the flats' edge of the lane
-  goal: id => { day.goal(GOALS[id]); if (id === '1-2') chocho.act('loop:idle'); },
+  goal: id => { day.goal(GOALS[id]); },
   weapons: async () => { // the three ways the gang throws water (T3 WEAPONS: ပြွတ် · ပူဖောင်း · ပုံး) — each shows theirs
     const at = V(-1.0, -2.4);
     face(ngazwe, at); hud.toast('ပြွတ် — ငဇွဲ'); stream(ngazwe, V(at.x, at.z, .1), .8); await wait(1.6);
     face(maythu, at); hud.toast('ပူဖောင်း — မေသူ'); maythu.act('lob'); await wait(1.8);
     face(phoekyaw, at); hud.toast('ပုံး — ဖိုးကျော်'); phoekyaw.anim.play('splash'); await wait(1.6);
+  },
+  // after line 31: Cho Cho points down the lane and walks off west, the others follow a moment later
+  leave: async () => {
+    chocho.g.rotation.y = -Math.PI / 2; chocho.act('point'); await wait(1.0);
+    const first = walk(chocho, [AWAY.chocho], 'walk', 12); await wait(3);
+    await Promise.all([first, ...[ngazwe, maythu, phoekyaw].map(k => walk(k, [AWAY[k.id]], 'walk', 12))]);
+    await hud.fade(true, 500); placeWip(); await hud.fade(false, 500); // cut back to the house front: the gang stands round you, the bowl on the bench
   },
   ball: () => { S.ball = true; setTool('balloon'); hud.toast('+ ပူဖောင်း 🎈'); maythu.anim.play('wave'); },
   // 1-6
@@ -365,8 +400,8 @@ const dingBubble = () => cueBubble('ဒင်း', L.LAND4.clone().setY(2.4), 1.
 // ---------- rooms: walk in off the street (shops) or the lane (home) ----------
 let inside = null, backTo = null, seated = null;
 const ROOM_NAME = { tea: 'ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', clothes: 'ရွှေရည် အထည်ဆိုင်', barber: 'ဆံပင်ညှပ်ဆိုင်', home: '' };
-function setInside(name, at) { const r = ROOMS[name]; inside = name; W.setRoom(r); hero.g.position.set(at?.x ?? r.spawn.x, .05, at?.z ?? r.spawn.z); hero.g.rotation.y = Math.PI; W.snapCam(); day.range.watch(false); }
-function setOutside(at) { stand(); W.setRoom(null); inside = null; hero.g.position.set(at.x, ground(at.x, at.z), at.z); hero.g.rotation.y = 0; W.snapCam(); day.range.watch(true); }
+function setInside(name, at) { const r = ROOMS[name]; inside = name; if (hero.ch.tools.includes('bucket')) hero.ch.tool = 'none'; /* the bucket stays outside */ W.setRoom(r); hero.g.position.set(at?.x ?? r.spawn.x, .05, at?.z ?? r.spawn.z); hero.g.rotation.y = Math.PI; W.snapCam(); day.range.watch(false); }
+function setOutside(at) { stand(); W.setRoom(null); inside = null; if (hero.ch.tools.includes('bucket')) hero.ch.tool = 'bucket'; hero.g.position.set(at.x, ground(at.x, at.z), at.z); hero.g.rotation.y = 0; W.snapCam(); day.range.watch(true); }
 async function enter(name) {
   hud.cinematic(true); await hud.fade(true, 350);
   backTo = name === 'home' ? HOME_OUT.clone() : W.player.g.position.clone(); setInside(name);
@@ -376,8 +411,9 @@ async function enter(name) {
 async function goOut() {
   hud.cinematic(true); await hud.fade(true, 350);
   const was = inside; setOutside(backTo ?? HOME_OUT);
-  await hud.fade(false, 350); hud.cinematic(false);
-  if (was === 'home' && S.step === '1-1') { advance('1-2'); stage('1-2'); } // out into the lane: the day starts
+  await hud.fade(false, 350);
+  if (was === 'home' && S.step === '1-1') { advance('1-2'); stage('1-2'); scene12(); return; } // out into the lane: Scene B starts at once (the story keeps the cinematic on)
+  hud.cinematic(false);
 }
 function sitAt(st, lift = st.lift || 0) { const p = W.player; p.g.position.set(st.x, .05, st.z); p.g.rotation.y = st.ry; p.anim.setLoop('sit'); W.lift = lift; seated = { ry: st.ry }; }
 function stand() { if (!seated) return; seated = null; W.lift = 0; W.player.anim.setLoop('idle'); }
@@ -400,27 +436,33 @@ function sitBarber() { const ch = ROOMS.barber.chairs[0]; sitAt(ch, ch.lift); ta
 function tryOn() { const p = W.player, m = ROOMS.clothes.mirror; p.g.position.set(m.x, .05, m.z); p.g.rotation.y = -Math.PI / 2; talk([['အထည်ဆိုင် မမ', 'မှန်ရှေ့မှာ ဝတ်ကြည့်။']], () => openClothes({ W, hud, S, dress, onClose: () => tailor.anim.play('wave') }), tailor); }
 function toRoomChair() { const c = ROOMS.home.chair; put(bwabwa, c.x, c.z, c.ry, .05 + c.lift); bwabwa.anim.setLoop('sit'); }
 
+// wip (the stop after line 31): the gang stands in the half-ring round you at the house front, Phoe Kyaw's bike parked near with his two buckets on the rack
+function placeWip() {
+  for (const k of GANG) { put(k, ...ARC[k.id], 0); k.anim.setLoop('idle'); face(k, hero); }
+  bike.g.visible = true; bike.g.position.copy(WIP_BIKE); bike.g.rotation.y = Math.PI / 2; bike.g.add(pails); pails.visible = true; pails.rotation.set(0, Math.PI / 2, 0); pails.position.set(-.42, .68, 0);
+}
 // ---------- stage(step): where everyone is when a scene starts (a new game, a reload, the next scene) ----------
 function stage(step) {
-  const H = ROOMS.home, out = !['1-1', '1-8', 'done'].includes(step);
-  day.phase(PHASE_OF[step]); day.goal({ '1-1': '', '1-2': '', '1-8': GOALS['1-7'], done: GOALS['1-7'] }[step] ?? GOALS['1-2']); // the goal line appears in 1-2 (its cue) and changes in 1-7
+  const H = ROOMS.home, out = !['pro', '1-1', '1-8', 'done'].includes(step), NEW = ['pro', '1-1', '1-2', 'wip'].includes(step);
+  day.phase(PHASE_OF[step]); day.goal({ pro: '', '1-1': '', '1-2': '', '1-8': GOALS['1-7'], done: GOALS['1-7'] }[step] ?? GOALS['1-2']); // the goal line appears in 1-2 (its cue) and changes in 1-7
   // family
-  if (out) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night by the door side, out of the way
-  if (step === '1-6') put(bwabwa, 4.6, -3.0 + OZ, 0); else toRoomChair();
+  if (out && !NEW) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1' || step === 'pro') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night (and in T5b's Scene B / wip, once you've stepped out) she's inside, out of the way
+  if (step === '1-6') put(bwabwa, 4.6, -3.0 + OZ, 0); else if (step === 'pro') { put(bwabwa, L.BENCH.at.x - .5, L.BENCH.at.z + .45, Math.atan2(.5, -.45)); bwabwa.anim.setLoop('idle'); } else toRoomChair(); // (pro: she stands at the bench's left end, turned in to the bowl, so the camera still sees it)
   // the bowl: in Bwa Bwa's lap → in her arms (1-6) → on its seat (1-7) → over the fence (after)
   if (bowl.by) { bowl.by.release(true); bowl.by = null; } if (bowl.at) { bowl.at.item = null; bowl.at = null; }
-  if (['1-1', '1-2', '1-3', '1-4', '1-5', '1-6'].includes(step)) { bwc._load(bowl); bowl.g.visible = true; }
+  if (NEW) bowlOnBench(); // T5b-1: the bowl is on the bench the whole way (Bwa Bwa only polishes it in pro)
+  else if (['1-3', '1-4', '1-5', '1-6'].includes(step)) { bwc._load(bowl); bowl.g.visible = true; }
   else if (step === '1-7') { scene.attach(bowl.g); mandat.seat.socket.add(bowl.g); bowl.g.position.set(0, 0, 0); bowl.g.scale.setScalar(1); bowl.g.rotation.set(0, 0, 0); bowl.state = 'placed'; bowl.at = mandat.seat; mandat.seat.item = bowl; bowl.g.visible = true; }
   else { scene.attach(bowl.g); bowl.g.position.copy(L.LAND4); bowl.state = 'gone'; bowl.g.visible = false; } // in ④ now (T6)
   // the gang
   for (const k of GANG) { k.g.visible = false; k.anim.setLoop('idle'); }
-  if (step === '1-2') { put(ngazwe, GATHER.x, GATHER.z, Math.PI / 2); ngazwe.act('loop:shoulder'); hide(maythu); hide(phoekyaw); hide(chocho); }
   if (['1-3', '1-4', '1-5'].includes(step)) for (const k of GANG) put(k, ...LOT[k.id], 0);
   if (step === '1-3') put(ngazwe, BUCKET_SPOT.x + .9, BUCKET_SPOT.z + .4, Math.PI);
   if (step === '1-4') { put(chocho, -3.3, .3, -Math.PI / 2); put(phoekyaw, -3.4, -.6, -Math.PI / 2); }
   if (['1-6', '1-7'].includes(step)) for (const k of GANG) put(k, ...FRONT[k.id], Math.PI);
-  bike.g.visible = step !== '1-1' && step !== '1-2'; if (bike.g.visible) { bike.g.position.set(6.4, 0, -1.2); bike.g.rotation.y = 0; }
-  pails.visible = out && step !== '1-2'; if (pails.visible) { scene.attach(pails); pails.position.set(WATER.x, .02, WATER.z); }
+  scene.attach(pails); pails.visible = false; bike.g.visible = false;
+  if (step === 'wip') placeWip(); // (1-2: nobody yet — each arrives on a cue)
+  else if (!NEW) { bike.g.visible = true; bike.g.position.set(6.4, 0, -1.2); bike.g.rotation.y = 0; pails.visible = out; if (out) { pails.position.set(WATER.x, .02, WATER.z); } }
   // Saya Gyi at five o'clock only; Ko Zaw at his table for M3
   hide(sayagyi); if (step === '1-5') put(kozaw, TABLE.x, TABLE.z + .7, Math.PI); else hide(kozaw);
   table.visible = step === '1-5'; tableSolid.x0 = step === '1-5' ? TABLE.x - .45 : 1e9; tableSolid.x1 = step === '1-5' ? TABLE.x + .45 : 1e9;
@@ -438,13 +480,28 @@ function stage(step) {
   else if (step === '1-8' || step === 'done') { setInside('home', V(H.chair.x - .7, H.chair.z + 1.3)); face(hero, bwabwa); }
   else if (inside) setOutside(HOME_OUT);
   else day.range.watch(true);
-  hero.ch.blushEars(false); $('end').hidden = true;
+  hero.g.visible = step !== 'pro'; hero.ch.blushEars(false); $('end').hidden = true;
   if (DEBUG) console.log('stage', step);
 }
 
 // ---------- the flow: what starts each scene ----------
+// T5b-1 Prologue (~15 s, no lines, a tap skips): the bowl on the bamboo bench, the title over it, Bwa Bwa polishes it twice and goes in; cut inside → the 「ရက် ၁」 card → 1-1
+async function scenePro() {
+  hud.cinematic(true); $('title').style.top = '17%'; // (up out of the way: the bowl on the bench stays in view under it)
+  let skipped = false, skipRes; const sk = new Promise(r => { skipRes = r; }), onSkip = () => { skipped = true; skipRes(); };
+  addEventListener('pointerdown', onSkip, { once: true }); addEventListener('keydown', onSkip, { once: true });
+  const w = s => skipped ? 0 : Promise.race([wait(s), sk]);
+  W.orbit?.focus(V(L.BENCH.at.x - .3, L.BENCH.at.z + .2, 1.0), { dist: 7.5, elev: .42, t: .01 });
+  await w(3);
+  for (let i = 0; i < 2 && !skipped; i++) { bwabwa.anim.play('polish'); if (i) $('title').classList.add('gone'); await w(2.6); }
+  if (!skipped) await Promise.race([walk(bwabwa, [[HOME_OUT.x, HOME_OUT.z - .7]], 'walk', 6), sk]);
+  removeEventListener('pointerdown', onSkip); removeEventListener('keydown', onSkip);
+  bwabwa.anim.skip?.(99); hide(bwabwa); $('title').classList.add('gone'); await w(.6); $('title').style.top = '';
+  await hud.fade(true, 700); W.orbit?.release(); advance('1-1'); stage('1-1'); await hud.fade(false, 700);
+  scene11();
+}
 async function scene11() {
-  hud.cinematic(true); await day.title(1); hud.cinematic(false); await story.play('1-1'); tutorial(); // (no walking out before Mum has spoken)
+  hud.cinematic(true); await day.title(1); await wait(1.3); await story.play('1-1'); tutorial(); // (the card is gone before Mum speaks; no walking out before she has)
 }
 let tut = null;
 function tutorial() { // 1-1: walk, run, jump — one hint at a time, until you've done each once
@@ -459,12 +516,14 @@ W.tick(dt => {
   if ((k === 'walk' && a.loop === 'walk') || (k === 'run' && a.loop === 'run') || (k === 'jump' && a.one === 'jump') || (k === 'door' && !inside)) { tut.i++; tut.t = 0; return; }
   if ((tut.t -= dt) <= 0) { tut.t = 3; hud.toast(text); }
 });
-async function scene12() {
-  await story.play('1-2'); advance('1-3');
-  ngazwe.act('loop:idle'); for (const k of GANG) walk(k, [LOT[k.id]], 'run'); walk(ngazwe, [[BUCKET_SPOT.x + .9, BUCKET_SPOT.z + .4]], 'run');
-  bike.g.visible = true; pails.visible = true; scene.attach(pails); pails.position.set(WATER.x, .02, WATER.z); bike.g.position.set(6.4, 0, -1.2); bike.g.rotation.y = 0;
-  BK.y = BK.to = BTOP.y; sendBucket(STUCK); auntie.anim.play('call');
+async function scene12() { // T5b-1: Scene B (lines 10–31), then the stop. (T5's hand-over to 1-3 — the lot, the rope bucket — comes back with T5b-2)
+  await story.play('1-2'); advance('wip'); showWip();
 }
+function showWip() { // the creator's script ends at line 31: a card, 「အစက ပြန်ကြည့်」 (?new) or walk about with the gang waiting
+  $('eagain').textContent = 'အစက ပြန်ကြည့်'; $('ewalk').hidden = false;
+  day.card('ဆက်ရန်…', 'ရက် ၁ ရဲ့ ကျန်တဲ့ အပိုင်း — script စောင့်နေ');
+}
+$('ewalk').addEventListener('click', e => { e.stopPropagation(); $('end').hidden = true; });
 async function scene14() { await story.play('1-4'); }
 // five o'clock: everyone to the mandat
 async function scene16() {
@@ -527,8 +586,6 @@ const SPOTS = [
   { at: () => HOME_OUT, r: 1.1, label: () => inside || !['1-2', '1-3', '1-4', '1-5'].includes(S.step) ? null : 'အိမ်ထဲ ဝင်', goal: () => false, run: () => enter('home') },
   { at: () => ROOMS.home.door, r: .9, label: () => inside === 'home' && ['1-1', '1-2', '1-3', '1-4', '1-5'].includes(S.step) && !story.playing ? 'အပြင် ထွက်' : null, goal: () => S.step === '1-1' && !story.playing, run: goOut },
   { at: () => bwabwa.g.position, r: 1.3, label: () => inside === 'home' && S.step !== '1-8' && !story.playing ? 'ဘွားဘွား' : null, goal: () => false, run: () => { bwabwa.anim.emote('heart'); face(bwabwa); } },
-  // 1-2: Nga Zwe waiting at the lane head (walk up to him)
-  { auto: true, at: () => ngazwe.g.position, r: 2.2, label: () => on('1-2')() && !inside ? 'ငဇွဲ' : null, goal: on('1-2'), run: () => scene12() },
   // 1-3 M1: the empty bucket hangs; splash water up into it until it's heavy enough to come down with the cloth
   { at: () => BUCKET_SPOT, r: 1.5, label: () => !on('1-3')() ? null : BK.fill < 1 ? 'ပုံးထဲ ရေပက်ထည့် 💦' : BK.y < .2 && !pc.item && bCloth.visible ? 'ပိတ်စ ယူ' : null, goal: () => on('1-3')() && !pc.item, run: m1 },
   { at: () => mandat.pileAt, r: 1.6, label: () => S.step === '1-3' && pc.item?.def.name === 'ပိတ်စ' ? 'ပိတ်စ ချ' : S.step === '1-4' && speaker ? 'အသံချဲ့စက် ချ' : S.step === '1-5' && pc.item?.def.name === 'မီးကြိုး' ? 'မီးကြိုး ချ' : null,
@@ -684,7 +741,7 @@ $('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); locati
 stage(S.step); save();
 W.start();
 if (DEBUG) window.zone = { W, S: () => S, day, story, director, rooms: ROOMS, inside: () => inside, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
-  bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, fast: false,
+  bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, bench, bowlOnBench, ARC, AWAY, pails, bike, fast: false,
   // tests: do what the goal points at — go there and press E (an auto spot just needs you there)
   next() {
     if (hud.busy() || story.playing || flight || fixing) return 'busy';
@@ -692,5 +749,5 @@ if (DEBUG) window.zone = { W, S: () => S, day, story, director, rooms: ROOMS, in
     const at = s.stand?.() ?? s.at().clone().add(V(s.auto ? .4 : .25, s.auto ? .4 : .25)), lab = s.label(); hero.g.position.set(at.x, W.ground(at.x, at.z), at.z); W.snapCam();
     if (!s.auto) s.run(); return lab;
   } };
-if (S.step === '1-1') $('title').classList.add('gone'); else day.title(S.day, 1800); // scene11 shows the day's title itself
-({ '1-1': scene11, '1-6': scene16, '1-7': () => story.play('1-7'), '1-8': () => story.play('1-8'), done: () => day.card('ရက် ၂ — မကြာခင်') })[S.step]?.();
+if (S.step !== 'pro') $('title').classList.add('gone'); // pro keeps the page's 「သင်္ကြန်ပွဲ」 title; scene11 shows the day's card itself
+({ pro: scenePro, '1-1': scene11, '1-2': scene12, wip: showWip, '1-6': scene16, '1-7': () => story.play('1-7'), '1-8': () => story.play('1-8'), done: () => day.card('ရက် ၂ — မကြာခင်') })[S.step]?.();
