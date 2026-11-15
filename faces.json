@@ -7,6 +7,7 @@
   "mad": {"eyes": "glare", "brows": "in", "mouth": "grit", "extra": null},
   "pout": {"eyes": "half", "brows": "in", "mouth": "pout", "extra": null},
   "sly": {"eyes": "side", "brows": "one", "mouth": "smile", "extra": null},
+  "sad": {"eyes": "half", "brows": "out", "mouth": "line", "extra": null},
   "wet": {"eyes": "><", "brows": "out", "mouth": "open", "extra": null},
   "cry": {"eyes": "><", "brows": "out", "mouth": "wobble", "extra": "tear"}
  },

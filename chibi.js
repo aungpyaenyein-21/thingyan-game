@@ -607,20 +607,26 @@ export class ChibiAnimator {
     return FLAP[this.flapI];
   }
   // T6.5 anim.face('worry', 1.5): that expression for 1.5 s on top of whatever the loop says, then the loop's own face again. Unknown name: false, nothing happens.
+  // T16 anim.mood('sad'): the base face, kept until it is changed (null: the character's own, e.g. U Tin Maung joy). anim.face() overlays on top and returns to it; wet still wins.
+  mood(name) { if (name != null && !FACE[name]) { console.warn('anim.mood: unknown face', name); return false; } this.moodName = name ?? null; return true; }
+  // T16 anim.gaze = radians the head is turned off the body (the talk director sets it towards whoever is talking / listened to); eased in _apply
   face(name, sec = 2) { if (!FACE[name]) { console.warn('anim.face: unknown face', name); return false; } this.fx = { name, t: sec }; return true; }
-  // the four parts to paint now. Priority: hit by water (wet) > anim.face() > the pose's face (a JSON tic key) > the character's base face (U Tin Maung: joy) > the loop's own expr / mouth.
+  // the four parts to paint now. Priority: hit by water (wet) > anim.face() > the pose's face (a JSON tic key) > the mood (T16) > the character's base face (U Tin Maung: joy) > the loop's own expr / mouth.
   _faceNow(p, dt) {
     const c = this.ch, o = c.opts, ov = FACE_OV[c.faceId] || {}, hit = this.hitT > 0;
     if (this.fx && (this.fx.t -= dt) <= 0) this.fx = null;
     const inline = !this.fx && p.face && typeof p.face === 'object' ? p.face : null; // a JSON tic key with its own parts: acts like the loop's expr / mouth (no name, no blink-cut)
     const named = this.fx ? this.fx.name : typeof p.face === 'string' && FACE[p.face] ? p.face : null;
     let name = hit ? 'wet' : named, r = name && faceParts(name, c);
-    if (!r && !named && ov.base && p.expr === 'normal' && p.mouth === 'smile') { name = ov.base; r = faceParts(name, c); }
+    const mn = this.moodName;
+    const pm = this.talking ? this.pmouth : p.mouth; // (the pose's own mouth: a talker's flap is not the loop saying something else)
+    if (!r && !named && !inline && mn && FACE[mn] && p.expr === 'normal' && pm === 'smile') { name = mn; r = faceParts(name, c); } // T16: the mood is the base face, for any loop that shows plain `ok`
+    else if (!r && !named && ov.base && p.expr === 'normal' && pm === 'smile') { name = ov.base; r = faceParts(name, c); }
     if (!r) { name = null; r = { eyes: p.expr, brows: 0, mouth: p.mouth, extra: null, ...inline }; } // the loop's own: expr normal|happy|squint|blink, mouth smile|open|o
     else r = { ...r };
     const sig = r.eyes + r.brows + r.mouth + r.extra;
     if (r.eyes === 'normal') r.eyes = (o.smileEyes ?? o.age === 'elder') ? 'happy' : (this.T % 3.7) < .12 ? 'blink' : 'normal'; // elders smile with their eyes (smileEyes: false for a stern one)
-    if (this.talking && name !== 'wet') r.mouth = p.mouth; // the talker's flap (T10) replaces the mouth part only
+    if (this.talking && name !== 'wet' && p.mouth !== 'smile') r.mouth = p.mouth; /* the talker's flap (T10) replaces the mouth part only: open / o; its `smile` beat keeps the face's own mouth (T16: a sad mouth stays flat) */
     if (!hit) { // blink-cut: between two different faces the eyes shut for a moment
       if (this.fn === undefined) this.fn = name; else if (name !== this.fn) { if (sig !== this.fs) this.cutT = .06; this.fn = name; }
       this.fs = sig; if (this.cutT > 0) { this.cutT -= dt; if (r.eyes !== 'none') r.eyes = 'blink'; }
@@ -669,7 +675,7 @@ export class ChibiAnimator {
     const w = ease(clamp01(this.blendT / .25));
     for (const k of KEYS) this.out[k] = this.from[k] + (pose[k] - this.from[k]) * w;
     if (this.jt && this.one !== this.jt.name && this.loop !== this.jt.name) this._jsonEnd(); // T6.5: a JSON tic ended (or was cut off): its props + visibility go back
-    this.out.expr = pose.expr; this.out.face = pose.face; this.out.mouth = this.talking ? this._flap(dt) : pose.mouth;
+    this.out.expr = pose.expr; this.out.face = pose.face; this.pmouth = pose.mouth; this.out.mouth = this.talking ? this._flap(dt) : pose.mouth;
     this.hitT = (this.hitT || 0) - dt;
     if (this.loop === 'dance' && !this.ch.bubble?.visible && Math.random() < dt * .2) this.emote('note', 1.4);
     this._apply(this.out, dt);
@@ -903,7 +909,8 @@ export class ChibiAnimator {
     const c = this.ch;
     c.body.position.set(p.x, p.y * c.legK, 0); c.body.scale.set(1 / Math.sqrt(p.sy), p.sy, 1 / Math.sqrt(p.sy));
     c.hips.rotation.set(0, p.hipsRy, p.hipsRz); c.spine.rotation.set(p.spineRx + (c.hunch || 0), p.spineRy, p.spineRz);
-    c.head.rotation.set(p.headRx - (c.hunch || 0) * .7, p.headRy, p.headRz);
+    this.gazeV = (this.gazeV || 0) + ((this.gaze || 0) - (this.gazeV || 0)) * (1 - Math.exp(-dt * 10)); // T16
+    c.head.rotation.set(p.headRx - (c.hunch || 0) * .7, p.headRy + this.gazeV, p.headRz);
     const throwing = this.one === 'splash';
     if (c.gun) c.gun.visible = c.tool === 'gun' && !throwing;
     if (c.cane) { c.cane.visible = !throwing; c.cane.rotation.x = -(p.armRx + p.elbowR + p.spineRx + c.hunch); }
@@ -984,6 +991,7 @@ export const FACE = {
   mad: { eyes: 'glare', brows: 'in', mouth: 'grit', extra: null },
   pout: { eyes: 'half', brows: 'in', mouth: 'pout', extra: null },
   sly: { eyes: 'side', brows: 'one', mouth: 'smile', extra: null },
+  sad: { eyes: 'half', brows: 'out', mouth: 'line', extra: null },
   wet: { eyes: '><', brows: 'out', mouth: 'open', extra: null },
   cry: { eyes: '><', brows: 'out', mouth: 'wobble', extra: 'tear' } };
 // per character id: base = the face shown wherever the loop would show `ok` · hideEyesWhen: 'goggles' = no eyes part while ch.goggles.up === false.

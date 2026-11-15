@@ -1,6 +1,6 @@
 // yangon/save.js — the story save (SCENARIO v6): which day, which scene, what's up on the mandat, what you said at night.
 // One key per story version: the v4 "nine favours" save (thingyan.day1.v2) is wiped the first time this loads.
-import { LOOK0 } from './wardrobe.js?v=8';
+import { LOOK0 } from './wardrobe.js?v=9';
 
 const KEY = 'thingyan.v6', OLD = ['thingyan.day1.v2'];
 // girl: the hero is a girl (lines say 「သမီး」 — ?girl) · v 61: SCENARIO v6.1 day-1 saves (T5's v 6 saves start fresh)

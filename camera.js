@@ -25,7 +25,7 @@ export const elevDefault = (d, t = TUNE) => t.elevMin + (t.elevMax - t.elevMin) 
 // upright; cheat / face: the director turns the speaker up to `cheat` rad towards the camera when it sees them more than `face` rad
 // off their front (yangon/talk.js); roomSpan: in a cut-away room the camera stays within ± this of the open side; boxLift: the faces raised by this
 // share of the half-frame (the dialogue box covers the bottom); glide: seconds per cut; headDrop: the target under the head (m)
-export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .7, thirdPortrait: .36, edgePortrait: .6, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
+export const TALK = { glide: .35, back: 1.0, third: 1 / 3, edge: .85, thirdPortrait: .36, edgePortrait: .8, otsFrac: .16, otsFar: 5, otsElev: .26, otsMax: 4.5, otsMin: .7, headDrop: .08,
   twoMin: 3.2, twoK: 1.9, twoPad: 1.4, twoElev: .25, twoYaw: .35, closeDist: 2.0, closeElev: .08, closeYaw: .45, wideElev: .55, wideYaw: .8, wideSpeaker: .5, widePad: 1, wideMin: 4.5, wideMax: 10,
   pullMax: .3, peopleR: .7, peopleK: .4, roomSpan: 60, boxLift: .22, cheat: 1.3, face: .9 };
 const PRI = { run: 1, ride: 2, war: 3, talk: 4, room: 5 }; // scene (6) sits above them all (CAMERA.md §၂)
@@ -73,9 +73,15 @@ export function createOrbit(cam, { base, min = 5, max = 24, az = 0, userMin = .6
     if (kind === 'ots' && SL > TALK.otsMax) kind = 'close'; // too far apart for one frame: a single on the speaker
     if (kind === 'ots') {
       const up = cam.aspect < 1, third = up ? TALK.thirdPortrait : TALK.third, edge = up ? TALK.edgePortrait : TALK.edge;
-      const b = TALK.back, want = Math.atan(th * third) + Math.atan(th * edge), sep = x => Math.atan(x / b) - Math.atan(x / (b + SL));
-      let hi = Math.sqrt(b * (b + SL)), lo = 0; if (sep(hi) > want) for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (sep(m) < want) lo = m; else hi = m; }
-      if (sep(hi) < want * TALK.otsMin) return shotOf('two', S, L, n, group, face); // standing too close for one over the other's shoulder (the big heads would cover each other)
+      // T16: the camera backs off (b grows) until the listener's head is at most otsFrac of the frame wide (a head ≈ .55 m) or otsFar m away — as far as the two can still be framed
+      const want = Math.atan(th * third) + Math.atan(th * edge), dMin = Math.min(TALK.otsFar, .55 / (2 * th * TALK.otsFrac)); let b = TALK.back, hi = 0, ok = null;
+      for (;;) {
+        const sep = x => Math.atan(x / b) - Math.atan(x / (b + SL)); let h = Math.sqrt(b * (b + SL)), lo = 0; if (sep(h) > want) for (let i = 0; i < 24; i++) { const m = (lo + h) / 2; if (sep(m) < want) lo = m; else h = m; }
+        if (sep(h) < want * TALK.otsMin) break; // (too close for one over the other's shoulder: the big heads would cover each other)
+        ok = b; hi = h; if (Math.hypot(h, b) >= dMin || (b += .25) > 8) break;
+      }
+      if (ok === null) return shotOf('two', S, L, n, group, face);
+      b = ok;
       const C = flat(L).addScaledVector(u, -b).addScaledVector(n, hi), dS = flat(S).sub(C), D = dS.length(); dS.divideScalar(D);
       const np = n.clone().addScaledVector(dS, -n.dot(dS)).normalize(), a = Math.atan(th * third);
       const axis = dS.clone().multiplyScalar(Math.cos(a)).addScaledVector(np, -Math.sin(a)); // the speaker on the ⅓ line, the listener's shoulder at the other edge

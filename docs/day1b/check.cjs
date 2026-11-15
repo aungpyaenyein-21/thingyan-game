@@ -80,7 +80,7 @@ function expected(girl) {
   // ---------- flow ----------
   if (want('flow')) {
     log('flow: ?new at reading pace');
-    const p = await open('new');
+    const p = await open('new&autotalk');
     await hook(p, { 2: '1-1-mum', 3: '1-1-hero', 6: '1-1-bwabwa', 10: '1-2-ngazwe', 15: '1-2-maythu-chocho', 19: '1-2-phoekyaw', 31: '1-2-gang' });
     // pro
     const pro = await p.evaluate(() => { const z = zone, P = z.people, bw = z.bowl, W = z.W, V = W.THREE.Vector3;
