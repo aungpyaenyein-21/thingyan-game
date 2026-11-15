@@ -1,0 +1,34 @@
+manifest
+  ok   orientation landscape
+card
+  ok   portrait phone: card visible
+  ok   first gesture tried the lock (stub, standalone)
+  ok   「ရပြီ」 closes
+  ok   closed card does not return
+  ok   new portrait launch: card visible
+  ok   card is a full-screen modal backdrop on top
+  ok   tapping the backdrop closes it
+  ok   rotate to landscape: card gone
+  ok   rotate back: not shown again
+  ok   landscape at launch: no card
+  ok   landscape: lock attempted, silently
+  ok   desktop: no card
+  ok   narrow desktop (pointer fine): no card
+layout 667x375
+  ok   667x375 Scene A line: dlg — inside the viewport, no overlap 
+  ok   667x375 Scene B gang line: dlg — inside the viewport, no overlap 
+  ok   667x375 wip card: end — inside the viewport, no overlap 
+  ok   667x375 walking HUD: goal,where,opt,splash,jump,tool,rotl,rotr,stick — inside the viewport, no overlap 
+  ok   667x375 ⚙ menu: goal,opt,opts,splash,jump,tool,stick,#redo,#scn,#snd,#cred — inside the viewport, no overlap 
+  ok   667x375 scene picker: pick — inside the viewport, no overlap 
+  ok   667x375 restart confirm: confirm — inside the viewport, no overlap 
+layout 844x390
+  ok   844x390 Scene A line: dlg — inside the viewport, no overlap 
+  ok   844x390 Scene B gang line: dlg — inside the viewport, no overlap 
+  ok   844x390 wip card: end — inside the viewport, no overlap 
+  ok   844x390 walking HUD: goal,where,opt,splash,jump,tool,rotl,rotr,stick — inside the viewport, no overlap 
+  ok   844x390 ⚙ menu: goal,opt,opts,splash,jump,tool,stick,#redo,#scn,#snd,#cred — inside the viewport, no overlap 
+  ok   844x390 scene picker: pick — inside the viewport, no overlap 
+  ok   844x390 restart confirm: confirm — inside the viewport, no overlap 
+  ok   console errors: 0
+ALL PASS

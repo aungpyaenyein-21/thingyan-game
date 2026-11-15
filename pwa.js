@@ -38,3 +38,20 @@ inst.onclick = e => {
   else if (ios && inst.dataset.tip) inst.hidden = true; // second tap: got it
   else if (ios) { inst.dataset.tip = 1; inst.textContent = 'Safari ⬆ မျှဝေ → “Add to Home Screen”'; }
 };
+
+// T17 landscape: the manifest asks Android's installed app for landscape; in a browser tab the lock needs fullscreen + a gesture,
+// and iPhone has no lock at all — so a portrait phone gets a small closable card, once per session.
+const portrait = matchMedia('(orientation: portrait)');
+const rot = $('rot');
+const hideRot = () => { rot.hidden = true; rot.dataset.done = 1; };
+if (matchMedia('(pointer: coarse)').matches && portrait.matches) rot.hidden = false;
+portrait.addEventListener('change', e => { if (!e.matches) hideRot(); });
+rot.onpointerdown = stop;
+$('rotx').onclick = e => { stop(e); hideRot(); };
+rot.onclick = e => { stop(e); hideRot(); }; /* the dim backdrop closes it too */
+$('rotc').onclick = stop;
+addEventListener('pointerdown', () => {
+  try {
+    if ((document.fullscreenElement || app) && screen.orientation?.lock) Promise.resolve(screen.orientation.lock('landscape')).catch(() => {});
+  } catch (e) { /* no lock here (iPhone, desktop): the card is the fallback */ }
+}, { once: true, capture: true });
