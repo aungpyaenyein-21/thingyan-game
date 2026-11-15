@@ -79,6 +79,12 @@
   #end p{margin:4px 0;font-size:15px}
   #end button{display:block;width:100%;margin-top:10px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:var(--ink);color:#fff6ea}
   #end button[hidden]{display:none}
+  #confirm,#pick{left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;width:min(380px,calc(100% - 32px));box-sizing:border-box;padding:18px 20px;text-align:center;line-height:1.8;max-height:calc(100% - 28px);overflow:auto}
+  #confirm[hidden],#pick[hidden]{display:none}
+  #confirm p{margin:0 0 6px;font-size:16px} #pick h3{margin:0 0 6px;font-size:18px;font-weight:normal}
+  #confirm button,#pick button{display:block;width:100%;min-height:44px;margin-top:8px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:var(--ink);color:#fff6ea}
+  #confirm button.alt,#pick button.alt{background:#fff;color:var(--ink);border:2px solid var(--line)}
+  #pick button.on{box-shadow:0 0 0 2px var(--accent)}
   #end button.alt{background:#fff;color:var(--ink);border:2px solid var(--line)}
   #splash{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:76px;height:76px;border-radius:50%;border:0;
     background:#7ec8e3;color:#fff;font:inherit;font-size:15px;box-shadow:0 4px 0 #4f9fbd;display:none}
@@ -95,6 +101,8 @@
   @media (pointer:coarse){#inst{bottom:calc(18px + env(safe-area-inset-bottom,0px))}#upd{bottom:calc(62px + env(safe-area-inset-bottom,0px))}}
   :is(#dlg,#menu,#mini,#end):not([hidden])~:is(#upd,#opts>#inst){display:none}
   #opt{display:none} #opts{display:contents}
+  #redo,#scn{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));min-width:84px;min-height:32px;padding:5px 10px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:12px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer;white-space:nowrap}
+  #redo,#scn{bottom:calc(156px + env(safe-area-inset-bottom,0px))} #redo{right:calc(122px + env(safe-area-inset-right,0px))} /* desktop: one row between the sound/credit row and the turn buttons */
   #gfx{position:fixed;z-index:3;right:calc(164px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));padding:5px 9px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:11px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer;white-space:nowrap}
   @media (pointer:coarse){#gfx{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
   @media (pointer:coarse){#cred{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
@@ -154,7 +162,7 @@
   <canvas id="map" width="180" height="148" aria-label="မြေပုံ"></canvas>
   <div id="bag"></div>
 </div>
-<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · <b>R</b> ရေပုံး⇄ပူဖောင်း · Space ခုန် · wheel zoom</div>
+<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် <span id="hintr">· <b>R</b> ရေပုံး⇄ပူဖောင်း</span> · Space ခုန် · wheel zoom</div>
 <div id="prompt" class="panel" hidden><span class="key">E</span><span id="ptext"></span></div>
 <div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small><span class="kb">E </span>▸ ဆက်</small></div>
 <div id="toast" class="panel" hidden></div>
@@ -171,7 +179,11 @@
 <div id="turn"><button id="rotl" type="button" aria-label="ဘယ်ဘက် လှည့်" hidden>⟲</button><button id="rotr" type="button" aria-label="ညာဘက် လှည့်" hidden>⟳</button></div>
 <button id="tool" type="button" aria-label="ရေပုံး / ရေသေနတ် ပြောင်း"></button>
 <button id="opt" type="button" aria-label="ဆက်တင်">⚙️</button>
+<div id="confirm" class="panel" hidden><p>save ဖျက်ပြီး အစက ပြန်စမလား</p><button id="cyes" type="button">ပြန်စမယ်</button><button id="cno" type="button" class="alt">မလုပ်တော့ဘူး</button></div>
+<div id="pick" class="panel" hidden><h3 id="phead"></h3><div id="plist"></div><button id="pno" type="button" class="alt">ပိတ်မယ်</button></div>
 <div id="opts">
+<button id="redo" type="button">🔄 အစက ပြန်စ</button>
+<button id="scn" type="button">🎬 အခန်း ရွေး</button>
 <button id="snd" type="button" aria-label="အသံ ဖွင့် / ပိတ်"></button>
 <button id="cred" type="button" aria-label="အသံ credit">credit</button>
 <button id="gfx" type="button" aria-label="ရုပ်ထွက် ပြောင်း"></button>
@@ -179,7 +191,7 @@
 </div>
 <button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="./yangon/boot.js?v=36"></script>
+<script type="module" src="./yangon/boot.js?v=37"></script>
 <script type="module" src="./pwa.js?v=1"></script>
 </body>
 </html>

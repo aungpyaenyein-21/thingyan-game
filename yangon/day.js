@@ -9,6 +9,8 @@ export const PHASES = { morning: 0, day: 0, five: .6, night: 1.7 };
 // every scene of a day, in order, and the phase it plays in
 // T5b-1: day 1 stops at 'wip' (the creator's script ends at line 31); T5's 1-3 … 1-8 stay in main.js, unreachable, for T5b-2
 export const STEPS = { 1: ['pro', '1-1', '1-2', 'wip'] };
+/* the scene picker's labels (T13): T5b-2 / T6 just add rows */
+export const STEP_LABELS = { pro: 'အဖွင့်', '1-1': 'အိမ်ထဲ (Scene A)', '1-2': 'အိမ်ရှေ့ (Scene B)', wip: 'ဆက်ရန်' };
 export const PHASE_OF = { pro: 'morning', wip: 'day', '1-1': 'morning', '1-2': 'day', '1-3': 'day', '1-4': 'day', '1-5': 'day', '1-6': 'five', '1-7': 'five', '1-8': 'night', done: 'night' };
 // the day's title card (SCENARIO §3 heading)
 const TITLE = { 1: ['ရက် ၁', 'အကြိုနေ့ — 「မဏ္ဍပ် ဆောက်」'] };
