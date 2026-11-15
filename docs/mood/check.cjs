@@ -6,7 +6,9 @@
 //   wait     no ?autotalk: a line is still up after 15 s of game time with no input; one E press (typing finished) moves to the next
 //            (people the camera has left out of frame are not animated by world.js, so they are not counted)
 //   screenshots: lines 3, 9, 19 (Phoe Kyaw), 23, 25 → docs/mood/*.jpg
-// run: (repo root) python3 -m http.server 8804 &  node docs/mood/check.cjs   (ONLY=flow,restore,wait; PORT=)
+//   ots      three viewports (800x450, 375x667, 667x375), zone.fast: at every ots shot the listener's head box ≤ 18% of the viewport, off the speaker's head box;
+//            no shot's line of sight to the speaker is blocked (talk.js clear()); line23-phone / -landscape / -desktop screenshots
+// run: (repo root) python3 -m http.server 8804 &  node docs/mood/check.cjs   (ONLY=flow,ots,restore,wait; PORT=)
 const { chromium } = require('playwright');
 const path = require('path');
 const OUT = __dirname, URL = `http://localhost:${process.env.PORT || 8804}/yangon.html`;
@@ -104,6 +106,40 @@ const SHOTS = { 3: 'line03-hero-sad', 9: 'line09-hero-pout', 19: 'line19-phoekya
     const fin = await p.evaluate(() => Object.fromEntries(Object.entries(zone.people).map(([k, c]) => [k, c.anim.moodName])));
     ok(['hero', 'ngazwe', 'maythu', 'chocho', 'phoekyaw'].every(k => fin[k] === 'ok'), 'at wip everyone is `ok` ' + JSON.stringify(fin));
     await p.context().close();
+  }
+
+  // ots framing (T16 review): at every over-the-shoulder shot the listener's head box covers ≤ 18% of the viewport and doesn't cover the speaker's head box; no shot's view of the speaker is blocked
+  if (want('ots')) {
+    const VPS = [['desk-800x450', { width: 800, height: 450 }], ['phone-375x667', { width: 375, height: 667 }], ['land-667x375', { width: 667, height: 375 }]];
+    for (const [vn, vp] of VPS) {
+      log('ots:', vn);
+      const p = await open('new&day=1&step=1-2', vp); await p.evaluate(() => { zone.fast = true; });
+      await p.evaluate(({ shotAt, nm }) => {
+        const z = zone, W = z.W, P = z.people, T = W.THREE, R = window.__O = { rows: [] }; window.__q = []; let cur = null, tk = 0;
+        const rect = c => { c.g.updateMatrixWorld(true); const bx = new T.Box3().setFromObject(c.ch.head).expandByScalar(.04); let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+          for (const x of [bx.min.x, bx.max.x]) for (const y of [bx.min.y, bx.max.y]) for (const zz of [bx.min.z, bx.max.z]) { const v = new T.Vector3(x, y, zz).project(W.cam); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); }
+          return { x0, x1, y0, y1 }; };
+        z.hud.onLine((name, text, o) => { if (o?.closed) { cur = null; return; } if (!o?.who) return; cur = { n: R.rows.length + 1, who: o.who, to: o.to, voice: !!o.voice, tk: 0 }; R.rows.push(cur); });
+        W.tick(() => {
+          if (!cur || cur.sampled) return; if (++cur.tk < 1) return; cur.sampled = true; W.cam.updateMatrixWorld(true);
+          const lg = z.director.log.at(-1); cur.kind = lg?.kind; cur.blocked = lg?.blocked; cur.blocked0 = lg?.blocked0; cur.by = lg?.by; cur.replaced = lg?.replaced; cur.dist = lg?.dist;
+          if (lg?.kind === 'ots' && P[cur.to]) { const L = rect(P[cur.to]), S = rect(P[cur.who]); const cl = (a, b) => Math.max(0, Math.min(1, b) - Math.max(-1, a));
+            cur.cov = cl(L.x0, L.x1) * cl(L.y0, L.y1) / 4 * 100; cur.ov = Math.max(0, Math.min(L.x1, S.x1) - Math.max(L.x0, S.x0)) * Math.max(0, Math.min(L.y1, S.y1) - Math.max(L.y0, S.y0)); cur.Lx = [+L.x0.toFixed(2), +L.x1.toFixed(2)]; cur.Sx = [+S.x0.toFixed(2), +S.x1.toFixed(2)]; }
+          if (cur.n === shotAt && !W.paused) { W.paused = true; window.__q.push(nm); }
+        });
+      }, { shotAt: 14, nm: 'line23-' + (vn.startsWith('desk') ? 'desktop' : vn.startsWith('phone') ? 'phone' : 'landscape') });
+      await drive(p, s => s.step === 'wip' && !s.playing, 1500);
+      const O = await p.evaluate(() => window.__O.rows);
+      const ots = O.filter(r => r.kind === 'ots'), worst = Math.max(0, ...ots.map(r => r.cov)), wOv = Math.max(0, ...ots.map(r => r.ov));
+      log(`   ${O.length} lines · ${ots.length} ots · worst foreground coverage ${worst.toFixed(1)}% · worst overlap ${wOv.toFixed(3)} · kinds ${JSON.stringify(O.reduce((a, r) => (a[r.kind] = (a[r.kind] || 0) + 1, a), {}))}`);
+      log('   blocked first choice → replaced:', O.filter(r => r.blocked0).map(r => r.n + (r.replaced ? '(replaced→' + r.kind + ')' : '(kept)')).join(' ') || 'none', '· still blocked:', O.filter(r => r.blocked).map(r => r.n).join(' ') || 'none');
+      ok(O.length === 22, `${vn}: lines 10–31 (22)`);
+      for (const r of O) if (r.blocked || r.ov > 0 || r.cov > 12) log('   line', r.n, r.kind, 'dist', r.dist, 'cov', r.cov?.toFixed(1), 'ov', r.ov?.toFixed(3), 'L', r.Lx, 'S', r.Sx, r.blocked ? 'BLOCKED by ' + JSON.stringify(r.by) : '');
+      ok(worst <= 18, `${vn}: every ots shot keeps the listener's head box ≤ 18% of the viewport`);
+      ok(wOv === 0, `${vn}: ... and off the speaker's head box`);
+      ok(!O.some(r => r.blocked), `${vn}: no shot's view of the speaker is blocked`);
+      await p.context().close();
+    }
   }
 
   if (want('restore')) {

@@ -14,7 +14,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { makeChibi, ChibiAnimator, HAIRS, HAIRS_DYED, HAIR_GREY, TOPS, ACCENTS, KID } from './chibi.js?v=35';
 import { makeCritter, CritterAnimator, DOG_COATS, CAT_COATS } from './critters.js?v=10';
 import { PAL as TONE } from './palette.js?v=1';
-import { createOrbit, TALK } from './camera.js?v=4';
+import { createOrbit, TALK } from './camera.js?v=5';
 import { createSky, createSurround } from './sky.js?v=4';
 
 export { THREE };
