@@ -48,6 +48,8 @@ if (matchMedia('(pointer: coarse)').matches && portrait.matches) rot.hidden = fa
 portrait.addEventListener('change', e => { if (!e.matches) hideRot(); });
 rot.onpointerdown = stop;
 $('rotx').onclick = e => { stop(e); hideRot(); };
+rot.onclick = e => { stop(e); hideRot(); }; /* the dim backdrop closes it too */
+$('rotc').onclick = stop;
 addEventListener('pointerdown', () => {
   try {
     if ((document.fullscreenElement || app) && screen.orientation?.lock) Promise.resolve(screen.orientation.lock('landscape')).catch(() => {});

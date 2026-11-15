@@ -6,6 +6,8 @@ card
   ok   「ရပြီ」 closes
   ok   closed card does not return
   ok   new portrait launch: card visible
+  ok   card is a full-screen modal backdrop on top
+  ok   tapping the backdrop closes it
   ok   rotate to landscape: card gone
   ok   rotate back: not shown again
   ok   landscape at launch: no card
@@ -29,3 +31,4 @@ layout 844x390
   ok   844x390 scene picker: pick — inside the viewport, no overlap 
   ok   844x390 restart confirm: confirm — inside the viewport, no overlap 
   ok   console errors: 0
+ALL PASS

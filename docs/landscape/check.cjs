@@ -60,6 +60,10 @@ const LOCK = () => { window.__lock = 0; try { Object.defineProperty(navigator, '
   await p.context().close();
   p = await open('day=1&step=1-1', { width: 375, height: 667 }, true);
   ok(await rotVis(p), 'new portrait launch: card visible');
+  ok(await p.evaluate(() => { const r = document.getElementById('rot'), b = r.getBoundingClientRect(); return b.width === innerWidth && b.height === innerHeight && getComputedStyle(r).zIndex >= 10 && document.elementFromPoint(5, 5) === r; }), 'card is a full-screen modal backdrop on top');
+  await p.mouse.click(5, 5); ok(!(await rotVis(p)), 'tapping the backdrop closes it');
+  await p.context().close();
+  p = await open('day=1&step=1-1', { width: 375, height: 667 }, true); await p.waitForTimeout(300);
   await p.setViewportSize({ width: 667, height: 375 }); await p.waitForFunction(() => document.getElementById('rot').hidden, null, { timeout: 20000 });
   ok(!(await rotVis(p)), 'rotate to landscape: card gone');
   await p.setViewportSize({ width: 375, height: 667 }); await p.waitForTimeout(500);
