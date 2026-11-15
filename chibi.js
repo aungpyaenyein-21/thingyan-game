@@ -85,6 +85,36 @@ function stripes(a, b, plaid, border) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; return t;
 }
 
+// T6.5 wide / side / half / glare: drawn from the character's own eye style (round · almond tilted · sleepy squashed with a heavy lid · bead with no white),
+// in that character's iris colour, so the same face still reads as that person (CHARACTERS §11).
+// wide = big sclera, small iris + pupil · side = both irises pushed to the same edge · half = flat lid across the middle · glare = the flat lid slanted down towards the nose (angry)
+function newEye(g, x, y, s, kind, o, iris, WH, ink) {
+  const st = o.eyes, bead = st === 'bead', alm = st === 'almond', slp = st === 'sleepy';
+  const rx = bead ? 15 : alm ? 30 : 27, ry = bead ? 19 : alm ? 21 : 34, ir = alm ? [17, 20, 3] : [21, 27, 5], pr = alm ? [9, 12, 5] : [11, 15, 8];
+  const wide = kind === 'wide', k = wide ? .62 : kind === 'side' ? .88 : 1, dx = kind === 'side' ? rx - ir[0] * k + 6 : 0, lw = slp ? 8 : 5;
+  g.save(); g.translate(x, y); if (slp) { g.translate(0, 8); g.scale(1, .65); } if (alm) g.rotate(-s * .14); if (wide) g.scale(1.15, 1.2); if (bead && wide) g.scale(1.3, 1.3);
+  g.save();
+  const ly = -ry * .08, oy = -ry * .5; // half: lid y · glare: lid y at the outer end (the inner end is at the middle)
+  if (kind === 'half') { g.beginPath(); g.rect(-60, ly, 120, 120); g.clip(); }
+  if (kind === 'glare') { const ox = s * (rx + 8), nx = -s * (rx + 8); g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox, 120); g.lineTo(nx, 120); g.lineTo(nx, 0); g.closePath(); g.clip(); }
+  if (bead) {
+    if (wide || kind === 'side') { g.fillStyle = WH; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill(); g.strokeStyle = ink; g.lineWidth = 3; g.stroke(); }
+    g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(dx * .6, 4, 13 * (wide ? .6 : kind === 'side' ? .8 : 1), 17 * (wide ? .6 : kind === 'side' ? .8 : 1), 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(dx * .6 - 4, -2, 4, 0, 7); g.fill();
+  } else {
+    g.fillStyle = WH; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill(); g.save(); g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.clip();
+    g.fillStyle = iris; g.beginPath(); g.ellipse(dx, ir[2], ir[0] * k, ir[1] * k, 0, 0, 7); g.fill();
+    g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(dx, pr[2], pr[0] * k * (wide ? .8 : 1), pr[1] * k * (wide ? .8 : 1), 0, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(dx - 7 * k, -4, 6 * k, 0, 7); g.fill(); g.restore();
+    g.strokeStyle = ink; g.lineWidth = wide ? 4 : lw; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, wide ? 0 : Math.PI * 1.05, wide ? 7 : Math.PI * 1.95); g.stroke();
+  }
+  g.restore();
+  g.strokeStyle = ink; g.lineWidth = slp ? 9 : 7; g.beginPath();
+  if (kind === 'half') { g.moveTo(-rx - 3, ly); g.lineTo(rx + 3, ly); g.stroke(); }
+  if (kind === 'glare') { g.moveTo(s * (rx + 6), oy); g.lineTo(-s * (rx + 6), 0); g.stroke(); }
+  g.restore();
+}
+
 // ---------- face: painted on a canvas, mapped onto a patch of the head ----------
 const FW = 384, FH = 256, faceCache = {};
 // o.eyes round|almond|bead|sleepy · o.brows arc|flat|thin|bold · o.lips smile|grin|small|cat · o.marks none|blush|freckles|mole
@@ -116,21 +146,12 @@ export function faceTex(o, f) {
     const x = 192 + s * 62, y = 112;
     g.save(); g.translate(x, y); g.scale(k, k); g.translate(-x, -y);
     g.save(); // brow, moved off the character's own shape by the face's brows part (T6.5)
-    if (brow) { const by = y - 68; g.translate(x, by); const [dy, rot] = { up: [-13, 0], in: [5, -.42 * s], out: [-2, .42 * s], one: [s > 0 ? -16 : 0, s > 0 ? .1 : 0] }[brow] || [0, 0]; g.translate(0, dy); g.rotate(rot); g.translate(-x, -by); }
+    const flatBrow = o.brows === 'flat' || brow === 'in' || brow === 'out' || (brow === 'one' && s < 0); // in / out are straight bars, tipped // 'one': the right brow goes high, the left one goes flat
+    if (brow) { const by = y - 68; g.translate(x, by); const [dy, rot] = { up: [-10, 0], in: [6, -.5 * s], out: [-3, .5 * s], one: [s > 0 ? -10 : 8, s > 0 ? -.12 * s : 0] }[brow] || [0, 0]; g.translate(0, dy / k); /* px on the canvas: a kid's face is scaled k about the eye, and the brows sit near the top edge */ g.rotate(rot); g.translate(-x, -by); }
     g.strokeStyle = ink; g.lineWidth = { thin: 3.5, bold: 11 }[o.brows] || 6; g.beginPath();
-    if (o.brows === 'flat') { g.moveTo(x - 17, y - 74); g.lineTo(x + 17, y - 74); } else g.arc(x - s * 2, y - 62, o.brows === 'bold' ? 16 : 18, Math.PI * 1.2, Math.PI * 1.8);
+    if (flatBrow) { g.moveTo(x - 17, y - 74); g.lineTo(x + 17, y - 74); } else g.arc(x - s * 2, y - 62, o.brows === 'bold' ? 16 : 18, Math.PI * 1.2, Math.PI * 1.8);
     g.stroke(); g.restore();
-    if (eye === 'wide' || eye === 'side' || eye === 'half') { // T6.5: round eyes, sized to the character's own (bead small, almond a little narrow)
-      const es = { bead: .64, almond: .9 }[o.eyes] || 1, ix = eye === 'side' ? 13 : 0, sx = eye === 'wide' ? 1.14 : 1, sy = eye === 'wide' ? 1.2 : 1, ir = eye === 'wide' ? .62 : 1;
-      g.save(); g.translate(x, y); g.scale(es * sx, es * sy); g.translate(-x, -y);
-      if (eye === 'half') { g.beginPath(); g.rect(x - 40, y - 5, 80, 60); g.clip(); }
-      g.fillStyle = WH; g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, 7); g.fill(); g.save(); g.beginPath(); g.ellipse(x, y, 27, 34, 0, 0, 7); g.clip();
-      g.fillStyle = iris; g.beginPath(); g.ellipse(x + ix, y + 5, 21 * ir, 27 * ir, 0, 0, 7); g.fill();
-      g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x + ix, y + 7, 11 * ir * (eye === 'wide' ? .7 : 1), 15 * ir * (eye === 'wide' ? .7 : 1), 0, 0, 7); g.fill();
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(x + ix - 6 * ir, y - 5, 6 * ir, 0, 7); g.fill(); g.restore();
-      g.strokeStyle = ink; g.lineWidth = eye === 'wide' ? 4 : 5; g.beginPath(); g.ellipse(x, y, 27, 34, 0, eye === 'wide' ? 0 : Math.PI * 1.05, eye === 'wide' ? 7 : Math.PI * 1.95); g.stroke();
-      if (eye === 'half') { g.lineWidth = 7; g.beginPath(); g.moveTo(x - 26, y - 1); g.lineTo(x + 26, y - 1); g.stroke(); } // the lid, half-way down
-      g.restore();
+    if (eye === 'wide' || eye === 'side' || eye === 'half' || eye === 'glare') { newEye(g, x, y, s, eye, o, iris, WH, ink);
     } else if (eye === 'none') { /* goggles down: the cups hide the eyes */ }
     else if (eye === 'normal' && o.eyes === 'bead') { // small shiny bead eyes
       g.fillStyle = '#1e1418'; g.beginPath(); g.ellipse(x, y + 4, 13, 17, 0, 0, 7); g.fill();
@@ -165,8 +186,8 @@ export function faceTex(o, f) {
   if (lips === 'o') { g.beginPath(); g.ellipse(192, 204, 10, 12, 0, 0, 7); g.fill(); }
   if (lips === 'wide') { g.beginPath(); g.moveTo(140, 184); g.quadraticCurveTo(192, 200, 244, 184); g.quadraticCurveTo(238, 244, 192, 246); g.quadraticCurveTo(146, 244, 140, 184); g.fill(); g.fillStyle = '#e8737f'; g.beginPath(); g.ellipse(192, 234, 22, 9, 0, 0, 7); g.fill(); }
   if (lips === 'line') { g.beginPath(); g.moveTo(166, 206); g.lineTo(218, 206); g.stroke(); }
-  if (lips === 'pout') { g.beginPath(); g.arc(192, 226, 17, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
-  if (lips === 'wobble') { g.beginPath(); g.moveTo(156, 214); for (let i = 0; i < 4; i++) g.quadraticCurveTo(156 + i * 20 + 10, i % 2 ? 226 : 202, 156 + i * 20 + 20, 214); g.stroke(); }
+  if (lips === 'pout') { g.fillStyle = '#e8737f'; g.lineWidth = 4; g.beginPath(); g.ellipse(192, 214, 14, 9, 0, 0, 7); g.fill(); g.stroke(); g.lineWidth = 6; g.beginPath(); g.moveTo(176, 204); g.quadraticCurveTo(192, 198, 208, 204); g.stroke(); } // lips pushed forward: a small round bump under a short bar
+  if (lips === 'wobble') { g.beginPath(); g.moveTo(146, 218); for (let i = 0; i < 5; i++) g.quadraticCurveTo(146 + i * 20 + 10, i % 2 ? 246 : 192, 146 + i * 20 + 20, 218); g.stroke(); } // a wavy line, wider and deeper than a smile
   if (lips === 'grit') { g.fillStyle = '#fff'; g.lineWidth = 5; g.beginPath(); g.roundRect(152, 192, 80, 32, 9); g.fill(); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(152, 208); g.lineTo(232, 208); for (const dx of [-26, -9, 9, 26]) { g.moveTo(192 + dx, 192); g.lineTo(192 + dx, 224); } g.stroke(); }
   if (extra === 'sweat') { g.fillStyle = '#bfe6f6'; g.strokeStyle = '#4fa3c9'; g.lineWidth = 4; g.beginPath(); g.moveTo(306, 34); g.quadraticCurveTo(326, 66, 306, 76); g.quadraticCurveTo(284, 66, 306, 34); g.fill(); g.stroke(); }
   if (extra === 'tear') { g.fillStyle = '#bfe6f6'; g.strokeStyle = '#4fa3c9'; g.lineWidth = 3; g.beginPath(); g.moveTo(124, 156); g.quadraticCurveTo(138, 178, 124, 186); g.quadraticCurveTo(110, 178, 124, 156); g.fill(); g.stroke(); }
@@ -960,7 +981,7 @@ export const FACE = {
   shock: { eyes: 'wide', brows: 'up', mouth: 'o', extra: 'sweat' },
   worry: { eyes: 'half', brows: 'out', mouth: 'wobble', extra: 'sweat' },
   lie: { eyes: 'side', brows: 0, mouth: 'line', extra: 'redEar' },
-  mad: { eyes: 'squint', brows: 'in', mouth: 'grit', extra: null },
+  mad: { eyes: 'glare', brows: 'in', mouth: 'grit', extra: null },
   pout: { eyes: 'half', brows: 'in', mouth: 'pout', extra: null },
   sly: { eyes: 'side', brows: 'one', mouth: 'smile', extra: null },
   wet: { eyes: '><', brows: 'out', mouth: 'open', extra: null },
@@ -968,7 +989,7 @@ export const FACE = {
 // per character id: base = the face shown wherever the loop would show `ok` · hideEyesWhen: 'goggles' = no eyes part while ch.goggles.up === false.
 // (Saya Gyi's no-happy-eyes is his own opts.smileEyes: false, which also keeps him off `joy`'s happy eyes.)
 export const FACE_OV = { utinmaung: { base: 'joy' }, thura: { hideEyesWhen: 'goggles' } };
-export const FACE_PARTS = { eyes: ['normal', 'blink', 'happy', 'squint', '><', 'wide', 'side', 'half', 'none'], brows: [0, 'up', 'in', 'out', 'one'],
+export const FACE_PARTS = { eyes: ['normal', 'blink', 'happy', 'squint', '><', 'wide', 'side', 'half', 'glare', 'none'], brows: [0, 'up', 'in', 'out', 'one'],
   mouth: ['smile', 'open', 'o', 'wide', 'line', 'pout', 'wobble', 'grit'], extra: [null, 'sweat', 'tear', 'lines', 'redEar'] };
 export function setFaces(json) { // faces.json → the table (replaced in place, so importers keep their reference)
   if (json.faces) { for (const k of Object.keys(FACE)) delete FACE[k]; Object.assign(FACE, json.faces); }

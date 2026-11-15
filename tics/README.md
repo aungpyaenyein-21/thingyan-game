@@ -19,7 +19,7 @@ Left: characters + tic list · right: sliders, key, props, save · bottom: trans
 - A channel is a track made of the keys that name it. `"pose": {}` = **base anchor** (every channel is the base loop's value there). `"pose": {}` with `"hold": true` = every channel stays as it was. A key with **no `pose` at all** only changes the face.
 - Before a channel's first key and after its last, it is the base loop's value (a tic starts and ends on the base unless a key says otherwise). The migrated `bow / note / lob` name every channel at t = 0 so they match the code tics exactly.
 - `ease` belongs to the segment that **ends** on the key. `hold: true` keeps the earlier value until that key's time.
-- `face`: a FACE name (`ok joy shock worry lie mad pout sly wet cry`) or `{ "eyes", "mouth", … }` parts. A named face blink-cuts in and out; parts behave like the loop's own expression.
+- `face`: a FACE name (`ok joy shock worry lie mad pout sly wet cry`; eyes parts `wide side half glare`, `><` and the legacy `squint`) or `{ "eyes", "mouth", … }` parts. A named face blink-cuts in and out; parts behave like the loop's own expression.
 - `props`: `{ id, at, to: handR|handL|chest|head|back|home, pos, rot }` · `show`: `{ id, at, visible }` · `emit`: `{ at, type, from }` (`anim.emit(type, pivot)`). When the tic ends or is cut short, every prop it moved and every visibility it changed goes back by itself.
 - A scribble (`note`) is just many linear keys; 8 per period is enough.
 

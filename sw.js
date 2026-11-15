@@ -7,6 +7,7 @@ const THREE = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 const CORE = [
   'yangon.html', 'pwa.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg',
   'world.js', 'chibi.js', 'critters.js', 'sound.js', 'palette.js', 'camera.js', 'sky.js', // T2: the orbit camera, the sky, the palette
+  'faces.json', 'tics/index.json', 'tics/bow.json', 'tics/note.json', 'tics/lob.json', // T6.5: the face table + the JSON tics cast.js loads at start
   'cast.js', 'carry.js', 'bike.js', 'rules.js', // T5: the named cast, carrying (the bowl), Phoe Kyaw's bike, the water-fight rules
   'art/home.glb', 'art/teashop.glb', 'art/stalls.glb', // T2 hero buildings (the town shows code-built stand-ins until these load)
   'fonts/fonts.css', 'fonts/NotoSansMyanmar-myanmar.woff2', 'fonts/NotoSansMyanmar-latin.woff2', 'fonts/NotoSansMyanmar-latin-ext.woff2',
