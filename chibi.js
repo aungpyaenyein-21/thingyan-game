@@ -60,8 +60,8 @@ export const BUILDS = {
 
 // T18: tucked shirt (longyi / htamein over short-hem tops). The band is a cuff of the skirt lathe wrapped over the shirt's lower part.
 const TUCKED_TOPS = ['tank', 'tee', 'stripe', 'shirt', 'long'];
-const HEM_FOLLOW = [.1, .26]; // spine-local y: the shirt follows the hips at/below the first, the spine at/above the second
-const BAND_TOP = .17, TUCK_SLACK = .026, TUCK_DEPTH = .04; // band top (hips y) · band radius = chest radius + this · how far inside the band the hem tapers
+const HEM_FOLLOW = [.14, .3]; // spine-local y: the shirt follows the hips at/below the first, the spine at/above the second
+const BAND_TOP = 0, RIM_GAP = .005, BAND_H = .05; // T18 review: the band top sits at the navel (hips y; the old untucked hem was at -.035) · the rim is this far outside the shirt · the cuff is this tall
 
 // ---------- palette ----------
 export const SKINS = ['#efc29c', '#d9a07a', '#b97d58'];
@@ -308,33 +308,39 @@ export function makeChibi(opts = {}) {
   // T18: the shirt is tucked into a longyi / htamein (the waist band wraps it) unless the top is a long traditional / outer one; o.tuck overrides
   const rc = Math.max(...B.torso.filter(([, y]) => y > .08).map(([r]) => r));
   const tuck = o.tuck ?? (longSkirt && TUCKED_TOPS.includes(o.topStyle));
-  const rb = rc + TUCK_SLACK;                                  // waist band radius
+  const rb = B.hip * 1.05 + .014;                              // waist band radius: snug over the hips (the hip ball is 1.05 x the build's hip radius)
   const skirtTop = tuck ? BAND_TOP : .1;
   if (skirt) {
     const men = o.bottom === 'longyi';
-    const sp = tuck ? [[rb, BAND_TOP], [rb, .1], ...skirtProf.slice(1)] : skirtProf; // the band: a straight cuff over the shirt, then the old profile
-    const pts = sp.map(([r, y = skirtHem]) => new THREE.Vector2(r, y)), prof = []; // each segment in two (T18: the seated tube bends at the knee, so it needs rings there; the standing shape is the same)
-    pts.forEach((v, i) => { prof.push(v); if (i < pts.length - 1) prof.push(v.clone().lerp(pts[i + 1], .5)); });
+    const sp = tuck ? [[rb, BAND_TOP], [rb, BAND_TOP - BAND_H], ...skirtProf.filter(([, y]) => y === undefined || y < BAND_TOP - BAND_H - .005).map(([r, y]) => [Math.min(r, rb + .015), y])] : skirtProf; // the band: a snug cuff at the navel, then the old profile from the hips down
+    const pts = sp.map(([r, y = skirtHem]) => new THREE.Vector2(r, y)), prof = []; // long segments in 2 to 3 (T18: the seated tube bends at the knee, so it needs rings there; the standing shape is the same)
+    pts.forEach((v, i) => { prof.push(v); if (i < pts.length - 1) { const k = Math.max(1, Math.ceil(v.distanceTo(pts[i + 1]) / .055)); for (let j = 1; j < k; j++) prof.push(v.clone().lerp(pts[i + 1], j / k)); } });
     const geo = new THREE.LatheGeometry(prof, 20); geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const tex = longSkirt ? stripes(o.bottomColor[0], o.bottomColor[1], men, men ? null : '#f2c14e') : stripes(o.bottomColor[0], o.bottomColor[0], false, lighten(o.bottomColor[0], .4)); tex.repeat.set(5, 1);
     const sm = wear(null, tex); sm.side = THREE.DoubleSide; skirtMesh = part(geo, sm, hips);
     skirtBase = Float32Array.from(geo.attributes.position.array);
-    const n = geo.attributes.position.count, sk = { u: new Float32Array(n), sx: new Float32Array(n), sz: new Float32Array(n), h: new Float32Array(n), wl: new Float32Array(n), fr: new Float32Array(n), key: new Float32Array(6).fill(9), done: false, r0: sp[0][0], top: skirtTop };
+    const n = geo.attributes.position.count, sk = { u: new Float32Array(n), sx: new Float32Array(n), sz: new Float32Array(n), h: new Float32Array(n), wl: new Float32Array(n), fr: new Float32Array(n), key: new Float32Array(6).fill(9), done: false, r0: sp[0][0], top: skirtTop, topSeat: Math.max(skirtTop, .09), r0s: sp[0][0] };
+    const hTop = tuck ? BAND_TOP - BAND_H - .01 : .1; // the standing swing leaves the band alone (the rim stays snug on the shirt)
+    const uv = geo.attributes.uv;
     for (let i = 0; i < n; i++) { // per vertex, once: arc fraction down the cloth + the ring fractions the seated tube keeps
       const x = skirtBase[i * 3], y = skirtBase[i * 3 + 1], z = skirtBase[i * 3 + 2], r = Math.hypot(x, z) || 1;
-      sk.u[i] = clamp01((skirtTop - y) / (skirtTop - skirtHem)); sk.sx[i] = x / r; sk.sz[i] = z / r;
-      sk.h[i] = clamp01((.1 - y) / (.1 - skirtHem)) ** 1.6; sk.wl[i] = clamp01(.5 + x * 4.5); sk.fr[i] = clamp01(z * 5); // the standing deform's per-vertex weights
+      sk.u[i] = clamp01((skirtTop - y) / (skirtTop - skirtHem)); sk.sx[i] = x / r; sk.sz[i] = z / r; uv.setY(i, sk.u[i]); /* the hem border sits at the hem whatever the seated tube does with the rings */
+      sk.h[i] = clamp01((hTop - y) / (hTop - skirtHem)) ** 1.6; sk.wl[i] = clamp01(.5 + x * 4.5); sk.fr[i] = clamp01(z * 5); // the standing deform's per-vertex weights
+    }
+    if (tuck) { // seated, the rim rides up over the lap (the thighs' tops are above the navel), still snug on the shirt there: the shirt is a cone from the band to the chest row, flattened front to back at the chest
+      const yB0 = BAND_TOP - .065, rw0 = rb - RIM_GAP - .003, f = clamp01((sk.topSeat - .06 - yB0) / (.14 - yB0)), zTop0 = o.age === 'kid' ? .98 : .82;
+      sk.r0s = rw0 + (rc - rw0) * f + RIM_GAP; sk.zs = (rw0 + (rc * zTop0 - rw0) * f + RIM_GAP) / sk.r0s;
     }
     skirtSeat = sk;
-    if (men) part(new THREE.SphereGeometry(.05, 12, 8), cloth(o.bottomColor[0]), hips, 0, tuck ? BAND_TOP - .05 : .06, (tuck ? rb : B.longyi[1][0]) - .005); // ပုဆိုးခါးပုံစ (front knot)
+    if (men) part(new THREE.SphereGeometry(.05, 12, 8), cloth(o.bottomColor[0]), hips, 0, tuck ? BAND_TOP - .02 : .06, (tuck ? rb : B.longyi[1][0]) - .005); // ပုဆိုးခါးပုံစ (front knot, on the band at the navel)
   }
 
   const spine = pivot(hips, 0, .06);
   // top: straight drape from the chest (no painted-on waist) to a hem that hangs over whatever is underneath
   // (tucked: the hem tapers inside the longyi band.) Both have 5 rows below the chest, so the print's UVs do not move.
   const under = skirt ? Math.max(skirtProf[1][0], skirtProf[2][0]) : shortsLike ? .185 : .17;
-  const hemR = Math.max(rc + .015, under + .028), rIn = Math.min(rb - TUCK_DEPTH, skirtProf[1][0] - .032);
-  const torsoProf = (tuck ? [[.001, -.05], [rIn, -.05], [rIn + .004, -.01], [rc * .99, .07], [rc, .14]] : [[.001, -.095], [hemR, -.095], [hemR - .006, -.06], [Math.max(rc * .99, skirt ? skirtProf[0][0] + .044 : under * .93), .06], [rc, .14]])
+  const hemR = Math.max(rc + .015, under + .028), rIn = rb - .03, rw = rb - RIM_GAP - .003, yB = BAND_TOP - .06; // yB: the band top in spine space
+  const torsoProf = (tuck ? [[.001, yB - .04], [rIn, yB - .04], [rw, yB - .005], [rw + (rc - rw) * (.06 - yB + .005) / (.14 - yB + .005), .06], [rc, .14]] : [[.001, -.095], [hemR, -.095], [hemR - .006, -.06], [Math.max(rc * .99, skirt ? skirtProf[0][0] + .044 : under * .93), .06], [rc, .14]])
     .concat(B.torso.filter(([, y]) => y >= .2)).map(([r, y]) => new THREE.Vector2(r, y));
   const tg = new THREE.LatheGeometry(torsoProf, 32), tp = tg.attributes.position, zTop = o.age === 'kid' ? .98 : .82; // kids: round tummy
   for (let i = 0; i < tp.count; i++) tp.setZ(i, tp.getZ(i) * THREE.MathUtils.lerp(zTop, 1, THREE.MathUtils.smoothstep(-tp.getY(i), -.1, .02))); // flattened chest, round hem (T18: the flattening eases out lower, so the hip-level cloth stays inside)
@@ -471,7 +477,7 @@ export function makeChibi(opts = {}) {
 
   skin(body, new Set([face, torso, skirtMesh, gun, cane].filter(Boolean)), new Set(), wetMats); // the torso's outline stays its own child: the hem moves (T18)
 
-  return { root, body, hips, spine, neck, head, legs, arms, tail, sockets, skirtMesh, skirtBase, skirtSeat, lapR: skirt ? .105 : pants ? .095 : .105, lapMax: skirt ? skirtTop - .012 : .12, hipW: tuck ? Math.hypot(rb, .13) + .012 : Math.max(B.hip * 1.05, .16) + .02, torso, torsoBase, torsoW, torsoIdx: Uint16Array.from(torsoIdx), tuck, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
+  return { root, body, hips, spine, neck, head, legs, arms, tail, sockets, skirtMesh, skirtBase, skirtSeat, lapR: skirt ? .105 : pants ? .095 : .105, lapMax: skirt ? skirtTop - .012 : .12, hipW: Math.max(B.hip * 1.05, .16) + .02, torso, torsoBase, torsoW, torsoIdx: Uint16Array.from(torsoIdx), tuck, face, faceKey: '', bucket: bucketG, gun, cane, tools, tool: o.tool ?? tools[0], hang: null, blob, scale, hunch, gait, legK, hipH, skirtHem, longSkirt, opts: o,
     wet: 0, wetShown: false, wetMats, hairVol: vol, drips, bubble: null };
 }
 
@@ -598,8 +604,9 @@ function seatNodes(c, p) {
   };
   node(1, 0, 0, d1y - 1, d1z, HIP_X, SEAT_R[0]);                                     // the hip root: tilted halfway between the waist's down and the thigh
   _sn[11] = Math.max(_sn[11], c.hipW); _sn[12] = Math.max(_sn[12], c.hipW); _sn[13] = Math.max(_sn[13], c.hipW);
-  node(0, sk.top, 0, -1, 0, 0, 0);                                                    // the waist: the lathe's own top ring
-  _sn[4] = _sn[5] = _sn[6] = sk.r0;
+  node(0, sk.topSeat, 0, -1, 0, 0, 0);                                                // the waist: the lathe's top ring (lifted over the lap when tucked)
+  _sn[4] = sk.r0s; _sn[5] = _sn[6] = sk.r0s * (sk.zs ?? 1);
+  if (sk.zs) _sn[13] = Math.max(_sn[13], (sk.r0s + .012) / .72);                  // tucked: the back of the first ring holds the shirt's seat
   const cos = Math.max(.5, ((d1y + d3y) * d1y + (d1z + d3z) * d1z) / (Math.hypot(d1y + d3y, d1z + d3z) || 1));
   if (long) {
     node(2, ky, kz, d1y + d3y, d1z + d3z, HIP_X + sz * up, SEAT_R[0], 1 / cos);      // the knee (mitre)
@@ -610,7 +617,7 @@ function seatNodes(c, p) {
   }
   if (long) _sn[27] = Math.max(_sn[27], hz - (az - SEAT_R[1] - SEAT_M));                        // behind: far enough to hold a folded shin
   if (long) _sn[20] = Math.max(_sn[20], (_sn[20] + _sn[27]) * .6);
-  const l01 = sk.top, l12 = up, l23 = long ? Math.abs(ky - hy) + .02 : .08, tot = l01 + l12 + l23;
+  const l01 = Math.max(sk.topSeat, .03), l12 = up, l23 = long ? Math.abs(ky - hy) + .02 : .08, tot = l01 + l12 + l23;
   _su[0] = 0; _su[1] = l01 / tot; _su[2] = (l01 + l12) / tot; _su[3] = 1;
 }
 function sitPose(p, T) {

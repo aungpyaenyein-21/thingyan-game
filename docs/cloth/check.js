@@ -6,7 +6,7 @@ const { makeChibi, ChibiAnimator, LOOPS, ONESHOT, BUILDS, SKINS, HAIRS } = M;
 await ticsReady;
 
 const COL = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#3f5a8a', '#3f5a8a'], shorts: ['#5b7fa8', '#f6ead2'], skirt: ['#e9a0b4', '#e9a0b4'], overalls: ['#4a6a9a', '#4a6a9a'] };
-const MARGIN = { leg: .012, top: .005, tuck: .01 };               // hips-local units (a unit is ~ .75 m): ~1 cm / ~4 mm / ~8 mm
+const MARGIN = { leg: .012, top: .005, tuck: .002, rim: 0, rimIn: 0, vis: 0, hem: 0, hemlow: 0 };               // hips-local units (a unit is ~ .75 m): ~1 cm / ~4 mm / ~8 mm
 const rc = new THREE.Raycaster(), V = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], mat = new THREE.Matrix4();
 const q = new THREE.Quaternion(), e = new THREE.Euler();
 
@@ -65,9 +65,9 @@ function check(ch, rec) {
           const o2 = r > .06 ? [kp, fp, .058] : [hp, kp, .066]; if (segDist(P, o2[0], o2[1]) < o2[2] * sc + .002) continue; /* inside the other bone: the joint, not the surface */
           const res = beyond(skirtMesh, A, P, MARGIN.leg, sc);
           if (res.miss) { /* a ray that leaves through the open waist (under the shirt) is fine */
-            const a = hips.worldToLocal(A.clone()), d = hips.worldToLocal(P.clone()).sub(a), top = ch.skirtSeat.top;
+            const a = hips.worldToLocal(A.clone()), d = hips.worldToLocal(P.clone()).sub(a), top = ch.skirtSeat.topSeat;
             if (d.y < -1e-4) continue; /* a ray that leaves down the open hem: the leg comes out of the cloth there, as it should */
-            if (d.y > 1e-4) { const t = (top - a.y) / d.y, x = a.x + d.x * t, z = a.z + d.z * t; if (Math.hypot(x, z) < ch.skirtSeat.r0 + .005) continue; }
+            if (d.y > 1e-4) { const t = (top - a.y) / d.y, x = a.x + d.x * t, z = a.z + d.z * t; if (Math.hypot(x, z) < ch.skirtSeat.r0s + .005) continue; }
             
           }
           rec('leg', res.slack, `${r > .06 ? 'thigh' : 'shin'}@s${s} k${k} ay${ay.toFixed(3)}` + (res.miss ? ' MISS a=' + hips.worldToLocal(A.clone()).toArray().map(v => v.toFixed(3)) + ' d=' + hips.worldToLocal(P.clone()).sub(hips.worldToLocal(A.clone())).normalize().toArray().map(v => v.toFixed(2)) : ''));
@@ -90,10 +90,31 @@ function check(ch, rec) {
       rec('top', r.slack, 'untucked@' + h.toArray().map(v => v.toFixed(3)) + (r.miss ? ' MISS' : '')); }
   } else { // tucked: the shirt's lower rows inside the band
     const tp = torso.geometry.attributes.position;
-    for (let i = 0; i < tp.count; i++) { if (base[i * 3 + 1] > .075 || base[i * 3 + 1] < hemY - 1e-4 && false) continue;
+    for (let i = 0; i < tp.count; i++) { if (base[i * 3 + 1] > ch.skirtSeat.top - .06 - .004) continue; /* the rows tucked below the rim */
       const v = new THREE.Vector3().fromBufferAttribute(tp, i).applyMatrix4(torso.matrixWorld), h = inHips(v); if (Math.hypot(h.x, h.z) < .01) continue;
       A.copy(hips.localToWorld(new THREE.Vector3(0, h.y, 0))); const r = beyond(skirtMesh, A, v, MARGIN.tuck, sc); rec('tuck', r.slack, 'shirt in band@' + h.toArray().map(x => x.toFixed(3)) + ' by' + base[i * 3 + 1].toFixed(2) + (r.miss ? ' MISS' : '')); }
-    for (const p of samples) { const h = inHips(p); A.copy(hips.localToWorld(new THREE.Vector3(0, h.y, 0))); { const r = beyond(skirtMesh, A, p, .005, sc); rec('tuck', r.slack, 'ball in band@' + h.toArray().map(x => x.toFixed(3)) + (r.miss ? ' MISS' : '')); } }
+    for (const p of samples) { const h = inHips(p); if (h.y > ch.skirtSeat.top - .004) continue; A.copy(hips.localToWorld(new THREE.Vector3(0, h.y, 0))); { const r = beyond(skirtMesh, A, p, .002, sc); rec('tuck', r.slack, 'ball in band@' + h.toArray().map(x => x.toFixed(3)) + (r.miss ? ' MISS' : '')); } }
+  }
+  if (ch.tuck) { // the rim: snug on the shirt all round (<= 1 cm, outside it), and plenty of shirt showing
+    const sk = ch.skirtSeat, pos = skirtMesh.geometry.attributes.position; skirtMesh.updateWorldMatrix(true, false);
+    for (let i = 0; i < pos.count; i += 1) { if (sk.u[i] > 1e-6) continue;
+      const v = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(skirtMesh.matrixWorld), h = inHips(v);
+      A.copy(hips.localToWorld(new THREE.Vector3(0, h.y - .004, 0))); v.copy(hips.localToWorld(new THREE.Vector3(h.x, h.y - .004, h.z)));
+      const d = V[3].copy(v).sub(A); d.x += 2e-4; const len = d.length(); rc.set(A, d.divideScalar(len)); rc.far = 2;
+      const hit = rc.intersectObject(torso, false)[0]; const gap = hit ? (len - hit.distance) / sc : 9;
+      rec('rim', .01 - gap, 'rim gap > 1 cm@' + gap.toFixed(4) + ' ' + h.toArray().map(x => x.toFixed(2))); rec('rimIn', gap - .002, 'rim inside the shirt@' + gap.toFixed(4));
+    }
+    const shoulder = spine.position.y + .225, hemOld = -.035; // hips space
+    rec('vis', (shoulder - sk.top) / (shoulder - hemOld) - .6, 'visible shirt fraction ' + ((shoulder - sk.top) / (shoulder - hemOld)).toFixed(2));
+  }
+  if (skirtMesh && ch.longSkirt && sat >= 1.1) { // seated: the front hem hangs to about 3 cm above the ankle (a folded shin is only kept outside the legs)
+    const L = ch.legs[0], th = L.hip.rotation.x, kn = L.knee.rotation.x;
+    if (Math.abs(th + kn) < .35) {
+      const pos = skirtMesh.geometry.attributes.position, sk = ch.skirtSeat; let n = 0, y = 0;
+      for (let i = 0; i < pos.count; i++) if (sk.u[i] > .999 && sk.sz[i] > .7) { y += pos.getY(i); n++; }
+      const ankle = inHips(L.foot.getWorldPosition(new THREE.Vector3())).y, above = y / n - ankle;
+      rec('hem', .05 - above, 'front hem ' + above.toFixed(3) + ' above the ankle'); rec('hemlow', above - .0, 'hem below the ankle ' + above.toFixed(3));
+    }
   }
 }
 
