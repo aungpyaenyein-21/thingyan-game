@@ -35,3 +35,26 @@ Screenshots in `docs/day1b/`: pro, 1-1 ×3, 1-2 ×4, wip, phone 375×667.
 5. wip card: hud/`yangon.html` `#end` has one button (`#eagain`). I will add a second button in yangon.html + main.js; confirm that is allowed (hud.js untouched).
 6. `1-2` kid cues: Nga Zwe's "arrival from the lane" start point (west lane head, `GATHER` side) and the walk-off direction for Cho Cho (spec: "down the lane") — I assume the west/lane axis used by the old `bike`/`maythu` cues.
 7. Mum's `hips` and Nga Zwe's `scratch` exist in `GESTURES` (cast.js line ~178). Mum `mom0` has no `act` — gestures go through `anim.play`; confirm the director's gesture path is what is wanted rather than `act`.
+
+## Decisions from the plan review (binding)
+`{son}` on lines 1 and 5 only · a pose-only `polish` one-shot in cast.js (played twice) · `hold` = clusters / 28 + max(1.6, clusters × .06), cap 8 s · hero = bucket only (`S.ball` stays false, R does nothing) · a second wip button · arrivals from the west along the home lane, stopping in a loose arc 2–2.5 m in front of the hero · gestures through the line's `act` · the bowl sits on a carry target (`bench`, `bowl.at = bench`, no E label yet) · no 「ရက် ၂」 card.
+
+## Results (T5b-1)
+`node docs/day1b/check.cjs` (python3 -m http.server 8797, `?debug&dt=0.2`): **ALL PASS, console errors 0**.
+- 31 lines shown, verbatim and with the right speaker, in order (SCENARIO.md parsed at run time); `?girl` → lines 1 and 5 say 「သမီး」 / 「သမီးတို့」, the other seven lines unchanged.
+- Game time at reading pace: Prologue 11.2 s (tap skips it: 1-1 at 1.6 s) · Scene A 28.0 s (budget 60) · Scene B 86.6 s (budget 100; it includes the three arrivals, Phoe Kyaw's bike run and Cho Cho leading off).
+- Arrivals: Nga Zwe at 42.9 → May Thu + Cho Cho together at 54.1 → Phoe Kyaw at 75.8 (game s); each hidden until its cue (checked at lines 10, 13, 15, 19).
+- Kit: no pump or jerry can mesh on anyone; hero `tools ['bucket']`; Nga Zwe empty; May Thu balloon bag; Cho Cho the small gun; Phoe Kyaw bucket in hand + two on the bike's rack. Gestures really play (mom `hips`, hero `nod`, Nga Zwe `scratch`, Cho Cho `point`); arrival shows (`lob`, `squirt`, `splash` + `ring`) play, Nga Zwe shows nothing.
+- Bowl: on the bench (world position within 5 cm of the bench socket, `bowl.at === bench`) at pro and at all 31 lines and at wip, also after a reload; Bwa Bwa is inside the house during 1-1.
+- `?day=1&step=1-2` plays 10–31 then wip; a reload mid-1-2 restarts Scene B; a reload at wip shows the card again; `?day=1&step=1-3` is ignored (the save stays at `pro`). cast.html, war.html, camlab.html, carry-lab.html load with console 0.
+- Screenshots in `docs/day1b/`: `pro`, `1-1-mum`, `1-1-hero`, `1-1-bwabwa`, `1-2-ngazwe`, `1-2-maythu-chocho`, `1-2-phoekyaw`, `1-2-gang` (the check swings the camera wide for this one so bench + bowl + the arc of kids show), `wip`, `phone-wip-375`, `phone-1-2-375`.
+- Version strings: cast.js 14 (main, cast.html, camlab.js, carry-lab.html, war.js; camlab.html 6, war.html 17) · set.js 23 (main, day, life, downtown, docs/talk/check.cjs) · save.js 10 · story.js 4 · day.js 5 · life.js 21 · downtown.js 19 · main.js 33 · boot.js 34 · sw.js y22. chibi / world / camera / talk / hud untouched.
+
+### Honest notes
+- **wip gang position differs from the spec.** After Cho Cho leads off, the gang ends west on the home lane (`WIP` spots, 6–8 m from the door, bike parked at the lane corner) and the wip card appears there; a reload at wip puts them on the same spots, not at the house front. Walking them off and then back looked worse than waiting where they walked to. One-line change if you want them at the front (`WIP` in main.js).
+- Mum stays outside at her T5 spot (`MUM_DAY`, just east of the bench) during Scene B. Silent.
+- Squirt/lob/splash shows are anims plus a short jet (Cho Cho) and one balloon lobbed into the empty lot (May Thu); Phoe Kyaw's bucket splash is the animation only (no water fx).
+- Faces use T5's emote bubbles (`sly` `worry` `pout` `shock`; `ok` has no bubble — line 9 is `pout` + the `nod` gesture); real faces wait for T6.5.
+- The pro frame is not director-driven (focus on the bench, the title moved up so the bowl stays visible). Bwa Bwa stands at the bench's left end turned in, because from the lane she hid the bowl when she stood in front.
+- The T5 check scripts `docs/day1/check.cjs` and `docs/talk/check.cjs` still describe T5's day-1 flow (1-1 → 1-8 / `step=1-3`) and are stale until T5b-2; the one edit I made there is the `set.js?v=` string in the talk check.
+- Not touched: TASKS.md, SCENARIO.md; T5's scenes 1-3 … 1-8, their cues, spots and stage branches are still in main.js, unreachable.
