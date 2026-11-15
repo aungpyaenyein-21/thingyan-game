@@ -41,13 +41,16 @@ function expected(girl) {
   const hook = (p, shots = {}) => p.evaluate(shots => {
     const z = zone, W = z.W, P = z.people; window.__lines = []; window.__q = []; window.__plays = []; window.__scene = {}; window.__shots = shots; window.__first = {};
     for (const [id, c] of Object.entries(P)) { const o = c.anim.play.bind(c.anim); c.anim.play = (n, ...a) => { window.__plays.push([id, n, +W.time().toFixed(2)]); return o(n, ...a); }; }
+    window.__fx = []; { const f0 = W.onFx; W.onFx = (n, p) => { window.__fx.push([n, +W.time().toFixed(2)]); return f0?.(n, p); }; }
+    const hudHidden = () => ['where', 'turn', 'opt', 'opts', 'tool'].every(id => getComputedStyle(document.getElementById(id)).display === 'none');
     const vis = () => Object.fromEntries(['ngazwe', 'maythu', 'chocho', 'phoekyaw'].map(k => [k, P[k].g.visible]));
     z.hud.onLine((name, text, o) => {
       if (o?.closed) return;
       const n = window.__lines.length + 1, c = o?.who && P[o.who];
-      const snap = { n, t: W.time(), name, text, who: o?.who ?? null, step: z.S().step, vis: vis(), inside: z.inside(), bwabwaX: P.bwabwa.g.position.x, bowl: null };
+      const snap = { n, t: W.time(), name, text, who: o?.who ?? null, step: z.S().step, vis: vis(), inside: z.inside(), bwabwaX: P.bwabwa.g.position.x, momX: P.mom.g.position.x, momVis: P.mom.g.visible, hudHidden: hudHidden(), heroTool: P.hero.ch.tool, bowl: null,
+        dist: Object.fromEntries(['ngazwe', 'maythu', 'chocho', 'phoekyaw'].map(k => [k, P[k].g.visible ? +P[k].g.position.distanceTo(P.hero.g.position).toFixed(2) : null])), face: Object.fromEntries(['ngazwe', 'maythu', 'chocho', 'phoekyaw'].map(k => { const d = P.hero.g.position.clone().sub(P[k].g.position), want = Math.atan2(d.x, d.z); let a = Math.abs(((P[k].g.rotation.y - want) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); return [k, +(a * 180 / Math.PI).toFixed(0)]; })) };
       const bw = z.bowl; if (bw) { const w = bw.g.getWorldPosition(new W.THREE.Vector3()), bt = z.bench.socket.getWorldPosition(new W.THREE.Vector3()); snap.bowl = { visible: bw.g.visible, at: bw.at === z.bench, state: bw.state, d: +w.distanceTo(bt).toFixed(3) }; }
-      if (n === 31) { z.W.orbit?.focus(new W.THREE.Vector3(3.9, 1.0, -3.2), { dist: 11, elev: .5, az: 0.5, t: .01 }); } /* the whole gang + the bench, from the lane */
+      if (n === 31) { z.W.orbit?.focus(new W.THREE.Vector3(3.9, 1.0, -3.2), { dist: 10, elev: 1.0, az: 0.3, t: .01 }); } /* the whole gang + the bench, from the lane */
       window.__lines.push(snap); window.__cur = { ...snap, shot: window.__shots[n] ?? null, done: false };
     });
     W.tick(() => {
@@ -85,6 +88,7 @@ function expected(girl) {
       return { step: z.S().step, bowlVisible: bw.g.visible, onBench: bw.at === z.bench, d: wp.distanceTo(bt), bwDist: P.bwabwa.g.position.distanceTo(bt), bwVisible: P.bwabwa.g.visible, inside: z.inside(), titleShown: !document.getElementById('title').classList.contains('gone'), titleText: document.getElementById('title').textContent }; });
     ok(pro.step === 'pro' && pro.bowlVisible && pro.onBench && pro.d < .05, `pro: the bowl sits on the bench (carry target, d ${pro.d.toFixed(3)})`);
     ok(pro.bwVisible && pro.bwDist < 1.5 && !pro.inside, `pro: Bwa Bwa at the bench (${pro.bwDist.toFixed(2)} m), outdoors`);
+    ok(await p.evaluate(() => ['where', 'turn', 'opt', 'opts', 'tool'].every(id => getComputedStyle(document.getElementById(id)).display === 'none')), 'pro: the HUD is hidden');
     ok(pro.titleShown && pro.titleText.includes('သင်္ကြန်ပွဲ'), 'pro: the title 「သင်္ကြန်ပွဲ」 is up');
     await p.waitForFunction(() => zone.W.time() > 1.5, null, { timeout: 600000 });
     await p.evaluate(() => { zone.W.paused = true; }); await shot(p, 'pro'); await p.evaluate(() => { zone.W.paused = false; }); log('   shot pro');
@@ -95,7 +99,7 @@ function expected(girl) {
     ok((await p.evaluate(() => window.__plays.filter(x => x[0] === 'bwabwa' && x[1] === 'polish').length)) === 2, 'pro: Bwa Bwa polishes twice');
     // 1-1 → 1-2 → wip
     const end = await drive(p, s => s.step === 'wip' && !s.playing);
-    const R = await p.evaluate(() => ({ lines: window.__lines, scene: window.__scene, first: window.__first, plays: window.__plays, step: zone.S().step }));
+    const R = await p.evaluate(() => ({ fx: window.__fx, lines: window.__lines, scene: window.__scene, first: window.__first, plays: window.__plays, step: zone.S().step }));
     linesCheck(R.lines, expected(false), 'boy');
     const L = R.lines;
     ok(L[0].text.includes('သား') && !L[0].text.includes('သမီး') && L[4].text.includes('သားတို့'), 'boy: lines 1 and 5 say 「သား」');
@@ -106,6 +110,19 @@ function expected(girl) {
     ok(v(15).maythu && v(15).chocho && !v(15).phoekyaw, 'line 15–18: May Thu + Cho Cho have arrived together, Phoe Kyaw not yet');
     ok(v(19).phoekyaw && v(19).maythu && v(19).chocho && v(19).ngazwe, 'line 19: Phoe Kyaw last, all four there');
     ok(R.first.ngazwe < R.first.maythu && Math.abs(R.first.maythu - R.first.chocho) < 1 && R.first.chocho < R.first.phoekyaw, `arrival order Nga Zwe ${R.first.ngazwe} → May Thu ${R.first.maythu} + Cho Cho ${R.first.chocho} → Phoe Kyaw ${R.first.phoekyaw}`);
+    // the speaker is close, the arc is a half-ring, Mum is indoors, the HUD is away, the bucket stays outside
+    for (const [n, k] of [[10, 'ngazwe'], [14, 'ngazwe'], [19, 'phoekyaw']]) ok(L[n - 1].dist[k] !== null && L[n - 1].dist[k] <= 3, `line ${n}: ${k} speaks from ${L[n - 1].dist[k]} m (≤ 3)`);
+    const d25 = L[24].dist, f25 = L[24].face;
+    ok(Object.values(d25).every(d => d >= 1.8 && d <= 2.5), 'line 25: all four stand 1.8–2.5 m from the hero ' + JSON.stringify(d25));
+    { const fa = [L[9].face.ngazwe, L[13].face.maythu, L[13].face.chocho, L[18].face.phoekyaw]; ok(fa.every(a => a <= 30), 'each arrival stops facing the hero (±30° at the first line after the cue): ' + fa.join(', ') + '° (mid-talk the director turns them to whoever speaks: line 25 ' + JSON.stringify(f25) + ')'); }
+    ok(L.slice(9).every(l => l.momX > 100 || !l.momVis), 'Scene B: Mum is indoors (not at the door)');
+    ok(L.every(l => l.hudHidden), 'minimap, turn buttons, ⚙ menu and tool pad are hidden at all 31 lines');
+    ok(L.slice(0, 9).every(l => l.heroTool === 'none') && L.slice(9).every(l => l.heroTool === 'bucket'), 'the bucket is not in the hero\'s hand indoors (1-1), and is outdoors (1-2)');
+    // water on every arrival
+    { const fx = R.fx, pl2 = R.plays, tL = pl2.find(x => x[0] === 'maythu' && x[1] === 'lob')[2], tP = pl2.find(x => x[0] === 'phoekyaw' && x[1] === 'splash')[2], tC = pl2.find(x => x[0] === 'chocho' && x[1] === 'squirt')[2];
+      ok(fx.some(([n, t]) => n === 'splash' && t > tL + .5 && t < tL + 1.65), `May Thu's balloon flies and pops on the ground (a splash fx ${tL}→)`);
+      ok(fx.some(([n, t]) => n === 'splash' && t >= tP && t < tP + 1.2), `Phoe Kyaw's bucket throws water (a splash fx ${tP}→)`);
+      ok(fx.some(([n, t]) => n === 'squirt' && t >= tC && t < tC + 1.2), `Cho Cho's squirt runs (${tC}→)`); }
     // bowl + Bwa Bwa
     ok(L.every(l => l.bowl.visible && l.bowl.at && l.bowl.state === 'placed' && l.bowl.d < .05), 'the bowl is on the bench at every one of the 31 lines (1-1 and 1-2)');
     ok(L.slice(0, 9).every(l => l.inside === 'home') && L.slice(0, 9).every(l => l.step === '1-1'), '1-1: lines 1–9 are played indoors');
@@ -136,7 +153,11 @@ function expected(girl) {
     ok(card.goal === 'ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်', 'goal line 「ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်」 is up');
     ok((await p.evaluate(() => { const bw = zone.bowl, V = zone.W.THREE.Vector3; return bw.at === zone.bench && bw.g.visible && bw.g.getWorldPosition(new V()).distanceTo(zone.bench.socket.getWorldPosition(new V())) < .05; })), 'wip: the bowl is on the bench');
     await p.evaluate(() => { zone.W.paused = true; }); await shot(p, 'wip'); await p.evaluate(() => { zone.W.paused = false; }); log('   shot wip');
+    const wipPos = await p.evaluate(() => { const P = zone.people; return Object.fromEntries(['ngazwe', 'maythu', 'chocho', 'phoekyaw'].map(k => [k, +P[k].g.position.distanceTo(P.hero.g.position).toFixed(2)])); });
+    ok(Object.values(wipPos).every(d => d >= 1.8 && d <= 2.5), 'wip: the gang stands round the hero at the house front ' + JSON.stringify(wipPos));
     await p.evaluate(() => document.getElementById('ewalk').click());
+    ok(await p.evaluate(() => getComputedStyle(document.getElementById('where')).display !== 'none' && !document.getElementById('tool').querySelector('small')), 'wip free roam: the HUD is back, the tool pad has no 「R · ပြောင်း」 hint');
+    await p.evaluate(() => { zone.W.orbit?.release(); zone.W.snapCam(); }); await p.waitForTimeout(1500); await p.evaluate(() => { zone.W.paused = true; }); await shot(p, 'wip-roam'); await p.evaluate(() => { zone.W.paused = false; }); log('   shot wip-roam');
     ok(await p.evaluate(() => document.getElementById('end').hidden && !zone.hud.busy()), 'wip: 「လမ်းလျှောက်ကြည့်」 closes the card, free roam');
     ok(await p.evaluate(() => Object.values(zone.people).filter(c => ['ngazwe', 'maythu', 'chocho', 'phoekyaw'].includes(c.id)).every(c => c.g.visible)), 'wip: the gang waits');
     await p.context().close();
@@ -176,7 +197,7 @@ function expected(girl) {
     await p.reload(); await p.waitForFunction(() => window.zone, null, { timeout: 180000 });
     await p.waitForFunction(() => zone.S().step === 'wip' && !document.getElementById('end').hidden, null, { timeout: 120000 });
     ok(true, 'a reload at wip shows the card again');
-    ok(await p.evaluate(() => { const V = zone.W.THREE.Vector3, bw = zone.bowl; return bw.at === zone.bench && bw.g.visible && bw.g.getWorldPosition(new V()).distanceTo(zone.bench.socket.getWorldPosition(new V())) < .05 && ['ngazwe', 'maythu', 'chocho', 'phoekyaw'].every(k => zone.people[k].g.visible); }), 'wip after a reload: bowl on the bench, the gang waiting');
+    ok(await p.evaluate(() => { const V = zone.W.THREE.Vector3, bw = zone.bowl; return bw.at === zone.bench && bw.g.visible && bw.g.getWorldPosition(new V()).distanceTo(zone.bench.socket.getWorldPosition(new V())) < .05 && ['ngazwe', 'maythu', 'chocho', 'phoekyaw'].every(k => zone.people[k].g.visible && zone.people[k].g.position.distanceTo(zone.people.hero.g.position) < 3); }), 'wip after a reload: bowl on the bench, the gang waiting');
     await p.context().close();
     // a reload mid-1-2 restarts the scene (at line 10)
     p = await open('new&day=1&step=1-2'); await hook(p); await p.evaluate(() => { zone.fast = true; });

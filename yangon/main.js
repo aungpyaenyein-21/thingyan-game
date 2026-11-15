@@ -32,6 +32,7 @@ const { THREE, scene, mesh, box, cyl, stripeTex, bubbleTex, bean, rnd, pick } = 
 const L = buildSet(W);
 const ROOMS = buildRooms(W); // the tea shop, the tailor's, the barber's off the street; home on the lane
 const hud = createHud(W);
+{ const cin = hud.cinematic; hud.cinematic = on => { cin(on); document.body.classList.toggle('cine', !!on); }; } // T5b: a cinematic (the Prologue, every story line) hides the HUD on every screen, not only phones (yangon.html body.cine)
 const sound = createSound(W); W.onFx = (n, p) => sound.fx(n, p); // ambience + effects, no music yet
 const V = (x, z, y = 0) => new THREE.Vector3(x, y, z), v = new THREE.Vector3(), $ = id => document.getElementById(id);
 const DEBUG = new URLSearchParams(location.search).has('debug');
@@ -208,7 +209,7 @@ function onThrowFx(c, t, hand) { // a 'lob' (May Thu) or a 'throw' (you, with a 
 }
 // your E with nothing to do: the bucket heave (world.js) or, once May Thu gave you one, a balloon (R swaps)
 S.tool ??= 'bucket';
-const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); save(); };
+const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); if (!S.ball) $('tool').querySelector('small')?.remove(); save(); }; // one tool = no 「R · ပြောင်း」 hint
 const swapTool = () => { if (S.ball) setTool(S.tool === 'balloon' ? 'bucket' : 'balloon'); };
 $('tool').addEventListener('pointerdown', e => { e.stopPropagation(); swapTool(); });
 addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(); });
@@ -235,10 +236,11 @@ const advance = next => { S.step = next; save(); };
 const HOME_OUT = V(4.4, -3.3 + OZ), MUM_DAY = V(6.9, -3.5 + OZ), GATHER = V(-3.3, -2.3);
 // T5b-1 (Scene B): where the gang stops in front of you (a loose arc 2–2.5 m from the door, bench + bowl stay in frame to the east), where they come in from (the west end of the
 // home lane) and where they wait after Cho Cho leads off (wip)
-const ARC = { ngazwe: [2.9, -2.5], maythu: [3.8, -2.2], chocho: [5.0, -2.4], phoekyaw: [2.2, -3.3] };
+const ring = (deg, r) => [+(HOME_OUT.x - r * Math.cos(deg * Math.PI / 180)).toFixed(2), +(HOME_OUT.z + r * Math.sin(deg * Math.PI / 180)).toFixed(2)]; // a point r m from the hero's spot, deg° round from west (0) through south (90)
+const ARC = { ngazwe: ring(5, 2.3), maythu: ring(35, 2.1), chocho: ring(62, 2.2), phoekyaw: ring(105, 2.4) }; // a half-ring on the lane side: bench + bowl (east) stay clear
 const LANE_IN = { ngazwe: [-5.0, -2.4], maythu: [-5.1, -2.0], chocho: [-4.7, -2.7] };
-const WIP = { chocho: [-4.2, -3.6], maythu: [-3.4, -3.3], ngazwe: [-2.4, -3.5], phoekyaw: [-1.4, -3.2] };
-const BIKE_PARK = V(-2.95, -1.7);
+const AWAY = { chocho: [-4.2, -3.6], maythu: [-3.4, -3.3], ngazwe: [-2.4, -3.5], phoekyaw: [-1.4, -3.2] }; // where they walk off to (Cho Cho leads)
+const BIKE_PARK = V(-2.95, -1.7), WIP_BIKE = V(.8, -3.0);
 const LOT = { ngazwe: [.4, .4], maythu: [1.4, -.3], phoekyaw: [4.8, -.3], chocho: [-.2, 1.2] };
 const FRONT = { hero: [5.0, 4.3], ngazwe: [3.4, 4.0], maythu: [4.2, 4.4], phoekyaw: [5.9, 3.8], chocho: [6.5, 3.2] }; // five o'clock, at the mandat's front corner (not in line with the bus stop on the street behind)
 const BUCKET_SPOT = V(BTOP.x, BTOP.z + .55), AMP_SPOT = V(L.AMP.at.x + 1.05, L.AMP.at.z), TABLE = V(-.5, 2.6), TABLE_SPOT = V(.25, 2.7), WATER = V(5.2, 1.0), THROW = V(6.0, .3), THROW_RY = 1.03;
@@ -351,9 +353,9 @@ const CUES = {
   // after line 31: Cho Cho points down the lane and walks off west, the others follow a moment later
   leave: async () => {
     chocho.g.rotation.y = -Math.PI / 2; chocho.act('point'); await wait(1.0);
-    const first = walk(chocho, [WIP.chocho], 'walk', 12); await wait(3);
-    await Promise.all([first, ...[ngazwe, maythu, phoekyaw].map(k => walk(k, [WIP[k.id]], 'walk', 12))]);
-    for (const k of GANG) face(k, hero);
+    const first = walk(chocho, [AWAY.chocho], 'walk', 12); await wait(3);
+    await Promise.all([first, ...[ngazwe, maythu, phoekyaw].map(k => walk(k, [AWAY[k.id]], 'walk', 12))]);
+    await hud.fade(true, 500); placeWip(); await hud.fade(false, 500); // cut back to the house front: the gang stands round you, the bowl on the bench
   },
   ball: () => { S.ball = true; setTool('balloon'); hud.toast('+ ပူဖောင်း 🎈'); maythu.anim.play('wave'); },
   // 1-6
@@ -398,8 +400,8 @@ const dingBubble = () => cueBubble('ဒင်း', L.LAND4.clone().setY(2.4), 1.
 // ---------- rooms: walk in off the street (shops) or the lane (home) ----------
 let inside = null, backTo = null, seated = null;
 const ROOM_NAME = { tea: 'ရွှေလမင်း လက်ဖက်ရည်ဆိုင်', clothes: 'ရွှေရည် အထည်ဆိုင်', barber: 'ဆံပင်ညှပ်ဆိုင်', home: '' };
-function setInside(name, at) { const r = ROOMS[name]; inside = name; W.setRoom(r); hero.g.position.set(at?.x ?? r.spawn.x, .05, at?.z ?? r.spawn.z); hero.g.rotation.y = Math.PI; W.snapCam(); day.range.watch(false); }
-function setOutside(at) { stand(); W.setRoom(null); inside = null; hero.g.position.set(at.x, ground(at.x, at.z), at.z); hero.g.rotation.y = 0; W.snapCam(); day.range.watch(true); }
+function setInside(name, at) { const r = ROOMS[name]; inside = name; if (hero.ch.tools.includes('bucket')) hero.ch.tool = 'none'; /* the bucket stays outside */ W.setRoom(r); hero.g.position.set(at?.x ?? r.spawn.x, .05, at?.z ?? r.spawn.z); hero.g.rotation.y = Math.PI; W.snapCam(); day.range.watch(false); }
+function setOutside(at) { stand(); W.setRoom(null); inside = null; if (hero.ch.tools.includes('bucket')) hero.ch.tool = 'bucket'; hero.g.position.set(at.x, ground(at.x, at.z), at.z); hero.g.rotation.y = 0; W.snapCam(); day.range.watch(true); }
 async function enter(name) {
   hud.cinematic(true); await hud.fade(true, 350);
   backTo = name === 'home' ? HOME_OUT.clone() : W.player.g.position.clone(); setInside(name);
@@ -434,12 +436,17 @@ function sitBarber() { const ch = ROOMS.barber.chairs[0]; sitAt(ch, ch.lift); ta
 function tryOn() { const p = W.player, m = ROOMS.clothes.mirror; p.g.position.set(m.x, .05, m.z); p.g.rotation.y = -Math.PI / 2; talk([['အထည်ဆိုင် မမ', 'မှန်ရှေ့မှာ ဝတ်ကြည့်။']], () => openClothes({ W, hud, S, dress, onClose: () => tailor.anim.play('wave') }), tailor); }
 function toRoomChair() { const c = ROOMS.home.chair; put(bwabwa, c.x, c.z, c.ry, .05 + c.lift); bwabwa.anim.setLoop('sit'); }
 
+// wip (the stop after line 31): the gang stands in the half-ring round you at the house front, Phoe Kyaw's bike parked near with his two buckets on the rack
+function placeWip() {
+  for (const k of GANG) { put(k, ...ARC[k.id], 0); k.anim.setLoop('idle'); face(k, hero); }
+  bike.g.visible = true; bike.g.position.copy(WIP_BIKE); bike.g.rotation.y = Math.PI / 2; bike.g.add(pails); pails.visible = true; pails.rotation.set(0, Math.PI / 2, 0); pails.position.set(-.42, .68, 0);
+}
 // ---------- stage(step): where everyone is when a scene starts (a new game, a reload, the next scene) ----------
 function stage(step) {
   const H = ROOMS.home, out = !['pro', '1-1', '1-8', 'done'].includes(step), NEW = ['pro', '1-1', '1-2', 'wip'].includes(step);
   day.phase(PHASE_OF[step]); day.goal({ pro: '', '1-1': '', '1-2': '', '1-8': GOALS['1-7'], done: GOALS['1-7'] }[step] ?? GOALS['1-2']); // the goal line appears in 1-2 (its cue) and changes in 1-7
   // family
-  if (out) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1' || step === 'pro') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night by the door side, out of the way
+  if (out && !NEW) put(mom, MUM_DAY.x, MUM_DAY.z, Math.PI * .8); else if (step === '1-1' || step === 'pro') put(mom, H.mom.x, H.mom.z, H.mom.ry, .05); else put(mom, H.mat.x - .4, H.mat.z + 1.9, Math.PI * .75, .05); // at night (and in T5b's Scene B / wip, once you've stepped out) she's inside, out of the way
   if (step === '1-6') put(bwabwa, 4.6, -3.0 + OZ, 0); else if (step === 'pro') { put(bwabwa, L.BENCH.at.x - .5, L.BENCH.at.z + .45, Math.atan2(.5, -.45)); bwabwa.anim.setLoop('idle'); } else toRoomChair(); // (pro: she stands at the bench's left end, turned in to the bowl, so the camera still sees it)
   // the bowl: in Bwa Bwa's lap → in her arms (1-6) → on its seat (1-7) → over the fence (after)
   if (bowl.by) { bowl.by.release(true); bowl.by = null; } if (bowl.at) { bowl.at.item = null; bowl.at = null; }
@@ -449,13 +456,12 @@ function stage(step) {
   else { scene.attach(bowl.g); bowl.g.position.copy(L.LAND4); bowl.state = 'gone'; bowl.g.visible = false; } // in ④ now (T6)
   // the gang
   for (const k of GANG) { k.g.visible = false; k.anim.setLoop('idle'); }
-  if (step === 'wip') for (const k of GANG) { put(k, ...WIP[k.id], 0); face(k, V(HOME_OUT.x, HOME_OUT.z)); } // (1-2: nobody yet — each arrives on a cue)
   if (['1-3', '1-4', '1-5'].includes(step)) for (const k of GANG) put(k, ...LOT[k.id], 0);
   if (step === '1-3') put(ngazwe, BUCKET_SPOT.x + .9, BUCKET_SPOT.z + .4, Math.PI);
   if (step === '1-4') { put(chocho, -3.3, .3, -Math.PI / 2); put(phoekyaw, -3.4, -.6, -Math.PI / 2); }
   if (['1-6', '1-7'].includes(step)) for (const k of GANG) put(k, ...FRONT[k.id], Math.PI);
   scene.attach(pails); pails.visible = false; bike.g.visible = false;
-  if (step === 'wip') { bike.g.visible = true; bike.g.position.copy(BIKE_PARK); bike.g.rotation.y = Math.PI / 2; bike.g.add(pails); pails.visible = true; pails.rotation.set(0, Math.PI / 2, 0); pails.position.set(-.42, .68, 0); } // Phoe Kyaw's two buckets on the rack
+  if (step === 'wip') placeWip(); // (1-2: nobody yet — each arrives on a cue)
   else if (!NEW) { bike.g.visible = true; bike.g.position.set(6.4, 0, -1.2); bike.g.rotation.y = 0; pails.visible = out; if (out) { pails.position.set(WATER.x, .02, WATER.z); } }
   // Saya Gyi at five o'clock only; Ko Zaw at his table for M3
   hide(sayagyi); if (step === '1-5') put(kozaw, TABLE.x, TABLE.z + .7, Math.PI); else hide(kozaw);
@@ -735,7 +741,7 @@ $('eagain').addEventListener('click', e => { e.stopPropagation(); wipe(); locati
 stage(S.step); save();
 W.start();
 if (DEBUG) window.zone = { W, S: () => S, day, story, director, rooms: ROOMS, inside: () => inside, mandat, cw, pc, hero, people: PEOPLE, SPOTS, hud, here, sound, L, life, bowl, bucket: () => ({ ...BK }), lastThrow, mission: MISSION,
-  bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, bench, bowlOnBench, ARC, WIP, pails, bike, fast: false,
+  bulbs: () => fixing, throwing: () => !!flight?.it, ding: () => cues.some(c => c.el.textContent === 'ဒင်း'), dingNow: () => dingBubble(), talking: () => hud.talking(), mini: () => hud.mini(), stage, bench, bowlOnBench, ARC, AWAY, pails, bike, fast: false,
   // tests: do what the goal points at — go there and press E (an auto spot just needs you there)
   next() {
     if (hud.busy() || story.playing || flight || fixing) return 'busy';

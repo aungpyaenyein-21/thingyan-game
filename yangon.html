@@ -143,6 +143,7 @@
     #upd{left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;max-width:calc(100vw - 40px)}
     body.busy :is(#splash,#jump,#tool,#stick,#prompt,#goal,#where,#opt,#opts,#turn){display:none!important}
   }
+  body.cine :is(#where,#turn,#opt,#opts,#tool,#splash,#jump,#stick,#hint,#prompt){display:none!important} /* a cinematic (the Prologue, every story line): nothing but the picture and the box */
   @media (prefers-reduced-motion:reduce){#area,#title{transition:none}}
 </style>
 </head>
