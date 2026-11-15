@@ -35,7 +35,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CAST, makeCast, ticsReady } from './cast.js?v=17';
+import { CAST, makeCast, ticsReady } from './cast.js?v=18';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -93,7 +93,7 @@ resize(); cam.position.set(0, 4.2, 10.5); ctl.target.set(0, .7, 0); select(null)
 const qs = new URLSearchParams(location.search); if (qs.get('c')) select(all.find(c => c.def.id === qs.get('c')) || null); if (qs.get('a')) targets().forEach(c => c.anim.setLoop(qs.get('a')));
 window.cast = { all, flying, ready: ticsReady,  get sel() { return sel; }, select: id => select(all.find(c => c.def.id === id) || null), act: k => sel?.act(k) };
 
-if (qs.has('edit')) import('./editor.js?v=2').then(m => m.mountEditor({ THREE, all, flying, scene, cam, ctl, makeCast, select: id => select(all.find(c => c.def.id === id) || null), emit })).catch(e => console.error('editor:', e));
+if (qs.has('edit')) import('./editor.js?v=3').then(m => m.mountEditor({ THREE, all, flying, scene, cam, ctl, makeCast, select: id => select(all.find(c => c.def.id === id) || null), emit })).catch(e => console.error('editor:', e));
 
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); cam.aspect = w / h; cam.fov = w <= 700 ? 44 : 28; cam.updateProjectionMatrix(); }
 addEventListener('resize', () => { resize(); select(sel); }); resize();

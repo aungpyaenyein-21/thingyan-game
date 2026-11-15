@@ -7,8 +7,8 @@
 <script type="module">
 // T18 check bench: ?who=bwabwa|<bottom>&build=&age=&top=&topStyle=&loop=&one=&cam=front|side|q|back&t=<seconds to run>
 import * as THREE from 'three';
-import { makeChibi, ChibiAnimator, SKINS, HAIRS, TOPS } from '../../chibi.js';
 const qs = new URLSearchParams(location.search), g = (k, d) => qs.get(k) ?? d;
+const { makeChibi, ChibiAnimator, SKINS, HAIRS, TOPS } = await import(g('src') === 'before' ? './before-chibi.js' : '../../chibi.js?v=36'); /* ?src=before: chibi.js as of main (untracked copy), for the before shots */
 const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement);
 const scene = new THREE.Scene(); scene.background = new THREE.Color('#e8d6c0');
 scene.add(new THREE.HemisphereLight('#ffe2c4', '#9a7fb8', 1.8)); const sun = new THREE.DirectionalLight('#ffd6a0', 2.2); sun.position.set(-3, 5, 4); scene.add(sun);
@@ -17,10 +17,17 @@ const COL = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], p
 const bottom = g('bottom', 'longyi'), kid = g('age', 'adult') === 'kid';
 const o = g('who') === 'bwabwa'
   ? { age: 'elder', hunch: .35, build: 'round', hair: 'bun', hairColor: '#d9d3c7', top: '#f4f1e8', topStyle: 'yinphone', print: '', bottom: 'htamein', bottomColor: ['#6a4a2a', '#b08a5a'], thanaka: 'round', shoes: 'slipper', shoeColor: '#3a2a1a', accent: '#f4f1e8' }
-  : { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], top: g('top', TOPS[3]), topStyle: g('topStyle', 'tee'), print: g('print', 'သင်္ကြန်'), bottom, bottomColor: COL[bottom], build: g('build', 'round'), age: kid ? 'kid' : 'adult', size: kid ? .72 : 1, thanaka: 'round', shoes: 'slipper', shoeColor: '#5a3a2a', accent: '#e0574f' };
+  : { skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], top: g('top', TOPS[3]), topStyle: g('topStyle', 'tee'), print: g('print', 'သင်္ကြန်'), bottom, bottomColor: COL[bottom], ...(qs.has('tuck') ? { tuck: g('tuck') === '1' } : {}), build: g('build', 'round'), age: kid ? 'kid' : 'adult', size: kid ? .72 : 1, thanaka: 'round', shoes: 'slipper', shoeColor: '#5a3a2a', accent: '#e0574f' };
+if (qs.get('ol')) o.outline = true;
 const ch = makeChibi(o), anim = new ChibiAnimator(ch, () => {}); scene.add(ch.root);
+/* sitters in the game stand at y = .05 + lift (life.js seat(), rooms.js chairs: lift .12 to .22; Bwa Bwa's home chair .2); the seat top is where the hip ball ends */
+const SEATED = ['sit', 'eat', 'vend', 'squat'].includes(g('loop')) || ['sitdown'].includes(g('one'));
+if (SEATED && g('stool', '1') === '1') {
+  const lift = +g('lift', .2), top = .05 + lift + (ch.hipH - .2 * ch.legK - .08) * ch.scale; ch.root.position.y = .05 + lift;
+  const stool = new THREE.Mesh(new THREE.BoxGeometry(.4, top, .26), new THREE.MeshLambertMaterial({ color: '#8a5a3a' })); stool.position.set(0, top / 2, -.08); scene.add(stool);
+}
 const cam = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, .1, 50), c = g('cam', 'q');
-const P = { front: [0, 1.0, 4.2], side: [4.2, 1.0, 0], q: [2.6, 1.3, 3.4], back: [0, 1.0, -4.2] }[c]; cam.position.set(...P); cam.lookAt(0, .5, 0);
+const P = { front: [0, 1.0, 4.2], side: [4.2, 1.0, 0], q: [2.6, 1.3, 3.4], back: [0, 1.0, -4.2], close: [1.2, 1.1, 1.7] }[c]; cam.position.set(...P); cam.lookAt(0, c === 'close' ? .72 : .5, 0);
 if (g('loop')) anim.setLoop(g('loop')); if (g('one')) anim.play(g('one'));
 window.lab = { THREE, ch, anim, scene, o, step(n, dt = .05) { for (let i = 0; i < n; i++) anim.update(dt); renderer.render(scene, cam); } };
 window.lab.step(+g('t', 40)); window.ready = true;

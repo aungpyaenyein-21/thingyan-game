@@ -4,20 +4,20 @@
 // Mum's range, goal line, cards), story.js holds the lines, mandat.js the mandat, carry.js the bowl and what you hold.
 // The v4 "nine favours + Mandalay bus + Phoe Tha" flow is gone (git history / docs/archive); the shops, the tea shop's
 // people and the street life stay — on day 1 they're out of Mum's range.
-import { createWorld, PAL, SKINS } from '../world.js?v=20';
-import { CAT_COATS } from '../critters.js?v=10';
-import { buildSet, MM, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=25';
+import { createWorld, PAL, SKINS } from '../world.js?v=21';
+import { CAT_COATS } from '../critters.js?v=11';
+import { buildSet, MM, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=26';
 import { createHud, play } from './hud.js?v=7';
-import { openBarber, openClothes, redress } from './wardrobe.js?v=9';
-import { buildRooms } from './rooms.js?v=14';
+import { openBarber, openClothes, redress } from './wardrobe.js?v=10';
+import { buildRooms } from './rooms.js?v=15';
 import { icon, TEA_MENU, teaColor } from './icons.js?v=1';
-import { startLife } from './life.js?v=23';
+import { startLife } from './life.js?v=24';
 import { bulbs } from './bulbs.js?v=1';
 import { createSound } from '../sound.js?v=3';
-import { makeCast, earBlush } from '../cast.js?v=17';
+import { makeCast, earBlush } from '../cast.js?v=18';
 import { createCarry, ITEMS } from '../carry.js?v=1';
 import { makeBike, seatOn } from '../bike.js?v=1';
-import { load as loadSave, save as store, fresh } from './save.js?v=12';
+import { load as loadSave, save as store, fresh } from './save.js?v=13';
 import { createDay, debugStart, PHASE_OF, STEPS, STEP_LABELS } from './day.js?v=8';
 import { createStory, GOALS, NIGHT } from './story.js?v=5';
 import { createMandat } from './mandat.js?v=1';

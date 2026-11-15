@@ -5,8 +5,8 @@
 // T12 (issue #41 §1): quiet zones (main.js: the home lane, the east lane, where the gang gathers) — none of these extras
 // spawn, park, idle or pass there; ① has them only on the side lane ↔ the main street. clearFor(secs): a story scene is on —
 // extras within 10 m of you walk off past 12 m and stay away till it's over.
-import { PAL } from '../world.js?v=20';
-import { ROAD } from './set.js?v=25';
+import { PAL } from '../world.js?v=21';
+import { ROAD } from './set.js?v=26';
 
 export function startLife(W, { L, BOUNDS, ground, phase, quiet = [] }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;

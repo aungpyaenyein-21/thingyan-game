@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>cloth timing</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head><body><script type="module">
+// CPU cost of ChibiAnimator.update for a town's worth of people: ?src=before (main's chibi.js) or after. window.timing(N, frames)
+const qs = new URLSearchParams(location.search);
+const { makeChibi, ChibiAnimator, SKINS, HAIRS } = await import(qs.get('src') === 'before' ? './before-chibi.js' : '../../chibi.js?v=36');
+const COL = { longyi: ['#3f7a5a', '#72b08b'], htamein: ['#a8434a', '#e08a8f'], pants: ['#3f5a8a', '#3f5a8a'], shorts: ['#5b7fa8', '#f6ead2'], skirt: ['#e9a0b4', '#e9a0b4'] };
+window.timing = (N = 40, frames = 600) => {
+  const people = [], loops = ['sit', 'idle', 'walk', 'sit', 'eat', 'idle', 'vend', 'walk'], bots = ['longyi', 'htamein', 'pants', 'shorts', 'skirt', 'longyi'];
+  for (let i = 0; i < N; i++) { const b = bots[i % bots.length]; const ch = makeChibi({ skin: SKINS[0], hair: 'short', hairColor: HAIRS[0], top: '#4fb3d9', topStyle: i % 2 ? 'tee' : 'yinphone', print: '', bottom: b, bottomColor: COL[b], build: ['round', 'slim', 'broad'][i % 3], age: 'adult' });
+    const an = new ChibiAnimator(ch, () => {}); an.setLoop(loops[i % loops.length]); an.seed = i; people.push(an); }
+  for (let f = 0; f < 90; f++) for (const an of people) an.update(1 / 60);
+  const out = {};
+  for (const [name, sel] of [['all 40', () => true], ['seated only', an => ['sit', 'eat', 'vend'].includes(an.loop)], ['walking only', an => an.loop === 'walk']]) {
+    const sub = people.filter(sel); const runs = [];
+    for (let r = 0; r < 3; r++) { const t0 = performance.now(); for (let f = 0; f < frames; f++) for (const an of sub) an.update(1 / 60); runs.push((performance.now() - t0) / (frames * sub.length)); }
+    out[name] = { n: sub.length, usPerPersonFrame: +(Math.min(...runs) * 1000).toFixed(1) };
+  }
+  return out;
+};
+window.ready = true;
+</script></body></html>
