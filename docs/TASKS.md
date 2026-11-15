@@ -15,7 +15,7 @@
 | T3b | [Day 4 + epilogue](#t3b-day-4--epilogue) — bridge-head match → the bowl into the creek (scripted) → ten kids fish it out → the 5 o'clock run → Bwa Bwa laughs → the pouring → photo | ⏳ spec ✅ (after T6 merge) | other model · branch `claude/day4` |
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ✅ 2026-11-02 (PR #32 · plan [plans/T5.md](plans/T5.md) · 2 reviews) — day 1 as SCENARIO v6; the story beats get reworked in T5b | အခြား model · branch `claude/day1` |
-| T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3: cinematic opening (31 lines), day-1 kit (no pumps), the bowl lent → forgotten → picked up by Thura, no throw, new night question | ⏳ spec ✅ — **can start now** (T12 merged; T10 preferred first) | other model · branch `claude/day1b` |
+| T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3. **T5b-1 now**: Prologue + Scene A + Scene B (lines 1–31, the creator's script so far) + day-1 kit, then a 「ဆက်ရန်」 stop · **T5b-2 later**: 1-3 … 1-9 once the creator hands in the rest of the day-1 script | 🔨 T5b-1 (2026-11-15) | design Opus · build Sonnet · branch `claude/day1b` |
 | T12 | [Ward: clear, widen, near-lens fade](#t12-ward-clear-widen-near-lens-fade-issue-41) — issue #41 · life.js exclusion zone, lanes ×1.5 in set.js, dithered near-lens fade for street furniture (`?tune`) | ✅ 2026-11-07 (PR #42 · plan + 2 reviews · merged; fade defaults 2.5/5) | other model |
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5b merge) — v6.1 deltas below: pump stall + 1,000 ks, Thura 「ကောက်ရတာ」, bowl never in ④'s yard | other model · branch `claude/day23` |
 | T6.5 | [Pose/tic editor + face editor](#t65-posetic-editor--face-editor) — `cast.html?edit`: keyframe JSON tics played by chibi.js, FACE table (CHARACTERS §14) with 14 new face parts, `anim.face()` | ⏳ spec ✅ (after T10 merge — chibi.js) | other model · branch `claude/editor` |
@@ -520,6 +520,38 @@ Spec: [#40](https://github.com/aungpyaenyein-21/thingyan-game/issues/40) + its t
 **Prereqs** — T5 merged (✅ #32). **T12 merged** (the lane anchors move; place the day-1 spots once). T10 preferred (the opening is a dialogue scene — with T10 the camera cuts to the speaker; without it, `W.talkWith` framing). Plan `docs/plans/T5b.md` first. Branch `claude/day1b`.
 
 **Files** — `yangon/story.js` (scenes 1-1 … 1-9 + `out`), `yangon/main.js` (day-1 flow), `yangon/day.js` (`STEPS[1]` = nine steps, `BEFORE`, `PHASE_OF`), `yangon/save.js` (`S.step` ids; bump KEY — day-1 saves from T5 are wiped), `yangon/set.js` (the house-front bench; **remove** ④'s fence `L.FENCE4` / `L.LAND4` and the lot's bowl seat stays for day 4), `yangon/mandat.js` (seat unchanged), `cast.js` (gear toggle: `pump` / `can` off, day-1 kit on), `yangon/hud.js` (nothing new expected). Not: `world.js` `camera.js` `chibi.js` `war.js`.
+
+### T5b-1 — only as far as the creator's script (2026-11-15, creator)
+> 「1日目の分のスクリプトがないから、今ある僕が教えてあるスクリプトだけまでに物語を作って…どんな感じになってるかを見てみたい」 — build the story **up to line 31** first so the creator can see how it plays; the rest of day 1 (1-3 … 1-9) waits for the creator's next script and becomes T5b-2. The table below stays the target for T5b-2; for T5b-1 only these rows apply.
+
+**Steps** — `STEPS[1] = ['pro', '1-1', '1-2', 'wip']` (`PHASE_OF`: pro / 1-1 morning, 1-2 / wip day). The old T5 scenes 1-3 … 1-8 stay in the code **untouched and unreachable** (T5b-2 rewrites them); don't delete, don't fix.
+
+| step | build |
+|---|---|
+| `pro` Prologue (~15 s, no lines, tap skips) | morning light, the house front: a **bamboo bench** by the door (`set.js`, a new solid prop next to `HOME_OUT`, out of the walking line) with the **silver bowl** on it · title 「သင်္ကြန်ပွဲ」 over it · Bwa Bwa sits/stands at the bench, plays a polish action on the bowl (reuse T5's `polish` cue motion), puts it down, walks in through the door · camera then cuts inside → the 「ရက် ၁」 card → 1-1 |
+| `1-1` Scene A (lines 1–9) | inside, Mum + Bwa Bwa + hero, the talk director (T10) cuts per speaker · faces: 2 `sly` (+ Mum `hips`), 3 `worry`, 7 `pout`, 9 `pout` then `ok`-ish (`nod` gesture, slow/reluctant) · `[သား/သမီး]`: lines 1 and 5 say 「သား」 for a boy hero, 「သမီး」 for a girl (a `{son}` token in story.js; the save has no gender yet → add `S.girl` default `false`, `?girl` sets it) · after line 9 the hero is free: T5's walk / run / jump hints on the way to the door · the door's E 「အပြင် ထွက်」 |
+| `1-2` Scene B (lines 10–31) | starts **as soon as the hero steps out** (no walk-to-trigger): the hero stands by the door, the bench + bowl in view · cue **ngazwe**: Nga Zwe runs up from the lane, **empty-handed** → 10–13 (12 with `scratch`) · cue **maythu+chocho**: May Thu and Cho Cho walk up **together** → 14–18 · cue **bike**: Phoe Kyaw last, on the bike with two buckets, bell (`ring`) → 19–31 (21 `shock`) · on each arrival that kid **shows their splash once** (May Thu a balloon `lob` into the lane, Cho Cho a toy-gun `squirt`, Phoe Kyaw a bucket `splash`; short, game time, no hits) · goal 「ငါတို့ ဘာသာ ငါတို့ ဆောက်မယ်」 after line 25 · after 31: Cho Cho `point`s down the lane and walks off, the gang follows ~3 s → `wip` |
+| `wip` stop | an end card: head 「ဆက်ရန်…」, body 「ရက် ၁ ရဲ့ ကျန်တဲ့ အပိုင်း — script စောင့်နေ」, two buttons: 「အစက ပြန်ကြည့်」 (`?new`, reload) and 「လမ်းလျှောက်ကြည့်」 (close the card; free roam in day 1's range, the gang standing at the house front, the bowl on the bench) · a reload at `wip` shows the card again |
+
+**Day-1 kit (no steel pump on anyone)** — `cast.js`: the pump / jerry can become a gear option that is **off on day 1** (e.g. `makeCast(id, emit, { kit: 'day1' })`; war.html and day 2+ keep today's default). Day 1: hero = bucket (the player's only tool, `tools: ['bucket']`) · Nga Zwe = nothing · May Thu = balloon (bag + one in hand) · Cho Cho = toy water gun (chibi `tool: 'gun'`, small, not a pump) · Phoe Kyaw = bucket in hand + two buckets on the bike. Thura / ④ kids are not in T5b-1.
+
+**Lines** — all 31 **verbatim** from SCENARIO §3 (copy from SCENARIO.md, never retype); `( )` notes → `{ face, act }`, never text. **Reading time**: no line leaves before it's typed and readable — for these scenes `hold` = typing time + max(1.6, chars × .05) s, capped at 8 s (line 19 is long); a tap still skips. Scene A ≤ 60 s, Scene B ≤ 100 s total at that pace (arrivals included).
+
+**Save** — keep KEY `thingyan.v6` (war.js reads `S.goggles` from it), bump `fresh().v` → `61` and accept only `v === 61` (T5 day-1 saves start fresh). `?day=1&step=pro|1-1|1-2|wip` works; a reload mid-scene restarts that scene.
+
+**Not in T5b-1** — 1-3 lend, missions, five o'clock, the gone beat, night · `world.js` `camera.js` `chibi.js` `war.js` `talk.js` (if one of them blocks you, stop and report — don't patch) · TASKS.md / SCENARIO.md.
+
+**✅ Done means (T5b-1)**
+- `?new` → pro → 1-1 → 1-2 → wip card, console 0, `docs/day1b/check.cjs` with asserts:
+  - every one of the 31 lines shown verbatim, in order, with the right speaker (read from `hud.onLine`, compared against the SCENARIO.md table parsed at run time)
+  - arrival order Nga Zwe → May Thu + Cho Cho → Phoe Kyaw, each hidden before its cue
+  - no visible pump / jerry can on any cast member; the kit table holds; Nga Zwe's hands empty
+  - the bowl on the bench in pro, 1-1 exit, 1-2 and wip; Bwa Bwa inside during 1-1
+  - Scene A / Scene B durations at reading pace (`fast` off) within the budget above
+  - `?girl` → lines 1 and 5 say 「သမီး」
+  - `?day=1&step=1-2` and a reload at 1-2 / wip work
+- Screenshots `docs/day1b/`: pro (title over the bench), 1-1 ×3 (Mum, hero, Bwa Bwa speaking), 1-2 ×4 (each arrival + the whole gang), wip card, one at phone 375×667
+- `docs/plans/T5b.md` (plan for T5b-1 first, then Results) + PR
 
 ### What changes, scene by scene (SCENARIO §3 has the lines)
 | scene | build |
