@@ -6,7 +6,7 @@
 // people and the street life stay — on day 1 they're out of Mum's range.
 import { createWorld, PAL, SKINS } from '../world.js?v=19';
 import { CAT_COATS } from '../critters.js?v=9';
-import { buildSet, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=25';
+import { buildSet, MM, BOUNDS, LANES, OX, OZ, ground, AREAS, areaAt, shwedagon } from './set.js?v=25';
 import { createHud, play } from './hud.js?v=6';
 import { openBarber, openClothes, redress } from './wardrobe.js?v=8';
 import { buildRooms } from './rooms.js?v=14';
@@ -209,7 +209,7 @@ function onThrowFx(c, t, hand) { // a 'lob' (May Thu) or a 'throw' (you, with a 
 }
 // your E with nothing to do: the bucket heave (world.js) or, once May Thu gave you one, a balloon (R swaps)
 S.tool ??= 'bucket';
-const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); if (!S.ball) $('tool').querySelector('small')?.remove(); save(); }; // one tool = no 「R · ပြောင်း」 hint
+const setTool = t => { S.tool = t; hud.tool(t === 'balloon' ? 'balloon' : 'bucket'); if (!S.ball) $('tool').querySelector('small')?.remove(); $('hintr').hidden = !S.ball; save(); }; // one tool = no 「R · ပြောင်း」 hint
 const swapTool = () => { if (S.ball) setTool(S.tool === 'balloon' ? 'bucket' : 'balloon'); };
 $('tool').addEventListener('pointerdown', e => { e.stopPropagation(); swapTool(); });
 addEventListener('keydown', e => { if (e.code === 'KeyR' && !e.repeat) swapTool(); });
@@ -750,7 +750,7 @@ $('cyes').addEventListener('click', e => { e.stopPropagation(); restart(); });
 $('cno').addEventListener('click', e => { e.stopPropagation(); $('confirm').hidden = true; });
 $('scn').addEventListener('click', e => {
   e.stopPropagation(); closeOpts(); $('confirm').hidden = true;
-  $('phead').textContent = 'ရက် ' + S.day;
+  $('phead').textContent = 'ရက် ' + MM(S.day);
   $('plist').replaceChildren(...(STEPS[S.day] ?? []).map(id => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.step = id; b.textContent = STEP_LABELS[id] ?? id; b.classList.toggle('on', id === S.step);
     b.addEventListener('click', ev => { ev.stopPropagation(); const P = keep(); P.set('day', S.day); P.set('step', id); location.search = '?' + P; });

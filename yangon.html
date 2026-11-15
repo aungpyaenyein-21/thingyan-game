@@ -101,6 +101,8 @@
   @media (pointer:coarse){#inst{bottom:calc(18px + env(safe-area-inset-bottom,0px))}#upd{bottom:calc(62px + env(safe-area-inset-bottom,0px))}}
   :is(#dlg,#menu,#mini,#end):not([hidden])~:is(#upd,#opts>#inst){display:none}
   #opt{display:none} #opts{display:contents}
+  #redo,#scn{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));min-width:84px;min-height:32px;padding:5px 10px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:12px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer;white-space:nowrap}
+  #redo{bottom:calc(190px + env(safe-area-inset-bottom,0px))} #scn{bottom:calc(154px + env(safe-area-inset-bottom,0px))}
   #gfx{position:fixed;z-index:3;right:calc(164px + env(safe-area-inset-right,0px));bottom:calc(118px + env(safe-area-inset-bottom,0px));padding:5px 9px;border:0;border-radius:12px;background:#fff6ea;color:#5a3550;font:inherit;font-size:11px;box-shadow:0 2px 0 #d9c9b8;cursor:pointer;white-space:nowrap}
   @media (pointer:coarse){#gfx{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
   @media (pointer:coarse){#cred{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
@@ -160,7 +162,7 @@
   <canvas id="map" width="180" height="148" aria-label="မြေပုံ"></canvas>
   <div id="bag"></div>
 </div>
-<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် · <b>R</b> ရေပုံး⇄ပူဖောင်း · Space ခုန် · wheel zoom</div>
+<div id="hint" class="panel">WASD လမ်းလျှောက် · Shift ပြေး · <b>E</b> စကားပြော / ရေပက် <span id="hintr">· <b>R</b> ရေပုံး⇄ပူဖောင်း</span> · Space ခုန် · wheel zoom</div>
 <div id="prompt" class="panel" hidden><span class="key">E</span><span id="ptext"></span></div>
 <div id="dlg" class="panel" hidden><b id="dname"></b><span id="dtext"></span><small><span class="kb">E </span>▸ ဆက်</small></div>
 <div id="toast" class="panel" hidden></div>
