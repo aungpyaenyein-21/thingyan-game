@@ -1,3 +1,5 @@
+> **2026-11-15: ဒီ Phaser pixel game (index.html / game.js / art.js) ကို ဖျက်လိုက်ပြီ — index.html က yangon.html ဆီ လွှဲပေးတာပဲ (T15)။**
+
 # သင်္ကြန်ပွဲ Online · နည်းပညာ Design (v1)
 
 > ⚠️ **၂၀၂၆-၁၀-၃၀: ဦးတည်ချက် ပြောင်းပြီ → [DIRECTION.md](DIRECTION.md)** ကို အရင်ဖတ်ပါ။ §၃ Portal · Map ၃ ခု၊ §၄ Account၊ §၅ Chat (public) တွေ အဟောင်း — ရပ်ကွက် ၄ ခု မြေပုံ တစ်ခုတည်း + group play (သူငယ်ချင်း ၂–၄ ယောက်၊ voice chat၊ အကောင့် မလို)။
