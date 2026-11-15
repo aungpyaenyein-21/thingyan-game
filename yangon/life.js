@@ -6,7 +6,7 @@
 // spawn, park, idle or pass there; ① has them only on the side lane ↔ the main street. clearFor(secs): a story scene is on —
 // extras within 10 m of you walk off past 12 m and stay away till it's over.
 import { PAL } from '../world.js?v=18';
-import { ROAD } from './set.js?v=22';
+import { ROAD } from './set.js?v=23';
 
 export function startLife(W, { L, BOUNDS, ground, phase, quiet = [] }) {
   const { THREE, scene, bean, mesh, box, cyl, textTex, bubbleTex, rnd, pick } = W;

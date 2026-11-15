@@ -175,7 +175,7 @@ const bell = (t, a, b, r = .3) => ease(clamp01((t - a) / .3)) * (1 - ease(clamp0
 const moveTo = (m, parent, x, y, z, rx = 0, ry = 0, rz = 0) => { parent.add(m); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); };
 const moveHome = (m, h) => { h.parent.add(m); m.position.copy(h.pos); m.rotation.copy(h.rot); };
 Object.assign(ONESHOT, { bow: 2.4, lift: 2.6, note: 2.2, lob: 1.5, whistle: 1.6, towel: 2.0, goggles: .9, shrug: 1.6, scold: 1.6, ring: 1.4,
-  point: 1.3, hips: 1.4, scratch: 1.4, nod: 1.0 }); // T10 talk gestures (yangon/talk.js): pose only, no props, anyone can play them
+  point: 1.3, hips: 1.4, scratch: 1.4, nod: 1.0, polish: 2.5 }); // T10 talk gestures (yangon/talk.js): pose only, no props, anyone can play them
 export const GESTURES = ['point', 'hips', 'scratch', 'nod'];
 Object.assign(ChibiAnimator.prototype, {
   // scolded: head drops, shoulders slump, both hands clasped low in front, and it holds
@@ -212,6 +212,9 @@ Object.assign(ChibiAnimator.prototype, {
   _scratch(p, t) { const k = bell(t, 0, 1.05, .3), r = k > .8 ? Math.sin(t * 19) : 0; Object.assign(p, { armRx: -2.55 * k, armRz: -.55 * k, elbowR: -2.2 * k, handRz: (.3 + .35 * r) * k, headRx: .14 * k, headRz: -.14 * k, spineRz: .04 * k }); return p; },
   // nod: two quick dips of the head
   _nod(p, t) { const ph = clamp01(t / .9) * 2, d = Math.sin(Math.PI * (ph % 1)) ** 2 * (t < .9 ? 1 : 0); Object.assign(p, { headRx: p.headRx + .28 * d, spineRx: p.spineRx + .04 * d }); return p; },
+  // polish (T5b prologue): both hands together low in front of her, rubbing the bowl on the bench in slow circles, head down on it — pose only
+  _polish(p, t) { const k = bell(t, 0, 2.2, .3), a = t * 7; Object.assign(p, { armLx: -.95 * k + .08 * Math.sin(a) * k, armRx: -.95 * k - .08 * Math.sin(a) * k, armLz: .22 * k, armRz: -.22 * k, elbowL: -.85 * k, elbowR: -.85 * k, handLz: .3 * k, handRz: -.3 * k,
+    spineRx: .22 * k, headRx: .3 * k, spineRz: .05 * Math.sin(a) * k, expr: 'happy', mouth: 'smile' }); return p; },
   // 「ဟဲ့!」: a step forward, hand on the hip, the other arm pointing straight at you, chin out
   _scold(p, t) { const k = bell(t, 0, 1.2, .3); Object.assign(p, { armRx: -1.35 * k, armRz: -.55 * k, elbowR: -.05, handRz: 0, armLx: -.35 * k, armLz: .65 * k, elbowL: -1.9 * k, handLz: -.4 * k, spineRx: .12 * k, headRx: -.06 * k, legRx: -.3 * k, kneeL: .15 * k, expr: 'normal', mouth: t > .3 && t < .9 ? 'open' : 'smile' }); if (!this.thrown && t > .2) { this.thrown = true; this.emote('bang', 1.2); } return p; },
 });
@@ -226,9 +229,16 @@ ChibiAnimator.prototype.skip = function (dt) {
   if (was === 'shrug' && c.pump) c.pump.visible = true; if (was === 'lob' && c.balloon) c.balloon.visible = false; this.thrown = false;
 };
 
-export function makeCast(id, emit) {
-  const def = CAST.find(c => c.id === id);
-  const ch = makeChibi(def.opts); def.build(ch); ch.gogglesUp = true;
+// T5b: day 1's kit — nobody has a steel pump yet (SCENARIO v6.1 §3 table). makeCast(id, emit, { kit: 'day1' }); anyone not listed, and no kit
+// at all (cast.html, camlab, carry-lab, day 2+), is built as in CAST. opts: extra chibi opts · build: replaces CAST's build
+const DAY1 = {
+  hero: { opts: { tools: ['bucket'], tool: 'bucket' }, build: () => {} },                       // the bucket is the only tool
+  ngazwe: { build: ch => { ch.blushEars = earBlush(ch); } },                                    // nothing in his hands (the bowl comes in T5b-2)
+  phoekyaw: { opts: { tools: ['bucket'], tool: 'bucket' }, build: ch => { snack(ch); bikeBell(ch); } }, // a bucket in hand (two more on the bike)
+};
+export function makeCast(id, emit, { kit } = {}) {
+  const def = CAST.find(c => c.id === id), k = kit === 'day1' ? DAY1[id] : null;
+  const ch = makeChibi(k?.opts ? { ...def.opts, ...k.opts } : def.opts); (k?.build ?? def.build)(ch); ch.gogglesUp = true;
   const anim = new ChibiAnimator(ch, emit);
   const act = (k) => { // what this character's own buttons do
     if (k.startsWith('loop:')) {

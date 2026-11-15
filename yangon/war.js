@@ -10,7 +10,7 @@ import { createSound } from '../sound.js?v=3';
 import { createFx } from '../fx.js?v=2';
 import { createRules, RULE_TEXT } from '../rules.js?v=1';
 import { createAI } from './ai.js?v=3';
-import { goggles as strapGoggles } from '../cast.js?v=13'; // T8: the swim goggles (and, by importing cast.js, its `goggles` one-shot on every kid's ChibiAnimator)
+import { goggles as strapGoggles } from '../cast.js?v=14'; // T8: the swim goggles (and, by importing cast.js, its `goggles` one-shot on every kid's ChibiAnimator)
 
 const P = new URLSearchParams(location.search);
 const MODE = P.get('mode'), AUTO = P.has('auto'), ALLEY = P.get('map') === 'alley'; // the open lot by default; the alleys if asked

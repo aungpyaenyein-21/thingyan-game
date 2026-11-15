@@ -78,6 +78,7 @@
   #end h2{margin:0 0 6px;font-size:21px;font-weight:normal}
   #end p{margin:4px 0;font-size:15px}
   #end button{display:block;width:100%;margin-top:10px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:var(--ink);color:#fff6ea}
+  #end button[hidden]{display:none}
   #end button.alt{background:#fff;color:var(--ink);border:2px solid var(--line)}
   #splash{position:fixed;z-index:3;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:76px;height:76px;border-radius:50%;border:0;
     background:#7ec8e3;color:#fff;font:inherit;font-size:15px;box-shadow:0 4px 0 #4f9fbd;display:none}
@@ -142,6 +143,7 @@
     #upd{left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;max-width:calc(100vw - 40px)}
     body.busy :is(#splash,#jump,#tool,#stick,#prompt,#goal,#where,#opt,#opts,#turn){display:none!important}
   }
+  body.cine :is(#where,#turn,#opt,#opts,#tool,#splash,#jump,#stick,#hint,#prompt){display:none!important} /* a cinematic (the Prologue, every story line): nothing but the picture and the box */
   @media (prefers-reduced-motion:reduce){#area,#title{transition:none}}
 </style>
 </head>
@@ -162,6 +164,7 @@
 <div id="mini" class="panel" hidden><span id="mtitle2"></span> <b id="mcount"></b><div id="mbar"><div id="mband"></div><div id="mcur"></div></div><small>E / တို့ — အနီရောင်တံ ရွှေရောင်ထဲ ရောက်မှ နှိပ်</small></div>
 <div id="fade"></div>
 <div id="end" class="panel" hidden><h2 id="ehead"></h2><p id="ebody"></p><!-- the end-of-day card (day.js card()) -->
+  <button id="ewalk" type="button" hidden>လမ်းလျှောက်ကြည့်</button>
   <button id="eagain" type="button" class="alt">အစက ပြန်ကစားမယ်</button></div>
 <button id="splash" type="button" aria-label="ရေပက် / လုပ်"><b>💦</b>ရေပက်</button>
 <button id="jump" type="button" aria-label="ခုန်"><b>⏫</b>ခုန်</button>
@@ -176,7 +179,7 @@
 </div>
 <button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="./yangon/boot.js?v=33"></script>
+<script type="module" src="./yangon/boot.js?v=34"></script>
 <script type="module" src="./pwa.js?v=1"></script>
 </body>
 </html>
