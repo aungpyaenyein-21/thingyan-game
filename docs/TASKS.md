@@ -16,6 +16,7 @@
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ✅ 2026-11-02 (PR #32 · plan [plans/T5.md](plans/T5.md) · 2 reviews) — day 1 as SCENARIO v6; the story beats get reworked in T5b | အခြား model · branch `claude/day1` |
 | T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3. **T5b-1 now**: Prologue + Scene A + Scene B (lines 1–31, the creator's script so far) + day-1 kit, then a 「ဆက်ရန်」 stop · **T5b-2 later**: 1-3 … 1-9 once the creator hands in the rest of the day-1 script | ✅ T5b-1 2026-11-15 (PR #45 · plan + 2 code reviews · merged) · ⏳ T5b-2 waits for the creator's script | design Opus · build Sonnet · branch `claude/day1b` |
+| T13 | [Restart + scene picker](#t13-restart--scene-picker-creator-2026-11-15) — ⚙ menu: 「အစက ပြန်စ」 (confirm → new save → Prologue) + a scene list to jump straight to any day-1 step, for testing | ✅ 2026-11-15 (PR · plan + 2 code reviews · merged) — restart keeps name / look / girl, resets the story | design Opus · build Sonnet · branch `claude/restart` |
 | T15 | Retire the pixel game (creator 2026-11-15) — the Phaser `index.html` / `game.js` / `art.js` deleted; `index.html` now sends you to `yangon.html` (query + hash kept) | ✅ 2026-11-15 (PR · merged) | design Opus · build Sonnet · branch `claude/home` |
 | T12 | [Ward: clear, widen, near-lens fade](#t12-ward-clear-widen-near-lens-fade-issue-41) — issue #41 · life.js exclusion zone, lanes ×1.5 in set.js, dithered near-lens fade for street furniture (`?tune`) | ✅ 2026-11-07 (PR #42 · plan + 2 reviews · merged; fade defaults 2.5/5) | other model |
 | T6 | [Day 2 + Day 3](#t6-day-2--day-3) — ④ lane, M4 drain / M5 lane 4 / M6 laundry / M7 ice run, Thura's bowl helmet, Phoe Wa, U Tin Maung's ice truck | ⏳ spec ✅ (after T5b merge) — v6.1 deltas below: pump stall + 1,000 ks, Thura 「ကောက်ရတာ」, bowl never in ④'s yard | other model · branch `claude/day23` |
@@ -583,6 +584,19 @@ Spec: [#40](https://github.com/aungpyaenyein-21/thingyan-game/issues/40) + its t
 Day 2+ (T6 — the pump stall, Bwa Bwa's 2-1 look) · `world.js` `camera.js` `chibi.js` `war.js` · the talk director itself (T10) · commit unless asked
 
 ---
+
+## T13 Restart + scene picker (creator, 2026-11-15)
+> 「僕が試すときに…途中から始まるから…リセットボタン、最初からやり直しみたいなのがあるといい」 — the save resumes mid-day; the creator wants to restart (and test a scene) without typing `?new` / `?day=&step=`.
+
+**Files** — `yangon.html` (two entries in `#opts` + a small confirm panel), `yangon/main.js` (handlers), `yangon/day.js` (export the step list + Burmese labels if needed), `sw.js` + the `?v=` chain. Not: `hud.js` (the ⚙ toggle already works), `world.js` `camera.js` `chibi.js` `talk.js` `war.js`.
+
+**Build**
+1. **「🔄 အစက ပြန်စ」** in `#opts` → a confirm panel 「save ဖျက်ပြီး အစက ပြန်စမလား」 with 「ပြန်စမယ်」 / 「မလုပ်တော့ဘူး」 → `wipe()` then reload with `?new` (keep `?girl` / `?name` / `?tune` / `?debug` if present). The Prologue plays from the top.
+2. **「🎬 အခန်း ရွေး」** in `#opts` → a list of the current day's steps (`STEPS[S.day]`) with short Burmese labels: `pro` 「အဖွင့်」 · `1-1` 「အိမ်ထဲ (Scene A)」 · `1-2` 「အိမ်ရှေ့ (Scene B)」 · `wip` 「ဆက်ရန်」 → reload with `?day=1&step=<id>` (the existing `debugStart`). Labels come from one table so T5b-2 / T6 just add rows.
+3. Both close the ⚙ menu; both work while a story line plays (a reload is fine) and on a phone (375 px: the list fits, buttons ≥ 40 px tall).
+4. The old 「အစက ပြန်ကစားမယ်」 / wip 「အစက ပြန်ကြည့်」 buttons use the same restart function.
+
+**✅ Done means** — `docs/restart/check.cjs` (port 8800): mid-Scene-B → ⚙ → restart → confirm → the Prologue (`S.step === 'pro'`, the old save gone) · cancel leaves the save untouched · the picker reaches each of the 4 steps (`S.step` after load) · `?girl` survives a restart · console 0 · screenshots: the menu, the confirm, the picker (desktop + phone 375) · `docs/plans/T13.md` (short plan, then Results) + PR.
 
 ## T12 Ward: clear, widen, near-lens fade (issue #41)
 
