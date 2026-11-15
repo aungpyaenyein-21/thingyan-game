@@ -3,10 +3,11 @@
 import { LOOK0 } from './wardrobe.js?v=7';
 
 const KEY = 'thingyan.v6', OLD = ['thingyan.day1.v2'];
-// day: 1–4 · step: the scene you're in ('1-1' … '1-8'; 'done' once the day card is up) — saved after every scene
+// girl: the hero is a girl (lines say 「သမီး」 — ?girl) · v 61: SCENARIO v6.1 day-1 saves (T5's v 6 saves start fresh)
+// day: 1–4 · step: the scene you're in ('pro' · '1-1' · '1-2' · 'wip' on day 1, then '1-3' … '1-8'; 'done' once the day card is up) — saved after every scene
 // parts: what's up on the mandat (mandat.js PARTS) · got: today's mission items, delivered to the lot but not lifted yet
 // night: what you answered each night ('yes' | 'dots') · name: {နာမည်} · ball: May Thu gave you the balloon (1-2)
-export const fresh = () => ({ v: 6, day: 1, step: '1-1', parts: [], got: [], night: [], name: 'မောင်မောင်', ball: false, look: { ...LOOK0 } });
+export const fresh = () => ({ v: 61, day: 1, step: 'pro', girl: false, parts: [], got: [], night: [], name: 'မောင်မောင်', ball: false, look: { ...LOOK0 } });
 export function load() {
   let S = fresh();
   try {
@@ -14,8 +15,9 @@ export function load() {
     const P = new URLSearchParams(location.search);
     if (P.has('new')) { localStorage.removeItem(KEY); P.delete('new'); history.replaceState(null, '', location.pathname + (P.size ? '?' + P : '')); } // so a reload doesn't wipe it again
     const old = JSON.parse(localStorage.getItem(KEY) || '{}');
-    S = { ...fresh(), ...(old.v === 6 ? old : {}) }; S.look = { ...LOOK0, ...old.look };
+    S = { ...fresh(), ...(old.v === 61 ? old : {}) }; S.look = { ...LOOK0, ...old.look };
     if (P.get('name')) S.name = P.get('name');
+    if (P.has('girl')) S.girl = P.get('girl') !== '0'; // the hero's gender for 「သား / သမီး」 (no picker yet)
   } catch {}
   return S;
 }
