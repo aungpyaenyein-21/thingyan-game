@@ -16,6 +16,7 @@
 | T4 | [ကောက်-သယ်-ချ system](#t4-ကောက်-သယ်-ချ-system) (လက်/ရင်ဘတ်/ခေါင်းပေါ်/စက်ဘီးနောက်၊ ရေခဲ timer၊ ပက်ခံရရင် ကျ) · arm IK | ✅ 2026-10-31 (PR #29) | အခြား model |
 | T5 | [ရက် ၁ + ရက်စဉ် system](#t5-ရက်-၁--ရက်စဉ်-system) — `day.js` / `mandat.js` / `story.js`၊ ၁-၁ → ၁-၈ အစအဆုံး ကစားလို့ရ၊ M1–M3 ရေပါ၊ ၁-၇ ဖလား ပစ်လွတ် | ✅ 2026-11-02 (PR #32 · plan [plans/T5.md](plans/T5.md) · 2 reviews) — day 1 as SCENARIO v6; the story beats get reworked in T5b | အခြား model · branch `claude/day1` |
 | T5b | [Day 1 rework](#t5b-day-1-rework-issue-40) — issue #40 · SCENARIO v6.1 §3. **T5b-1 now**: Prologue + Scene A + Scene B (lines 1–31, the creator's script so far) + day-1 kit, then a 「ဆက်ရန်」 stop · **T5b-2 later**: 1-3 … 1-9 once the creator hands in the rest of the day-1 script | ✅ T5b-1 2026-11-15 (PR #45 · plan + 2 code reviews · merged) · ⏳ T5b-2 waits for the creator's script | design Opus · build Sonnet · branch `claude/day1b` |
+| T18 | [Longyi when seated + tucked shirt](#t18-longyi-when-seated--tucked-shirt-creator-2026-11-15) — a seated longyi / ပုဆိုး / ထဘီ drapes over the lap and down the shins (no knees through it); men's longyi has the shirt tucked in (the longyi's waist + knot over the shirt); no bottom ever pokes through a top in any pose | ✅ 2026-11-15 (PR · plan + 1 code review · merged) — htamein tucks with short tops, long blouses outside (creator to confirm) | design Opus · build Sonnet · branch `claude/cloth` |
 | T16 | [Mood + addressee + tap to advance](#t16-mood--addressee--tap-to-advance-issue-50) — issue #50: the sad face stays (Phoe Kyaw arrives `ok`, turns sad at line 24, all back to `ok` at 25), a speaker faces who they talk to (`to` on all 31 lines), listeners watch the speaker, lines wait for 「▸ ဆက်」 / E, talk director skips blocked shots, smaller ots foreground | ✅ 2026-11-15 (PR · plan + 1 code review · merged) | design Opus · build Sonnet · branch `claude/mood` |
 | T17 | [Landscape on phones](#t17-landscape-on-phones-creator-2026-11-15) — manifest `landscape` (Android PWA locks), `screen.orientation.lock` try, a closable 「ဖုန်းကို စောင်းပါ」 card in portrait (iPhone can't lock), landscape layout fixes | ✅ 2026-11-15 (PR · 1 code review · merged) | design Opus · build Sonnet · branch `claude/landscape` |
 | T13 | [Restart + scene picker](#t13-restart--scene-picker-creator-2026-11-15) — ⚙ menu: 「အစက ပြန်စ」 (confirm → new save → Prologue) + a scene list to jump straight to any day-1 step, for testing | ✅ 2026-11-15 (PR · plan + 2 code reviews · merged) — restart keeps name / look / girl, resets the story | design Opus · build Sonnet · branch `claude/restart` |
@@ -586,6 +587,31 @@ Spec: [#40](https://github.com/aungpyaenyein-21/thingyan-game/issues/40) + its t
 Day 2+ (T6 — the pump stall, Bwa Bwa's 2-1 look) · `world.js` `camera.js` `chibi.js` `war.js` · the talk director itself (T10) · commit unless asked
 
 ---
+
+## T18 Longyi when seated + tucked shirt (creator, 2026-11-15)
+> 「လုံချည်တို့ ပုဆိုးတို့ ထဘီ ဝတ်ထားတဲ့လူတွေ ထိုင်ရင် ပုံစံမကျဘူး… လုံချည်က အတောင့်လိုက်ကြီး… အဖွား ထိုင်တဲ့ပုံ ကြည့်ရင် သိသာတယ်… ဒူးက ပေါ်လို့」 · 「အင်္ကျီ နည်းနည်း ကျပ်ပြီဆို အောက်က ဝတ်ထားတဲ့ ဘောင်းဘီ ဒါမှမဟုတ် လုံချည်က အပေါ်အင်္ကျီကို ဖောက်ထွက်နေတယ်… လုံချည်ဆိုရင် အင်္ကျီကို အထဲထည့်ပြီး ဝတ်ကြတာ များတယ်」
+
+**Problem 1 — the seated skirt.** `chibi.js` builds the longyi / htamein as one lathe on `hips` and the skin pass (line ~953) only slides the hem forward with the leg swing (`dz`) and lifts it a little. Seated (`sitPose`: thighs −1.45, knees +1.45), the knees end up at hip height in front while the tube still runs from the waist down-forward to the ankles, so the knees and thighs punch through its front and it stays a stiff cone. Bwa Bwa (sits on her stool) shows it most.
+
+**Fix 1** — a seated drape in the skirt deform, driven by the pose (not a per-character hack), for every SEATED loop (`sit` `eat` `vend` `squat`; `cycle` / `coast` too if they look wrong) and blended through `sitdown` / `standup`:
+- the front half of the cloth runs from the waist **along the top of the thighs** to just past the knees (a lap, a little sag between the knees), then **hangs down** in front of the shins to the hem, which ends a little above the feet;
+- the back half follows the seat and hangs down behind the calves; the sides close the shape so no gap shows from the side;
+- it stays **outside** the legs everywhere: test it by sampling the leg capsules (thigh + shin, both sides) against the deformed cloth — no thigh / knee / shin point outside the cloth surface, with a small margin (≈ 1 cm);
+- the standing / walking / running / hitched-longyi look stays as it is now (compare screenshots before/after);
+- works for all three builds (`round` `slim` `broad`), adults + kids, `longyi` and `htamein`. The knee-length `skirt` gets the same treatment if it shows the same problem.
+Approach is the builder's choice (a better per-vertex deform from the leg bones is the expected route; skinning the cloth to the legs or adding geometry is fine if it stays cheap — this runs for every NPC in the town each frame, so no per-frame allocation, and keep `computeVertexNormals` cost where it is or lower).
+
+**Problem 2 — the bottom pokes through the top.** The top is a lathe on `spine` whose hem radius comes from the skirt / pants width (`under`, line ~316). When the spine bends or twists against the hips (`spineRx` / `spineRy` / `spineRz` — sitting, leaning, pushing, cycling, throwing) the hip-level cloth (skirt top, hip ball, pants) comes out through the shirt.
+
+**Fix 2**
+- **Men's `longyi`: the shirt is tucked in.** The longyi's waist goes over the shirt: the shirt's hem ends inside the longyi waist band, the longyi's top edge sits a little higher and wraps the shirt, the ပုဆိုး knot stays in front. Shirt prints must still read (the print sits on the chest, not cut by the waist band).
+- **`htamein`**: also tucked (the creator: 「လုံချည်ဆိုရင် အင်္ကျီကို အထဲထည့်ပြီး ဝတ်ကြတာ များတယ်」). Show me one screenshot of a woman / girl in htamein tucked vs untucked in the plan results so I can confirm with the creator; default tucked.
+- **`pants` / `shorts` / `overalls` / `skirt`**: the shirt stays outside, but nothing under it may come through in any pose.
+- Check it as geometry, not by eye only: for every outfit combo × every loop / one-shot that bends the spine (sit, eat, vend, squat, cycle, coast, push, carry, run, the throws, the pump strokes, laugh, kadaw…), sample the hip-level parts and assert they stay inside the top (untucked) or that the top's hem stays inside the bottom's waist (tucked), with a small margin.
+
+**Files** — `chibi.js` (+ `faces.json` untouched), the `?v=` chain for chibi (`chibi.js` is imported by many modules — bump every importer and `sw.js` VERSION), a check `docs/cloth/check.cjs` + screenshots `docs/cloth/*.jpg`, plan `docs/plans/T18.md`. Not: `story.js` `talk.js` `camera.js` `world.js` layout. If the existing character lab page (if any) helps, use it for screenshots.
+
+**✅ Done means** — before/after screenshots (same camera) of: Bwa Bwa seated on her stool (front ¾ and side), U Tin Maung / a man in longyi seated, a woman in htamein seated, a kid in longyi seated, the same four standing + walking (unchanged look), a man in longyi and a kid in a tee + shorts mid-throw and pushing (no poke-through), the tucked shirt close-up; the cloth-vs-leg and top-vs-bottom checks pass for all builds × outfits × poses; the day-1 flow check (`docs/day1b/check.cjs`) and `docs/mood/check.cjs` still ALL PASS; console 0; frame time of the town with all NPCs not worse than before (log both).
 
 ## T16 Mood + addressee + tap to advance (issue #50)
 > 「がっかりした顔…普通の顔に戻るのが不自然…みんなもがっかりしてる顔でいい…最初知らないポーチョは普通の顔で来ていい」 · 「その人に対して教えるときはその人を見て話す」 · 「やる気が出て、普通の顔に戻ってもいい」 · 「自動で流れてる…続けるを押してから…早すぎる」

@@ -1,7 +1,7 @@
 // T6.5 pose / tic editor + face editor — cast.html?edit[&c=<id>][&tic=<name>]. Laptop tool: it only exists when the page has ?edit, builds all its DOM here,
 // and plays the draft through the very same JSON player the game uses (chibi.js registerTic), so what you scrub is what the game plays.
 // Save = Copy JSON / Download (no server); the file is committed by hand next to tics/index.json. See tics/README.md.
-import { POSE_KEYS, FACE, FACE_OV, FACE_PARTS, faceTex, faceParts, setFaces, registerTic, ONESHOT } from './chibi.js?v=35';
+import { POSE_KEYS, FACE, FACE_OV, FACE_PARTS, faceTex, faceParts, setFaces, registerTic, ONESHOT } from './chibi.js?v=36';
 
 const GROUPS = [
   ['head', ['headRx', 'headRy', 'headRz']], ['spine', ['spineRx', 'spineRy', 'spineRz']], ['hips', ['hipsRy', 'hipsRz']],
