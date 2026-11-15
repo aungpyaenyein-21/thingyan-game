@@ -1,3 +1,5 @@
+> **2026-11-15: this Phaser pixel game was removed (T15); index.html now redirects to yangon.html.**
+
 # သင်္ကြန်ပွဲ · Thingyan Pwe — Game Design (v0)
 
 ပုံစံ: Nibbana Zay လိုပဲ top-down pixel art၊ Phaser 3 (CDN) + Tiled map၊ build tool မသုံး။
