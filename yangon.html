@@ -153,6 +153,30 @@
   }
   body.cine :is(#where,#turn,#opt,#opts,#tool,#splash,#jump,#stick,#hint,#prompt){display:none!important} /* a cinematic (the Prologue, every story line): nothing but the picture and the box */
   @media (prefers-reduced-motion:reduce){#area,#title{transition:none}}
+  /* T17 rotate card: portrait phones only (pwa.js un-hides it), closable, gone for the session once closed or turned */
+  #rot{left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;width:min(320px,calc(100% - 32px));box-sizing:border-box;padding:18px 20px;text-align:center;line-height:1.8}
+  #rot p{margin:6px 0 4px;font-size:16px}
+  #rot button{display:block;width:100%;min-height:44px;margin-top:8px;padding:9px;border:0;border-radius:10px;font:inherit;font-size:15px;cursor:pointer;background:var(--ink);color:#fff6ea}
+  #rotico{display:block;width:64px;height:64px;margin:0 auto;transform-origin:50% 50%;animation:rotphone 2.6s ease-in-out infinite}
+  @keyframes rotphone{0%,15%{transform:rotate(0)}45%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+  @media (prefers-reduced-motion:reduce){#rotico{animation:none;transform:rotate(-90deg)}}
+  /* T17 landscape on a phone (667x375, 844x390): the rows of buttons are short, the cards and menus scroll instead of spilling */
+  @media (orientation:landscape) and (max-height:500px){
+    #goal{max-width:calc(100% - 250px)}
+    #dlg{left:50%;right:auto;width:min(560px,calc(100% - 300px));margin:0;transform:translateX(-50%);padding:6px 14px 4px;font-size:14px;line-height:1.6}
+    #dname{font-size:13px}
+    #toast{top:calc(10px + env(safe-area-inset-top,0px))}
+    body.opts #opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(380px,calc(100vw - 100px));max-height:calc(100% - 70px);overflow:auto;box-sizing:border-box}
+    body.opts #opts>button{padding:6px 10px;font-size:13px;min-height:36px}
+    #end,#confirm,#pick,#rot{padding:10px 18px;line-height:1.6;max-height:calc(100% - 20px);overflow:auto}
+    #end h2{font-size:18px} #end p{font-size:14px} #end button,#confirm button,#pick button,#rot button{margin-top:6px;min-height:40px;padding:6px}
+    #mini{bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+    #menu{max-height:calc(100% - 20px)}
+    #credits{max-height:calc(100vh - 20px)}
+    #turn{bottom:calc(190px + env(safe-area-inset-bottom,0px))} /* under the map, above the tool button */
+    body.opts :is(#where,#turn){display:none!important} /* the ⚙ list takes the right column; any tap closes it */
+    body:has(:is(#end,#pick,#confirm):not([hidden])) :is(#goal,#where,#opt,#opts,#splash,#jump,#tool,#turn,#stick,#prompt){display:none!important} /* a card (end / scene picker / restart confirm) owns the screen */
+  }
 </style>
 </head>
 <body>
@@ -189,9 +213,11 @@
 <button id="gfx" type="button" aria-label="ရုပ်ထွက် ပြောင်း"></button>
 <button id="inst" type="button" hidden>📲 ဖုန်းထဲ ထည့်မယ်</button>
 </div>
+<div id="rot" class="panel" hidden role="dialog" aria-label="ဖုန်း စောင်း"><svg id="rotico" viewBox="0 0 64 64" aria-hidden="true"><rect x="19" y="6" width="26" height="52" rx="5" fill="none" stroke="#5a3550" stroke-width="4"/><circle cx="32" cy="50" r="2.5" fill="#5a3550"/><path d="M26 11h12" stroke="#c8553d" stroke-width="3" stroke-linecap="round"/></svg>
+  <p>ဖုန်းကို စောင်းပြီး ကစားရင် ပိုကြည့်ကောင်းတယ်</p><button id="rotx" type="button">ရပြီ</button></div>
 <button id="upd" type="button" hidden>✨ ဗားရှင်းအသစ် ရပြီ · ပြန်ဖွင့်မယ်</button>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module" src="./yangon/boot.js?v=37"></script>
-<script type="module" src="./pwa.js?v=1"></script>
+<script type="module" src="./pwa.js?v=2"></script>
 </body>
 </html>
